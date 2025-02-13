@@ -1,0 +1,31 @@
+{
+  "name": "effect-contents",
+  "version": "1.0.0",
+  "description": "Effect documentation processor",
+  "type": "module",
+  "scripts": {
+    "init:website": "git submodule add https://github.com/Effect-TS/website.git sources/website",
+    "init:effect-io-ai": "git submodule add https://github.com/tim-smart/effect-io-ai.git sources/effect-io-ai",
+    "init": "npm run init:website && npm run init:effect-io-ai",
+    "update": "git submodule update --init --recursive",
+    "build:docs": "./libs/yek sources/website/content/src/content/docs/docs --config-file ./config/docs.yaml --output-template '> FILE_PATH\\n\\nFILE_CONTENT' > ./output/docs.md",
+    "build:api-docs": "./libs/yek sources/effect-io-ai/effect --config-file ./config/api.yaml --output-template '> FILE_PATH\\n\\nFILE_CONTENT' > ./output/api.md",
+    "build:module-docs": "./libs/yek sources/effect-io-ai/json --config-file ./config/module.yaml --output-template '#FILE_PATH\nFILE_CONTENT' > ./output/module.json",
+    "build": "rm -rf output && mkdir -p output && npm run build:docs && npm run build:api-docs && npm run build:module-docs && node --experimental-strip-types ./src/process.ts"
+  },
+  "dependencies": {
+    "glob": "^11.0.1",
+    "gpt-tokenizer": "^2.8.1",
+    "pretty-bytes": "^6.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.2",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "effect",
+    "documentation"
+  ],
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0"
+}

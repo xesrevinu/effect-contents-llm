@@ -1,0 +1,11 @@
+ignore_patterns:
+  - "**/*.jpg"
+  - "**/*.png"
+  - "**/*.gif"
+  - "**/*.svg"
+
+priority_rules:
+  - score: 100
+    pattern: "^sources/effect-io-ai/effect/.*\\.md$"
+
+output_template: "> FILE_PATH\n\nFILE_CONTENT"

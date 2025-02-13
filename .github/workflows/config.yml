@@ -1,0 +1,9 @@
+# 工作流配置
+update_schedule: "0 0 * * *"
+auto_merge: true
+branch_name: "update-docs"
+commit_message: "chore: update documentation [skip ci]"
+pr_title: "chore: update documentation"
+pr_labels:
+  - documentation
+  - automated

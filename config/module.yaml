@@ -1,0 +1,11 @@
+ignore_patterns:
+  - "**/*.jpg"
+  - "**/*.png"
+  - "**/*.gif"
+  - "**/*.svg"
+
+priority_rules:
+  - score: 100
+    pattern: "^sources/effect-io-ai/json/.*\\.json$"
+
+output_template: "FILE_CONTENT"

@@ -1,0 +1,6 @@
+[submodule "sources/website"]
+	path = sources/website
+	url = https://github.com/Effect-TS/website.git
+[submodule "sources/effect-io-ai"]
+	path = sources/effect-io-ai
+	url = https://github.com/tim-smart/effect-io-ai.git
