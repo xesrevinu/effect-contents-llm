@@ -68,8 +68,6 @@ You can customize the processing behavior by modifying the config files in the `
 - `config/api.yaml` - API documentation config
 - `config/module.yaml` - Module documentation config
 
-## Documentation Statistics
-
 <!-- STATS_START -->
 ## Documentation Statistics
 
