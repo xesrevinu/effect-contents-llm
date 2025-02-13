@@ -4,8 +4,8 @@ import { glob } from 'glob';
 import prettyBytes from 'pretty-bytes';
 import { encode } from 'gpt-tokenizer';
 
-const GITHUB_REPO = "https://github.com/xesrevinu/effect-contents";
-const GITHUB_RAW = "https://raw.githubusercontent.com/xesrevinu/effect-contents/main";
+const GITHUB_REPO = "https://github.com/xesrevinu/effect-contents-llm";
+const GITHUB_RAW = "https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main";
 
 interface DocConfig {
   title: string;

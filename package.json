@@ -1,5 +1,5 @@
 {
-  "name": "effect-contents",
+  "name": "effect-contents-llm",
   "version": "1.0.0",
   "description": "Effect documentation processor",
   "type": "module",

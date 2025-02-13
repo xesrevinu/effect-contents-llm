@@ -28,8 +28,8 @@ This project processes and combines documentation from various Effect sources, m
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/xesrevinu/effect-contents.git
-cd effect-contents
+git clone https://github.com/xesrevinu/effect-contents-llm.git
+cd effect-contents-llm
 ```
 
 2. Install dependencies:
@@ -89,8 +89,8 @@ You can customize the processing behavior by modifying the config files in the `
 
 | Extension | Count | Size | Tokens | Origin URL | GitHub |
 |-----------|-------|------|--------|------------|--------|
-| .md | 2 | 3.92 MB | 1,021,920 | [https://effect.website/docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.md) |
-| .json | 1 | 11.2 MB | 3,023,372 | [https://effect.website/docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.json) |
+| .md | 2 | 3.92 MB | 1,021,920 | [https://effect.website/docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/docs.md) |
+| .json | 1 | 11.2 MB | 3,023,372 | [https://effect.website/docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/docs.json) |
 
 ### Website Documentation
 
@@ -102,13 +102,13 @@ You can customize the processing behavior by modifying the config files in the `
 
 | Extension | Count | Size | Tokens | GitHub |
 |-----------|-------|------|--------|--------|
-| .md | 1 | 1.49 MB | 346,080 | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.md) |
+| .md | 1 | 1.49 MB | 346,080 | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/docs.md) |
 
 #### Files
 
 | File | Size | Tokens | Origin URL | GitHub | Raw |
 |------|------|--------|------------|--------|-----|
-| [docs.md](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.md) | 1.49 MB | 346,080 | [Docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.md) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents/main/output/docs.md) |
+| [docs.md](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/docs.md) | 1.49 MB | 346,080 | [Docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/docs.md) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/docs.md) |
 
 ### API Documentation
 
@@ -120,13 +120,13 @@ You can customize the processing behavior by modifying the config files in the `
 
 | Extension | Count | Size | Tokens | GitHub |
 |-----------|-------|------|--------|--------|
-| .md | 1 | 2.44 MB | 675,840 | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) |
+| .md | 1 | 2.44 MB | 675,840 | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/api.md) |
 
 #### Files
 
 | File | Size | Tokens | Origin URL | GitHub | Raw |
 |------|------|--------|------------|--------|-----|
-| [api.md](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) | 2.44 MB | 675,840 | [Docs](https://effect.website) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents/main/output/api.md) |
+| [api.md](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/api.md) | 2.44 MB | 675,840 | [Docs](https://effect.website) | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/api.md) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/api.md) |
 
 ### Module Documentation
 
@@ -138,13 +138,13 @@ You can customize the processing behavior by modifying the config files in the `
 
 | Extension | Count | Size | Tokens | GitHub |
 |-----------|-------|------|--------|--------|
-| .json | 1 | 11.2 MB | 3,023,372 | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/module.json) |
+| .json | 1 | 11.2 MB | 3,023,372 | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/module.json) |
 
 #### Files
 
 | File | Size | Tokens | Origin URL | GitHub | Raw |
 |------|------|--------|------------|--------|-----|
-| [module.json](https://github.com/xesrevinu/effect-contents/blob/main/output/module.json) | 11.2 MB | 3,023,372 | [Docs](https://effect.website) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/module.json) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents/main/output/module.json) |
+| [module.json](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/module.json) | 11.2 MB | 3,023,372 | [Docs](https://effect.website) | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/module.json) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/module.json) |
 
 
 <!-- STATS_END -->
@@ -152,7 +152,7 @@ You can customize the processing behavior by modifying the config files in the `
 ## Project Structure
 
 ```
-effect-contents/
+effect-contents-llm/
 ├── config/               # Configuration files
 │   ├── docs.yaml
 │   ├── api.yaml
