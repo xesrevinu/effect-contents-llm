@@ -28,6 +28,8 @@ jobs:
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
+        with:
+          node-version: 23
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -54,11 +56,14 @@ jobs:
             echo "changes=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Install dependencies
+      - name: Download yek binary
         if: steps.check-changes.outputs.changes == 'true'
         run: |
-          pnpm install
-          chmod +x ./libs/yek
+          curl -fsSL https://bodo.run/yek.sh | bash
+
+      - name: Install dependencies
+        if: steps.check-changes.outputs.changes == 'true'
+        run: pnpm install
 
       - name: Build documentation
         if: steps.check-changes.outputs.changes == 'true'

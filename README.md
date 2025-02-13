@@ -11,6 +11,7 @@ This project processes and combines documentation from various Effect sources, m
   - Official Effect documentation from the website
   - API documentation from effect-io-ai
   - Module documentation from effect-io-ai
+- Uses [yek](https://github.com/bodo-run/yek) for efficient file processing
 - Generates comprehensive statistics for each documentation type
 - Calculates token counts for LLM processing
 - Maintains organized output structure
@@ -21,6 +22,7 @@ This project processes and combines documentation from various Effect sources, m
 - Node.js 18+
 - pnpm
 - Git (for submodules)
+- [yek](https://github.com/bodo-run/yek) - A fast Rust-based tool for serializing text files
 
 ## Installation
 
@@ -35,7 +37,13 @@ cd effect-contents
 pnpm install
 ```
 
-3. Initialize submodules:
+3. Install yek:
+```bash
+# Unix-like Systems (macOS, Linux)
+curl -fsSL https://bodo.run/yek.sh | bash
+```
+
+4. Initialize submodules:
 ```bash
 pnpm run init
 ```

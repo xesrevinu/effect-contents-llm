@@ -8,9 +8,9 @@
     "init:effect-io-ai": "git submodule add https://github.com/tim-smart/effect-io-ai.git sources/effect-io-ai",
     "init": "npm run init:website && npm run init:effect-io-ai",
     "update": "git submodule update --init --recursive",
-    "build:docs": "./libs/yek sources/website/content/src/content/docs/docs --config-file ./config/docs.yaml --output-template '> FILE_PATH\\n\\nFILE_CONTENT' > ./output/docs.md",
-    "build:api-docs": "./libs/yek sources/effect-io-ai/effect --config-file ./config/api.yaml --output-template '> FILE_PATH\\n\\nFILE_CONTENT' > ./output/api.md",
-    "build:module-docs": "./libs/yek sources/effect-io-ai/json --config-file ./config/module.yaml --output-template '#FILE_PATH\nFILE_CONTENT' > ./output/module.json",
+    "build:docs": "yek sources/website/content/src/content/docs/docs --config-file ./config/docs.yaml --output-template '> FILE_PATH\\n\\nFILE_CONTENT' > ./output/docs.md",
+    "build:api-docs": "yek sources/effect-io-ai/effect --config-file ./config/api.yaml --output-template '> FILE_PATH\\n\\nFILE_CONTENT' > ./output/api.md",
+    "build:module-docs": "yek sources/effect-io-ai/json --config-file ./config/module.yaml --output-template '#FILE_PATH\nFILE_CONTENT' > ./output/module.json",
     "build": "rm -rf output && mkdir -p output && npm run build:docs && npm run build:api-docs && npm run build:module-docs && node --experimental-strip-types ./src/process.ts"
   },
   "dependencies": {
