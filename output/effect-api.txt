@@ -8511,6 +8511,25 @@ export declare const die: (defect: unknown) => Cause<never>
 ```
 
 
+# Die
+
+Represents an unexpected defect within a `Cause`.
+
+**Details**
+
+This interface models a `Cause` for errors that are typically unrecoverable or
+unanticipated—like runtime exceptions or bugs. When code "dies," it indicates a
+severe failure that wasn't accounted for.
+
+To import and use `Die` from the "Cause" module:
+
+```ts
+import * as Cause from "effect/Cause"
+// Can be accessed like this
+Cause.Die
+```
+
+
 # dieOption
 
 Retrieves the first `Die` defect in a `Cause`, if present.
@@ -8557,6 +8576,19 @@ Cause.empty
 
 ```ts
 export declare const empty: Cause<never>
+```
+
+
+# Empty
+
+Represents a lack of errors within a `Cause`.
+
+To import and use `Empty` from the "Cause" module:
+
+```ts
+import * as Cause from "effect/Cause"
+// Can be accessed like this
+Cause.Empty
 ```
 
 
@@ -8620,6 +8652,25 @@ Cause.fail
 
 ```ts
 export declare const fail: <E>(error: E) => Cause<E>
+```
+
+
+# Fail
+
+Represents an expected error within a `Cause`.
+
+**Details**
+
+This interface models a `Cause` that carries an expected or known error of
+type `E`. For example, if you validate user input and find it invalid, you
+might store that error within a `Fail`.
+
+To import and use `Fail` from the "Cause" module:
+
+```ts
+import * as Cause from "effect/Cause"
+// Can be accessed like this
+Cause.Fail
 ```
 
 
@@ -8920,6 +8971,26 @@ Cause.interrupt
 
 ```ts
 export declare const interrupt: (fiberId: FiberId.FiberId) => Cause<never>
+```
+
+
+# Interrupt
+
+Represents fiber interruption within a `Cause`.
+
+**Details**
+
+This interface models a scenario where an effect was halted by an external
+signal, carrying a `FiberId` that identifies which fiber was interrupted.
+Interruption is a normal part of concurrency, used for cancellation or
+resource cleanup.
+
+To import and use `Interrupt` from the "Cause" module:
+
+```ts
+import * as Cause from "effect/Cause"
+// Can be accessed like this
+Cause.Interrupt
 ```
 
 
@@ -9663,6 +9734,25 @@ export declare const parallel: <E, E2>(left: Cause<E>, right: Cause<E2>) => Caus
 ```
 
 
+# Parallel
+
+Represents parallel composition of two `Cause`s.
+
+**Details**
+
+This interface captures failures that happen simultaneously. In scenarios
+with concurrency, more than one operation can fail in parallel. Instead of
+losing information, this structure stores both errors together.
+
+To import and use `Parallel` from the "Cause" module:
+
+```ts
+import * as Cause from "effect/Cause"
+// Can be accessed like this
+Cause.Parallel
+```
+
+
 # pretty
 
 Converts a `Cause` into a human-readable string.
@@ -9878,6 +9968,25 @@ Cause.sequential
 
 ```ts
 export declare const sequential: <E, E2>(left: Cause<E>, right: Cause<E2>) => Cause<E | E2>
+```
+
+
+# Sequential
+
+Represents sequential composition of two `Cause`s.
+
+**Details**
+
+This interface models the scenario where one error follows another in
+sequence, such as when a main effect fails and then a finalizer also fails.
+It ensures both errors are retained in the final `Cause`.
+
+To import and use `Sequential` from the "Cause" module:
+
+```ts
+import * as Cause from "effect/Cause"
+// Can be accessed like this
+Cause.Sequential
 ```
 
 
@@ -19219,6 +19328,41 @@ export declare const taggedEnum: {
 ```
 
 
+# TaggedEnum
+
+Create a tagged enum data type, which is a union of `Data` structs.
+
+```ts
+import { Data } from "effect"
+
+type HttpError = Data.TaggedEnum<{
+  BadRequest: { readonly status: 400; readonly message: string }
+  NotFound: { readonly status: 404; readonly message: string }
+}>
+
+// Equivalent to:
+type HttpErrorPlain =
+  | {
+      readonly _tag: "BadRequest"
+      readonly status: 400
+      readonly message: string
+    }
+  | {
+      readonly _tag: "NotFound"
+      readonly status: 404
+      readonly message: string
+    }
+```
+
+To import and use `TaggedEnum` from the "Data" module:
+
+```ts
+import * as Data from "effect/Data"
+// Can be accessed like this
+Data.TaggedEnum
+```
+
+
 # add
 
 Add the given `amount` of `unit`'s to a `DateTime`.
@@ -22050,6 +22194,19 @@ export declare const cat: {
 ```
 
 
+# Cat
+
+Represents the concatenation of two documents.
+
+To import and use `Cat` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.Cat
+```
+
+
 # cats
 
 The `cats` combinator will attempt to lay out a collection of documents
@@ -22360,6 +22517,23 @@ export declare const char: (char: string) => Doc<never>
 ```
 
 
+# Char
+
+Represents a document containing a single character.
+
+**Invariants**
+
+- Cannot be the newline (`"\n"`) character
+
+To import and use `Char` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.Char
+```
+
+
 # colon
 
 A document containing a single `:` character.
@@ -22421,6 +22595,19 @@ assert.strictEqual(
 
 ```ts
 export declare const column: <A>(react: (position: number) => Doc<A>) => Doc<A>
+```
+
+
+# Column
+
+Represents a document that reacts to the current cursor position.
+
+To import and use `Column` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.Column
 ```
 
 
@@ -22614,6 +22801,21 @@ export declare const empty: Doc<never>
 ```
 
 
+# Empty
+
+Represents the empty document.
+
+Conceptually, the `Empty` document can be thought of as the unit of `Cat`.
+
+To import and use `Empty` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.Empty
+```
+
+
 # encloseSep
 
 The `encloseSep` combinator concatenates a collection of documents,
@@ -22715,6 +22917,21 @@ Doc.fail
 
 ```ts
 export declare const fail: Doc<never>
+```
+
+
+# Fail
+
+Represents a document that cannot be rendered. Generally occurs when
+flattening a line. The layout algorithms will reject this document and choose
+a more suitable rendering.
+
+To import and use `Fail` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.Fail
 ```
 
 
@@ -22951,6 +23168,24 @@ export declare const flatAlt: {
   <B>(that: Doc<B>): <A>(self: Doc<A>) => Doc<B | A>
   <A, B>(self: Doc<A>, that: Doc<B>): Doc<A | B>
 }
+```
+
+
+# FlatAlt
+
+Represents a flattened alternative of two documents. The layout algorithms
+will choose the first document, but when flattened (via `group`) the second
+document will be preferreinternal.
+
+The layout algorithms operate under the assumption that the first alternative
+is less wide than the flattened second alternative.
+
+To import and use `FlatAlt` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.FlatAlt
 ```
 
 
@@ -23572,6 +23807,19 @@ export declare const line: Doc<never>
 ```
 
 
+# Line
+
+Represents a document that contains a hard line break.
+
+To import and use `Line` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.Line
+```
+
+
 # lineBreak
 
 The `lineBreak` document is like `line` but behaves like `empty` if the line
@@ -23711,6 +23959,19 @@ export declare const nest: { (indent: number): <A>(self: Doc<A>) => Doc<A>; <A>(
 ```
 
 
+# Nest
+
+Represents a document that is indented by a certain number of columns.
+
+To import and use `Nest` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.Nest
+```
+
+
 # nesting
 
 Lays out a document depending upon the current nesting level (i.e., the
@@ -23748,6 +24009,19 @@ assert.strictEqual(
 
 ```ts
 export declare const nesting: <A>(react: (level: number) => Doc<A>) => Doc<A>
+```
+
+
+# Nesting
+
+Represents a document that reacts to the current nesting level.
+
+To import and use `Nesting` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.Nesting
 ```
 
 
@@ -24397,6 +24671,24 @@ Doc.text
 
 ```ts
 export declare const text: (text: string) => Doc<never>
+```
+
+
+# Text
+
+Represents a document containing a string of text.
+
+**Invariants**
+
+- Text cannot be less than two characters long
+- Text cannot contain a newline (`"\n"`) character
+
+To import and use `Text` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.Text
 ```
 
 
@@ -41575,6 +41867,19 @@ export declare const parallel: ExecutionStrategy
 ```
 
 
+# Parallel
+
+Execute effects in parallel.
+
+To import and use `Parallel` from the "ExecutionStrategy" module:
+
+```ts
+import * as ExecutionStrategy from "effect/ExecutionStrategy"
+// Can be accessed like this
+ExecutionStrategy.Parallel
+```
+
+
 # parallelN
 
 Execute effects in parallel, up to the specified number of concurrent fibers.
@@ -41594,6 +41899,19 @@ export declare const parallelN: (parallelism: number) => ExecutionStrategy
 ```
 
 
+# ParallelN
+
+Execute effects in parallel, up to the specified number of concurrent fibers.
+
+To import and use `ParallelN` from the "ExecutionStrategy" module:
+
+```ts
+import * as ExecutionStrategy from "effect/ExecutionStrategy"
+// Can be accessed like this
+ExecutionStrategy.ParallelN
+```
+
+
 # sequential
 
 Execute effects sequentially.
@@ -41610,6 +41928,19 @@ ExecutionStrategy.sequential
 
 ```ts
 export declare const sequential: ExecutionStrategy
+```
+
+
+# Sequential
+
+Execute effects sequentially.
+
+To import and use `Sequential` from the "ExecutionStrategy" module:
+
+```ts
+import * as ExecutionStrategy from "effect/ExecutionStrategy"
+// Can be accessed like this
+ExecutionStrategy.Sequential
 ```
 
 
@@ -44170,6 +44501,22 @@ FiberRefs.fiberRefs
 
 ```ts
 export declare const fiberRefs: (self: FiberRefs) => HashSet.HashSet<FiberRef.FiberRef<any>>
+```
+
+
+# FiberRefs
+
+`FiberRefs` is a data type that represents a collection of `FiberRef` values.
+
+This allows safely propagating `FiberRef` values across fiber boundaries, for
+example between an asynchronous producer and consumer.
+
+To import and use `FiberRefs` from the "FiberRefs" module:
+
+```ts
+import * as FiberRefs from "effect/FiberRefs"
+// Can be accessed like this
+FiberRefs.FiberRefs
 ```
 
 
@@ -60460,6 +60807,20 @@ export declare const optimize: {
 ```
 
 
+# Optimize
+
+Represents optimization of a given document tree through fusion of redundant
+document nodes.
+
+To import and use `Optimize` from the "Optimize" module:
+
+```ts
+import * as Optimize from "@effect/printer/Optimize"
+// Can be accessed like this
+Optimize.Optimize
+```
+
+
 # Shallow
 
 Instructs the document fusion optimizer to avoid diving deeply into nested
@@ -71236,6 +71597,26 @@ export declare const cooperativeYielding: (self: RuntimeFlags) => boolean
 ```
 
 
+# CooperativeYielding
+
+The cooperative yielding flag determines whether the Effect runtime will
+yield to another fiber.
+
+To import and use `CooperativeYielding` from the "RuntimeFlags" module:
+
+```ts
+import * as RuntimeFlags from "effect/RuntimeFlags"
+// Can be accessed like this
+RuntimeFlags.CooperativeYielding
+```
+
+**Signature**
+
+```ts
+export declare const CooperativeYielding: RuntimeFlag
+```
+
+
 # diff
 
 Creates a `RuntimeFlagsPatch` which describes the difference between `self`
@@ -71410,6 +71791,26 @@ export declare const interruption: (self: RuntimeFlags) => boolean
 ```
 
 
+# Interruption
+
+The interruption flag determines whether or not the Effect runtime system will
+interrupt a fiber.
+
+To import and use `Interruption` from the "RuntimeFlags" module:
+
+```ts
+import * as RuntimeFlags from "effect/RuntimeFlags"
+// Can be accessed like this
+RuntimeFlags.Interruption
+```
+
+**Signature**
+
+```ts
+export declare const Interruption: RuntimeFlag
+```
+
+
 # isDisabled
 
 Returns `true` if the specified `RuntimeFlag` is disabled, `false` otherwise.
@@ -71490,6 +71891,28 @@ RuntimeFlags.opSupervision
 
 ```ts
 export declare const opSupervision: (self: RuntimeFlags) => boolean
+```
+
+
+# OpSupervision
+
+The op supervision flag determines whether or not the Effect runtime system
+will supervise all operations of the Effect runtime. Use of this flag will
+negatively impact performance, but is required for some operations, such as
+profiling.
+
+To import and use `OpSupervision` from the "RuntimeFlags" module:
+
+```ts
+import * as RuntimeFlags from "effect/RuntimeFlags"
+// Can be accessed like this
+RuntimeFlags.OpSupervision
+```
+
+**Signature**
+
+```ts
+export declare const OpSupervision: RuntimeFlag
 ```
 
 
@@ -71584,6 +72007,29 @@ export declare const runtimeMetrics: (self: RuntimeFlags) => boolean
 ```
 
 
+# RuntimeMetrics
+
+The runtime metrics flag determines whether or not the Effect runtime system
+will collect metrics about the Effect runtime. Use of this flag will have a
+very small negative impact on performance, but generates very helpful
+operational insight into running Effect applications that can be exported to
+Prometheus or other tools via Effect Metrics.
+
+To import and use `RuntimeMetrics` from the "RuntimeFlags" module:
+
+```ts
+import * as RuntimeFlags from "effect/RuntimeFlags"
+// Can be accessed like this
+RuntimeFlags.RuntimeMetrics
+```
+
+**Signature**
+
+```ts
+export declare const RuntimeMetrics: RuntimeFlag
+```
+
+
 # toSet
 
 Converts the provided `RuntimeFlags` into a `ReadonlySet<number>`.
@@ -71620,6 +72066,28 @@ RuntimeFlags.windDown
 
 ```ts
 export declare const windDown: (self: RuntimeFlags) => boolean
+```
+
+
+# WindDown
+
+The wind down flag determines whether the Effect runtime system will execute
+effects in wind-down mode. In wind-down mode, even if interruption is
+enabled and a fiber has been interrupted, the fiber will continue its
+execution uninterrupted.
+
+To import and use `WindDown` from the "RuntimeFlags" module:
+
+```ts
+import * as RuntimeFlags from "effect/RuntimeFlags"
+// Can be accessed like this
+RuntimeFlags.WindDown
+```
+
+**Signature**
+
+```ts
+export declare const WindDown: RuntimeFlag
 ```
 
 
@@ -94080,6 +94548,19 @@ export declare const concat: {
 ```
 
 
+# Concat
+
+Concatenates two strings at the type level.
+
+To import and use `Concat` from the "String" module:
+
+```ts
+import * as String from "effect/String"
+// Can be accessed like this
+String.Concat
+```
+
+
 # empty
 
 The empty string `""`.
@@ -96446,6 +96927,47 @@ TestClock.testClock
 
 ```ts
 export declare const testClock: () => Effect.Effect<TestClock>
+```
+
+
+# TestClock
+
+A `TestClock` makes it easy to deterministically and efficiently test effects
+involving the passage of time.
+
+Instead of waiting for actual time to pass, `sleep` and methods implemented
+in terms of it schedule effects to take place at a given clock time. Users
+can adjust the clock time using the `adjust` and `setTime` methods, and all
+effects scheduled to take place on or before that time will automatically be
+run in order.
+
+For example, here is how we can test `Effect.timeout` using `TestClock`:
+
+```ts
+import { Duration, Effect, Fiber, TestClock, Option } from "effect"
+
+Effect.gen(function* () {
+  const fiber = yield* pipe(Effect.sleep(Duration.minutes(5)), Effect.timeout(Duration.minutes(1)), Effect.fork)
+  yield* TestClock.adjust(Duration.minutes(1))
+  const result = yield* Fiber.join(fiber)
+  assert.deepStrictEqual(result, Option.none())
+})
+```
+
+Note how we forked the fiber that `sleep` was invoked on. Calls to `sleep`
+and methods derived from it will semantically block until the time is set to
+on or after the time they are scheduled to run. If we didn't fork the fiber
+on which we called sleep we would never get to set the time on the line
+below. Thus, a useful pattern when using `TestClock` is to fork the effect
+being tested, then adjust the clock time, and finally verify that the
+expected effects have been performed.
+
+To import and use `TestClock` from the "TestClock" module:
+
+```ts
+import * as TestClock from "effect/TestClock"
+// Can be accessed like this
+TestClock.TestClock
 ```
 
 
