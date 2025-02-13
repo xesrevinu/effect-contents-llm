@@ -62,20 +62,6 @@ This will:
 2. Generate statistics
 3. Update this README with current statistics
 
-### Output Structure
-
-The processed files will be available in the `output` directory:
-- `output/docs.md` - Website documentation
-- `output/api.md` - API documentation
-- `output/module.md` - Module documentation
-
-### Configuration
-
-You can customize the processing behavior by modifying the config files in the `config` directory:
-- `config/docs.yaml` - Website documentation config
-- `config/api.yaml` - API documentation config
-- `config/module.yaml` - Module documentation config
-
 <!-- STATS_START -->
 ## Documentation Statistics
 

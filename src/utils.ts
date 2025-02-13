@@ -6,7 +6,6 @@ import type { YekConfig } from "./types";
 export const execAsync = promisify(exec);
 
 export async function initSubmodules(): Promise<void> {
-  // Initialize submodules if not already initialized
   if (!fs.existsSync(".gitmodules")) {
     await execAsync("git submodule init");
   }
@@ -23,20 +22,44 @@ export async function addSubmodule(url: string, name: string): Promise<void> {
 
 export async function runYek(
   files: string[],
-  outputFile: string
+  outputFile: string,
+  batchSize = 50
 ): Promise<void> {
-  const command = `yek ${files.join(
-    " "
-  )} --output-template 'FILE_PATH\nFILE_CONTENT' > ${outputFile}`;
+  console.log(`Processing ${files.length} files in batches of ${batchSize}...`);
 
-  try {
-    console.log(`Running yek...`);
-    await execAsync(command);
-    console.log(`Yek processing completed`);
-  } catch (error) {
-    console.error(`Error running yek:`, error);
-    throw error;
+  // Create or clear the output file
+  fs.writeFileSync(outputFile, "");
+
+  // Process files in batches
+  for (let i = 0; i < files.length; i += batchSize) {
+    const batch = files.slice(i, i + batchSize);
+    const tempOutput = `${outputFile}.temp`;
+
+    const command = `yek ${batch.join(
+      " "
+    )} --output-template 'FILE_PATH\nFILE_CONTENT' > ${tempOutput}`;
+
+    try {
+      console.log(
+        `Processing batch ${i / batchSize + 1}/${Math.ceil(
+          files.length / batchSize
+        )}...`
+      );
+      await execAsync(command);
+
+      // Append the temp file content to the main output file
+      const content = fs.readFileSync(tempOutput, "utf8");
+      fs.appendFileSync(outputFile, content);
+
+      // Clean up temp file
+      fs.unlinkSync(tempOutput);
+    } catch (error) {
+      console.error(`Error processing batch ${i / batchSize + 1}:`, error);
+      throw error;
+    }
   }
+
+  console.log(`Yek processing completed`);
 }
 
 interface TableColumn<T> {
@@ -50,11 +73,9 @@ export function buildTable<T>(
   data: T[],
   options: { alignments?: Array<"left" | "center" | "right"> } = {}
 ): string {
-  // 构建表头
   const headers = columns.map((col) => col.header);
   let table = `| ${headers.join(" | ")} |\n`;
 
-  // 构建对齐行
   const alignments = options.alignments || columns.map(() => "left");
   const alignRow = alignments.map((align) => {
     switch (align) {
@@ -68,7 +89,6 @@ export function buildTable<T>(
   });
   table += `| ${alignRow.join(" | ")} |\n`;
 
-  // 构建数据行
   const rows = data.map((item) => {
     const cells = columns.map((col) => {
       if (col.render) {
