@@ -37,8 +37,8 @@ jobs:
         run: |
           git submodule update --remote
 
-          SUBMODULE_CHANGES=$(git status --porcelain | grep -E "sources/")
-          SRC_CHANGES=$(git status --porcelain | grep -E "src/|config/|libs/")
+          SUBMODULE_CHANGES=$(git status --porcelain | grep -E "sources/" || true)
+          SRC_CHANGES=$(git status --porcelain | grep -E "src/|config/|libs/" || true)
 
           if [[ -n "$SUBMODULE_CHANGES" ]] || [[ -n "$SRC_CHANGES" ]] || [[ "${{ github.event.inputs.force_update }}" == "true" ]]; then
             echo "changes=true" >> $GITHUB_OUTPUT
