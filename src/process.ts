@@ -160,12 +160,14 @@ async function processResource(
       throw new Error(`Repository path does not exist: ${repoPath}`);
     }
 
-    const files = await glob(resource.pattern, {
-      cwd: repoPath,
-      absolute: true,
-      nodir: true,
-      ignore: ["node_modules/**"],
-    });
+    const files = (
+      await glob(resource.pattern, {
+        cwd: repoPath,
+        absolute: true,
+        nodir: true,
+        ignore: ["node_modules/**"],
+      })
+    ).sort((a, b) => a.localeCompare(b));
 
     const stats: FileStats[] = [];
     const fileTypes = new Map<string, FileTypeStats>();
