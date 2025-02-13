@@ -16794,6 +16794,352 @@ Explanation:
 - The `[Hash.symbol]` method computes a hash code using the `id` of the person. This value is used to quickly differentiate between instances in hashing operations, optimizing the performance of data structures that utilize hashing.
 - The equality check returns `true` when comparing `alice` to a new `Person` object with identical property values and `false` when comparing `alice` to `bob` due to their differing property values.
 
+> caching/cache.mdx\n\n---
+title: Cache
+description: Optimize performance with cache for concurrent, compositional, and efficient value retrieval.
+sidebar:
+  order: 1
+---
+
+In many applications, handling overlapping work is common. For example, in services that process incoming requests, it's important to avoid redundant work like handling the same request multiple times. The Cache module helps improve performance by preventing duplicate work.
+
+Key Features of Cache:
+
+| Feature                           | Description                                                                                                            |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Compositionality**              | Allows overlapping work across different parts of the application while preserving compositional programming.          |
+| **Unified Sync and Async Caches** | Integrates both synchronous and asynchronous caches through a unified lookup function that computes values either way. |
+| **Effect Integration**            | Works natively with the Effect library, supporting concurrent lookups, failure handling, and interruption.             |
+| **Cache Metrics**                 | Tracks key metrics like entries, hits, and misses, providing insights for performance optimization.                    |
+
+## Creating a Cache
+
+A cache is defined by a lookup function that computes the value for a given key if it's not already cached:
+
+```ts showLineNumbers=false
+type Lookup<Key, Value, Error, Requirements> = (
+  key: Key
+) => Effect<Value, Error, Requirements>
+```
+
+The lookup function takes a `Key` and returns an `Effect`, which describes how to compute the value (`Value`). This `Effect` may require an environment (`Requirements`), can fail with an `Error`, and succeed with a `Value`. Since it returns an `Effect`, it can handle both synchronous and asynchronous workflows.
+
+You create a cache by providing a lookup function along with a maximum size and a time-to-live (TTL) for cached values.
+
+```ts showLineNumbers=false
+declare const make: <Key, Value, Error, Requirements>(options: {
+  readonly capacity: number
+  readonly timeToLive: Duration.DurationInput
+  readonly lookup: Lookup<Key, Value, Error, Requirements>
+}) => Effect<Cache<Key, Value, Error>, never, Requirements>
+```
+
+Once a cache is created, the most idiomatic way to work with it is the `get` method.
+The `get` method returns the current value in the cache if it exists, or computes a new value, puts it in the cache, and returns it.
+
+If multiple concurrent processes request the same value, it will only be computed once. All other processes will receive the computed value as soon as it is available. This is managed using Effect's fiber-based concurrency model without blocking the underlying thread.
+
+**Example** (Concurrent Cache Lookups)
+
+In this example, we call `timeConsumingEffect` three times concurrently with the same key.
+The cache runs this effect only once, so concurrent lookups will wait until the value is available:
+
+```ts twoslash
+import { Effect, Cache, Duration } from "effect"
+
+// Simulating an expensive lookup with a delay
+const expensiveLookup = (key: string) =>
+  Effect.sleep("2 seconds").pipe(Effect.as(key.length))
+
+const program = Effect.gen(function* () {
+  // Create a cache with a capacity of 100 and an infinite TTL
+  const cache = yield* Cache.make({
+    capacity: 100,
+    timeToLive: Duration.infinity,
+    lookup: expensiveLookup
+  })
+
+  // Perform concurrent lookups using the same key
+  const result = yield* Effect.all(
+    [cache.get("key1"), cache.get("key1"), cache.get("key1")],
+    { concurrency: "unbounded" }
+  )
+  console.log(
+    "Result of parallel execution of three effects" +
+      `with the same key: ${result}`
+  )
+
+  // Fetch and display cache stats
+  const hits = yield* cache.cacheStats.pipe(
+    Effect.map((stats) => stats.hits)
+  )
+  console.log(`Number of cache hits: ${hits}`)
+  const misses = yield* cache.cacheStats.pipe(
+    Effect.map((stats) => stats.misses)
+  )
+  console.log(`Number of cache misses: ${misses}`)
+})
+
+Effect.runPromise(program)
+/*
+Output:
+Result of parallel execution of three effects with the same key: 4,4,4
+Number of cache hits: 2
+Number of cache misses: 1
+*/
+```
+
+## Concurrent Access
+
+The cache is designed to be safe for concurrent access and efficient under concurrent conditions. If two concurrent processes request the same value and it is not in the cache, the value will be computed once and provided to both processes as soon as it is available. Concurrent processes will wait for the value without blocking the underlying thread.
+
+If the lookup function fails or is interrupted, the error will be propagated to all concurrent processes waiting for the value. Failures are cached to prevent repeated computation of the same failed value. If interrupted, the key will be removed from the cache, so subsequent calls will attempt to compute the value again.
+
+## Capacity
+
+A cache is created with a specified capacity. When the cache reaches capacity, the least recently accessed values will be removed first. The cache size may slightly exceed the specified capacity between operations.
+
+## Time To Live (TTL)
+
+A cache can also have a specified time to live (TTL). Values older than the TTL will not be returned. The age is calculated from when the value was loaded into the cache.
+
+## Methods
+
+In addition to `get`, the cache provides several other methods:
+
+| Method          | Description                                                                                                                                                                |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `refresh`       | Triggers a recomputation of the value for a key without removing the old value, allowing continued access.                                                                 |
+| `size`          | Returns the current size of the cache. The size is approximate under concurrent conditions.                                                                                |
+| `contains`      | Checks if a value associated with a specified key exists in the cache. Under concurrent access, the result is valid as of the check time but may change immediately after. |
+| `invalidate`    | Evicts the value associated with a specific key.                                                                                                                           |
+| `invalidateAll` | Evicts all values from the cache.                                                                                                                                          |
+
+> caching/caching-effects.mdx\n\n---
+title: Caching Effects
+description: Efficiently manage caching and memoization of effects with reusable tools.
+sidebar:
+  order: 0
+---
+
+This section covers several functions from the library that help manage caching and memoization in your application.
+
+## cachedFunction
+
+Memoizes a function with effects, caching results for the same inputs to avoid recomputation.
+
+**Example** (Memoizing a Random Number Generator)
+
+```ts twoslash
+import { Effect, Random } from "effect"
+
+const program = Effect.gen(function* () {
+  const randomNumber = (n: number) => Random.nextIntBetween(1, n)
+  console.log("non-memoized version:")
+  console.log(yield* randomNumber(10)) // Generates a new random number
+  console.log(yield* randomNumber(10)) // Generates a different number
+
+  console.log("memoized version:")
+  const memoized = yield* Effect.cachedFunction(randomNumber)
+  console.log(yield* memoized(10)) // Generates and caches the result
+  console.log(yield* memoized(10)) // Reuses the cached result
+})
+
+Effect.runFork(program)
+/*
+Example Output:
+non-memoized version:
+2
+8
+memoized version:
+5
+5
+*/
+```
+
+## once
+
+Ensures an effect is executed only once, even if invoked multiple times.
+
+**Example** (Single Execution of an Effect)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const program = Effect.gen(function* () {
+  const task1 = Console.log("task1")
+
+  // Repeats task1 three times
+  yield* Effect.repeatN(task1, 2)
+
+  // Ensures task2 is executed only once
+  const task2 = yield* Effect.once(Console.log("task2"))
+
+  // Attempts to repeat task2, but it will only execute once
+  yield* Effect.repeatN(task2, 2)
+})
+
+Effect.runFork(program)
+/*
+Output:
+task1
+task1
+task1
+task2
+*/
+```
+
+## cached
+
+Returns an effect that computes a result lazily and caches it. Subsequent evaluations of this effect will return the cached result without re-executing the logic.
+
+**Example** (Lazy Caching of an Expensive Task)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+let i = 1
+
+// Simulating an expensive task with a delay
+const expensiveTask = Effect.promise<string>(() => {
+  console.log("expensive task...")
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(`result ${i++}`)
+    }, 100)
+  })
+})
+
+const program = Effect.gen(function* () {
+  // Without caching, the task is executed each time
+  console.log("-- non-cached version:")
+  yield* expensiveTask.pipe(Effect.andThen(Console.log))
+  yield* expensiveTask.pipe(Effect.andThen(Console.log))
+
+  // With caching, the result is reused after the first run
+  console.log("-- cached version:")
+  const cached = yield* Effect.cached(expensiveTask)
+  yield* cached.pipe(Effect.andThen(Console.log))
+  yield* cached.pipe(Effect.andThen(Console.log))
+})
+
+Effect.runFork(program)
+/*
+Output:
+-- non-cached version:
+expensive task...
+result 1
+expensive task...
+result 2
+-- cached version:
+expensive task...
+result 3
+result 3
+*/
+```
+
+## cachedWithTTL
+
+Returns an effect that caches its result for a specified duration, known as the `timeToLive`. When the cache expires after the duration, the effect will be recomputed upon next evaluation.
+
+**Example** (Caching with Time-to-Live)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+let i = 1
+
+// Simulating an expensive task with a delay
+const expensiveTask = Effect.promise<string>(() => {
+  console.log("expensive task...")
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(`result ${i++}`)
+    }, 100)
+  })
+})
+
+const program = Effect.gen(function* () {
+  // Caches the result for 150 milliseconds
+  const cached = yield* Effect.cachedWithTTL(expensiveTask, "150 millis")
+
+  // First evaluation triggers the task
+  yield* cached.pipe(Effect.andThen(Console.log))
+
+  // Second evaluation returns the cached result
+  yield* cached.pipe(Effect.andThen(Console.log))
+
+  // Wait for 100 milliseconds, ensuring the cache expires
+  yield* Effect.sleep("100 millis")
+
+  // Recomputes the task after cache expiration
+  yield* cached.pipe(Effect.andThen(Console.log))
+})
+
+Effect.runFork(program)
+/*
+Output:
+expensive task...
+result 1
+result 1
+expensive task...
+result 2
+*/
+```
+
+## cachedInvalidateWithTTL
+
+Similar to `Effect.cachedWithTTL`, this function caches an effect's result for a specified duration. It also includes an additional effect for manually invalidating the cached value before it naturally expires.
+
+**Example** (Invalidating Cache Manually)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+let i = 1
+
+// Simulating an expensive task with a delay
+const expensiveTask = Effect.promise<string>(() => {
+  console.log("expensive task...")
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(`result ${i++}`)
+    }, 100)
+  })
+})
+
+const program = Effect.gen(function* () {
+  // Caches the result for 150 milliseconds
+  const [cached, invalidate] = yield* Effect.cachedInvalidateWithTTL(
+    expensiveTask,
+    "150 millis"
+  )
+
+  // First evaluation triggers the task
+  yield* cached.pipe(Effect.andThen(Console.log))
+
+  // Second evaluation returns the cached result
+  yield* cached.pipe(Effect.andThen(Console.log))
+
+  // Invalidate the cache before it naturally expires
+  yield* invalidate
+
+  // Third evaluation triggers the task again
+  // since the cache was invalidated
+  yield* cached.pipe(Effect.andThen(Console.log))
+})
+
+Effect.runFork(program)
+/*
+Output:
+expensive task...
+result 1
+result 1
+expensive task...
+result 2
+*/
+```
+
 > sink/operations.mdx\n\n---
 title: Sink Operations
 description: Explore operations to transform, filter, and adapt sinks, enabling custom input-output handling and element filtering in stream processing.
@@ -19888,6 +20234,2620 @@ const NodeSdkLive = NodeSdk.layer(() => ({
   spanProcessor: new SentrySpanProcessor()
 }))
 ```
+
+> concurrency/fibers.mdx\n\n---
+title: Fibers
+description: Understand fibers in Effect, lightweight virtual threads enabling powerful concurrency, structured lifecycles, and efficient resource management for responsive applications.
+sidebar:
+  order: 2
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+Effect is a highly concurrent framework powered by fibers. Fibers are lightweight virtual threads with resource-safe cancellation capabilities, enabling many features in Effect.
+
+In this section, you will learn the basics of fibers and get familiar with some of the powerful low-level operators that utilize fibers.
+
+## What Are Virtual Threads?
+
+JavaScript is inherently single-threaded, meaning it executes code in a single sequence of instructions. However, modern JavaScript environments use an event loop to manage asynchronous operations, creating the illusion of multitasking. In this context, virtual threads, or fibers, are logical threads simulated by the Effect runtime. They allow concurrent execution without relying on true multi-threading, which is not natively supported in JavaScript.
+
+## How Fibers work
+
+All effects in Effect are executed by fibers. If you didn't create the fiber yourself, it was created by an operation you're using (if it's concurrent) or by the Effect runtime system.
+
+A fiber is created any time an effect is run. When running effects concurrently, a fiber is created for each concurrent effect.
+
+Even if you write "single-threaded" code with no concurrent operations, there will always be at least one fiber: the "main" fiber that executes your effect.
+
+Effect fibers have a well-defined lifecycle based on the effect they are executing.
+
+Every fiber exits with either a failure or success, depending on whether the effect it is executing fails or succeeds.
+
+Effect fibers have unique identities, local state, and a status (such as done, running, or suspended).
+
+To summarize:
+
+- An `Effect` is a higher-level concept that describes an effectful computation. It is lazy and immutable, meaning it represents a computation that may produce a value or fail but does not immediately execute.
+- A fiber, on the other hand, represents the running execution of an `Effect`. It can be interrupted or awaited to retrieve its result. Think of it as a way to control and interact with the ongoing computation.
+
+## The Fiber Data Type
+
+The `Fiber` data type in Effect represents a "handle" on the execution of an effect.
+
+Here is the general form of a `Fiber`:
+
+```text showLineNumbers=false
+        ┌─── Represents the success type
+        │        ┌─── Represents the error type
+        │        │
+        ▼        ▼
+Fiber<Success, Error>
+```
+
+This type indicates that a fiber:
+
+- Succeeds and returns a value of type `Success`
+- Fails with an error of type `Error`
+
+Fibers do not have an `Requirements` type parameter because they only execute effects that have already had their requirements provided to them.
+
+## Forking Effects
+
+You can create a new fiber by **forking** an effect. This starts the effect in a new fiber, and you receive a reference to that fiber.
+
+**Example** (Forking a Fiber)
+
+In this example, the Fibonacci calculation is forked into its own fiber, allowing it to run independently of the main fiber. The reference to the `fib10Fiber` can be used later to join or interrupt the fiber.
+
+```ts twoslash
+import { Effect } from "effect"
+
+const fib = (n: number): Effect.Effect<number> =>
+  n < 2
+    ? Effect.succeed(n)
+    : Effect.zipWith(fib(n - 1), fib(n - 2), (a, b) => a + b)
+
+//      ┌─── Effect<RuntimeFiber<number, never>, never, never>
+//      ▼
+const fib10Fiber = Effect.fork(fib(10))
+```
+
+## Joining Fibers
+
+One common operation with fibers is **joining** them. By using the `Fiber.join` function, you can wait for a fiber to complete and retrieve its result. The joined fiber will either succeed or fail, and the `Effect` returned by `join` reflects the outcome of the fiber.
+
+**Example** (Joining a Fiber)
+
+```ts twoslash
+import { Effect, Fiber } from "effect"
+
+const fib = (n: number): Effect.Effect<number> =>
+  n < 2
+    ? Effect.succeed(n)
+    : Effect.zipWith(fib(n - 1), fib(n - 2), (a, b) => a + b)
+
+//      ┌─── Effect<RuntimeFiber<number, never>, never, never>
+//      ▼
+const fib10Fiber = Effect.fork(fib(10))
+
+const program = Effect.gen(function* () {
+  // Retrieve the fiber
+  const fiber = yield* fib10Fiber
+  // Join the fiber and get the result
+  const n = yield* Fiber.join(fiber)
+  console.log(n)
+})
+
+Effect.runFork(program) // Output: 55
+```
+
+## Awaiting Fibers
+
+The `Fiber.await` function is a helpful tool when working with fibers. It allows you to wait for a fiber to complete and retrieve detailed information about how it finished. The result is encapsulated in an [Exit](/docs/data-types/exit/) value, which gives you insight into whether the fiber succeeded, failed, or was interrupted.
+
+**Example** (Awaiting Fiber Completion)
+
+```ts twoslash
+import { Effect, Fiber } from "effect"
+
+const fib = (n: number): Effect.Effect<number> =>
+  n < 2
+    ? Effect.succeed(n)
+    : Effect.zipWith(fib(n - 1), fib(n - 2), (a, b) => a + b)
+
+//      ┌─── Effect<RuntimeFiber<number, never>, never, never>
+//      ▼
+const fib10Fiber = Effect.fork(fib(10))
+
+const program = Effect.gen(function* () {
+  // Retrieve the fiber
+  const fiber = yield* fib10Fiber
+  // Await its completion and get the Exit result
+  const exit = yield* Fiber.await(fiber)
+  console.log(exit)
+})
+
+Effect.runFork(program)
+/*
+Output:
+{ _id: 'Exit', _tag: 'Success', value: 55 }
+*/
+```
+
+## Interruption Model
+
+While developing concurrent applications, there are several cases that we need to interrupt the execution of other fibers, for example:
+
+1. A parent fiber might start some child fibers to perform a task, and later the parent might decide that, it doesn't need the result of some or all of the child fibers.
+
+2. Two or more fibers start race with each other. The fiber whose result is computed first wins, and all other fibers are no longer needed, and should be interrupted.
+
+3. In interactive applications, a user may want to stop some already running tasks, such as clicking on the "stop" button to prevent downloading more files.
+
+4. Computations that run longer than expected should be aborted by using timeout operations.
+
+5. When we have an application that perform compute-intensive tasks based on the user inputs, if the user changes the input we should cancel the current task and perform another one.
+
+### Polling vs. Asynchronous Interruption
+
+When it comes to interrupting fibers, a naive approach is to allow one fiber to forcefully terminate another fiber. However, this approach is not ideal because it can leave shared state in an inconsistent and unreliable state if the target fiber is in the middle of modifying that state. Therefore, it does not guarantee internal consistency of the shared mutable state.
+
+Instead, there are two popular and valid solutions to tackle this problem:
+
+1. **Semi-asynchronous Interruption (Polling for Interruption)**: Imperative languages often employ polling as a semi-asynchronous signaling mechanism, such as Java. In this model, a fiber sends an interruption request to another fiber. The target fiber continuously polls the interrupt status and checks whether it has received any interruption requests from other fibers. If an interruption request is detected, the target fiber terminates itself as soon as possible.
+
+   With this solution, the fiber itself handles critical sections. So, if a fiber is in the middle of a critical section and receives an interruption request, it ignores the interruption and defers its handling until after the critical section.
+
+   However, one drawback of this approach is that if the programmer forgets to poll regularly, the target fiber can become unresponsive, leading to deadlocks. Additionally, polling a global flag is not aligned with the functional paradigm followed by Effect.
+
+2. **Asynchronous Interruption**: In asynchronous interruption, a fiber is allowed to terminate another fiber. The target fiber is not responsible for polling the interrupt status. Instead, during critical sections, the target fiber disables the interruptibility of those regions. This is a purely functional solution that doesn't require polling a global state. Effect adopts this solution for its interruption model, which is a fully asynchronous signaling mechanism.
+
+   This mechanism overcomes the drawback of forgetting to poll regularly. It is also fully compatible with the functional paradigm because in a purely functional computation, we can abort the computation at any point, except during critical sections where interruption is disabled.
+
+### Interrupting Fibers
+
+Fibers can be interrupted if their result is no longer needed. This action immediately stops the fiber and safely runs all finalizers to release any resources.
+
+Like `Fiber.await`, the `Fiber.interrupt` function returns an [Exit](/docs/data-types/exit/) value that provides detailed information about how the fiber ended.
+
+**Example** (Interrupting a Fiber)
+
+```ts twoslash
+import { Effect, Fiber } from "effect"
+
+const program = Effect.gen(function* () {
+  // Fork a fiber that runs indefinitely, printing "Hi!"
+  const fiber = yield* Effect.fork(
+    Effect.forever(Effect.log("Hi!").pipe(Effect.delay("10 millis")))
+  )
+  yield* Effect.sleep("30 millis")
+  // Interrupt the fiber and get an Exit value detailing how it finished
+  const exit = yield* Fiber.interrupt(fiber)
+  console.log(exit)
+})
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#1 message=Hi!
+timestamp=... level=INFO fiber=#1 message=Hi!
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: {
+    _id: 'Cause',
+    _tag: 'Interrupt',
+    fiberId: {
+      _id: 'FiberId',
+      _tag: 'Runtime',
+      id: 0,
+      startTimeMillis: ...
+    }
+  }
+}
+*/
+```
+
+By default, the effect returned by `Fiber.interrupt` waits until the fiber has fully terminated before resuming. This ensures that no new fibers are started before the previous ones have finished, a behavior known as "back-pressuring."
+
+If you do not require this waiting behavior, you can fork the interruption itself, allowing the main program to proceed without waiting for the fiber to terminate:
+
+**Example** (Forking an Interruption)
+
+```ts twoslash
+import { Effect, Fiber } from "effect"
+
+const program = Effect.gen(function* () {
+  const fiber = yield* Effect.fork(
+    Effect.forever(Effect.log("Hi!").pipe(Effect.delay("10 millis")))
+  )
+  yield* Effect.sleep("30 millis")
+  const _ = yield* Effect.fork(Fiber.interrupt(fiber))
+  console.log("Do something else...")
+})
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#1 message=Hi!
+timestamp=... level=INFO fiber=#1 message=Hi!
+Do something else...
+*/
+```
+
+There is also a shorthand for background interruption called `Fiber.interruptFork`.
+
+```ts twoslash del={8} ins={9}
+import { Effect, Fiber } from "effect"
+
+const program = Effect.gen(function* () {
+  const fiber = yield* Effect.fork(
+    Effect.forever(Effect.log("Hi!").pipe(Effect.delay("10 millis")))
+  )
+  yield* Effect.sleep("30 millis")
+  // const _ = yield* Effect.fork(Fiber.interrupt(fiber))
+  const _ = yield* Fiber.interruptFork(fiber)
+  console.log("Do something else...")
+})
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#1 message=Hi!
+timestamp=... level=INFO fiber=#1 message=Hi!
+Do something else...
+*/
+```
+
+<Aside type="tip" title="Interrupting via Effect.interrupt">
+  You can also interrupt fibers using the high-level API
+  `Effect.interrupt`. For more details, refer to the [Effect.interrupt
+  documentation](/docs/concurrency/basic-concurrency/#interruptions).
+</Aside>
+
+## Composing Fibers
+
+The `Fiber.zip` and `Fiber.zipWith` functions allow you to combine two fibers into one. The resulting fiber will produce the results of both input fibers. If either fiber fails, the combined fiber will also fail.
+
+**Example** (Combining Fibers with `Fiber.zip`)
+
+In this example, both fibers run concurrently, and the results are combined into a tuple.
+
+```ts twoslash
+import { Effect, Fiber } from "effect"
+
+const program = Effect.gen(function* () {
+  // Fork two fibers that each produce a string
+  const fiber1 = yield* Effect.fork(Effect.succeed("Hi!"))
+  const fiber2 = yield* Effect.fork(Effect.succeed("Bye!"))
+
+  // Combine the two fibers using Fiber.zip
+  const fiber = Fiber.zip(fiber1, fiber2)
+
+  // Join the combined fiber and get the result as a tuple
+  const tuple = yield* Fiber.join(fiber)
+  console.log(tuple)
+})
+
+Effect.runFork(program)
+/*
+Output:
+[ 'Hi!', 'Bye!' ]
+*/
+```
+
+Another way to compose fibers is by using `Fiber.orElse`. This function allows you to provide an alternative fiber that will execute if the first one fails. If the first fiber succeeds, its result will be returned. If it fails, the second fiber will run instead, and its result will be returned regardless of its outcome.
+
+**Example** (Providing a Fallback Fiber with `Fiber.orElse`)
+
+```ts twoslash
+import { Effect, Fiber } from "effect"
+
+const program = Effect.gen(function* () {
+  // Fork a fiber that will fail
+  const fiber1 = yield* Effect.fork(Effect.fail("Uh oh!"))
+  // Fork another fiber that will succeed
+  const fiber2 = yield* Effect.fork(Effect.succeed("Hurray!"))
+  // If fiber1 fails, fiber2 will be used as a fallback
+  const fiber = Fiber.orElse(fiber1, fiber2)
+  const message = yield* Fiber.join(fiber)
+  console.log(message)
+})
+
+Effect.runFork(program)
+/*
+Output:
+Hurray!
+*/
+```
+
+## Lifetime of Child Fibers
+
+When we fork fibers, depending on how we fork them we can have four different lifetime strategies for the child fibers:
+
+1. **Fork With Automatic Supervision**. If we use the ordinary `Effect.fork` operation, the child fiber will be automatically supervised by the parent fiber. The lifetime child fibers are tied to the lifetime of their parent fiber. This means that these fibers will be terminated either when they end naturally, or when their parent fiber is terminated.
+
+2. **Fork in Global Scope (Daemon)**. Sometimes we want to run long-running background fibers that aren't tied to their parent fiber, and also we want to fork them in a global scope. Any fiber that is forked in global scope will become daemon fiber. This can be achieved by using the `Effect.forkDaemon` operator. As these fibers have no parent, they are not supervised, and they will be terminated when they end naturally, or when our application is terminated.
+
+3. **Fork in Local Scope**. Sometimes, we want to run a background fiber that isn't tied to its parent fiber, but we want to live that fiber in the local scope. We can fork fibers in the local scope by using `Effect.forkScoped`. Such fibers can outlive their parent fiber (so they are not supervised by their parents), and they will be terminated when their life end or their local scope is closed.
+
+4. **Fork in Specific Scope**. This is similar to the previous strategy, but we can have more fine-grained control over the lifetime of the child fiber by forking it in a specific scope. We can do this by using the `Effect.forkIn` operator.
+
+### Fork with Automatic Supervision
+
+Effect follows a **structured concurrency** model, where child fibers' lifetimes are tied to their parent. Simply put, the lifespan of a fiber depends on the lifespan of its parent fiber.
+
+**Example** (Automatically Supervised Child Fiber)
+
+In this scenario, the `parent` fiber spawns a `child` fiber that repeatedly prints a message every second.
+The `child` fiber will be terminated when the `parent` fiber completes.
+
+```ts twoslash
+import { Effect, Console, Schedule } from "effect"
+
+// Child fiber that logs a message repeatedly every second
+const child = Effect.repeat(
+  Console.log("child: still running!"),
+  Schedule.fixed("1 second")
+)
+
+const parent = Effect.gen(function* () {
+  console.log("parent: started!")
+  // Child fiber is supervised by the parent
+  yield* Effect.fork(child)
+  yield* Effect.sleep("3 seconds")
+  console.log("parent: finished!")
+})
+
+Effect.runFork(parent)
+/*
+Output:
+parent: started!
+child: still running!
+child: still running!
+child: still running!
+parent: finished!
+*/
+```
+
+This behavior can be extended to any level of nested fibers, ensuring a predictable and controlled fiber lifecycle.
+
+### Fork in Global Scope (Daemon)
+
+You can create a long-running background fiber using `Effect.forkDaemon`. This type of fiber, known as a daemon fiber, is not tied to the lifecycle of its parent fiber. Instead, its lifetime is linked to the global scope. A daemon fiber continues running even if its parent fiber is terminated and will only stop when the global scope is closed or the fiber completes naturally.
+
+**Example** (Creating a Daemon Fiber)
+
+This example shows how daemon fibers can continue running in the background even after the parent fiber has finished.
+
+```ts twoslash
+import { Effect, Console, Schedule } from "effect"
+
+// Daemon fiber that logs a message repeatedly every second
+const daemon = Effect.repeat(
+  Console.log("daemon: still running!"),
+  Schedule.fixed("1 second")
+)
+
+const parent = Effect.gen(function* () {
+  console.log("parent: started!")
+  // Daemon fiber running independently
+  yield* Effect.forkDaemon(daemon)
+  yield* Effect.sleep("3 seconds")
+  console.log("parent: finished!")
+})
+
+Effect.runFork(parent)
+/*
+Output:
+parent: started!
+daemon: still running!
+daemon: still running!
+daemon: still running!
+parent: finished!
+daemon: still running!
+daemon: still running!
+daemon: still running!
+daemon: still running!
+daemon: still running!
+...etc...
+*/
+```
+
+Even if the parent fiber is interrupted, the daemon fiber will continue running independently.
+
+**Example** (Interrupting the Parent Fiber)
+
+In this example, interrupting the parent fiber doesn't affect the daemon fiber, which continues to run in the background.
+
+```ts twoslash
+import { Effect, Console, Schedule, Fiber } from "effect"
+
+// Daemon fiber that logs a message repeatedly every second
+const daemon = Effect.repeat(
+  Console.log("daemon: still running!"),
+  Schedule.fixed("1 second")
+)
+
+const parent = Effect.gen(function* () {
+  console.log("parent: started!")
+  // Daemon fiber running independently
+  yield* Effect.forkDaemon(daemon)
+  yield* Effect.sleep("3 seconds")
+  console.log("parent: finished!")
+}).pipe(Effect.onInterrupt(() => Console.log("parent: interrupted!")))
+
+// Program that interrupts the parent fiber after 2 seconds
+const program = Effect.gen(function* () {
+  const fiber = yield* Effect.fork(parent)
+  yield* Effect.sleep("2 seconds")
+  yield* Fiber.interrupt(fiber) // Interrupt the parent fiber
+})
+
+Effect.runFork(program)
+/*
+Output:
+parent: started!
+daemon: still running!
+daemon: still running!
+parent: interrupted!
+daemon: still running!
+daemon: still running!
+daemon: still running!
+daemon: still running!
+daemon: still running!
+...etc...
+*/
+```
+
+### Fork in Local Scope
+
+Sometimes we want to create a fiber that is tied to a local [scope](/docs/resource-management/scope/), meaning its lifetime is not dependent on its parent fiber but is bound to the local scope in which it was forked. This can be done using the `Effect.forkScoped` operator.
+
+Fibers created with `Effect.forkScoped` can outlive their parent fibers and will only be terminated when the local scope itself is closed.
+
+**Example** (Forking a Fiber in a Local Scope)
+
+In this example, the `child` fiber continues to run beyond the lifetime of the `parent` fiber. The `child` fiber is tied to the local scope and will be terminated only when the scope ends.
+
+```ts twoslash
+import { Effect, Console, Schedule } from "effect"
+
+// Child fiber that logs a message repeatedly every second
+const child = Effect.repeat(
+  Console.log("child: still running!"),
+  Schedule.fixed("1 second")
+)
+
+//      ┌─── Effect<void, never, Scope>
+//      ▼
+const parent = Effect.gen(function* () {
+  console.log("parent: started!")
+  // Child fiber attached to local scope
+  yield* Effect.forkScoped(child)
+  yield* Effect.sleep("3 seconds")
+  console.log("parent: finished!")
+})
+
+// Program runs within a local scope
+const program = Effect.scoped(
+  Effect.gen(function* () {
+    console.log("Local scope started!")
+    yield* Effect.fork(parent)
+    // Scope lasts for 5 seconds
+    yield* Effect.sleep("5 seconds")
+    console.log("Leaving the local scope!")
+  })
+)
+
+Effect.runFork(program)
+/*
+Output:
+Local scope started!
+parent: started!
+child: still running!
+child: still running!
+child: still running!
+parent: finished!
+child: still running!
+child: still running!
+Leaving the local scope!
+*/
+```
+
+### Fork in Specific Scope
+
+There are some cases where we need more fine-grained control, so we want to fork a fiber in a specific scope.
+We can use the `Effect.forkIn` operator which takes the target scope as an argument.
+
+**Example** (Forking a Fiber in a Specific Scope)
+
+In this example, the `child` fiber is forked into the `outerScope`, allowing it to outlive the inner scope but still be terminated when the `outerScope` is closed.
+
+```ts twoslash
+import { Console, Effect, Schedule } from "effect"
+
+// Child fiber that logs a message repeatedly every second
+const child = Effect.repeat(
+  Console.log("child: still running!"),
+  Schedule.fixed("1 second")
+)
+
+const program = Effect.scoped(
+  Effect.gen(function* () {
+    yield* Effect.addFinalizer(() =>
+      Console.log("The outer scope is about to be closed!")
+    )
+
+    // Capture the outer scope
+    const outerScope = yield* Effect.scope
+
+    // Create an inner scope
+    yield* Effect.scoped(
+      Effect.gen(function* () {
+        yield* Effect.addFinalizer(() =>
+          Console.log("The inner scope is about to be closed!")
+        )
+        // Fork the child fiber in the outer scope
+        yield* Effect.forkIn(child, outerScope)
+        yield* Effect.sleep("3 seconds")
+      })
+    )
+
+    yield* Effect.sleep("5 seconds")
+  })
+)
+
+Effect.runFork(program)
+/*
+Output:
+child: still running!
+child: still running!
+child: still running!
+The inner scope is about to be closed!
+child: still running!
+child: still running!
+child: still running!
+child: still running!
+child: still running!
+child: still running!
+The outer scope is about to be closed!
+*/
+```
+
+## When do Fibers run?
+
+Forked fibers begin execution after the current fiber completes or yields.
+
+**Example** (Late Fiber Start Captures Only One Value)
+
+In the following example, the `changes` stream only captures a single value, `2`.
+This happens because the fiber created by `Effect.fork` starts **after** the value is updated.
+
+```ts twoslash
+import { Effect, SubscriptionRef, Stream, Console } from "effect"
+
+const program = Effect.gen(function* () {
+  const ref = yield* SubscriptionRef.make(0)
+  yield* ref.changes.pipe(
+    // Log each change in SubscriptionRef
+    Stream.tap((n) => Console.log(`SubscriptionRef changed to ${n}`)),
+    Stream.runDrain,
+    // Fork a fiber to run the stream
+    Effect.fork
+  )
+  yield* SubscriptionRef.set(ref, 1)
+  yield* SubscriptionRef.set(ref, 2)
+})
+
+Effect.runFork(program)
+/*
+Output:
+SubscriptionRef changed to 2
+*/
+```
+
+If you add a short delay with `Effect.sleep()` or call `Effect.yieldNow()`, you allow the current fiber to yield. This gives the forked fiber enough time to start and collect all values before they are updated.
+
+<Aside type="caution" title="Fiber Execution is Non-Deterministic">
+  Keep in mind that the timing of fiber execution is not deterministic,
+  and many factors can affect when a fiber starts. Do not rely on the idea
+  that a single yield always ensures your fiber begins at a particular
+  time.
+</Aside>
+
+**Example** (Delay Allows Fiber to Capture All Values)
+
+```ts twoslash ins={14}
+import { Effect, SubscriptionRef, Stream, Console } from "effect"
+
+const program = Effect.gen(function* () {
+  const ref = yield* SubscriptionRef.make(0)
+  yield* ref.changes.pipe(
+    // Log each change in SubscriptionRef
+    Stream.tap((n) => Console.log(`SubscriptionRef changed to ${n}`)),
+    Stream.runDrain,
+    // Fork a fiber to run the stream
+    Effect.fork
+  )
+
+  // Allow the fiber a chance to start
+  yield* Effect.sleep("100 millis")
+
+  yield* SubscriptionRef.set(ref, 1)
+  yield* SubscriptionRef.set(ref, 2)
+})
+
+Effect.runFork(program)
+/*
+Output:
+SubscriptionRef changed to 0
+SubscriptionRef changed to 1
+SubscriptionRef changed to 2
+*/
+```
+
+> concurrency/queue.mdx\n\n---
+title: Queue
+description: Learn how to use Effect's Queue for lightweight, type-safe, and asynchronous workflows with built-in back-pressure.
+sidebar:
+  order: 5
+---
+
+A `Queue` is a lightweight in-memory queue with built-in back-pressure, enabling asynchronous, purely-functional, and type-safe handling of data.
+
+## Basic Operations
+
+A `Queue<A>` stores values of type `A` and provides two fundamental operations:
+
+| API           | Description                                          |
+| ------------- | ---------------------------------------------------- |
+| `Queue.offer` | Adds a value of type `A` to the queue.               |
+| `Queue.take`  | Removes and returns the oldest value from the queue. |
+
+**Example** (Adding and Retrieving an Item)
+
+```ts twoslash
+import { Effect, Queue } from "effect"
+
+const program = Effect.gen(function* () {
+  // Creates a bounded queue with capacity 100
+  const queue = yield* Queue.bounded<number>(100)
+  // Adds 1 to the queue
+  yield* Queue.offer(queue, 1)
+  // Retrieves and removes the oldest value
+  const value = yield* Queue.take(queue)
+  return value
+})
+
+Effect.runPromise(program).then(console.log)
+// Output: 1
+```
+
+## Creating a Queue
+
+Queues can be **bounded** (with a specified capacity) or **unbounded** (without a limit). Different types of queues handle new values differently when they reach capacity.
+
+### Bounded Queue
+
+A bounded queue applies back-pressure when full, meaning any `Queue.offer` operation will suspend until there is space.
+
+**Example** (Creating a Bounded Queue)
+
+```ts twoslash
+import { Queue } from "effect"
+
+// Creating a bounded queue with a capacity of 100
+const boundedQueue = Queue.bounded<number>(100)
+```
+
+### Dropping Queue
+
+A dropping queue discards new values if the queue is full.
+
+**Example** (Creating a Dropping Queue)
+
+```ts twoslash
+import { Queue } from "effect"
+
+// Creating a dropping queue with a capacity of 100
+const droppingQueue = Queue.dropping<number>(100)
+```
+
+### Sliding Queue
+
+A sliding queue removes old values to make space for new ones when it reaches capacity.
+
+**Example** (Creating a Sliding Queue)
+
+```ts twoslash
+import { Queue } from "effect"
+
+// Creating a sliding queue with a capacity of 100
+const slidingQueue = Queue.sliding<number>(100)
+```
+
+### Unbounded Queue
+
+An unbounded queue has no capacity limit, allowing unrestricted additions.
+
+**Example** (Creating an Unbounded Queue)
+
+```ts twoslash
+import { Queue } from "effect"
+
+// Creates an unbounded queue without a capacity limit
+const unboundedQueue = Queue.unbounded<number>()
+```
+
+## Adding Items to a Queue
+
+### offer
+
+Use `Queue.offer` to add values to the queue.
+
+**Example** (Adding a Single Item)
+
+```ts twoslash
+import { Effect, Queue } from "effect"
+
+const program = Effect.gen(function* () {
+  const queue = yield* Queue.bounded<number>(100)
+  // Adds 1 to the queue
+  yield* Queue.offer(queue, 1)
+})
+```
+
+When using a back-pressured queue, `Queue.offer` suspends if the queue is full. To avoid blocking the main fiber, you can fork the `Queue.offer` operation.
+
+**Example** (Handling a Full Queue with `Effect.fork`)
+
+```ts twoslash
+import { Effect, Queue, Fiber } from "effect"
+
+const program = Effect.gen(function* () {
+  const queue = yield* Queue.bounded<number>(1)
+  // Fill the queue with one item
+  yield* Queue.offer(queue, 1)
+  // Attempting to add a second item will suspend as the queue is full
+  const fiber = yield* Effect.fork(Queue.offer(queue, 2))
+  // Empties the queue to make space
+  yield* Queue.take(queue)
+  // Joins the fiber, completing the suspended offer
+  yield* Fiber.join(fiber)
+  // Returns the size of the queue after additions
+  return yield* Queue.size(queue)
+})
+
+Effect.runPromise(program).then(console.log)
+// Output: 1
+```
+
+### offerAll
+
+You can also add multiple items at once using `Queue.offerAll`.
+
+**Example** (Adding Multiple Items)
+
+```ts twoslash
+import { Effect, Queue, Array } from "effect"
+
+const program = Effect.gen(function* () {
+  const queue = yield* Queue.bounded<number>(100)
+  const items = Array.range(1, 10)
+  // Adds all items to the queue at once
+  yield* Queue.offerAll(queue, items)
+  // Returns the size of the queue after additions
+  return yield* Queue.size(queue)
+})
+
+Effect.runPromise(program).then(console.log)
+// Output: 10
+```
+
+## Consuming Items from a Queue
+
+### take
+
+The `Queue.take` operation removes and returns the oldest item from the queue. If the queue is empty, `Queue.take` will suspend and only resume when an item is added. To prevent blocking, you can fork the `Queue.take` operation into a new fiber.
+
+**Example** (Waiting for an Item in a Fiber)
+
+```ts twoslash
+import { Effect, Queue, Fiber } from "effect"
+
+const program = Effect.gen(function* () {
+  const queue = yield* Queue.bounded<string>(100)
+  // This take operation will suspend because the queue is empty
+  const fiber = yield* Effect.fork(Queue.take(queue))
+  // Adds an item to the queue
+  yield* Queue.offer(queue, "something")
+  // Joins the fiber to get the result of the take operation
+  const value = yield* Fiber.join(fiber)
+  return value
+})
+
+Effect.runPromise(program).then(console.log)
+// Output: something
+```
+
+### poll
+
+To retrieve the queue's first item without suspending, use `Queue.poll`. If the queue is empty, `Queue.poll` returns `None`; if it has an item, it wraps it in `Some`.
+
+**Example** (Polling an Item)
+
+```ts twoslash
+import { Effect, Queue } from "effect"
+
+const program = Effect.gen(function* () {
+  const queue = yield* Queue.bounded<number>(100)
+  // Adds items to the queue
+  yield* Queue.offer(queue, 10)
+  yield* Queue.offer(queue, 20)
+  // Retrieves the first item if available
+  const head = yield* Queue.poll(queue)
+  return head
+})
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+{
+  _id: "Option",
+  _tag: "Some",
+  value: 10
+}
+*/
+```
+
+### takeUpTo
+
+To retrieve multiple items, use `Queue.takeUpTo`, which returns up to the specified number of items.
+If there aren't enough items, it returns all available items without waiting for more.
+
+This function is particularly useful for batch processing when an exact number of items is not required. It ensures the program continues working with whatever data is currently available.
+
+If you need to wait for an exact number of items before proceeding, consider using [takeN](#taken).
+
+**Example** (Taking Up to N Items)
+
+```ts twoslash
+import { Effect, Queue } from "effect"
+
+const program = Effect.gen(function* () {
+  const queue = yield* Queue.bounded<number>(100)
+
+  // Adds items to the queue
+  yield* Queue.offer(queue, 1)
+  yield* Queue.offer(queue, 2)
+  yield* Queue.offer(queue, 3)
+
+  // Retrieves up to 2 items
+  const chunk = yield* Queue.takeUpTo(queue, 2)
+  console.log(chunk)
+
+  return "some result"
+})
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+{ _id: 'Chunk', values: [ 1, 2 ] }
+some result
+*/
+```
+
+### takeN
+
+Takes a specified number of elements from a queue. If the queue does not contain enough elements, the operation suspends until the required number of elements become available.
+
+This function is useful for scenarios where processing requires an exact number of items at a time, ensuring that the operation does not proceed until the batch is complete.
+
+**Example** (Taking a Fixed Number of Items)
+
+```ts twoslash
+import { Effect, Queue, Fiber } from "effect"
+
+const program = Effect.gen(function* () {
+  // Create a queue that can hold up to 100 elements
+  const queue = yield* Queue.bounded<number>(100)
+
+  // Fork a fiber that attempts to take 3 items from the queue
+  const fiber = yield* Effect.fork(
+    Effect.gen(function* () {
+      console.log("Attempting to take 3 items from the queue...")
+      const chunk = yield* Queue.takeN(queue, 3)
+      console.log(`Successfully took 3 items: ${chunk}`)
+    })
+  )
+
+  // Offer only 2 items initially
+  yield* Queue.offer(queue, 1)
+  yield* Queue.offer(queue, 2)
+  console.log(
+    "Offered 2 items. The fiber is now waiting for the 3rd item..."
+  )
+
+  // Simulate some delay
+  yield* Effect.sleep("2 seconds")
+
+  // Offer the 3rd item, which will unblock the takeN call
+  yield* Queue.offer(queue, 3)
+  console.log("Offered the 3rd item, which should unblock the fiber.")
+
+  // Wait for the fiber to finish
+  yield* Fiber.join(fiber)
+  return "some result"
+})
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+Offered 2 items. The fiber is now waiting for the 3rd item...
+Attempting to take 3 items from the queue...
+Offered the 3rd item, which should unblock the fiber.
+Successfully took 3 items: {
+  "_id": "Chunk",
+  "values": [
+    1,
+    2,
+    3
+  ]
+}
+some result
+*/
+```
+
+### takeAll
+
+To retrieve all items from the queue at once, use `Queue.takeAll`. This operation completes immediately, returning an empty collection if the queue is empty.
+
+**Example** (Taking All Items)
+
+```ts twoslash
+import { Effect, Queue } from "effect"
+
+const program = Effect.gen(function* () {
+  const queue = yield* Queue.bounded<number>(100)
+  // Adds items to the queue
+  yield* Queue.offer(queue, 10)
+  yield* Queue.offer(queue, 20)
+  yield* Queue.offer(queue, 30)
+  // Retrieves all items from the queue
+  const chunk = yield* Queue.takeAll(queue)
+  return chunk
+})
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+{
+  _id: "Chunk",
+  values: [ 10, 20, 30 ]
+}
+*/
+```
+
+## Shutting Down a Queue
+
+### shutdown
+
+The `Queue.shutdown` operation allows you to interrupt all fibers that are currently suspended on `offer*` or `take*` operations. This action also empties the queue and makes any future `offer*` and `take*` calls terminate immediately.
+
+**Example** (Interrupting Fibers on Queue Shutdown)
+
+```ts twoslash
+import { Effect, Queue, Fiber } from "effect"
+
+const program = Effect.gen(function* () {
+  const queue = yield* Queue.bounded<number>(3)
+  // Forks a fiber that waits to take an item from the queue
+  const fiber = yield* Effect.fork(Queue.take(queue))
+  // Shuts down the queue, interrupting the fiber
+  yield* Queue.shutdown(queue)
+  // Joins the interrupted fiber
+  yield* Fiber.join(fiber)
+})
+```
+
+### awaitShutdown
+
+The `Queue.awaitShutdown` operation can be used to run an effect when the queue shuts down. It waits until the queue is closed and resumes immediately if the queue is already shut down.
+
+**Example** (Waiting for Queue Shutdown)
+
+```ts twoslash
+import { Effect, Queue, Fiber, Console } from "effect"
+
+const program = Effect.gen(function* () {
+  const queue = yield* Queue.bounded<number>(3)
+  // Forks a fiber to await queue shutdown and log a message
+  const fiber = yield* Effect.fork(
+    Queue.awaitShutdown(queue).pipe(
+      Effect.andThen(Console.log("shutting down"))
+    )
+  )
+  // Shuts down the queue, triggering the await in the fiber
+  yield* Queue.shutdown(queue)
+  yield* Fiber.join(fiber)
+})
+
+Effect.runPromise(program)
+// Output: shutting down
+```
+
+## Offer-only / Take-only Queues
+
+Sometimes, you might want certain parts of your code to only add values to a queue (`Enqueue`) or only retrieve values from a queue (`Dequeue`). Effect provides interfaces to enforce these specific capabilities.
+
+### Enqueue
+
+All methods for adding values to a queue are defined by the `Enqueue` interface. This restricts the queue to only offer operations.
+
+**Example** (Restricting Queue to Offer-only Operations)
+
+```ts twoslash
+import { Queue } from "effect"
+
+const send = (offerOnlyQueue: Queue.Enqueue<number>, value: number) => {
+  // This queue is restricted to offer operations only
+
+  // Error: cannot use take on an offer-only queue
+  // @ts-expect-error
+  Queue.take(offerOnlyQueue)
+
+  // Valid offer operation
+  return Queue.offer(offerOnlyQueue, value)
+}
+```
+
+### Dequeue
+
+Similarly, all methods for retrieving values from a queue are defined by the `Dequeue` interface, which restricts the queue to only take operations.
+
+**Example** (Restricting Queue to Take-only Operations)
+
+```ts twoslash
+import { Queue } from "effect"
+
+const receive = (takeOnlyQueue: Queue.Dequeue<number>) => {
+  // This queue is restricted to take operations only
+
+  // Error: cannot use offer on a take-only queue
+  // @ts-expect-error
+  Queue.offer(takeOnlyQueue, 1)
+
+  // Valid take operation
+  return Queue.take(takeOnlyQueue)
+}
+```
+
+The `Queue` type combines both `Enqueue` and `Dequeue`, so you can easily pass it to different parts of your code, enforcing only `Enqueue` or `Dequeue` behaviors as needed.
+
+**Example** (Using Offer-only and Take-only Queues Together)
+
+```ts twoslash
+import { Effect, Queue } from "effect"
+
+const send = (offerOnlyQueue: Queue.Enqueue<number>, value: number) => {
+  return Queue.offer(offerOnlyQueue, value)
+}
+
+const receive = (takeOnlyQueue: Queue.Dequeue<number>) => {
+  return Queue.take(takeOnlyQueue)
+}
+
+const program = Effect.gen(function* () {
+  const queue = yield* Queue.unbounded<number>()
+
+  // Add values to the queue
+  yield* send(queue, 1)
+  yield* send(queue, 2)
+
+  // Retrieve values from the queue
+  console.log(yield* receive(queue))
+  console.log(yield* receive(queue))
+})
+
+Effect.runFork(program)
+/*
+Output:
+1
+2
+*/
+```
+
+> concurrency/basic-concurrency.mdx\n\n---
+title: Basic Concurrency
+description: Manage and control effect execution with concurrency, interruptions, and racing.
+sidebar:
+  order: 0
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+## Concurrency Options
+
+Effect provides options to manage how effects are executed, particularly focusing on controlling how many effects run concurrently.
+
+```ts showLineNumbers=false
+type Options = {
+  readonly concurrency?: Concurrency
+}
+```
+
+The `concurrency` option is used to determine the level of concurrency, with the following values:
+
+```ts showLineNumbers=false
+type Concurrency = number | "unbounded" | "inherit"
+```
+
+Let's explore each configuration in detail.
+
+<Aside type="tip" title="Applicability of Concurrency Options">
+  The examples here use the `Effect.all` function, but these options apply
+  to many other Effect APIs.
+</Aside>
+
+### Sequential Execution (Default)
+
+By default, if you don't specify any concurrency option, effects will run sequentially, one after the other. This means each effect starts only after the previous one completes.
+
+**Example** (Sequential Execution)
+
+```ts twoslash
+import { Effect, Duration } from "effect"
+
+// Helper function to simulate a task with a delay
+const makeTask = (n: number, delay: Duration.DurationInput) =>
+  Effect.promise(
+    () =>
+      new Promise<void>((resolve) => {
+        console.log(`start task${n}`) // Logs when the task starts
+        setTimeout(() => {
+          console.log(`task${n} done`) // Logs when the task finishes
+          resolve()
+        }, Duration.toMillis(delay))
+      })
+  )
+
+const task1 = makeTask(1, "200 millis")
+const task2 = makeTask(2, "100 millis")
+
+const sequential = Effect.all([task1, task2])
+
+Effect.runPromise(sequential)
+/*
+Output:
+start task1
+task1 done
+start task2 <-- task2 starts only after task1 completes
+task2 done
+*/
+```
+
+### Numbered Concurrency
+
+You can control how many effects run concurrently by setting a `number` for `concurrency`. For example, `concurrency: 2` allows up to two effects to run at the same time.
+
+**Example** (Limiting to 2 Concurrent Tasks)
+
+```ts twoslash
+import { Effect, Duration } from "effect"
+
+// Helper function to simulate a task with a delay
+const makeTask = (n: number, delay: Duration.DurationInput) =>
+  Effect.promise(
+    () =>
+      new Promise<void>((resolve) => {
+        console.log(`start task${n}`) // Logs when the task starts
+        setTimeout(() => {
+          console.log(`task${n} done`) // Logs when the task finishes
+          resolve()
+        }, Duration.toMillis(delay))
+      })
+  )
+
+const task1 = makeTask(1, "200 millis")
+const task2 = makeTask(2, "100 millis")
+const task3 = makeTask(3, "210 millis")
+const task4 = makeTask(4, "110 millis")
+const task5 = makeTask(5, "150 millis")
+
+const numbered = Effect.all([task1, task2, task3, task4, task5], {
+  concurrency: 2
+})
+
+Effect.runPromise(numbered)
+/*
+Output:
+start task1
+start task2 <-- active tasks: task1, task2
+task2 done
+start task3 <-- active tasks: task1, task3
+task1 done
+start task4 <-- active tasks: task3, task4
+task4 done
+start task5 <-- active tasks: task3, task5
+task3 done
+task5 done
+*/
+```
+
+### Unbounded Concurrency
+
+When `concurrency: "unbounded"` is used, there's no limit to the number of effects running concurrently.
+
+**Example** (Unbounded Concurrency)
+
+```ts twoslash
+import { Effect, Duration } from "effect"
+
+// Helper function to simulate a task with a delay
+const makeTask = (n: number, delay: Duration.DurationInput) =>
+  Effect.promise(
+    () =>
+      new Promise<void>((resolve) => {
+        console.log(`start task${n}`) // Logs when the task starts
+        setTimeout(() => {
+          console.log(`task${n} done`) // Logs when the task finishes
+          resolve()
+        }, Duration.toMillis(delay))
+      })
+  )
+
+const task1 = makeTask(1, "200 millis")
+const task2 = makeTask(2, "100 millis")
+const task3 = makeTask(3, "210 millis")
+const task4 = makeTask(4, "110 millis")
+const task5 = makeTask(5, "150 millis")
+
+const unbounded = Effect.all([task1, task2, task3, task4, task5], {
+  concurrency: "unbounded"
+})
+
+Effect.runPromise(unbounded)
+/*
+Output:
+start task1
+start task2
+start task3
+start task4
+start task5
+task2 done
+task4 done
+task5 done
+task1 done
+task3 done
+*/
+```
+
+### Inherit Concurrency
+
+When using `concurrency: "inherit"`, the concurrency level is inherited from the surrounding context. This context can be set using `Effect.withConcurrency(number | "unbounded")`. If no context is provided, the default is `"unbounded"`.
+
+**Example** (Inheriting Concurrency from Context)
+
+```ts twoslash
+import { Effect, Duration } from "effect"
+
+// Helper function to simulate a task with a delay
+const makeTask = (n: number, delay: Duration.DurationInput) =>
+  Effect.promise(
+    () =>
+      new Promise<void>((resolve) => {
+        console.log(`start task${n}`) // Logs when the task starts
+        setTimeout(() => {
+          console.log(`task${n} done`) // Logs when the task finishes
+          resolve()
+        }, Duration.toMillis(delay))
+      })
+  )
+
+const task1 = makeTask(1, "200 millis")
+const task2 = makeTask(2, "100 millis")
+const task3 = makeTask(3, "210 millis")
+const task4 = makeTask(4, "110 millis")
+const task5 = makeTask(5, "150 millis")
+
+// Running all tasks with concurrency: "inherit",
+// which defaults to "unbounded"
+const inherit = Effect.all([task1, task2, task3, task4, task5], {
+  concurrency: "inherit"
+})
+
+Effect.runPromise(inherit)
+/*
+Output:
+start task1
+start task2
+start task3
+start task4
+start task5
+task2 done
+task4 done
+task5 done
+task1 done
+task3 done
+*/
+```
+
+If you use `Effect.withConcurrency`, the concurrency configuration will adjust to the specified option.
+
+**Example** (Setting Concurrency Option)
+
+```ts twoslash
+import { Effect, Duration } from "effect"
+
+// Helper function to simulate a task with a delay
+const makeTask = (n: number, delay: Duration.DurationInput) =>
+  Effect.promise(
+    () =>
+      new Promise<void>((resolve) => {
+        console.log(`start task${n}`) // Logs when the task starts
+        setTimeout(() => {
+          console.log(`task${n} done`) // Logs when the task finishes
+          resolve()
+        }, Duration.toMillis(delay))
+      })
+  )
+
+const task1 = makeTask(1, "200 millis")
+const task2 = makeTask(2, "100 millis")
+const task3 = makeTask(3, "210 millis")
+const task4 = makeTask(4, "110 millis")
+const task5 = makeTask(5, "150 millis")
+
+// Running tasks with concurrency: "inherit",
+// which will inherit the surrounding context
+const inherit = Effect.all([task1, task2, task3, task4, task5], {
+  concurrency: "inherit"
+})
+
+// Setting a concurrency limit of 2
+const withConcurrency = inherit.pipe(Effect.withConcurrency(2))
+
+Effect.runPromise(withConcurrency)
+/*
+Output:
+start task1
+start task2 <-- active tasks: task1, task2
+task2 done
+start task3 <-- active tasks: task1, task3
+task1 done
+start task4 <-- active tasks: task3, task4
+task4 done
+start task5 <-- active tasks: task3, task5
+task3 done
+task5 done
+*/
+```
+
+## Interruptions
+
+All effects in Effect are executed by [fibers](/docs/concurrency/fibers/). If you didn't create the fiber yourself, it was created by an operation you're using (if it's concurrent) or by the Effect [runtime](/docs/runtime/) system.
+
+A fiber is created any time an effect is run. When running effects concurrently, a fiber is created for each concurrent effect.
+
+To summarize:
+
+- An `Effect` is a higher-level concept that describes an effectful computation. It is lazy and immutable, meaning it represents a computation that may produce a value or fail but does not immediately execute.
+- A fiber, on the other hand, represents the running execution of an `Effect`. It can be interrupted or awaited to retrieve its result. Think of it as a way to control and interact with the ongoing computation.
+
+Fibers can be interrupted in various ways. Let's explore some of these scenarios and see examples of how to interrupt fibers in Effect.
+
+### interrupt
+
+A fiber can be interrupted using the `Effect.interrupt` effect on that particular fiber.
+
+This effect models the explicit interruption of the fiber in which it runs.
+When executed, it causes the fiber to stop its operation immediately, capturing the interruption details such as the fiber's ID and its start time.
+The resulting interruption can be observed in the [Exit](/docs/data-types/exit/) type if the effect is run with functions like [runPromiseExit](/docs/getting-started/running-effects/#runpromiseexit).
+
+**Example** (Without Interruption)
+
+In this case, the program runs without any interruption, logging the start and completion of the task.
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  console.log("start")
+  yield* Effect.sleep("2 seconds")
+  console.log("done")
+  return "some result"
+})
+
+Effect.runPromiseExit(program).then(console.log)
+/*
+Output:
+start
+done
+{ _id: 'Exit', _tag: 'Success', value: 'some result' }
+*/
+```
+
+**Example** (With Interruption)
+
+Here, the fiber is interrupted after the log `"start"` but before the `"done"` log. The `Effect.interrupt` stops the fiber, and it never reaches the final log.
+
+```ts {6} twoslash
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  console.log("start")
+  yield* Effect.sleep("2 seconds")
+  yield* Effect.interrupt
+  console.log("done")
+  return "some result"
+})
+
+Effect.runPromiseExit(program).then(console.log)
+/*
+Output:
+start
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: {
+    _id: 'Cause',
+    _tag: 'Interrupt',
+    fiberId: {
+      _id: 'FiberId',
+      _tag: 'Runtime',
+      id: 0,
+      startTimeMillis: ...
+    }
+  }
+}
+*/
+```
+
+### onInterrupt
+
+Registers a cleanup effect to run when an effect is interrupted.
+
+This function allows you to specify an effect to run when the fiber is interrupted. This effect will be executed
+when the fiber is interrupted, allowing you to perform cleanup or other actions.
+
+**Example** (Running a Cleanup Action on Interruption)
+
+In this example, we set up a handler that logs "Cleanup completed" whenever the fiber is interrupted. We then show three cases: a successful effect, a failing effect, and an interrupted effect, demonstrating how the handler is triggered depending on how the effect ends.
+
+```ts twoslash
+import { Console, Effect } from "effect"
+
+// This handler is executed when the fiber is interrupted
+const handler = Effect.onInterrupt((_fibers) =>
+  Console.log("Cleanup completed")
+)
+
+const success = Console.log("Task completed").pipe(
+  Effect.as("some result"),
+  handler
+)
+
+Effect.runFork(success)
+/*
+Output:
+Task completed
+*/
+
+const failure = Console.log("Task failed").pipe(
+  Effect.andThen(Effect.fail("some error")),
+  handler
+)
+
+Effect.runFork(failure)
+/*
+Output:
+Task failed
+*/
+
+const interruption = Console.log("Task interrupted").pipe(
+  Effect.andThen(Effect.interrupt),
+  handler
+)
+
+Effect.runFork(interruption)
+/*
+Output:
+Task interrupted
+Cleanup completed
+*/
+```
+
+### Interruption of Concurrent Effects
+
+When running multiple effects concurrently, such as with `Effect.forEach`, if one of the effects is interrupted, it causes all concurrent effects to be interrupted as well.
+
+The resulting [cause](/docs/data-types/cause/) includes information about which fibers were interrupted.
+
+**Example** (Interrupting Concurrent Effects)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const program = Effect.forEach(
+  [1, 2, 3],
+  (n) =>
+    Effect.gen(function* () {
+      console.log(`start #${n}`)
+      yield* Effect.sleep(`${n} seconds`)
+      if (n > 1) {
+        yield* Effect.interrupt
+      }
+      console.log(`done #${n}`)
+    }).pipe(Effect.onInterrupt(() => Console.log(`interrupted #${n}`))),
+  { concurrency: "unbounded" }
+)
+
+Effect.runPromiseExit(program).then((exit) =>
+  console.log(JSON.stringify(exit, null, 2))
+)
+/*
+Output:
+start #1
+start #2
+start #3
+done #1
+interrupted #2
+interrupted #3
+{
+  "_id": "Exit",
+  "_tag": "Failure",
+  "cause": {
+    "_id": "Cause",
+    "_tag": "Parallel",
+    "left": {
+      "_id": "Cause",
+      "_tag": "Interrupt",
+      "fiberId": {
+        "_id": "FiberId",
+        "_tag": "Runtime",
+        "id": 3,
+        "startTimeMillis": ...
+      }
+    },
+    "right": {
+      "_id": "Cause",
+      "_tag": "Sequential",
+      "left": {
+        "_id": "Cause",
+        "_tag": "Empty"
+      },
+      "right": {
+        "_id": "Cause",
+        "_tag": "Interrupt",
+        "fiberId": {
+          "_id": "FiberId",
+          "_tag": "Runtime",
+          "id": 0,
+          "startTimeMillis": ...
+        }
+      }
+    }
+  }
+}
+*/
+```
+
+## Racing
+
+### race
+
+This function takes two effects and runs them concurrently. The first effect
+that successfully completes will determine the result of the race, and the
+other effect will be interrupted.
+
+If neither effect succeeds, the function will fail with a [cause](/docs/data-types/cause/) containing all the errors.
+
+This is useful when you want to run two effects concurrently, but only care
+about the first one to succeed. It is commonly used in cases like timeouts,
+retries, or when you want to optimize for the faster response without
+worrying about the other effect.
+
+**Example** (Both Tasks Succeed)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.succeed("task1").pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Console.log("task1 done")),
+  Effect.onInterrupt(() => Console.log("task1 interrupted"))
+)
+const task2 = Effect.succeed("task2").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Console.log("task2 done")),
+  Effect.onInterrupt(() => Console.log("task2 interrupted"))
+)
+
+const program = Effect.race(task1, task2)
+
+Effect.runFork(program)
+/*
+Output:
+task1 done
+task2 interrupted
+*/
+```
+
+**Example** (One Task Fails, One Succeeds)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.fail("task1").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Console.log("task1 done")),
+  Effect.onInterrupt(() => Console.log("task1 interrupted"))
+)
+const task2 = Effect.succeed("task2").pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Console.log("task2 done")),
+  Effect.onInterrupt(() => Console.log("task2 interrupted"))
+)
+
+const program = Effect.race(task1, task2)
+
+Effect.runFork(program)
+/*
+Output:
+task2 done
+*/
+```
+
+**Example** (Both Tasks Fail)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.fail("task1").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Console.log("task1 done")),
+  Effect.onInterrupt(() => Console.log("task1 interrupted"))
+)
+const task2 = Effect.fail("task2").pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Console.log("task2 done")),
+  Effect.onInterrupt(() => Console.log("task2 interrupted"))
+)
+
+const program = Effect.race(task1, task2)
+
+Effect.runPromiseExit(program).then(console.log)
+/*
+Output:
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: {
+    _id: 'Cause',
+    _tag: 'Parallel',
+    left: { _id: 'Cause', _tag: 'Fail', failure: 'task1' },
+    right: { _id: 'Cause', _tag: 'Fail', failure: 'task2' }
+  }
+}
+*/
+```
+
+If you want to handle the result of whichever task completes first, whether it succeeds or fails, you can use the `Effect.either` function. This function wraps the result in an [Either](/docs/data-types/either/) type, allowing you to see if the result was a success (`Right`) or a failure (`Left`):
+
+**Example** (Handling Success or Failure with Either)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.fail("task1").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Console.log("task1 done")),
+  Effect.onInterrupt(() => Console.log("task1 interrupted"))
+)
+const task2 = Effect.succeed("task2").pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Console.log("task2 done")),
+  Effect.onInterrupt(() => Console.log("task2 interrupted"))
+)
+
+// Run both tasks concurrently, wrapping the result
+// in Either to capture success or failure
+const program = Effect.race(Effect.either(task1), Effect.either(task2))
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+task2 interrupted
+{ _id: 'Either', _tag: 'Left', left: 'task1' }
+*/
+```
+
+### raceAll
+
+This function runs multiple effects concurrently and returns the result of the first one to succeed. If one effect succeeds, the others will be interrupted.
+
+If none of the effects succeed, the function will fail with the last error encountered.
+
+This is useful when you want to race multiple effects, but only care
+about the first one to succeed. It is commonly used in cases like timeouts,
+retries, or when you want to optimize for the faster response without
+worrying about the other effects.
+
+**Example** (All Tasks Succeed)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.succeed("task1").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Console.log("task1 done")),
+  Effect.onInterrupt(() => Console.log("task1 interrupted"))
+)
+const task2 = Effect.succeed("task2").pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Console.log("task2 done")),
+  Effect.onInterrupt(() => Console.log("task2 interrupted"))
+)
+
+const task3 = Effect.succeed("task3").pipe(
+  Effect.delay("150 millis"),
+  Effect.tap(Console.log("task3 done")),
+  Effect.onInterrupt(() => Console.log("task3 interrupted"))
+)
+
+const program = Effect.raceAll([task1, task2, task3])
+
+Effect.runFork(program)
+/*
+Output:
+task1 done
+task2 interrupted
+task3 interrupted
+*/
+```
+
+**Example** (One Task Fails, Two Tasks Succeed)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.fail("task1").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Console.log("task1 done")),
+  Effect.onInterrupt(() => Console.log("task1 interrupted"))
+)
+const task2 = Effect.succeed("task2").pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Console.log("task2 done")),
+  Effect.onInterrupt(() => Console.log("task2 interrupted"))
+)
+
+const task3 = Effect.succeed("task3").pipe(
+  Effect.delay("150 millis"),
+  Effect.tap(Console.log("task3 done")),
+  Effect.onInterrupt(() => Console.log("task3 interrupted"))
+)
+
+const program = Effect.raceAll([task1, task2, task3])
+
+Effect.runFork(program)
+/*
+Output:
+task3 done
+task2 interrupted
+*/
+```
+
+**Example** (All Tasks Fail)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.fail("task1").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Console.log("task1 done")),
+  Effect.onInterrupt(() => Console.log("task1 interrupted"))
+)
+const task2 = Effect.fail("task2").pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Console.log("task2 done")),
+  Effect.onInterrupt(() => Console.log("task2 interrupted"))
+)
+
+const task3 = Effect.fail("task3").pipe(
+  Effect.delay("150 millis"),
+  Effect.tap(Console.log("task3 done")),
+  Effect.onInterrupt(() => Console.log("task3 interrupted"))
+)
+
+const program = Effect.raceAll([task1, task2, task3])
+
+Effect.runPromiseExit(program).then(console.log)
+/*
+Output:
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: { _id: 'Cause', _tag: 'Fail', failure: 'task2' }
+}
+*/
+```
+
+### raceFirst
+
+This function takes two effects and runs them concurrently, returning the
+result of the first one that completes, regardless of whether it succeeds or
+fails.
+
+This function is useful when you want to race two operations, and you want to
+proceed with whichever one finishes first, regardless of whether it succeeds
+or fails.
+
+**Example** (Both Tasks Succeed)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.succeed("task1").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Console.log("task1 done")),
+  Effect.onInterrupt(() =>
+    Console.log("task1 interrupted").pipe(Effect.delay("100 millis"))
+  )
+)
+const task2 = Effect.succeed("task2").pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Console.log("task2 done")),
+  Effect.onInterrupt(() =>
+    Console.log("task2 interrupted").pipe(Effect.delay("100 millis"))
+  )
+)
+
+const program = Effect.raceFirst(task1, task2).pipe(
+  Effect.tap(Console.log("more work..."))
+)
+
+Effect.runPromiseExit(program).then(console.log)
+/*
+Output:
+task1 done
+task2 interrupted
+more work...
+{ _id: 'Exit', _tag: 'Success', value: 'task1' }
+*/
+```
+
+**Example** (One Task Fails, One Succeeds)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.fail("task1").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Console.log("task1 done")),
+  Effect.onInterrupt(() =>
+    Console.log("task1 interrupted").pipe(Effect.delay("100 millis"))
+  )
+)
+const task2 = Effect.succeed("task2").pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Console.log("task2 done")),
+  Effect.onInterrupt(() =>
+    Console.log("task2 interrupted").pipe(Effect.delay("100 millis"))
+  )
+)
+
+const program = Effect.raceFirst(task1, task2).pipe(
+  Effect.tap(Console.log("more work..."))
+)
+
+Effect.runPromiseExit(program).then(console.log)
+/*
+Output:
+task2 interrupted
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: { _id: 'Cause', _tag: 'Fail', failure: 'task1' }
+}
+*/
+```
+
+#### Disconnecting Effects
+
+The `Effect.raceFirst` function safely interrupts the "loser" effect once the other completes, but it will not resume until the loser is cleanly terminated.
+
+If you want a quicker return, you can disconnect the interrupt signal for both effects. Instead of calling:
+
+```ts showLineNumbers=false
+Effect.raceFirst(task1, task2)
+```
+
+You can use:
+
+```ts showLineNumbers=false
+Effect.raceFirst(Effect.disconnect(task1), Effect.disconnect(task2))
+```
+
+This allows both effects to complete independently while still terminating the losing effect in the background.
+
+**Example** (Using `Effect.disconnect` for Quicker Return)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.succeed("task1").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Console.log("task1 done")),
+  Effect.onInterrupt(() =>
+    Console.log("task1 interrupted").pipe(Effect.delay("100 millis"))
+  )
+)
+const task2 = Effect.succeed("task2").pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Console.log("task2 done")),
+  Effect.onInterrupt(() =>
+    Console.log("task2 interrupted").pipe(Effect.delay("100 millis"))
+  )
+)
+
+// Race the two tasks with disconnect to allow quicker return
+const program = Effect.raceFirst(
+  Effect.disconnect(task1),
+  Effect.disconnect(task2)
+).pipe(Effect.tap(Console.log("more work...")))
+
+Effect.runPromiseExit(program).then(console.log)
+/*
+Output:
+task1 done
+more work...
+{ _id: 'Exit', _tag: 'Success', value: 'task1' }
+task2 interrupted
+*/
+```
+
+### raceWith
+
+This function runs two effects concurrently and calls a specified "finisher" function once one of the effects completes, regardless of whether it succeeds or fails.
+
+The finisher functions for each effect allow you to handle the results of each effect as soon as they complete.
+
+The function takes two finisher callbacks, one for each effect, and allows you to specify how to handle the result of the race.
+
+This function is useful when you need to react to the completion of either effect without waiting for both to finish. It can be used whenever you want to take action based on the first available result.
+
+**Example** (Handling Results of Concurrent Tasks)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.succeed("task1").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Console.log("task1 done")),
+  Effect.onInterrupt(() =>
+    Console.log("task1 interrupted").pipe(Effect.delay("100 millis"))
+  )
+)
+const task2 = Effect.succeed("task2").pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Console.log("task2 done")),
+  Effect.onInterrupt(() =>
+    Console.log("task2 interrupted").pipe(Effect.delay("100 millis"))
+  )
+)
+
+const program = Effect.raceWith(task1, task2, {
+  onSelfDone: (exit) => Console.log(`task1 exited with ${exit}`),
+  onOtherDone: (exit) => Console.log(`task2 exited with ${exit}`)
+})
+
+Effect.runFork(program)
+/*
+Output:
+task1 done
+task1 exited with {
+  "_id": "Exit",
+  "_tag": "Success",
+  "value": "task1"
+}
+task2 interrupted
+*/
+```
+
+> concurrency/pubsub.mdx\n\n---
+title: PubSub
+description: Effortless message broadcasting and asynchronous communication with PubSub in Effect.
+sidebar:
+  order: 6
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+A `PubSub` serves as an asynchronous message hub, allowing publishers to send messages that can be received by all current subscribers.
+
+Unlike a [Queue](/docs/concurrency/queue/), where each value is delivered to only one consumer, a `PubSub` broadcasts each published message to all subscribers. This makes `PubSub` ideal for scenarios requiring message broadcasting rather than load distribution.
+
+## Basic Operations
+
+A `PubSub<A>` stores messages of type `A` and provides two fundamental operations:
+
+| API                | Description                                                                                                                                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PubSub.publish`   | Sends a message of type `A` to the `PubSub`, returning an effect indicating if the message was successfully published.                                                                                                                |
+| `PubSub.subscribe` | Creates a scoped effect that allows subscription to the `PubSub`, automatically unsubscribing when the scope ends. Subscribers receive messages through a [Dequeue](/docs/concurrency/queue/#dequeue) which holds published messages. |
+
+**Example** (Publishing a Message to Multiple Subscribers)
+
+```ts twoslash
+import { Effect, PubSub, Queue } from "effect"
+
+const program = Effect.scoped(
+  Effect.gen(function* () {
+    const pubsub = yield* PubSub.bounded<string>(2)
+
+    // Two subscribers
+    const dequeue1 = yield* PubSub.subscribe(pubsub)
+    const dequeue2 = yield* PubSub.subscribe(pubsub)
+
+    // Publish a message to the pubsub
+    yield* PubSub.publish(pubsub, "Hello from a PubSub!")
+
+    // Each subscriber receives the message
+    console.log("Subscriber 1: " + (yield* Queue.take(dequeue1)))
+    console.log("Subscriber 2: " + (yield* Queue.take(dequeue2)))
+  })
+)
+
+Effect.runFork(program)
+/*
+Output:
+Subscriber 1: Hello from a PubSub!
+Subscriber 2: Hello from a PubSub!
+*/
+```
+
+<Aside type="caution" title="Subscribe Before Publishing">
+  A subscriber only receives messages published while it is actively
+  subscribed. To ensure a subscriber receives a particular message,
+  establish the subscription before publishing the message.
+</Aside>
+
+## Creating a PubSub
+
+### Bounded PubSub
+
+A bounded `PubSub` applies back pressure to publishers when it reaches capacity, suspending additional publishing until space becomes available.
+
+Back pressure ensures that all subscribers receive all messages while they are subscribed. However, it can lead to slower message delivery if a subscriber is slow.
+
+**Example** (Bounded PubSub Creation)
+
+```ts twoslash
+import { PubSub } from "effect"
+
+// Creates a bounded PubSub with a capacity of 2
+const boundedPubSub = PubSub.bounded<string>(2)
+```
+
+### Dropping PubSub
+
+A dropping `PubSub` discards new values when full. The `PubSub.publish` operation returns `false` if the message is dropped.
+
+In a dropping pubsub, publishers can continue to publish new values, but subscribers are not guaranteed to receive all messages.
+
+**Example** (Dropping PubSub Creation)
+
+```ts twoslash
+import { PubSub } from "effect"
+
+// Creates a dropping PubSub with a capacity of 2
+const droppingPubSub = PubSub.dropping<string>(2)
+```
+
+### Sliding PubSub
+
+A sliding `PubSub` removes the oldest message to make space for new ones, ensuring that publishing never blocks.
+
+A sliding pubsub prevents slow subscribers from impacting the message delivery rate. However, there's still a risk that slow subscribers may miss some messages.
+
+**Example** (Sliding PubSub Creation)
+
+```ts twoslash
+import { PubSub } from "effect"
+
+// Creates a sliding PubSub with a capacity of 2
+const slidingPubSub = PubSub.sliding<string>(2)
+```
+
+### Unbounded PubSub
+
+An unbounded `PubSub` has no capacity limit, so publishing always succeeds immediately.
+
+Unbounded pubsubs guarantee that all subscribers receive all messages without slowing down message delivery. However, they can grow indefinitely if messages are published faster than they are consumed.
+
+Generally, it's recommended to use bounded, dropping, or sliding pubsubs unless you have specific use cases for unbounded pubsubs.
+
+**Example**
+
+```ts twoslash
+import { PubSub } from "effect"
+
+// Creates an unbounded PubSub with unlimited capacity
+const unboundedPubSub = PubSub.unbounded<string>()
+```
+
+## Operators On PubSubs
+
+### publishAll
+
+The `PubSub.publishAll` function lets you publish multiple values to the pubsub at once.
+
+**Example** (Publishing Multiple Messages)
+
+```ts twoslash
+import { Effect, PubSub, Queue } from "effect"
+
+const program = Effect.scoped(
+  Effect.gen(function* () {
+    const pubsub = yield* PubSub.bounded<string>(2)
+    const dequeue = yield* PubSub.subscribe(pubsub)
+    yield* PubSub.publishAll(pubsub, ["Message 1", "Message 2"])
+    console.log(yield* Queue.takeAll(dequeue))
+  })
+)
+
+Effect.runFork(program)
+/*
+Output:
+{ _id: 'Chunk', values: [ 'Message 1', 'Message 2' ] }
+*/
+```
+
+### capacity / size
+
+You can check the capacity and current size of a pubsub using `PubSub.capacity` and `PubSub.size`, respectively.
+
+Note that `PubSub.capacity` returns a `number` because the capacity is set at pubsub creation and never changes.
+In contrast, `PubSub.size` returns an effect that determines the current size of the pubsub since the number of messages in the pubsub can change over time.
+
+**Example** (Retrieving PubSub Capacity and Size)
+
+```ts twoslash
+import { Effect, PubSub } from "effect"
+
+const program = Effect.gen(function* () {
+  const pubsub = yield* PubSub.bounded<number>(2)
+  console.log(`capacity: ${PubSub.capacity(pubsub)}`)
+  console.log(`size: ${yield* PubSub.size(pubsub)}`)
+})
+
+Effect.runFork(program)
+/*
+Output:
+capacity: 2
+size: 0
+*/
+```
+
+### Shutting Down a PubSub
+
+To shut down a pubsub, use `PubSub.shutdown`. You can also verify if it has been shut down with `PubSub.isShutdown`, or wait for the shutdown to complete with `PubSub.awaitShutdown`. Shutting down a pubsub also terminates all associated queues, ensuring that the shutdown signal is effectively communicated.
+
+## PubSub as an Enqueue
+
+`PubSub` operators mirror those of [Queue](/docs/concurrency/queue/) with the main difference being that `PubSub.publish` and `PubSub.subscribe` are used in place of `Queue.offer` and `Queue.take`. If you're already familiar with using a `Queue`, you’ll find `PubSub` straightforward.
+
+Essentially, a `PubSub` can be seen as a `Enqueue` that only allows writes:
+
+```ts twoslash showLineNumbers=false
+import type { Queue } from "effect"
+
+interface PubSub<A> extends Queue.Enqueue<A> {}
+```
+
+Here, the `Enqueue` type refers to a queue that only accepts enqueues (or writes). Any value enqueued here is published to the pubsub, and operations like shutdown will also affect the pubsub.
+
+This design makes `PubSub` highly flexible, letting you use it anywhere you need a `Enqueue` that only accepts published values.
+
+> concurrency/latch.mdx\n\n---
+title: Latch
+description: A Latch synchronizes fibers by allowing them to wait until a specific event occurs, controlling access based on its open or closed state.
+sidebar:
+  order: 8
+---
+
+A Latch is a synchronization tool that works like a gate, letting fibers wait until the latch is opened before they continue. The latch can be either open or closed:
+
+- When closed, fibers that reach the latch wait until it opens.
+- When open, fibers pass through immediately.
+
+Once opened, a latch typically stays open, although you can close it again if needed
+
+Imagine an application that processes requests only after completing an initial setup (like loading configuration data or establishing a database connection).
+You can create a latch in a closed state while the setup is happening.
+Any incoming requests, represented as fibers, would wait at the latch until it opens.
+Once the setup is finished, you call `latch.open` so the requests can proceed.
+
+## The Latch Interface
+
+A `Latch` includes several operations that let you control and observe its state:
+
+| Operation  | Description                                                                                              |
+| ---------- | -------------------------------------------------------------------------------------------------------- |
+| `whenOpen` | Runs a given effect only if the latch is open, otherwise, waits until it opens.                          |
+| `open`     | Opens the latch so that any waiting fibers can proceed.                                                  |
+| `close`    | Closes the latch, causing fibers to wait when they reach this latch in the future.                       |
+| `await`    | Suspends the current fiber until the latch is opened. If the latch is already open, returns immediately. |
+| `release`  | Allows waiting fibers to continue without permanently opening the latch.                                 |
+
+## Creating a Latch
+
+Use the `Effect.makeLatch` function to create a latch in an open or closed state by passing a boolean. The default is `false`, which means it starts closed.
+
+**Example** (Creating and Using a Latch)
+
+In this example, the latch starts closed. A fiber logs "open sesame" only when the latch is open. After waiting for one second, the latch is opened, releasing the fiber:
+
+```ts twoslash
+import { Console, Effect } from "effect"
+
+// A generator function that demonstrates latch usage
+const program = Effect.gen(function* () {
+  // Create a latch, starting in the closed state
+  const latch = yield* Effect.makeLatch()
+
+  // Fork a fiber that logs "open sesame" only when the latch is open
+  const fiber = yield* Console.log("open sesame").pipe(
+    latch.whenOpen, // Waits for the latch to open
+    Effect.fork // Fork the effect into a new fiber
+  )
+
+  // Wait for 1 second
+  yield* Effect.sleep("1 second")
+
+  // Open the latch, releasing the fiber
+  yield* latch.open
+
+  // Wait for the forked fiber to finish
+  yield* fiber.await
+})
+
+Effect.runFork(program)
+// Output: open sesame (after 1 second)
+```
+
+## Latch vs Semaphore
+
+A latch is good when you have a one-time event or condition that determines whether fibers can proceed. For example, you might use a latch to block all fibers until a setup step is finished, and then open the latch so everyone can continue.
+
+A [semaphore](/docs/concurrency/semaphore/) with one lock (often called a binary semaphore or a mutex) is usually for mutual exclusion: it ensures that only one fiber at a time accesses a shared resource or section of code. Once a fiber acquires the lock, no other fiber can enter the protected area until the lock is released.
+
+In short:
+
+- Use a **latch** if you're gating a set of fibers on a specific event ("Wait here until this becomes true").
+- Use a **semaphore (with one lock)** if you need to ensure only one fiber at a time is in a critical section or using a shared resource.
+
+> concurrency/deferred.mdx\n\n---
+title: Deferred
+description: Master asynchronous coordination with Deferred, a one-time variable for managing effect synchronization and communication.
+sidebar:
+  order: 4
+---
+
+A `Deferred<Success, Error>` is a specialized subtype of `Effect` that acts like a one-time variable with some unique characteristics. It can only be completed once, making it a useful tool for managing asynchronous operations and synchronization between different parts of your program.
+
+A deferred is essentially a synchronization primitive that represents a value that may not be available right away. When you create a deferred, it starts out empty. Later, it can be completed with either a success value `Success` or an error value `Error`:
+
+```text showLineNumbers=false
+           ┌─── Represents the success type
+           │        ┌─── Represents the error type
+           │        │
+           ▼        ▼
+Deferred<Success, Error>
+```
+
+Once completed, it cannot be changed again.
+
+When a fiber calls `Deferred.await`, it will pause until the deferred is completed. While the fiber is waiting, it doesn't block the thread, it only blocks semantically. This means other fibers can still run, ensuring efficient concurrency.
+
+A deferred is conceptually similar to JavaScript's `Promise`.
+The key difference is that it supports both success and error types, giving more type safety.
+
+## Creating a Deferred
+
+A deferred can be created using the `Deferred.make` constructor. This returns an effect that represents the creation of the deferred. Since the creation of a deferred involves memory allocation, it must be done within an effect to ensure safe management of resources.
+
+**Example** (Creating a Deferred)
+
+```ts twoslash
+import { Deferred } from "effect"
+
+//      ┌─── Effect<Deferred<string, Error>>
+//      ▼
+const deferred = Deferred.make<string, Error>()
+```
+
+## Awaiting
+
+To retrieve a value from a deferred, you can use `Deferred.await`. This operation suspends the calling fiber until the deferred is completed with a value or an error.
+
+```ts twoslash
+import { Effect, Deferred } from "effect"
+
+//      ┌─── Effect<Deferred<string, Error>, never, never>
+//      ▼
+const deferred = Deferred.make<string, Error>()
+
+//      ┌─── Effect<string, Error, never>
+//      ▼
+const value = deferred.pipe(Effect.andThen(Deferred.await))
+```
+
+## Completing
+
+You can complete a deferred in several ways, depending on whether you want to succeed, fail, or interrupt the waiting fibers:
+
+| API                     | Description                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `Deferred.succeed`      | Completes the deferred successfully with a value.                                                               |
+| `Deferred.done`         | Completes the deferred with an [Exit](/docs/data-types/exit/) value.                                            |
+| `Deferred.complete`     | Completes the deferred with the result of an effect.                                                            |
+| `Deferred.completeWith` | Completes the deferred with an effect. This effect will be executed by each waiting fiber, so use it carefully. |
+| `Deferred.fail`         | Fails the deferred with an error.                                                                               |
+| `Deferred.die`          | Defects the deferred with a user-defined error.                                                                 |
+| `Deferred.failCause`    | Fails or defects the deferred with a [Cause](/docs/data-types/cause/).                                          |
+| `Deferred.interrupt`    | Interrupts the deferred, forcefully stopping or interrupting the waiting fibers.                                |
+
+**Example** (Completing a Deferred with Success)
+
+```ts twoslash
+import { Effect, Deferred } from "effect"
+
+const program = Effect.gen(function* () {
+  const deferred = yield* Deferred.make<number, string>()
+
+  // Complete the Deferred successfully
+  yield* Deferred.succeed(deferred, 1)
+
+  // Awaiting the Deferred to get its value
+  const value = yield* Deferred.await(deferred)
+
+  console.log(value)
+})
+
+Effect.runFork(program)
+// Output: 1
+```
+
+Completing a deferred produces an `Effect<boolean>`. This effect returns `true` if the deferred was successfully completed, and `false` if it had already been completed previously. This can be useful for tracking the state of the deferred.
+
+**Example** (Checking Completion Status)
+
+```ts twoslash
+import { Effect, Deferred } from "effect"
+
+const program = Effect.gen(function* () {
+  const deferred = yield* Deferred.make<number, string>()
+
+  // Attempt to fail the Deferred
+  const firstAttempt = yield* Deferred.fail(deferred, "oh no!")
+
+  // Attempt to succeed after it has already been completed
+  const secondAttempt = yield* Deferred.succeed(deferred, 1)
+
+  console.log([firstAttempt, secondAttempt])
+})
+
+Effect.runFork(program)
+// Output: [ true, false ]
+```
+
+## Checking Completion Status
+
+Sometimes, you might need to check if a deferred has been completed without suspending the fiber. This can be done using the `Deferred.poll` method. Here's how it works:
+
+- `Deferred.poll` returns an `Option<Effect<A, E>>`:
+  - If the `Deferred` is incomplete, it returns `None`.
+  - If the `Deferred` is complete, it returns `Some`, which contains the result or error.
+
+Additionally, you can use the `Deferred.isDone` function to check if a deferred has been completed. This method returns an `Effect<boolean>`, which evaluates to `true` if the `Deferred` is completed, allowing you to quickly check its state.
+
+**Example** (Polling and Checking Completion Status)
+
+```ts twoslash
+import { Effect, Deferred } from "effect"
+
+const program = Effect.gen(function* () {
+  const deferred = yield* Deferred.make<number, string>()
+
+  // Polling the Deferred to check if it's completed
+  const done1 = yield* Deferred.poll(deferred)
+
+  // Checking if the Deferred has been completed
+  const done2 = yield* Deferred.isDone(deferred)
+
+  console.log([done1, done2])
+})
+
+Effect.runFork(program)
+/*
+Output:
+[ { _id: 'Option', _tag: 'None' }, false ]
+*/
+```
+
+## Common Use Cases
+
+`Deferred` becomes useful when you need to wait for something specific to happen in your program.
+It's ideal for scenarios where you want one part of your code to signal another part when it's ready.
+
+Here are a few common use cases:
+
+| **Use Case**             | **Description**                                                                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Coordinating Fibers**  | When you have multiple concurrent tasks and need to coordinate their actions, `Deferred` can help one fiber signal to another when it has completed its task.             |
+| **Synchronization**      | Anytime you want to ensure that one piece of code doesn't proceed until another piece of code has finished its work, `Deferred` can provide the synchronization you need. |
+| **Handing Over Work**    | You can use `Deferred` to hand over work from one fiber to another. For example, one fiber can prepare some data, and then a second fiber can continue processing it.     |
+| **Suspending Execution** | When you want a fiber to pause its execution until some condition is met, a `Deferred` can be used to block it until the condition is satisfied.                          |
+
+**Example** (Using Deferred to Coordinate Two Fibers)
+
+In this example, a deferred is used to pass a value between two fibers.
+
+By running both fibers concurrently and using the deferred as a synchronization point, we can ensure that `fiberB` only proceeds after `fiberA` has completed its task.
+
+```ts twoslash
+import { Effect, Deferred, Fiber } from "effect"
+
+const program = Effect.gen(function* () {
+  const deferred = yield* Deferred.make<string, string>()
+
+  // Completes the Deferred with a value after a delay
+  const taskA = Effect.gen(function* () {
+    console.log("Starting task to complete the Deferred")
+    yield* Effect.sleep("1 second")
+    console.log("Completing the Deferred")
+    return yield* Deferred.succeed(deferred, "hello world")
+  })
+
+  // Waits for the Deferred and prints the value
+  const taskB = Effect.gen(function* () {
+    console.log("Starting task to get the value from the Deferred")
+    const value = yield* Deferred.await(deferred)
+    console.log("Got the value from the Deferred")
+    return value
+  })
+
+  // Run both fibers concurrently
+  const fiberA = yield* Effect.fork(taskA)
+  const fiberB = yield* Effect.fork(taskB)
+
+  // Wait for both fibers to complete
+  const both = yield* Fiber.join(Fiber.zip(fiberA, fiberB))
+
+  console.log(both)
+})
+
+Effect.runFork(program)
+/*
+Starting task to complete the Deferred
+Starting task to get the value from the Deferred
+Completing the Deferred
+Got the value from the Deferred
+[ true, 'hello world' ]
+*/
+```
+
+> concurrency/semaphore.mdx\n\n---
+title: Semaphore
+description: Learn to use semaphores in Effect for precise control of concurrency, managing resource access, and coordinating asynchronous tasks effectively.
+sidebar:
+  order: 7
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+A semaphore is a synchronization mechanism used to manage access to a shared resource. In Effect, semaphores help control resource access or coordinate tasks within asynchronous, concurrent operations.
+
+A semaphore acts as a generalized mutex, allowing a set number of **permits** to be held and released concurrently. Permits act like tickets, giving tasks or fibers controlled access to a shared resource. When no permits are available, tasks trying to acquire one will wait until a permit is released.
+
+## Creating a Semaphore
+
+The `Effect.makeSemaphore` function initializes a semaphore with a specified number of permits.
+Each permit allows one task to access a resource or perform an operation concurrently, and multiple permits enable a configurable level of concurrency.
+
+**Example** (Creating a Semaphore with 3 Permits)
+
+```ts twoslash
+import { Effect } from "effect"
+
+// Create a semaphore with 3 permits
+const mutex = Effect.makeSemaphore(3)
+```
+
+## withPermits
+
+The `withPermits` method lets you specify the number of permits required to run an effect. Once the specified permits are available, it runs the effect, automatically releasing the permits when the task completes.
+
+**Example** (Forcing Sequential Task Execution with a One-Permit Semaphore)
+
+In this example, three tasks are started concurrently, but they run sequentially because the one-permit semaphore only allows one task to proceed at a time.
+
+```ts twoslash
+import { Effect } from "effect"
+
+const task = Effect.gen(function* () {
+  yield* Effect.log("start")
+  yield* Effect.sleep("2 seconds")
+  yield* Effect.log("end")
+})
+
+const program = Effect.gen(function* () {
+  const mutex = yield* Effect.makeSemaphore(1)
+
+  // Wrap the task to require one permit, forcing sequential execution
+  const semTask = mutex
+    .withPermits(1)(task)
+    .pipe(Effect.withLogSpan("elapsed"))
+
+  // Run 3 tasks concurrently, but they execute sequentially
+  // due to the one-permit semaphore
+  yield* Effect.all([semTask, semTask, semTask], {
+    concurrency: "unbounded"
+  })
+})
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#1 message=start elapsed=3ms
+timestamp=... level=INFO fiber=#1 message=end elapsed=2010ms
+timestamp=... level=INFO fiber=#2 message=start elapsed=2012ms
+timestamp=... level=INFO fiber=#2 message=end elapsed=4017ms
+timestamp=... level=INFO fiber=#3 message=start elapsed=4018ms
+timestamp=... level=INFO fiber=#3 message=end elapsed=6026ms
+*/
+```
+
+**Example** (Using Multiple Permits to Control Concurrent Task Execution)
+
+In this example, we create a semaphore with five permits and use `withPermits(n)` to allocate a different number of permits for each task:
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  const mutex = yield* Effect.makeSemaphore(5)
+
+  const tasks = [1, 2, 3, 4, 5].map((n) =>
+    mutex
+      .withPermits(n)(
+        Effect.delay(Effect.log(`process: ${n}`), "2 seconds")
+      )
+      .pipe(Effect.withLogSpan("elapsed"))
+  )
+
+  yield* Effect.all(tasks, { concurrency: "unbounded" })
+})
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#1 message="process: 1" elapsed=2011ms
+timestamp=... level=INFO fiber=#2 message="process: 2" elapsed=2017ms
+timestamp=... level=INFO fiber=#3 message="process: 3" elapsed=4020ms
+timestamp=... level=INFO fiber=#4 message="process: 4" elapsed=6025ms
+timestamp=... level=INFO fiber=#5 message="process: 5" elapsed=8034ms
+*/
+```
+
+<Aside type="note" title="Permit Release Guarantee">
+  The `withPermits` method guarantees that permits are released after each
+  task, even if the task fails or is interrupted.
+</Aside>
 
 > platform/file-system.mdx\n\n---
 title: FileSystem
@@ -23971,6 +26931,1313 @@ Duration(1m)
 */
 ```
 
+> resource-management/patterns.mdx\n\n---
+title: Patterns
+description: Learn how to handle sequential operations in Effect, ensuring either full success or rollback on failure, with efficient error handling and resource management.
+sidebar:
+  order: 1
+---
+
+## Sequencing Operations
+
+In certain scenarios, you might need to perform a sequence of chained operations where the success of each operation depends on the previous one. However, if any of the operations fail, you would want to reverse the effects of all previous successful operations. This pattern is valuable when you need to ensure that either all operations succeed, or none of them have any effect at all.
+
+Effect offers a way to achieve this pattern using the [Effect.acquireRelease](/docs/resource-management/scope/#defining-resources) function in combination with the [Exit](/docs/data-types/exit/) type.
+The [Effect.acquireRelease](/docs/resource-management/scope/#defining-resources) function allows you to acquire a resource, perform operations with it, and release the resource when you're done.
+The [Exit](/docs/data-types/exit/) type represents the outcome of an effectful computation, indicating whether it succeeded or failed.
+
+Let's go through an example of implementing this pattern. Suppose we want to create a "Workspace" in our application, which involves creating an S3 bucket, an ElasticSearch index, and a Database entry that relies on the previous two.
+
+To begin, we define the domain model for the required [services](/docs/requirements-management/services/):
+
+- `S3`
+- `ElasticSearch`
+- `Database`
+
+```ts twoslash
+import { Effect, Context } from "effect"
+
+class S3Error {
+  readonly _tag = "S3Error"
+}
+
+interface Bucket {
+  readonly name: string
+}
+
+class S3 extends Context.Tag("S3")<
+  S3,
+  {
+    readonly createBucket: Effect.Effect<Bucket, S3Error>
+    readonly deleteBucket: (bucket: Bucket) => Effect.Effect<void>
+  }
+>() {}
+
+class ElasticSearchError {
+  readonly _tag = "ElasticSearchError"
+}
+
+interface Index {
+  readonly id: string
+}
+
+class ElasticSearch extends Context.Tag("ElasticSearch")<
+  ElasticSearch,
+  {
+    readonly createIndex: Effect.Effect<Index, ElasticSearchError>
+    readonly deleteIndex: (index: Index) => Effect.Effect<void>
+  }
+>() {}
+
+class DatabaseError {
+  readonly _tag = "DatabaseError"
+}
+
+interface Entry {
+  readonly id: string
+}
+
+class Database extends Context.Tag("Database")<
+  Database,
+  {
+    readonly createEntry: (
+      bucket: Bucket,
+      index: Index
+    ) => Effect.Effect<Entry, DatabaseError>
+    readonly deleteEntry: (entry: Entry) => Effect.Effect<void>
+  }
+>() {}
+```
+
+Next, we define the three create actions and the overall transaction (`make`) for the
+
+```ts twoslash collapse={3-52}
+import { Effect, Context, Exit } from "effect"
+
+class S3Error {
+  readonly _tag = "S3Error"
+}
+
+interface Bucket {
+  readonly name: string
+}
+
+class S3 extends Context.Tag("S3")<
+  S3,
+  {
+    readonly createBucket: Effect.Effect<Bucket, S3Error>
+    readonly deleteBucket: (bucket: Bucket) => Effect.Effect<void>
+  }
+>() {}
+
+class ElasticSearchError {
+  readonly _tag = "ElasticSearchError"
+}
+
+interface Index {
+  readonly id: string
+}
+
+class ElasticSearch extends Context.Tag("ElasticSearch")<
+  ElasticSearch,
+  {
+    readonly createIndex: Effect.Effect<Index, ElasticSearchError>
+    readonly deleteIndex: (index: Index) => Effect.Effect<void>
+  }
+>() {}
+
+class DatabaseError {
+  readonly _tag = "DatabaseError"
+}
+
+interface Entry {
+  readonly id: string
+}
+
+class Database extends Context.Tag("Database")<
+  Database,
+  {
+    readonly createEntry: (
+      bucket: Bucket,
+      index: Index
+    ) => Effect.Effect<Entry, DatabaseError>
+    readonly deleteEntry: (entry: Entry) => Effect.Effect<void>
+  }
+>() {}
+
+// Create a bucket, and define the release function that deletes the
+// bucket if the operation fails.
+const createBucket = Effect.gen(function* () {
+  const { createBucket, deleteBucket } = yield* S3
+  return yield* Effect.acquireRelease(createBucket, (bucket, exit) =>
+    // The release function for the Effect.acquireRelease operation is
+    // responsible for handling the acquired resource (bucket) after the
+    // main effect has completed. It is called regardless of whether the
+    // main effect succeeded or failed. If the main effect failed,
+    // Exit.isFailure(exit) will be true, and the function will perform
+    // a rollback by calling deleteBucket(bucket). If the main effect
+    // succeeded, Exit.isFailure(exit) will be false, and the function
+    // will return Effect.void, representing a successful, but
+    // do-nothing effect.
+    Exit.isFailure(exit) ? deleteBucket(bucket) : Effect.void
+  )
+})
+
+// Create an index, and define the release function that deletes the
+// index if the operation fails.
+const createIndex = Effect.gen(function* () {
+  const { createIndex, deleteIndex } = yield* ElasticSearch
+  return yield* Effect.acquireRelease(createIndex, (index, exit) =>
+    Exit.isFailure(exit) ? deleteIndex(index) : Effect.void
+  )
+})
+
+// Create an entry in the database, and define the release function that
+// deletes the entry if the operation fails.
+const createEntry = (bucket: Bucket, index: Index) =>
+  Effect.gen(function* () {
+    const { createEntry, deleteEntry } = yield* Database
+    return yield* Effect.acquireRelease(
+      createEntry(bucket, index),
+      (entry, exit) =>
+        Exit.isFailure(exit) ? deleteEntry(entry) : Effect.void
+    )
+  })
+
+const make = Effect.scoped(
+  Effect.gen(function* () {
+    const bucket = yield* createBucket
+    const index = yield* createIndex
+    return yield* createEntry(bucket, index)
+  })
+)
+```
+
+We then create simple service implementations to test the behavior of our Workspace code.
+To achieve this, we will utilize [layers](/docs/requirements-management/layers/) to construct test
+These layers will be able to handle various scenarios, including errors, which we can control using the `FailureCase` type.
+
+```ts twoslash collapse={3-99}
+import { Effect, Context, Layer, Console, Exit } from "effect"
+
+class S3Error {
+  readonly _tag = "S3Error"
+}
+
+interface Bucket {
+  readonly name: string
+}
+
+class S3 extends Context.Tag("S3")<
+  S3,
+  {
+    readonly createBucket: Effect.Effect<Bucket, S3Error>
+    readonly deleteBucket: (bucket: Bucket) => Effect.Effect<void>
+  }
+>() {}
+
+class ElasticSearchError {
+  readonly _tag = "ElasticSearchError"
+}
+
+interface Index {
+  readonly id: string
+}
+
+class ElasticSearch extends Context.Tag("ElasticSearch")<
+  ElasticSearch,
+  {
+    readonly createIndex: Effect.Effect<Index, ElasticSearchError>
+    readonly deleteIndex: (index: Index) => Effect.Effect<void>
+  }
+>() {}
+
+class DatabaseError {
+  readonly _tag = "DatabaseError"
+}
+
+interface Entry {
+  readonly id: string
+}
+
+class Database extends Context.Tag("Database")<
+  Database,
+  {
+    readonly createEntry: (
+      bucket: Bucket,
+      index: Index
+    ) => Effect.Effect<Entry, DatabaseError>
+    readonly deleteEntry: (entry: Entry) => Effect.Effect<void>
+  }
+>() {}
+
+// Create a bucket, and define the release function that deletes the
+// bucket if the operation fails.
+const createBucket = Effect.gen(function* () {
+  const { createBucket, deleteBucket } = yield* S3
+  return yield* Effect.acquireRelease(createBucket, (bucket, exit) =>
+    // The release function for the Effect.acquireRelease operation is
+    // responsible for handling the acquired resource (bucket) after the
+    // main effect has completed. It is called regardless of whether the
+    // main effect succeeded or failed. If the main effect failed,
+    // Exit.isFailure(exit) will be true, and the function will perform
+    // a rollback by calling deleteBucket(bucket). If the main effect
+    // succeeded, Exit.isFailure(exit) will be false, and the function
+    // will return Effect.void, representing a successful, but
+    // do-nothing effect.
+    Exit.isFailure(exit) ? deleteBucket(bucket) : Effect.void
+  )
+})
+
+// Create an index, and define the release function that deletes the
+// index if the operation fails.
+const createIndex = Effect.gen(function* () {
+  const { createIndex, deleteIndex } = yield* ElasticSearch
+  return yield* Effect.acquireRelease(createIndex, (index, exit) =>
+    Exit.isFailure(exit) ? deleteIndex(index) : Effect.void
+  )
+})
+
+// Create an entry in the database, and define the release function that
+// deletes the entry if the operation fails.
+const createEntry = (bucket: Bucket, index: Index) =>
+  Effect.gen(function* () {
+    const { createEntry, deleteEntry } = yield* Database
+    return yield* Effect.acquireRelease(
+      createEntry(bucket, index),
+      (entry, exit) =>
+        Exit.isFailure(exit) ? deleteEntry(entry) : Effect.void
+    )
+  })
+
+const make = Effect.scoped(
+  Effect.gen(function* () {
+    const bucket = yield* createBucket
+    const index = yield* createIndex
+    return yield* createEntry(bucket, index)
+  })
+)
+
+// The `FailureCaseLiterals` type allows us to provide different error
+// scenarios while testing our
+//
+// For example, by providing the value "S3", we can simulate an error
+// scenario specific to the S3 service. This helps us ensure that our
+// program handles errors correctly and behaves as expected in various
+// situations.
+//
+// Similarly, we can provide other values like "ElasticSearch" or
+// "Database" to simulate error scenarios for those  In cases
+// where we want to test the absence of errors, we can provide
+// `undefined`. By using this parameter, we can thoroughly test our
+// services and verify their behavior under different error conditions.
+type FailureCaseLiterals = "S3" | "ElasticSearch" | "Database" | undefined
+
+class FailureCase extends Context.Tag("FailureCase")<
+  FailureCase,
+  FailureCaseLiterals
+>() {}
+
+// Create a test layer for the S3 service
+
+const S3Test = Layer.effect(
+  S3,
+  Effect.gen(function* () {
+    const failureCase = yield* FailureCase
+    return {
+      createBucket: Effect.gen(function* () {
+        console.log("[S3] creating bucket")
+        if (failureCase === "S3") {
+          return yield* Effect.fail(new S3Error())
+        } else {
+          return { name: "<bucket.name>" }
+        }
+      }),
+      deleteBucket: (bucket) =>
+        Console.log(`[S3] delete bucket ${bucket.name}`)
+    }
+  })
+)
+
+// Create a test layer for the ElasticSearch service
+
+const ElasticSearchTest = Layer.effect(
+  ElasticSearch,
+  Effect.gen(function* () {
+    const failureCase = yield* FailureCase
+    return {
+      createIndex: Effect.gen(function* () {
+        console.log("[ElasticSearch] creating index")
+        if (failureCase === "ElasticSearch") {
+          return yield* Effect.fail(new ElasticSearchError())
+        } else {
+          return { id: "<index.id>" }
+        }
+      }),
+      deleteIndex: (index) =>
+        Console.log(`[ElasticSearch] delete index ${index.id}`)
+    }
+  })
+)
+
+// Create a test layer for the Database service
+
+const DatabaseTest = Layer.effect(
+  Database,
+  Effect.gen(function* () {
+    const failureCase = yield* FailureCase
+    return {
+      createEntry: (bucket, index) =>
+        Effect.gen(function* () {
+          console.log(
+            "[Database] creating entry for bucket" +
+              `${bucket.name} and index ${index.id}`
+          )
+          if (failureCase === "Database") {
+            return yield* Effect.fail(new DatabaseError())
+          } else {
+            return { id: "<entry.id>" }
+          }
+        }),
+      deleteEntry: (entry) =>
+        Console.log(`[Database] delete entry ${entry.id}`)
+    }
+  })
+)
+
+// Merge all the test layers for S3, ElasticSearch, and Database
+// services into a single layer
+const layer = Layer.mergeAll(S3Test, ElasticSearchTest, DatabaseTest)
+
+// Create a runnable effect to test the Workspace code. The effect is
+// provided with the test layer and a FailureCase service with undefined
+// value (no failure case).
+const runnable = make.pipe(
+  Effect.provide(layer),
+  Effect.provideService(FailureCase, undefined)
+)
+
+Effect.runPromise(Effect.either(runnable)).then(console.log)
+```
+
+Let's examine the test results for the scenario where `FailureCase` is set to `undefined` (happy path):
+
+```ansi showLineNumbers=false
+[S3] creating bucket
+[ElasticSearch] creating index
+[Database] creating entry for bucket <bucket.name> and index <index.id>
+{
+  _id: "Either",
+  _tag: "Right",
+  right: {
+    id: "<entry.id>"
+  }
+}
+```
+
+In this case, all operations succeed, and we see a successful result with `right({ id: '<entry.id>' })`.
+
+Now, let's simulate a failure in the `Database`:
+
+```ts showLineNumbers=false
+const runnable = make.pipe(
+  Effect.provide(layer),
+  Effect.provideService(FailureCase, "Database")
+)
+```
+
+The console output will be:
+
+```ansi showLineNumbers=false
+[S3] creating bucket
+[ElasticSearch] creating index
+[Database] creating entry for bucket <bucket.name> and index <index.id>
+[ElasticSearch] delete index <index.id>
+[S3] delete bucket <bucket.name>
+{
+  _id: "Either",
+  _tag: "Left",
+  left: {
+    _tag: "DatabaseError"
+  }
+}
+```
+
+You can observe that once the `Database` error occurs, there is a complete rollback that deletes the `ElasticSearch` index first and then the associated `S3` bucket. The result is a failure with `left(new DatabaseError())`.
+
+Let's now make the index creation fail instead:
+
+```ts showLineNumbers=false
+const runnable = make.pipe(
+  Effect.provide(layer),
+  Effect.provideService(FailureCase, "ElasticSearch")
+)
+```
+
+In this case, the console output will be:
+
+```ansi showLineNumbers=false
+[S3] creating bucket
+[ElasticSearch] creating index
+[S3] delete bucket <bucket.name>
+{
+  _id: "Either",
+  _tag: "Left",
+  left: {
+    _tag: "ElasticSearchError"
+  }
+}
+```
+
+As expected, once the `ElasticSearch` index creation fails, there is a rollback that deletes the `S3` bucket. The result is a failure with `left(new ElasticSearchError())`.
+
+> resource-management/scope.mdx\n\n---
+title: Scope
+description: Learn how Effect simplifies resource management with Scopes, ensuring efficient cleanup and safe resource handling in long-running applications.
+sidebar:
+  order: 0
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components"
+
+In long-running applications, managing resources efficiently is essential, particularly when building large-scale systems. If resources like socket connections, database connections, or file descriptors are not properly managed, it can lead to resource leaks, which degrade application performance and reliability. Effect provides constructs that help ensure resources are properly managed and released, even in cases where exceptions occur.
+
+By ensuring that every time a resource is acquired, there is a corresponding mechanism to release it, Effect simplifies the process of resource management in your application.
+
+## The Scope Data Type
+
+The `Scope` data type is a core construct in Effect for managing resources in a safe and composable way.
+
+A scope represents the lifetime of one or more resources. When the scope is closed, all the resources within it are released, ensuring that no resources are leaked. Scopes also allow the addition of **finalizers**, which define how to release resources.
+
+With the `Scope` data type, you can:
+
+- **Add finalizers**: A finalizer specifies the cleanup logic for a resource.
+- **Close the scope**: When the scope is closed, all resources are released, and the finalizers are executed.
+
+**Example** (Managing a Scope)
+
+```ts twoslash
+import { Scope, Effect, Console, Exit } from "effect"
+
+const program =
+  // create a new scope
+  Scope.make().pipe(
+    // add finalizer 1
+    Effect.tap((scope) =>
+      Scope.addFinalizer(scope, Console.log("finalizer 1"))
+    ),
+    // add finalizer 2
+    Effect.tap((scope) =>
+      Scope.addFinalizer(scope, Console.log("finalizer 2"))
+    ),
+    // close the scope
+    Effect.andThen((scope) =>
+      Scope.close(scope, Exit.succeed("scope closed successfully"))
+    )
+  )
+
+Effect.runPromise(program)
+/*
+Output:
+finalizer 2 <-- finalizers are closed in reverse order
+finalizer 1
+*/
+```
+
+In the above example, finalizers are added to the scope, and when the scope is closed, the finalizers are **executed in the reverse order**.
+
+This reverse order is important because it ensures that resources are released in the correct sequence.
+
+For instance, if you acquire a network connection and then access a file on a remote server, the file must be closed before the network connection to avoid errors.
+
+<Aside type="tip" title="High-Level Resource Management">
+  Although managing scopes directly with `Scope` is possible, it's more
+  common to use higher-level functions like
+  [Effect.addFinalizer](#addfinalizer) or
+  [Effect.acquireUseRelease](#acquireuserelease), which handle much of the
+  complexity for you.
+</Aside>
+
+## addFinalizer
+
+The `Effect.addFinalizer` function is a high-level API that allows you to add finalizers to the scope of an effect. A finalizer is a piece of code that is guaranteed to run when the associated scope is closed. The behavior of the finalizer can vary based on the [Exit](/docs/data-types/exit/) value, which represents how the scope was closed—whether successfully or with an error.
+
+**Example** (Adding a Finalizer on Success)
+
+<Tabs syncKey="pipe-vs-gen">
+
+<TabItem label="Using Effect.gen">
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+//      ┌─── Effect<string, never, Scope>
+//      ▼
+const program = Effect.gen(function* () {
+  yield* Effect.addFinalizer((exit) =>
+    Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
+  )
+  return "some result"
+})
+
+// Wrapping the effect in a scope
+//
+//      ┌─── Effect<string, never, never>
+//      ▼
+const runnable = Effect.scoped(program)
+
+Effect.runPromiseExit(runnable).then(console.log)
+/*
+Output:
+Finalizer executed. Exit status: Success
+{ _id: 'Exit', _tag: 'Success', value: 'some result' }
+*/
+```
+
+</TabItem>
+
+<TabItem label="Using pipe">
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+//      ┌─── Effect<string, never, Scope>
+//      ▼
+const program = Effect.addFinalizer((exit) =>
+  Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
+).pipe(Effect.andThen(Effect.succeed("some result")))
+
+// Wrapping the effect in a scope
+//
+//      ┌─── Effect<string, never, never>
+//      ▼
+const runnable = Effect.scoped(program)
+
+Effect.runPromiseExit(runnable).then(console.log)
+/*
+Output:
+Finalizer executed. Exit status: Success
+{ _id: 'Exit', _tag: 'Success', value: 'some result' }
+*/
+```
+
+</TabItem>
+
+</Tabs>
+
+In this example, we use `Effect.addFinalizer` to add a finalizer that logs the exit state after the scope is closed. The finalizer will execute when the effect finishes, and it will log whether the effect completed successfully or failed.
+
+The type signature:
+
+```ts showLineNumbers=false "Scope"
+const program: Effect<string, never, Scope>
+```
+
+shows that the workflow requires a `Scope` to run. You can provide this `Scope` using the `Effect.scoped` function, which creates a new scope, runs the effect within it, and ensures the finalizers are executed when the scope is closed.
+
+<Aside type="note" title="Finalizer Execution Order">
+  Finalizers are executed in reverse order of how they were added,
+  ensuring that resources are released in the proper sequence, just like
+  in stack unwinding.
+</Aside>
+
+**Example** (Adding a Finalizer on Failure)
+
+<Tabs syncKey="pipe-vs-gen">
+
+<TabItem label="Using Effect.gen">
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+//      ┌─── Effect<never, string, Scope>
+//      ▼
+const program = Effect.gen(function* () {
+  yield* Effect.addFinalizer((exit) =>
+    Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
+  )
+  return yield* Effect.fail("Uh oh!")
+})
+
+// Wrapping the effect in a scope
+//
+//      ┌─── Effect<never, string, never>
+//      ▼
+const runnable = Effect.scoped(program)
+
+Effect.runPromiseExit(runnable).then(console.log)
+/*
+Output:
+Finalizer executed. Exit status: Failure
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: { _id: 'Cause', _tag: 'Fail', failure: 'Uh oh!' }
+}
+*/
+```
+
+</TabItem>
+
+<TabItem label="Using pipe">
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+//      ┌─── Effect<never, string, Scope>
+//      ▼
+const program = Effect.addFinalizer((exit) =>
+  Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
+).pipe(Effect.andThen(Effect.fail("Uh oh!")))
+
+// Wrapping the effect in a scope
+//
+//      ┌─── Effect<never, string, never>
+//      ▼
+const runnable = Effect.scoped(program)
+
+Effect.runPromiseExit(runnable).then(console.log)
+/*
+Output:
+Finalizer executed. Exit status: Failure
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: { _id: 'Cause', _tag: 'Fail', failure: 'Uh oh!' }
+}
+*/
+```
+
+</TabItem>
+
+</Tabs>
+
+In this case, the finalizer is executed even when the effect fails. The log output reflects that the finalizer runs after the failure, and it logs the failure details.
+
+**Example** (Adding a Finalizer on [Interruption](/docs/concurrency/basic-concurrency/#interruptions))
+
+<Tabs syncKey="pipe-vs-gen">
+
+<TabItem label="Using Effect.gen">
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+//      ┌─── Effect<never, never, Scope>
+//      ▼
+const program = Effect.gen(function* () {
+  yield* Effect.addFinalizer((exit) =>
+    Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
+  )
+  return yield* Effect.interrupt
+})
+
+// Wrapping the effect in a scope
+//
+//      ┌─── Effect<never, never, never>
+//      ▼
+const runnable = Effect.scoped(program)
+
+Effect.runPromiseExit(runnable).then(console.log)
+/*
+Output:
+Finalizer executed. Exit status: Failure
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: {
+    _id: 'Cause',
+    _tag: 'Interrupt',
+    fiberId: {
+      _id: 'FiberId',
+      _tag: 'Runtime',
+      id: 0,
+      startTimeMillis: ...
+    }
+  }
+}
+*/
+```
+
+</TabItem>
+
+<TabItem label="Using pipe">
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+//      ┌─── Effect<never, never, Scope>
+//      ▼
+const program = Effect.addFinalizer((exit) =>
+  Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
+).pipe(Effect.andThen(Effect.interrupt))
+
+// Wrapping the effect in a scope
+//
+//      ┌─── Effect<never, never, never>
+//      ▼
+const runnable = Effect.scoped(program)
+
+Effect.runPromiseExit(runnable).then(console.log)
+/*
+Output:
+Finalizer executed. Exit status: Failure
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: {
+    _id: 'Cause',
+    _tag: 'Interrupt',
+    fiberId: {
+      _id: 'FiberId',
+      _tag: 'Runtime',
+      id: 0,
+      startTimeMillis: ...
+    }
+  }
+}
+*/
+```
+
+</TabItem>
+
+</Tabs>
+
+This example shows how a finalizer behaves when the effect is interrupted. The finalizer runs after the interruption, and the exit status reflects that the effect was stopped mid-execution.
+
+## Manually Create and Close Scopes
+
+When you're working with multiple scoped resources within a single operation, it's important to understand how their scopes interact.
+By default, these scopes are merged into one, but you can have more fine-grained control over when each scope is closed by manually creating and closing them.
+
+Let's start by looking at how scopes are merged by default:
+
+**Example** (Merging Scopes)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Effect.gen(function* () {
+  console.log("task 1")
+  yield* Effect.addFinalizer(() => Console.log("finalizer after task 1"))
+})
+
+const task2 = Effect.gen(function* () {
+  console.log("task 2")
+  yield* Effect.addFinalizer(() => Console.log("finalizer after task 2"))
+})
+
+const program = Effect.gen(function* () {
+  // The scopes of both tasks are merged into one
+  yield* task1
+  yield* task2
+})
+
+Effect.runPromise(Effect.scoped(program))
+/*
+Output:
+task 1
+task 2
+finalizer after task 2
+finalizer after task 1
+*/
+```
+
+In this case, the scopes of `task1` and `task2` are merged into a single scope, and when the program is run, it outputs the tasks and their finalizers in a specific order.
+
+If you want more control over when each scope is closed, you can manually create and close them:
+
+**Example** (Manually Creating and Closing Scopes)
+
+```ts twoslash
+import { Console, Effect, Exit, Scope } from "effect"
+
+const task1 = Effect.gen(function* () {
+  console.log("task 1")
+  yield* Effect.addFinalizer(() => Console.log("finalizer after task 1"))
+})
+
+const task2 = Effect.gen(function* () {
+  console.log("task 2")
+  yield* Effect.addFinalizer(() => Console.log("finalizer after task 2"))
+})
+
+const program = Effect.gen(function* () {
+  const scope1 = yield* Scope.make()
+  const scope2 = yield* Scope.make()
+
+  // Extend the scope of task1 into scope1
+  yield* task1.pipe(Scope.extend(scope1))
+
+  // Extend the scope of task2 into scope2
+  yield* task2.pipe(Scope.extend(scope2))
+
+  // Manually close scope1 and scope2
+  yield* Scope.close(scope1, Exit.void)
+  yield* Console.log("doing something else")
+  yield* Scope.close(scope2, Exit.void)
+})
+
+Effect.runPromise(program)
+/*
+Output:
+task 1
+task 2
+finalizer after task 1
+doing something else
+finalizer after task 2
+*/
+```
+
+In this example, we create two separate scopes, `scope1` and `scope2`, and extend the scope of each task into its respective scope. When you run the program, it outputs the tasks and their finalizers in a different order.
+
+<Aside type="note" title="Extending a Scope">
+  The `Scope.extend` function allows you to extend the scope of an effect
+  workflow that requires a scope into another scope without closing the
+  scope when the workflow finishes executing. This allows you to extend a
+  scoped value into a larger scope.
+</Aside>
+
+You might wonder what happens when a scope is closed, but a task within that scope hasn't completed yet.
+The key point to note is that the scope closing doesn't force the task to be interrupted.
+
+**Example** (Closing a Scope with Pending Tasks)
+
+```ts twoslash
+import { Console, Effect, Exit, Scope } from "effect"
+
+const task = Effect.gen(function* () {
+  yield* Effect.sleep("1 second")
+  console.log("Executed")
+  yield* Effect.addFinalizer(() => Console.log("Task Finalizer"))
+})
+
+const program = Effect.gen(function* () {
+  const scope = yield* Scope.make()
+
+  // Close the scope immediately
+  yield* Scope.close(scope, Exit.void)
+  console.log("Scope closed")
+
+  // This task will be executed even if the scope is closed
+  yield* task.pipe(Scope.extend(scope))
+})
+
+Effect.runPromise(program)
+/*
+Output:
+Scope closed
+Executed <-- after 1 second
+Task Finalizer
+*/
+```
+
+## Finalization
+
+In many languages, the `try` / `finally` construct provides a way to ensure that, when the try block finishes (normally or with an error), the code in the finally block always runs. Effect offers a similar feature through the `Effect.ensuring` function.
+
+For higher-level approaches with automatic acquisition and release, see the [acquireRelease](#acquirerelease) family of functions.
+
+### ensuring
+
+This function makes sure a finalizer effect always runs once the main effect begins, whether the effect succeeds, fails, or is interrupted.
+
+This can be helpful when you need cleanup steps or final actions in all situations, such as releasing resources or logging messages.
+
+If you need access to the effect's result, consider using [onExit](#onexit).
+
+**Example** (Running a Finalizer in All Outcomes)
+
+```ts twoslash
+import { Console, Effect } from "effect"
+
+const handler = Effect.ensuring(Console.log("Cleanup completed"))
+
+const success = Console.log("Task completed").pipe(
+  Effect.as("some result"),
+  handler
+)
+
+Effect.runFork(success)
+/*
+Output:
+Task completed
+Cleanup completed
+*/
+
+const failure = Console.log("Task failed").pipe(
+  Effect.andThen(Effect.fail("some error")),
+  handler
+)
+
+Effect.runFork(failure)
+/*
+Output:
+Task failed
+Cleanup completed
+*/
+
+const interruption = Console.log("Task interrupted").pipe(
+  Effect.andThen(Effect.interrupt),
+  handler
+)
+
+Effect.runFork(interruption)
+/*
+Output:
+Task interrupted
+Cleanup completed
+*/
+```
+
+### onExit
+
+This function runs a cleanup step once the main effect finishes, regardless of whether it succeeds, fails, or is interrupted.
+
+It passes the [Exit](/docs/data-types/exit/) value to the cleanup function, which reveals how the effect ended:
+
+- If the effect succeeds, the `Exit` holds the success value.
+- If it fails, the `Exit` includes the error or failure cause.
+- If it is interrupted, the `Exit` reflects that interruption.
+
+The cleanup step itself is uninterruptible, which can help manage resources in complex or high-concurrency cases.
+
+**Example** (Running a Cleanup Function in All Outcomes)
+
+```ts twoslash
+import { Console, Effect, Exit } from "effect"
+
+// Define a cleanup function that logs the outcome of the effect
+const handler = Effect.onExit((exit) =>
+  Console.log(`Cleanup completed: ${Exit.getOrElse(exit, String)}`)
+)
+
+const success = Console.log("Task completed").pipe(
+  Effect.as("some result"),
+  handler
+)
+
+Effect.runFork(success)
+/*
+Output:
+Task completed
+Cleanup completed: some result
+*/
+
+const failure = Console.log("Task failed").pipe(
+  Effect.andThen(Effect.fail("some error")),
+  handler
+)
+
+Effect.runFork(failure)
+/*
+Output:
+Task failed
+Cleanup completed: Error: some error
+*/
+
+const interruption = Console.log("Task interrupted").pipe(
+  Effect.andThen(Effect.interrupt),
+  handler
+)
+
+Effect.runFork(interruption)
+/*
+Output:
+Task interrupted
+Cleanup completed: All fibers interrupted without errors.
+*/
+```
+
+### onError
+
+This function lets you attach a cleanup effect that runs whenever the calling effect fails, passing the cause of the failure to the cleanup effect.
+
+You can use it to perform actions such as logging, releasing resources, or applying additional recovery steps.
+
+The cleanup effect will also run if the failure is caused by interruption, and it is uninterruptible, so it always finishes once it starts.
+
+**Example** (Cleanup on Failure)
+
+```ts twoslash
+import { Console, Effect } from "effect"
+
+// This handler logs the failure cause when the effect fails
+const handler = Effect.onError((cause) =>
+  Console.log(`Cleanup completed: ${cause}`)
+)
+
+const success = Console.log("Task completed").pipe(
+  Effect.as("some result"),
+  handler
+)
+
+Effect.runFork(success)
+/*
+Output:
+Task completed
+*/
+
+const failure = Console.log("Task failed").pipe(
+  Effect.andThen(Effect.fail("some error")),
+  handler
+)
+
+Effect.runFork(failure)
+/*
+Output:
+Task failed
+Cleanup completed: Error: some error
+*/
+
+const interruption = Console.log("Task interrupted").pipe(
+  Effect.andThen(Effect.interrupt),
+  handler
+)
+
+Effect.runFork(interruption)
+/*
+Output:
+Task interrupted
+Cleanup completed: All fibers interrupted without errors.
+*/
+```
+
+## Defining Resources
+
+### acquireRelease
+
+The `Effect.acquireRelease(acquire, release)` function allows you to define resources that are acquired and safely released when they are no longer needed. This is useful for managing resources such as file handles, database connections, or network sockets.
+
+To use `Effect.acquireRelease`, you need to define three actions:
+
+1. **Acquiring the Resource**: An effect describing the acquisition of the resource, e.g., opening a file or establishing a database connection.
+2. **Using the Resource**: An effect describing the actual process to produce a result, e.g., reading from the file or querying the database.
+3. **Releasing the Resource**: The clean-up effect that ensures the resource is properly released, e.g., closing the file or the connection.
+
+The acquisition process is **uninterruptible** to ensure that partial resource acquisition doesn't leave your system in an inconsistent state.
+
+The `Effect.acquireRelease` function guarantees that once a resource is successfully acquired, its release step is always executed when the `Scope` is closed.
+
+**Example** (Defining a Simple Resource)
+
+```ts twoslash
+import { Effect } from "effect"
+
+// Define an interface for a resource
+interface MyResource {
+  readonly contents: string
+  readonly close: () => Promise<void>
+}
+
+// Simulate resource acquisition
+const getMyResource = (): Promise<MyResource> =>
+  Promise.resolve({
+    contents: "lorem ipsum",
+    close: () =>
+      new Promise((resolve) => {
+        console.log("Resource released")
+        resolve()
+      })
+  })
+
+// Define how the resource is acquired
+const acquire = Effect.tryPromise({
+  try: () =>
+    getMyResource().then((res) => {
+      console.log("Resource acquired")
+      return res
+    }),
+  catch: () => new Error("getMyResourceError")
+})
+
+// Define how the resource is released
+const release = (res: MyResource) => Effect.promise(() => res.close())
+
+// Create the resource management workflow
+//
+//      ┌─── Effect<MyResource, Error, Scope>
+//      ▼
+const resource = Effect.acquireRelease(acquire, release)
+```
+
+In the code above, the `Effect.acquireRelease` function creates a resource workflow that requires a `Scope`:
+
+```ts showLineNumbers=false "Scope"
+const resource: Effect<MyResource, Error, Scope>
+```
+
+This means that the workflow needs a `Scope` to run, and the resource will automatically be released when the scope is closed.
+
+You can now use the resource by chaining operations using `Effect.andThen` or similar functions.
+
+We can continue working with the resource for as long as we want by using `Effect.andThen` or other Effect operators. For example, here's how we can read the contents:
+
+**Example** (Using the Resource)
+
+```ts twoslash collapse={3-34}
+import { Effect } from "effect"
+
+// Define an interface for a resource
+interface MyResource {
+  readonly contents: string
+  readonly close: () => Promise<void>
+}
+
+// Simulate resource acquisition
+const getMyResource = (): Promise<MyResource> =>
+  Promise.resolve({
+    contents: "lorem ipsum",
+    close: () =>
+      new Promise((resolve) => {
+        console.log("Resource released")
+        resolve()
+      })
+  })
+
+// Define how the resource is acquired
+const acquire = Effect.tryPromise({
+  try: () =>
+    getMyResource().then((res) => {
+      console.log("Resource acquired")
+      return res
+    }),
+  catch: () => new Error("getMyResourceError")
+})
+
+// Define how the resource is released
+const release = (res: MyResource) => Effect.promise(() => res.close())
+
+// Create the resource management workflow
+const resource = Effect.acquireRelease(acquire, release)
+
+//      ┌─── Effect<void, Error, Scope>
+//      ▼
+const program = Effect.gen(function* () {
+  const res = yield* resource
+  console.log(`content is ${res.contents}`)
+})
+```
+
+To ensure proper resource management, the `Scope` should be closed when you're done with the resource. The `Effect.scoped` function handles this for you by creating a `Scope`, running the effect, and then closing the `Scope` when the effect finishes.
+
+**Example** (Providing the `Scope` with `Effect.scoped`)
+
+```ts twoslash collapse={3-34}
+import { Effect } from "effect"
+
+// Define an interface for a resource
+interface MyResource {
+  readonly contents: string
+  readonly close: () => Promise<void>
+}
+
+// Simulate resource acquisition
+const getMyResource = (): Promise<MyResource> =>
+  Promise.resolve({
+    contents: "lorem ipsum",
+    close: () =>
+      new Promise((resolve) => {
+        console.log("Resource released")
+        resolve()
+      })
+  })
+
+// Define how the resource is acquired
+const acquire = Effect.tryPromise({
+  try: () =>
+    getMyResource().then((res) => {
+      console.log("Resource acquired")
+      return res
+    }),
+  catch: () => new Error("getMyResourceError")
+})
+
+// Define how the resource is released
+const release = (res: MyResource) => Effect.promise(() => res.close())
+
+// Create the resource management workflow
+const resource = Effect.acquireRelease(acquire, release)
+
+//      ┌─── Effect<void, Error, never>
+//      ▼
+const program = Effect.scoped(
+  Effect.gen(function* () {
+    const res = yield* resource
+    console.log(`content is ${res.contents}`)
+  })
+)
+
+// We now have a workflow that is ready to run
+Effect.runPromise(program)
+/*
+Resource acquired
+content is lorem ipsum
+Resource released
+*/
+```
+
+### acquireUseRelease
+
+The `Effect.acquireUseRelease` function is a specialized version of the `Effect.acquireRelease` function that simplifies resource management by automatically handling the scoping of resources.
+
+```ts showLineNumbers=false
+Effect.acquireUseRelease(acquire, use, release)
+```
+
+The main difference is that `Effect.acquireUseRelease` eliminates the need to manually call `Effect.scoped` to manage the resource's scope. It has additional knowledge about when you are done using the resource created with the `acquire` step. This is achieved by providing a `use` argument, which represents the function that operates on the acquired resource. As a result, `Effect.acquireUseRelease` can automatically determine when it should execute the release step.
+
+**Example** (Automatically Managing Resource Lifetime)
+
+```ts twoslash collapse={3-31}
+import { Effect, Console } from "effect"
+
+// Define an interface for a resource
+interface MyResource {
+  readonly contents: string
+  readonly close: () => Promise<void>
+}
+
+// Simulate resource acquisition
+const getMyResource = (): Promise<MyResource> =>
+  Promise.resolve({
+    contents: "lorem ipsum",
+    close: () =>
+      new Promise((resolve) => {
+        console.log("Resource released")
+        resolve()
+      })
+  })
+
+// Define how the resource is acquired
+const acquire = Effect.tryPromise({
+  try: () =>
+    getMyResource().then((res) => {
+      console.log("Resource acquired")
+      return res
+    }),
+  catch: () => new Error("getMyResourceError")
+})
+
+// Define how the resource is released
+const release = (res: MyResource) => Effect.promise(() => res.close())
+
+const use = (res: MyResource) => Console.log(`content is ${res.contents}`)
+
+//      ┌─── Effect<void, Error, never>
+//      ▼
+const program = Effect.acquireUseRelease(acquire, use, release)
+
+Effect.runPromise(program)
+/*
+Output:
+Resource acquired
+content is lorem ipsum
+Resource released
+*/
+```
+
 > data-types/chunk.mdx\n\n---
 title: Chunk
 description: Learn about Chunk, a high-performance immutable data structure in Effect, offering efficient operations like concatenation, slicing, and conversions.
@@ -26759,6 +31026,4739 @@ Connecting to in-memory database
 ...
 */
 ```
+
+> getting-started/the-effect-type.mdx\n\n---
+title: The Effect Type
+description: Understand the Effect type in the Effect ecosystem, which models immutable, lazy workflows with type-safe success, error, and requirement handling for effectful computations.
+sidebar:
+  order: 5
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+The `Effect` type is an **immutable** description of a workflow or operation that is **lazily** executed. This means that when you create an `Effect`, it doesn't run immediately, but instead defines a program that can succeed, fail, or require some additional context to complete.
+
+Here is the general form of an `Effect`:
+
+```text showLineNumbers=false
+         ┌─── Represents the success type
+         │        ┌─── Represents the error type
+         │        │      ┌─── Represents required dependencies
+         ▼        ▼      ▼
+Effect<Success, Error, Requirements>
+```
+
+This type indicates that an effect:
+
+- Succeeds and returns a value of type `Success`
+- Fails with an error of type `Error`
+- May need certain contextual dependencies of type `Requirements` to execute
+
+Conceptually, you can think of `Effect` as an effectful version of the following function type:
+
+```ts showLineNumbers=false
+type Effect<Success, Error, Requirements> = (
+  context: Context<Requirements>
+) => Error | Success
+```
+
+However, effects are not actually functions. They can model synchronous, asynchronous, concurrent, and resourceful computations.
+
+**Immutability**. `Effect` values are immutable, and every function in the Effect library produces a new `Effect` value.
+
+**Modeling Interactions**. These values do not perform any actions themselves, they simply model or describe effectful interactions.
+
+**Execution**. An `Effect` can be executed by the [Effect Runtime System](/docs/runtime/), which interprets it into actual interactions with the external world.
+Ideally, this execution happens at a single entry point in your application, such as the main function where effectful operations are initiated.
+
+## Type Parameters
+
+The `Effect` type has three type parameters with the following meanings:
+
+| Parameter        | Description                                                                                                                                                                                                                                    |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Success**      | Represents the type of value that an effect can succeed with when executed. If this type parameter is `void`, it means the effect produces no useful information, while if it is `never`, it means the effect runs forever (or until failure). |
+| **Error**        | Represents the expected errors that can occur when executing an effect. If this type parameter is `never`, it means the effect cannot fail, because there are no values of type `never`.                                                       |
+| **Requirements** | Represents the contextual data required by the effect to be executed. This data is stored in a collection named `Context`. If this type parameter is `never`, it means the effect has no requirements and the `Context` collection is empty.   |
+
+<Aside type="note" title="Type Parameter Abbreviations">
+  In the Effect ecosystem, you may often encounter the type parameters of
+  `Effect` abbreviated as `A`, `E`, and `R` respectively. This is just
+  shorthand for the success value of type **A**, **E**rror, and
+  **R**equirements.
+</Aside>
+
+## Extracting Inferred Types
+
+By using the utility types `Effect.Success`, `Effect.Error`, and `Effect.Context`, you can extract the corresponding types from an effect.
+
+**Example** (Extracting Success, Error, and Context Types)
+
+```ts twoslash
+import { Effect, Context } from "effect"
+
+class SomeContext extends Context.Tag("SomeContext")<SomeContext, {}>() {}
+
+// Assume we have an effect that succeeds with a number,
+// fails with an Error, and requires SomeContext
+declare const program: Effect.Effect<number, Error, SomeContext>
+
+// Extract the success type, which is number
+type A = Effect.Effect.Success<typeof program>
+
+// Extract the error type, which is Error
+type E = Effect.Effect.Error<typeof program>
+
+// Extract the context type, which is SomeContext
+type R = Effect.Effect.Context<typeof program>
+```
+
+> getting-started/introduction.mdx\n\n---
+title: Introduction
+description: Explore Effect, a TypeScript library for building scalable, maintainable, and type-safe applications with advanced concurrency, error handling, and resource management.
+sidebar:
+  order: 0
+---
+
+Welcome to the Effect documentation!
+
+Effect is a powerful TypeScript library designed to help developers
+easily create complex, synchronous, and asynchronous programs.
+
+Some of the main Effect features include:
+
+| Feature             | Description                                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Concurrency**     | Achieve highly-scalable, ultra low-latency applications through Effect's fiber-based concurrency model.            |
+| **Composability**   | Construct highly maintainable, readable, and flexible software through the use of small, reusable building blocks. |
+| **Resource Safety** | Safely manage acquisition and release of resources, even when your program fails.                                  |
+| **Type Safety**     | Leverage the TypeScript type system to the fullest with Effect's focus on type inference and type safety.          |
+| **Error Handling**  | Handle errors in a structured and reliable manner using Effect's built-in error handling capabilities.             |
+| **Asynchronicity**  | Write code that looks the same, whether it is synchronous or asynchronous.                                         |
+| **Observability**   | With full tracing capabilities, you can easily debug and monitor the execution of your Effect program.             |
+
+## How to Use These Docs
+
+The documentation is structured in a sequential manner, starting from the basics and progressing to more advanced topics. This allows you to follow along step-by-step as you build your Effect application. However, you have the flexibility to read the documentation in any order or jump directly to the pages that are relevant to your specific use case.
+
+To facilitate navigation within a page, you will find a table of contents on the right side of the screen. This allows you to easily jump between different sections of the page.
+
+## Join our Community
+
+If you have questions about anything related to Effect,
+you're always welcome to ask our community on [Discord](https://discord.gg/effect-ts).
+
+> getting-started/using-generators.mdx\n\n---
+title: Using Generators
+description: Learn how to use generators in Effect for writing effectful code, enhancing control flow, handling errors, and simplifying asynchronous operations with a syntax similar to async/await.
+sidebar:
+  order: 8
+---
+
+import {
+  Aside,
+  Tabs,
+  TabItem,
+  Badge
+} from "@astrojs/starlight/components"
+
+Effect offers a convenient syntax, similar to `async`/`await`, to write effectful code using [generators](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator).
+
+<Aside type="note" title="Optional Feature">
+  The use of generators is an optional feature in Effect. If you find
+  generators unfamiliar or prefer a different coding style, you can
+  explore the documentation about [Building
+  Pipelines](/docs/getting-started/building-pipelines/) in Effect.
+</Aside>
+
+## Understanding Effect.gen
+
+The `Effect.gen` utility simplifies the task of writing effectful code by utilizing JavaScript's generator functions. This method helps your code appear and behave more like traditional synchronous code, which enhances both readability and error management.
+
+**Example** (Performing Transactions with Discounts)
+
+Let's explore a practical program that performs a series of data transformations commonly found in application logic:
+
+```ts twoslash
+import { Effect } from "effect"
+
+// Function to add a small service charge to a transaction amount
+const addServiceCharge = (amount: number) => amount + 1
+
+// Function to apply a discount safely to a transaction amount
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+// Simulated asynchronous task to fetch a transaction amount from a
+// database
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+// Simulated asynchronous task to fetch a discount rate from a
+// configuration file
+const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
+
+// Assembling the program using a generator function
+const program = Effect.gen(function* () {
+  // Retrieve the transaction amount
+  const transactionAmount = yield* fetchTransactionAmount
+
+  // Retrieve the discount rate
+  const discountRate = yield* fetchDiscountRate
+
+  // Calculate discounted amount
+  const discountedAmount = yield* applyDiscount(
+    transactionAmount,
+    discountRate
+  )
+
+  // Apply service charge
+  const finalAmount = addServiceCharge(discountedAmount)
+
+  // Return the total amount after applying the charge
+  return `Final amount to charge: ${finalAmount}`
+})
+
+// Execute the program and log the result
+Effect.runPromise(program).then(console.log)
+// Output: Final amount to charge: 96
+```
+
+Key steps to follow when using `Effect.gen`:
+
+- Wrap your logic in `Effect.gen`
+- Use `yield*` to handle effects
+- Return the final result
+
+<Aside type="caution" title="Required TypeScript Configuration">
+  The generator API is only available when using the `downlevelIteration`
+  flag or with a `target` of `"es2015"` or higher in your `tsconfig.json`
+  file.
+</Aside>
+
+## Comparing Effect.gen with async/await
+
+If you are familiar with `async`/`await`, you may notice that the flow of writing code is similar.
+
+Let's compare the two approaches:
+
+<Tabs syncKey="promises-vs-generators">
+
+<TabItem label="Using Effect.gen">
+
+```ts twoslash
+import { Effect } from "effect"
+
+const addServiceCharge = (amount: number) => amount + 1
+
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
+
+export const program = Effect.gen(function* () {
+  const transactionAmount = yield* fetchTransactionAmount
+  const discountRate = yield* fetchDiscountRate
+  const discountedAmount = yield* applyDiscount(
+    transactionAmount,
+    discountRate
+  )
+  const finalAmount = addServiceCharge(discountedAmount)
+  return `Final amount to charge: ${finalAmount}`
+})
+```
+
+</TabItem>
+
+<TabItem label="Using Async / Await">
+
+```ts twoslash
+const addServiceCharge = (amount: number) => amount + 1
+
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Promise<number> =>
+  discountRate === 0
+    ? Promise.reject(new Error("Discount rate cannot be zero"))
+    : Promise.resolve(total - (total * discountRate) / 100)
+
+const fetchTransactionAmount = Promise.resolve(100)
+
+const fetchDiscountRate = Promise.resolve(5)
+
+export const program = async function () {
+  const transactionAmount = await fetchTransactionAmount
+  const discountRate = await fetchDiscountRate
+  const discountedAmount = await applyDiscount(
+    transactionAmount,
+    discountRate
+  )
+  const finalAmount = addServiceCharge(discountedAmount)
+  return `Final amount to charge: ${finalAmount}`
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+It's important to note that although the code appears similar, the two programs are not identical. The purpose of comparing them side by side is just to highlight the resemblance in how they are written.
+
+## Embracing Control Flow
+
+One significant advantage of using `Effect.gen` in conjunction with generators is its capability to employ standard control flow constructs within the generator function. These constructs include `if`/`else`, `for`, `while`, and other branching and looping mechanisms, enhancing your ability to express complex control flow logic in your code.
+
+**Example** (Using Control Flow)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const calculateTax = (
+  amount: number,
+  taxRate: number
+): Effect.Effect<number, Error> =>
+  taxRate > 0
+    ? Effect.succeed((amount * taxRate) / 100)
+    : Effect.fail(new Error("Invalid tax rate"))
+
+const program = Effect.gen(function* () {
+  let i = 1
+
+  while (true) {
+    if (i === 10) {
+      break // Break the loop when counter reaches 10
+    } else {
+      if (i % 2 === 0) {
+        // Calculate tax for even numbers
+        console.log(yield* calculateTax(100, i))
+      }
+      i++
+      continue
+    }
+  }
+})
+
+Effect.runPromise(program)
+/*
+Output:
+2
+4
+6
+8
+*/
+```
+
+## How to Raise Errors
+
+The `Effect.gen` API lets you integrate error handling directly into your workflow by yielding failed effects.
+You can introduce errors with `Effect.fail`, as shown in the example below.
+
+**Example** (Introducing an Error into the Flow)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Console.log("task1...")
+const task2 = Console.log("task2...")
+
+const program = Effect.gen(function* () {
+  // Perform some tasks
+  yield* task1
+  yield* task2
+  // Introduce an error
+  yield* Effect.fail("Something went wrong!")
+})
+
+Effect.runPromise(program).then(console.log, console.error)
+/*
+Output:
+task1...
+task2...
+(FiberFailure) Error: Something went wrong!
+*/
+```
+
+## The Role of Short-Circuiting
+
+When working with `Effect.gen`, it is important to understand how it handles errors.
+This API will stop execution at the **first error** it encounters and return that error.
+
+How does this affect your code? If you have several operations in sequence, once any one of them fails, the remaining operations will not run, and the error will be returned.
+
+In simpler terms, if something fails at any point, the program will stop right there and deliver the error to you.
+
+**Example** (Halting Execution at the First Error)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const task1 = Console.log("task1...")
+const task2 = Console.log("task2...")
+const failure = Effect.fail("Something went wrong!")
+const task4 = Console.log("task4...")
+
+const program = Effect.gen(function* () {
+  yield* task1
+  yield* task2
+  // The program stops here due to the error
+  yield* failure
+  // The following lines never run
+  yield* task4
+  return "some result"
+})
+
+Effect.runPromise(program).then(console.log, console.error)
+/*
+Output:
+task1...
+task2...
+(FiberFailure) Error: Something went wrong!
+*/
+```
+
+Even though execution never reaches code after a failure, TypeScript may still assume that the code below the error is reachable unless you explicitly return after the failure.
+
+For example, consider the following scenario where you want to narrow the type of a variable:
+
+**Example** (Type Narrowing without Explicit Return)
+
+```ts twoslash
+import { Effect } from "effect"
+
+type User = {
+  readonly name: string
+}
+
+// Imagine this function checks a database or an external service
+declare function getUserById(id: string): Effect.Effect<User | undefined>
+
+function greetUser(id: string) {
+  return Effect.gen(function* () {
+    const user = yield* getUserById(id)
+
+    if (user === undefined) {
+      // Even though we fail here, TypeScript still thinks
+      // 'user' might be undefined later
+      yield* Effect.fail(`User with id ${id} not found`)
+    }
+
+    // @ts-expect-error user is possibly 'undefined'.ts(18048)
+    return `Hello, ${user.name}!`
+  })
+}
+```
+
+In this example, TypeScript still considers `user` possibly `undefined` because there is no explicit return after the failure.
+
+To fix this, explicitly return right after calling `Effect.fail`:
+
+**Example** (Type Narrowing with Explicit Return)
+
+```ts twoslash {15}
+import { Effect } from "effect"
+
+type User = {
+  readonly name: string
+}
+
+declare function getUserById(id: string): Effect.Effect<User | undefined>
+
+function greetUser(id: string) {
+  return Effect.gen(function* () {
+    const user = yield* getUserById(id)
+
+    if (user === undefined) {
+      // Explicitly return after failing
+      return yield* Effect.fail(`User with id ${id} not found`)
+    }
+
+    // Now TypeScript knows that 'user' is not undefined
+    return `Hello, ${user.name}!`
+  })
+}
+```
+
+<Aside type="note" title="Further Learning">
+  To learn more about error handling in Effect, refer to the [Error
+  Management](/docs/error-management/two-error-types/) section.
+</Aside>
+
+## Passing `this`
+
+In some cases, you might need to pass a reference to the current object (`this`) into the body of your generator function.
+You can achieve this by utilizing an overload that accepts the reference as the first argument:
+
+**Example** (Passing `this` to Generator)
+
+```ts twoslash
+import { Effect } from "effect"
+
+class MyClass {
+  readonly local = 1
+  compute = Effect.gen(this, function* () {
+    const n = this.local + 1
+
+    yield* Effect.log(`Computed value: ${n}`)
+
+    return n
+  })
+}
+
+Effect.runPromise(new MyClass().compute).then(console.log)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message="Computed value: 2"
+2
+*/
+```
+
+## Adapter <Badge text="Deprecated" variant="caution" />
+
+You may still come across some code snippets that use an adapter, typically indicated by `_` or `$` symbols.
+
+In earlier versions of TypeScript, the generator "adapter" function was necessary to ensure correct type inference within generators. This adapter was used to facilitate the interaction between TypeScript's type system and generator functions.
+
+**Example** (Adapter in Older Code)
+
+```ts twoslash "$"
+import { Effect } from "effect"
+
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+// Older usage with an adapter for proper type inference
+const programWithAdapter = Effect.gen(function* ($) {
+  const transactionAmount = yield* $(fetchTransactionAmount)
+})
+
+// Current usage without an adapter
+const program = Effect.gen(function* () {
+  const transactionAmount = yield* fetchTransactionAmount
+})
+```
+
+With advances in TypeScript (v5.5+), the adapter is no longer necessary for type inference. While it remains in the codebase for backward compatibility, it is anticipated to be removed in the upcoming major release of Effect.
+
+> getting-started/building-pipelines.mdx\n\n---
+title: Building Pipelines
+description: Learn to create modular, readable pipelines for composing and sequencing operations in Effect, enabling clear and efficient data transformations.
+sidebar:
+  order: 9
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+Effect pipelines allow for the composition and sequencing of operations on values, enabling the transformation and manipulation of data in a concise and modular manner.
+
+## Why Pipelines are Good for Structuring Your Application
+
+Pipelines are an excellent way to structure your application and handle data transformations in a concise and modular manner. They offer several benefits:
+
+1. **Readability**: Pipelines allow you to compose functions in a readable and sequential manner. You can clearly see the flow of data and the operations applied to it, making it easier to understand and maintain the code.
+
+2. **Code Organization**: With pipelines, you can break down complex operations into smaller, manageable functions. Each function performs a specific task, making your code more modular and easier to reason about.
+
+3. **Reusability**: Pipelines promote the reuse of functions. By breaking down operations into smaller functions, you can reuse them in different pipelines or contexts, improving code reuse and reducing duplication.
+
+4. **Type Safety**: By leveraging the type system, pipelines help catch errors at compile-time. Functions in a pipeline have well-defined input and output types, ensuring that the data flows correctly through the pipeline and minimizing runtime errors.
+
+## Functions vs Methods
+
+The use of functions in the Effect ecosystem libraries is important for
+achieving **tree shakeability** and ensuring **extensibility**.
+Functions enable efficient bundling by eliminating unused code, and they
+provide a flexible and modular approach to extending the libraries'
+functionality.
+
+### Tree Shakeability
+
+Tree shakeability refers to the ability of a build system to eliminate unused code during the bundling process. Functions are tree shakeable, while methods are not.
+
+When functions are used in the Effect ecosystem, only the functions that are actually imported and used in your application will be included in the final bundled code. Unused functions are automatically removed, resulting in a smaller bundle size and improved performance.
+
+On the other hand, methods are attached to objects or prototypes, and they cannot be easily tree shaken. Even if you only use a subset of methods, all methods associated with an object or prototype will be included in the bundle, leading to unnecessary code bloat.
+
+### Extensibility
+
+Another important advantage of using functions in the Effect ecosystem is the ease of extensibility. With methods, extending the functionality of an existing API often requires modifying the prototype of the object, which can be complex and error-prone.
+
+In contrast, with functions, extending the functionality is much simpler. You can define your own "extension methods" as plain old functions without the need to modify the prototypes of objects. This promotes cleaner and more modular code, and it also allows for better compatibility with other libraries and modules.
+
+## pipe
+
+The `pipe` function is a utility that allows us to compose functions in a readable and sequential manner. It takes the output of one function and passes it as the input to the next function in the pipeline. This enables us to build complex transformations by chaining multiple functions together.
+
+**Syntax**
+
+```ts showLineNumbers=false
+import { pipe } from "effect"
+
+const result = pipe(input, func1, func2, ..., funcN)
+```
+
+In this syntax, `input` is the initial value, and `func1`, `func2`, ..., `funcN` are the functions to be applied in sequence. The result of each function becomes the input for the next function, and the final result is returned.
+
+Here's an illustration of how `pipe` works:
+
+```text showLineNumbers=false
+┌───────┐    ┌───────┐    ┌───────┐    ┌───────┐    ┌───────┐    ┌────────┐
+│ input │───►│ func1 │───►│ func2 │───►│  ...  │───►│ funcN │───►│ result │
+└───────┘    └───────┘    └───────┘    └───────┘    └───────┘    └────────┘
+```
+
+It's important to note that functions passed to `pipe` must have a **single argument** because they are only called with a single argument.
+
+Let's see an example to better understand how `pipe` works:
+
+**Example** (Chaining Arithmetic Operations)
+
+```ts twoslash
+import { pipe } from "effect"
+
+// Define simple arithmetic operations
+const increment = (x: number) => x + 1
+const double = (x: number) => x * 2
+const subtractTen = (x: number) => x - 10
+
+// Sequentially apply these operations using `pipe`
+const result = pipe(5, increment, double, subtractTen)
+
+console.log(result)
+// Output: 2
+```
+
+In the above example, we start with an input value of `5`. The `increment` function adds `1` to the initial value, resulting in `6`. Then, the `double` function doubles the value, giving us `12`. Finally, the `subtractTen` function subtracts `10` from `12`, resulting in the final output of `2`.
+
+The result is equivalent to `subtractTen(double(increment(5)))`, but using `pipe` makes the code more readable because the operations are sequenced from left to right, rather than nesting them inside out.
+
+## map
+
+Transforms the value inside an effect by applying a function to it.
+
+**Syntax**
+
+```ts showLineNumbers=false
+const mappedEffect = pipe(myEffect, Effect.map(transformation))
+// or
+const mappedEffect = Effect.map(myEffect, transformation)
+// or
+const mappedEffect = myEffect.pipe(Effect.map(transformation))
+```
+
+`Effect.map` takes a function and applies it to the value contained within an
+effect, creating a new effect with the transformed value.
+
+<Aside type="note" title="Effects are Immutable">
+  It's important to note that effects are immutable, meaning that the
+  original effect is not modified. Instead, a new effect is returned with
+  the updated value.
+</Aside>
+
+**Example** (Adding a Service Charge)
+
+Here's a practical example where we apply a service charge to a transaction amount:
+
+```ts twoslash
+import { pipe, Effect } from "effect"
+
+// Function to add a small service charge to a transaction amount
+const addServiceCharge = (amount: number) => amount + 1
+
+// Simulated asynchronous task to fetch a transaction amount from database
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+// Apply service charge to the transaction amount
+const finalAmount = pipe(
+  fetchTransactionAmount,
+  Effect.map(addServiceCharge)
+)
+
+Effect.runPromise(finalAmount).then(console.log) // Output: 101
+```
+
+## as
+
+Replaces the value inside an effect with a constant value.
+
+`Effect.as` allows you to ignore the original value inside an effect and replace it with a new constant value.
+
+<Aside type="note" title="Effects are Immutable">
+  It's important to note that effects are immutable, meaning that the
+  original effect is not modified. Instead, a new effect is returned with
+  the updated value.
+</Aside>
+
+**Example** (Replacing a Value)
+
+```ts twoslash
+import { pipe, Effect } from "effect"
+
+// Replace the value 5 with the constant "new value"
+const program = pipe(Effect.succeed(5), Effect.as("new value"))
+
+Effect.runPromise(program).then(console.log) // Output: "new value"
+```
+
+## flatMap
+
+Chains effects to produce new `Effect` instances, useful for combining operations that depend on previous results.
+
+**Syntax**
+
+```ts showLineNumbers=false
+const flatMappedEffect = pipe(myEffect, Effect.flatMap(transformation))
+// or
+const flatMappedEffect = Effect.flatMap(myEffect, transformation)
+// or
+const flatMappedEffect = myEffect.pipe(Effect.flatMap(transformation))
+```
+
+In the code above, `transformation` is the function that takes a value and returns an `Effect`, and `myEffect` is the initial `Effect` being transformed.
+
+Use `Effect.flatMap` when you need to chain multiple effects, ensuring that each
+step produces a new `Effect` while flattening any nested effects that may
+occur.
+
+It is similar to `flatMap` used with arrays but works
+specifically with `Effect` instances, allowing you to avoid deeply nested
+effect structures.
+
+<Aside type="note" title="Effects are Immutable">
+  It's important to note that effects are immutable, meaning that the
+  original effect is not modified. Instead, a new effect is returned with
+  the updated value.
+</Aside>
+
+**Example** (Applying a Discount)
+
+```ts twoslash
+import { pipe, Effect } from "effect"
+
+// Function to apply a discount safely to a transaction amount
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+// Simulated asynchronous task to fetch a transaction amount from database
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+// Chaining the fetch and discount application using `flatMap`
+const finalAmount = pipe(
+  fetchTransactionAmount,
+  Effect.flatMap((amount) => applyDiscount(amount, 5))
+)
+
+Effect.runPromise(finalAmount).then(console.log)
+// Output: 95
+```
+
+### Ensure All Effects Are Considered
+
+Make sure that all effects within `Effect.flatMap` contribute to the final computation. If you ignore an effect, it can lead to unexpected behavior:
+
+```ts {3} showLineNumbers=false
+Effect.flatMap((amount) => {
+  // This effect will be ignored
+  Effect.sync(() => console.log(`Apply a discount to: ${amount}`))
+  return applyDiscount(amount, 5)
+})
+```
+
+In this case, the `Effect.sync` call is ignored and does not affect the result of `applyDiscount(amount, 5)`. To handle effects correctly, make sure to explicitly chain them using functions like `Effect.map`, `Effect.flatMap`, `Effect.andThen`, or `Effect.tap`.
+
+## andThen
+
+Chains two actions, where the second action can depend on the result of the first.
+
+**Syntax**
+
+```ts showLineNumbers=false
+const transformedEffect = pipe(myEffect, Effect.andThen(anotherEffect))
+// or
+const transformedEffect = Effect.andThen(myEffect, anotherEffect)
+// or
+const transformedEffect = myEffect.pipe(Effect.andThen(anotherEffect))
+```
+
+Use `andThen` when you need to run multiple actions in sequence, with the
+second action depending on the result of the first. This is useful for
+combining effects or handling computations that must happen in order.
+
+The second action can be:
+
+1. A value (similar to `Effect.as`)
+2. A function returning a value (similar to `Effect.map`)
+3. A `Promise`
+4. A function returning a `Promise`
+5. An `Effect`
+6. A function returning an `Effect` (similar to `Effect.flatMap`)
+
+**Example** (Applying a Discount Based on Fetched Amount)
+
+Let's look at an example comparing `Effect.andThen` with `Effect.map` and `Effect.flatMap`:
+
+```ts twoslash
+import { pipe, Effect } from "effect"
+
+// Function to apply a discount safely to a transaction amount
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+// Simulated asynchronous task to fetch a transaction amount from database
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+// Using Effect.map and Effect.flatMap
+const result1 = pipe(
+  fetchTransactionAmount,
+  Effect.map((amount) => amount * 2),
+  Effect.flatMap((amount) => applyDiscount(amount, 5))
+)
+
+Effect.runPromise(result1).then(console.log) // Output: 190
+
+// Using Effect.andThen
+const result2 = pipe(
+  fetchTransactionAmount,
+  Effect.andThen((amount) => amount * 2),
+  Effect.andThen((amount) => applyDiscount(amount, 5))
+)
+
+Effect.runPromise(result2).then(console.log) // Output: 190
+```
+
+### Option and Either with andThen
+
+Both [Option](/docs/data-types/option/#interop-with-effect) and [Either](/docs/data-types/either/#interop-with-effect) are commonly used for handling optional or missing values or simple error cases. These types integrate well with `Effect.andThen`. When used with `Effect.andThen`, the operations are categorized as scenarios 5 and 6 (as discussed earlier) because both `Option` and `Either` are treated as effects in this context.
+
+**Example** (with Option)
+
+```ts twoslash
+import { pipe, Effect, Option } from "effect"
+
+// Simulated asynchronous task fetching a number from a database
+const fetchNumberValue = Effect.tryPromise(() => Promise.resolve(42))
+
+//      ┌─── Effect<number, UnknownException | NoSuchElementException, never>
+//      ▼
+const program = pipe(
+  fetchNumberValue,
+  Effect.andThen((x) => (x > 0 ? Option.some(x) : Option.none()))
+)
+```
+
+You might expect the type of `program` to be `Effect<Option<number>, UnknownException, never>`, but it is actually `Effect<number, UnknownException | NoSuchElementException, never>`.
+
+This is because `Option<A>` is treated as an effect of type `Effect<A, NoSuchElementException>`, and as a result, the possible errors are combined into a union type.
+
+<Aside type="tip" title="Option As Effect">
+A value of type `Option<A>` is interpreted as an effect of type `Effect<A, NoSuchElementException>`.
+</Aside>
+
+**Example** (with Either)
+
+```ts twoslash
+import { pipe, Effect, Either } from "effect"
+
+// Function to parse an integer from a string that can fail
+const parseInteger = (input: string): Either.Either<number, string> =>
+  isNaN(parseInt(input))
+    ? Either.left("Invalid integer")
+    : Either.right(parseInt(input))
+
+// Simulated asynchronous task fetching a string from database
+const fetchStringValue = Effect.tryPromise(() => Promise.resolve("42"))
+
+//      ┌─── Effect<number, string | UnknownException, never>
+//      ▼
+const program = pipe(
+  fetchStringValue,
+  Effect.andThen((str) => parseInteger(str))
+)
+```
+
+Although one might expect the type of `program` to be `Effect<Either<number, string>, UnknownException, never>`, it is actually `Effect<number, string | UnknownException, never>`.
+
+This is because `Either<A, E>` is treated as an effect of type `Effect<A, E>`, meaning the errors are combined into a union type.
+
+<Aside type="tip" title="Either As Effect">
+A value of type `Either<A, E>` is interpreted as an effect of type `Effect<A, E>`.
+</Aside>
+
+## tap
+
+Runs a side effect with the result of an effect without changing the original value.
+
+Use `Effect.tap` when you want to perform a side effect, like logging or tracking,
+without modifying the main value. This is useful when you need to observe or
+record an action but want the original value to be passed to the next step.
+
+`Effect.tap` works similarly to `Effect.flatMap`, but it ignores the result of the function
+passed to it. The value from the previous effect remains available for the
+next part of the chain. Note that if the side effect fails, the entire chain
+will fail too.
+
+**Example** (Logging a step in a pipeline)
+
+```ts twoslash
+import { pipe, Effect, Console } from "effect"
+
+// Function to apply a discount safely to a transaction amount
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+// Simulated asynchronous task to fetch a transaction amount from database
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+const finalAmount = pipe(
+  fetchTransactionAmount,
+  // Log the fetched transaction amount
+  Effect.tap((amount) => Console.log(`Apply a discount to: ${amount}`)),
+  // `amount` is still available!
+  Effect.flatMap((amount) => applyDiscount(amount, 5))
+)
+
+Effect.runPromise(finalAmount).then(console.log)
+/*
+Output:
+Apply a discount to: 100
+95
+*/
+```
+
+In this example, `Effect.tap` is used to log the transaction amount before applying the discount, without modifying the value itself. The original value (`amount`) remains available for the next operation (`applyDiscount`).
+
+Using `Effect.tap` allows us to execute side effects during the computation without altering the result.
+This can be useful for logging, performing additional actions, or observing the intermediate values without interfering with the main computation flow.
+
+## all
+
+Combines multiple effects into one, returning results based on the input structure.
+
+Use `Effect.all` when you need to run multiple effects and combine their results
+into a single output. It supports tuples, iterables, structs, and records,
+making it flexible for different input types.
+
+For instance, if the input is a tuple:
+
+```ts showLineNumbers=false
+//         ┌─── a tuple of effects
+//         ▼
+Effect.all([effect1, effect2, ...])
+```
+
+the effects are executed in order, and the result is a new effect containing the results as a tuple. The results in the tuple match the order of the effects passed to `Effect.all`.
+
+By default, `Effect.all` runs effects sequentially and produces a tuple or object
+with the results. If any effect fails, it stops execution (short-circuiting)
+and propagates the error.
+
+See [Collecting](/docs/getting-started/control-flow/#all) for more information on how to use `Effect.all`.
+
+**Example** (Combining Configuration and Database Checks)
+
+```ts twoslash
+import { Effect } from "effect"
+
+// Simulated function to read configuration from a file
+const webConfig = Effect.promise(() =>
+  Promise.resolve({ dbConnection: "localhost", port: 8080 })
+)
+
+// Simulated function to test database connectivity
+const checkDatabaseConnectivity = Effect.promise(() =>
+  Promise.resolve("Connected to Database")
+)
+
+// Combine both effects to perform startup checks
+const startupChecks = Effect.all([webConfig, checkDatabaseConnectivity])
+
+Effect.runPromise(startupChecks).then(([config, dbStatus]) => {
+  console.log(
+    `Configuration: ${JSON.stringify(config)}\nDB Status: ${dbStatus}`
+  )
+})
+/*
+Output:
+Configuration: {"dbConnection":"localhost","port":8080}
+DB Status: Connected to Database
+*/
+```
+
+## Build your first pipeline
+
+Let's now combine the `pipe` function, `Effect.all`, and `Effect.andThen` to create a pipeline that performs a sequence of transformations.
+
+**Example** (Building a Transaction Pipeline)
+
+```ts twoslash
+import { Effect, pipe } from "effect"
+
+// Function to add a small service charge to a transaction amount
+const addServiceCharge = (amount: number) => amount + 1
+
+// Function to apply a discount safely to a transaction amount
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+// Simulated asynchronous task to fetch a transaction amount from database
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+// Simulated asynchronous task to fetch a discount rate
+// from a configuration file
+const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
+
+// Assembling the program using a pipeline of effects
+const program = pipe(
+  // Combine both fetch effects to get the transaction amount
+  // and discount rate
+  Effect.all([fetchTransactionAmount, fetchDiscountRate]),
+
+  // Apply the discount to the transaction amount
+  Effect.andThen(([transactionAmount, discountRate]) =>
+    applyDiscount(transactionAmount, discountRate)
+  ),
+
+  // Add the service charge to the discounted amount
+  Effect.andThen(addServiceCharge),
+
+  // Format the final result for display
+  Effect.andThen(
+    (finalAmount) => `Final amount to charge: ${finalAmount}`
+  )
+)
+
+// Execute the program and log the result
+Effect.runPromise(program).then(console.log)
+// Output: "Final amount to charge: 96"
+```
+
+This pipeline demonstrates how you can structure your code by combining different effects into a clear, readable flow.
+
+## The pipe method
+
+Effect provides a `pipe` method that works similarly to the `pipe` method found in [rxjs](https://rxjs.dev/api/index/function/pipe). This method allows you to chain multiple operations together, making your code more concise and readable.
+
+**Syntax**
+
+```ts showLineNumbers=false
+const result = effect.pipe(func1, func2, ..., funcN)
+```
+
+This is equivalent to using the `pipe` **function** like this:
+
+```ts showLineNumbers=false
+const result = pipe(effect, func1, func2, ..., funcN)
+```
+
+The `pipe` method is available on all effects and many other data types, eliminating the need to import the `pipe` function and saving you some keystrokes.
+
+**Example** (Using the `pipe` Method)
+
+Let's rewrite an [earlier example](#build-your-first-pipeline), this time using the `pipe` method.
+
+```ts twoslash collapse={3-15}
+import { Effect } from "effect"
+
+const addServiceCharge = (amount: number) => amount + 1
+
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
+
+const program = Effect.all([
+  fetchTransactionAmount,
+  fetchDiscountRate
+]).pipe(
+  Effect.andThen(([transactionAmount, discountRate]) =>
+    applyDiscount(transactionAmount, discountRate)
+  ),
+  Effect.andThen(addServiceCharge),
+  Effect.andThen(
+    (finalAmount) => `Final amount to charge: ${finalAmount}`
+  )
+)
+```
+
+## Cheatsheet
+
+Let's summarize the transformation functions we have seen so far:
+
+| API       | Input                                     | Output                      |
+| --------- | ----------------------------------------- | --------------------------- |
+| `map`     | `Effect<A, E, R>`, `A => B`               | `Effect<B, E, R>`           |
+| `flatMap` | `Effect<A, E, R>`, `A => Effect<B, E, R>` | `Effect<B, E, R>`           |
+| `andThen` | `Effect<A, E, R>`, \*                     | `Effect<B, E, R>`           |
+| `tap`     | `Effect<A, E, R>`, `A => Effect<B, E, R>` | `Effect<A, E, R>`           |
+| `all`     | `[Effect<A, E, R>, Effect<B, E, R>, ...]` | `Effect<[A, B, ...], E, R>` |
+
+> getting-started/running-effects.mdx\n\n---
+title: Running Effects
+description: Learn how to execute effects in Effect with various functions for synchronous and asynchronous execution, including handling results and managing error outcomes.
+sidebar:
+  order: 7
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+To execute an effect, you can use one of the many `run` functions provided by the `Effect` module.
+
+<Aside type="tip" title="Running Effects at the Program's Edge">
+  The recommended approach is to design your program with the majority of
+  its logic as Effects. It's advisable to use the `run*` functions closer
+  to the "edge" of your program. This approach allows for greater
+  flexibility in executing your program and building sophisticated
+  effects.
+</Aside>
+
+## runSync
+
+Executes an effect synchronously, running it immediately and returning the result.
+
+**Example** (Synchronous Logging)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.sync(() => {
+  console.log("Hello, World!")
+  return 1
+})
+
+const result = Effect.runSync(program)
+// Output: Hello, World!
+
+console.log(result)
+// Output: 1
+```
+
+Use `Effect.runSync` to run an effect that does not fail and does not include any asynchronous operations. If the effect fails or involves asynchronous work, it will throw an error, and execution will stop where the failure or async operation occurs.
+
+**Example** (Incorrect Usage with Failing or Async Effects)
+
+```ts twoslash
+import { Effect } from "effect"
+
+try {
+  // Attempt to run an effect that fails
+  Effect.runSync(Effect.fail("my error"))
+} catch (e) {
+  console.error(e)
+}
+/*
+Output:
+(FiberFailure) Error: my error
+*/
+
+try {
+  // Attempt to run an effect that involves async work
+  Effect.runSync(Effect.promise(() => Promise.resolve(1)))
+} catch (e) {
+  console.error(e)
+}
+/*
+Output:
+(FiberFailure) AsyncFiberException: Fiber #0 cannot be resolved synchronously. This is caused by using runSync on an effect that performs async work
+*/
+```
+
+## runSyncExit
+
+Runs an effect synchronously and returns the result as an [Exit](/docs/data-types/exit/) type, which represents the outcome (success or failure) of the effect.
+
+Use `Effect.runSyncExit` to find out whether an effect succeeded or failed,
+including any defects, without dealing with asynchronous operations.
+
+The `Exit` type represents the result of the effect:
+
+- If the effect succeeds, the result is wrapped in a `Success`.
+- If it fails, the failure information is provided as a `Failure` containing
+  a [Cause](/docs/data-types/cause/) type.
+
+**Example** (Handling Results as Exit)
+
+```ts twoslash
+import { Effect } from "effect"
+
+console.log(Effect.runSyncExit(Effect.succeed(1)))
+/*
+Output:
+{
+  _id: "Exit",
+  _tag: "Success",
+  value: 1
+}
+*/
+
+console.log(Effect.runSyncExit(Effect.fail("my error")))
+/*
+Output:
+{
+  _id: "Exit",
+  _tag: "Failure",
+  cause: {
+    _id: "Cause",
+    _tag: "Fail",
+    failure: "my error"
+  }
+}
+*/
+```
+
+If the effect contains asynchronous operations, `Effect.runSyncExit` will
+return an `Failure` with a `Die` cause, indicating that the effect cannot be
+resolved synchronously.
+
+**Example** (Asynchronous Operation Resulting in Die)
+
+```ts twoslash
+import { Effect } from "effect"
+
+console.log(Effect.runSyncExit(Effect.promise(() => Promise.resolve(1))))
+/*
+Output:
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: {
+    _id: 'Cause',
+    _tag: 'Die',
+    defect: [Fiber #0 cannot be resolved synchronously. This is caused by using runSync on an effect that performs async work] {
+      fiber: [FiberRuntime],
+      _tag: 'AsyncFiberException',
+      name: 'AsyncFiberException'
+    }
+  }
+}
+*/
+```
+
+## runPromise
+
+Executes an effect and returns the result as a `Promise`.
+
+Use `Effect.runPromise` when you need to execute an effect and work with the
+result using `Promise` syntax, typically for compatibility with other
+promise-based code.
+
+**Example** (Running a Successful Effect as a Promise)
+
+```ts twoslash
+import { Effect } from "effect"
+
+Effect.runPromise(Effect.succeed(1)).then(console.log)
+// Output: 1
+```
+
+If the effect succeeds, the promise will resolve with the result. If the
+effect fails, the promise will reject with an error.
+
+**Example** (Handling a Failing Effect as a Rejected Promise)
+
+```ts twoslash
+import { Effect } from "effect"
+
+Effect.runPromise(Effect.fail("my error")).catch(console.error)
+/*
+Output:
+(FiberFailure) Error: my error
+*/
+```
+
+## runPromiseExit
+
+Runs an effect and returns a `Promise` that resolves to an [Exit](/docs/data-types/exit/), which
+represents the outcome (success or failure) of the effect.
+
+Use `Effect.runPromiseExit` when you need to determine if an effect succeeded
+or failed, including any defects, and you want to work with a `Promise`.
+
+The `Exit` type represents the result of the effect:
+
+- If the effect succeeds, the result is wrapped in a `Success`.
+- If it fails, the failure information is provided as a `Failure` containing
+  a [Cause](/docs/data-types/cause/) type.
+
+**Example** (Handling Results as Exit)
+
+```ts twoslash
+import { Effect } from "effect"
+
+Effect.runPromiseExit(Effect.succeed(1)).then(console.log)
+/*
+Output:
+{
+  _id: "Exit",
+  _tag: "Success",
+  value: 1
+}
+*/
+
+Effect.runPromiseExit(Effect.fail("my error")).then(console.log)
+/*
+Output:
+{
+  _id: "Exit",
+  _tag: "Failure",
+  cause: {
+    _id: "Cause",
+    _tag: "Fail",
+    failure: "my error"
+  }
+}
+*/
+```
+
+## runFork
+
+The foundational function for running effects, returning a "fiber" that can be observed or interrupted.
+
+`Effect.runFork` is used to run an effect in the background by creating a fiber. It is the base function
+for all other run functions. It starts a fiber that can be observed or interrupted.
+
+<Aside type="tip" title="The Default for Effect Execution">
+  Unless you specifically need a `Promise` or synchronous operation,
+  `Effect.runFork` is a good default choice.
+</Aside>
+
+**Example** (Running an Effect in the Background)
+
+```ts twoslash
+import { Effect, Console, Schedule, Fiber } from "effect"
+
+//      ┌─── Effect<number, never, never>
+//      ▼
+const program = Effect.repeat(
+  Console.log("running..."),
+  Schedule.spaced("200 millis")
+)
+
+//      ┌─── RuntimeFiber<number, never>
+//      ▼
+const fiber = Effect.runFork(program)
+
+setTimeout(() => {
+  Effect.runFork(Fiber.interrupt(fiber))
+}, 500)
+```
+
+In this example, the `program` continuously logs "running..." with each repetition spaced 200 milliseconds apart. You can learn more about repetitions and scheduling in our [Introduction to Scheduling](/docs/scheduling/introduction/) guide.
+
+To stop the execution of the program, we use `Fiber.interrupt` on the fiber returned by `Effect.runFork`. This allows you to control the execution flow and terminate it when necessary.
+
+For a deeper understanding of how fibers work and how to handle interruptions, check out our guides on [Fibers](/docs/concurrency/fibers/) and [Interruptions](/docs/concurrency/basic-concurrency/#interruptions).
+
+## Synchronous vs. Asynchronous Effects
+
+In the Effect library, there is no built-in way to determine in advance whether an effect will execute synchronously or asynchronously. While this idea was considered in earlier versions of Effect, it was ultimately not implemented for a few important reasons:
+
+1. **Complexity:** Introducing this feature to track sync/async behavior in the type system would make Effect more complex to use and limit its composability.
+
+2. **Safety Concerns:** We experimented with different approaches to track asynchronous Effects, but they all resulted in a worse developer experience without significantly improving safety. Even with fully synchronous types, we needed to support a `fromCallback` combinator to work with APIs using Continuation-Passing Style (CPS). However, at the type level, it's impossible to guarantee that such a function is always called immediately and not deferred.
+
+### Best Practices for Running Effects
+
+In most cases, effects are run at the outermost parts of your application. Typically, an application built around Effect will involve a single call to the main effect. Here’s how you should approach effect execution:
+
+- Use `runPromise` or `runFork`: For most cases, asynchronous execution should be the default. These methods provide the best way to handle Effect-based workflows.
+
+- Use `runSync` only when necessary: Synchronous execution should be considered an edge case, used only in scenarios where asynchronous execution is not feasible. For example, when you are sure the effect is purely synchronous and need immediate results.
+
+## Cheatsheet
+
+The table provides a summary of the available `run*` functions, along with their input and output types, allowing you to choose the appropriate function based on your needs.
+
+| API              | Given          | Result                |
+| ---------------- | -------------- | --------------------- |
+| `runSync`        | `Effect<A, E>` | `A`                   |
+| `runSyncExit`    | `Effect<A, E>` | `Exit<A, E>`          |
+| `runPromise`     | `Effect<A, E>` | `Promise<A>`          |
+| `runPromiseExit` | `Effect<A, E>` | `Promise<Exit<A, E>>` |
+| `runFork`        | `Effect<A, E>` | `RuntimeFiber<A, E>`  |
+
+You can find the complete list of `run*` functions [here](https://effect-ts.github.io/effect/effect/Effect.ts.html#running-effects).
+
+> getting-started/control-flow.mdx\n\n---
+title: Control Flow Operators
+description: Learn to control execution flow in Effect programs using advanced constructs for conditional branching, iteration, and combining effects seamlessly.
+sidebar:
+  order: 10
+---
+
+Even though JavaScript provides built-in control flow structures, Effect offers additional control flow functions that are useful in Effect applications. In this section, we will introduce different ways to control the flow of execution.
+
+## if Expression
+
+When working with Effect values, we can use standard JavaScript if-then-else statements:
+
+**Example** (Returning None for Invalid Weight)
+
+Here we are using the [Option](/docs/data-types/option/) data type to represent the absence of a valid value.
+
+```ts twoslash
+import { Effect, Option } from "effect"
+
+// Function to validate weight and return an Option
+const validateWeightOption = (
+  weight: number
+): Effect.Effect<Option.Option<number>> => {
+  if (weight >= 0) {
+    // Return Some if the weight is valid
+    return Effect.succeed(Option.some(weight))
+  } else {
+    // Return None if the weight is invalid
+    return Effect.succeed(Option.none())
+  }
+}
+```
+
+**Example** (Returning Error for Invalid Weight)
+
+You can also handle invalid inputs by using the error channel, which allows you to return an error when the input is invalid:
+
+```ts twoslash
+import { Effect } from "effect"
+
+// Function to validate weight or fail with an error
+const validateWeightOrFail = (
+  weight: number
+): Effect.Effect<number, string> => {
+  if (weight >= 0) {
+    // Return the weight if valid
+    return Effect.succeed(weight)
+  } else {
+    // Fail with an error if invalid
+    return Effect.fail(`negative input: ${weight}`)
+  }
+}
+```
+
+## Conditional Operators
+
+### if
+
+Executes one of two effects based on a condition evaluated by an effectful predicate.
+
+Use `Effect.if` to run one of two effects depending on whether the predicate effect
+evaluates to `true` or `false`. If the predicate is `true`, the `onTrue` effect
+is executed. If it is `false`, the `onFalse` effect is executed instead.
+
+**Example** (Simulating a Coin Flip)
+
+In this example, we simulate a virtual coin flip using `Random.nextBoolean` to generate a random boolean value. If the value is `true`, the `onTrue` effect logs "Head". If the value is `false`, the `onFalse` effect logs "Tail".
+
+```ts twoslash
+import { Effect, Random, Console } from "effect"
+
+const flipTheCoin = Effect.if(Random.nextBoolean, {
+  onTrue: () => Console.log("Head"), // Runs if the predicate is true
+  onFalse: () => Console.log("Tail") // Runs if the predicate is false
+})
+
+Effect.runFork(flipTheCoin)
+```
+
+### when
+
+Conditionally executes an effect based on a boolean condition.
+
+`Effect.when` allows you to conditionally execute an effect, similar to using
+an `if (condition)` expression, but with the added benefit of handling
+effects. If the condition is `true`, the effect is executed; otherwise, it
+does nothing.
+
+The result of the effect is wrapped in an `Option<A>` to indicate whether the
+effect was executed. If the condition is `true`, the result of the effect is
+wrapped in a `Some`. If the condition is `false`, the result is `None`,
+representing that the effect was skipped.
+
+**Example** (Conditional Effect Execution)
+
+```ts twoslash
+import { Effect, Option } from "effect"
+
+const validateWeightOption = (
+  weight: number
+): Effect.Effect<Option.Option<number>> =>
+  // Conditionally execute the effect if the weight is non-negative
+  Effect.succeed(weight).pipe(Effect.when(() => weight >= 0))
+
+// Run with a valid weight
+Effect.runPromise(validateWeightOption(100)).then(console.log)
+/*
+Output:
+{
+  _id: "Option",
+  _tag: "Some",
+  value: 100
+}
+*/
+
+// Run with an invalid weight
+Effect.runPromise(validateWeightOption(-5)).then(console.log)
+/*
+Output:
+{
+  _id: "Option",
+  _tag: "None"
+}
+*/
+```
+
+In this example, the [Option](/docs/data-types/option/) data type is used to represent the presence or absence of a valid value. If the condition evaluates to `true` (in this case, if the weight is non-negative), the effect is executed and wrapped in a `Some`. Otherwise, the result is `None`.
+
+### whenEffect
+
+Executes an effect conditionally, based on the result of another effect.
+
+Use `Effect.whenEffect` when the condition to determine whether to execute the effect
+depends on the outcome of another effect that produces a boolean value.
+If the condition effect evaluates to `true`, the specified effect is executed.
+If it evaluates to `false`, no effect is executed.
+
+The result of the effect is wrapped in an `Option<A>` to indicate whether the
+effect was executed. If the condition is `true`, the result of the effect is
+wrapped in a `Some`. If the condition is `false`, the result is `None`,
+representing that the effect was skipped.
+
+**Example** (Using an Effect as a Condition)
+
+The following function creates a random integer, but only if a randomly generated boolean is `true`.
+
+```ts twoslash
+import { Effect, Random } from "effect"
+
+const randomIntOption = Random.nextInt.pipe(
+  Effect.whenEffect(Random.nextBoolean)
+)
+
+console.log(Effect.runSync(randomIntOption))
+/*
+Example Output:
+{ _id: 'Option', _tag: 'Some', value: 8609104974198840 }
+*/
+```
+
+### unless / unlessEffect
+
+The `Effect.unless` and `Effect.unlessEffect` functions are similar to the `when*` functions, but they are equivalent to the `if (!condition) expression` construct.
+
+## Zipping
+
+### zip
+
+Combines two effects into a single effect, producing a tuple with the results of both effects.
+
+The `Effect.zip` function executes the first effect (left) and then the second effect (right).
+Once both effects succeed, their results are combined into a tuple.
+
+**Example** (Combining Two Effects Sequentially)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const task1 = Effect.succeed(1).pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Effect.log("task1 done"))
+)
+
+const task2 = Effect.succeed("hello").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Effect.log("task2 done"))
+)
+
+// Combine the two effects together
+//
+//      ┌─── Effect<[number, string], never, never>
+//      ▼
+const program = Effect.zip(task1, task2)
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message="task1 done"
+timestamp=... level=INFO fiber=#0 message="task2 done"
+[ 1, 'hello' ]
+*/
+```
+
+By default, the effects are run sequentially. To run them concurrently, use the `{ concurrent: true }` option.
+
+**Example** (Combining Two Effects Concurrently)
+
+```ts collapse={3-11} "{ concurrent: true }" "task2 done"
+import { Effect } from "effect"
+
+const task1 = Effect.succeed(1).pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Effect.log("task1 done"))
+)
+
+const task2 = Effect.succeed("hello").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Effect.log("task2 done"))
+)
+
+// Run both effects concurrently using the concurrent option
+const program = Effect.zip(task1, task2, { concurrent: true })
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+timestamp=... level=INFO fiber=#3 message="task2 done"
+timestamp=... level=INFO fiber=#2 message="task1 done"
+[ 1, 'hello' ]
+*/
+```
+
+In this concurrent version, both effects run in parallel. `task2` completes first, but both tasks can be logged and processed as soon as they're done.
+
+### zipWith
+
+Combines two effects sequentially and applies a function to their results to produce a single value.
+
+The `Effect.zipWith` function is similar to [Effect.zip](#zip), but instead of returning a tuple of results,
+it applies a provided function to the results of the two effects, combining them into a single value.
+
+By default, the effects are run sequentially. To run them concurrently, use the `{ concurrent: true }` option.
+
+**Example** (Combining Effects with a Custom Function)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const task1 = Effect.succeed(1).pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Effect.log("task1 done"))
+)
+const task2 = Effect.succeed("hello").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Effect.log("task2 done"))
+)
+
+//      ┌─── Effect<number, never, never>
+//      ▼
+const task3 = Effect.zipWith(
+  task1,
+  task2,
+  // Combines results into a single value
+  (number, string) => number + string.length
+)
+
+Effect.runPromise(task3).then(console.log)
+/*
+Output:
+timestamp=... level=INFO fiber=#3 message="task1 done"
+timestamp=... level=INFO fiber=#2 message="task2 done"
+6
+*/
+```
+
+## Looping
+
+### loop
+
+The `Effect.loop` function allows you to repeatedly update a state using a `step` function until a condition defined by the `while` function becomes `false`. It collects the intermediate states in an array and returns them as the final result.
+
+**Syntax**
+
+```ts showLineNumbers=false
+Effect.loop(initial, {
+  while: (state) => boolean,
+  step: (state) => state,
+  body: (state) => Effect
+})
+```
+
+This function is similar to a `while` loop in JavaScript, with the addition of effectful computations:
+
+```ts showLineNumbers=false
+let state = initial
+const result = []
+
+while (options.while(state)) {
+  result.push(options.body(state)) // Perform the effectful operation
+  state = options.step(state) // Update the state
+}
+
+return result
+```
+
+**Example** (Looping with Collected Results)
+
+```ts twoslash
+import { Effect } from "effect"
+
+// A loop that runs 5 times, collecting each iteration's result
+const result = Effect.loop(
+  // Initial state
+  1,
+  {
+    // Condition to continue looping
+    while: (state) => state <= 5,
+    // State update function
+    step: (state) => state + 1,
+    // Effect to be performed on each iteration
+    body: (state) => Effect.succeed(state)
+  }
+)
+
+Effect.runPromise(result).then(console.log)
+// Output: [1, 2, 3, 4, 5]
+```
+
+In this example, the loop starts with the state `1` and continues until the state exceeds `5`. Each state is incremented by `1` and is collected into an array, which becomes the final result.
+
+#### Discarding Intermediate Results
+
+The `discard` option, when set to `true`, will discard the results of each effectful operation, returning `void` instead of an array.
+
+**Example** (Loop with Discarded Results)
+
+```ts twoslash "discard: true"
+import { Effect, Console } from "effect"
+
+const result = Effect.loop(
+  // Initial state
+  1,
+  {
+    // Condition to continue looping
+    while: (state) => state <= 5,
+    // State update function
+    step: (state) => state + 1,
+    // Effect to be performed on each iteration
+    body: (state) => Console.log(`Currently at state ${state}`),
+    // Discard intermediate results
+    discard: true
+  }
+)
+
+Effect.runPromise(result).then(console.log)
+/*
+Output:
+Currently at state 1
+Currently at state 2
+Currently at state 3
+Currently at state 4
+Currently at state 5
+undefined
+*/
+```
+
+In this example, the loop performs a side effect of logging the current index on each iteration, but it discards all intermediate results. The final result is `undefined`.
+
+### iterate
+
+The `Effect.iterate` function lets you repeatedly update a state through an effectful operation. It runs the `body` effect to update the state in each iteration and continues as long as the `while` condition evaluates to `true`.
+
+**Syntax**
+
+```ts showLineNumbers=false
+Effect.iterate(initial, {
+  while: (result) => boolean,
+  body: (result) => Effect
+})
+```
+
+This function is similar to a `while` loop in JavaScript, with the addition of effectful computations:
+
+```ts showLineNumbers=false
+let result = initial
+
+while (options.while(result)) {
+  result = options.body(result)
+}
+
+return result
+```
+
+**Example** (Effectful Iteration)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const result = Effect.iterate(
+  // Initial result
+  1,
+  {
+    // Condition to continue iterating
+    while: (result) => result <= 5,
+    // Operation to change the result
+    body: (result) => Effect.succeed(result + 1)
+  }
+)
+
+Effect.runPromise(result).then(console.log)
+// Output: 6
+```
+
+### forEach
+
+Executes an effectful operation for each element in an `Iterable`.
+
+The `Effect.forEach` function applies a provided operation to each element in the
+iterable, producing a new effect that returns an array of results.
+If any effect fails, the iteration stops immediately (short-circuiting), and
+the error is propagated.
+
+The `concurrency` option controls how many operations are performed
+concurrently. By default, the operations are performed sequentially.
+
+**Example** (Applying Effects to Iterable Elements)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const result = Effect.forEach([1, 2, 3, 4, 5], (n, index) =>
+  Console.log(`Currently at index ${index}`).pipe(Effect.as(n * 2))
+)
+
+Effect.runPromise(result).then(console.log)
+/*
+Output:
+Currently at index 0
+Currently at index 1
+Currently at index 2
+Currently at index 3
+Currently at index 4
+[ 2, 4, 6, 8, 10 ]
+*/
+```
+
+In this example, we iterate over the array `[1, 2, 3, 4, 5]`, applying an effect that logs the current index. The `Effect.as(n * 2)` operation transforms each value, resulting in an array `[2, 4, 6, 8, 10]`. The final output is the result of collecting all the transformed values.
+
+#### Discarding Results
+
+The `discard` option, when set to `true`, will discard the results of each effectful operation, returning `void` instead of an array.
+
+**Example** (Using `discard` to Ignore Results)
+
+```ts twoslash "{ discard: true }"
+import { Effect, Console } from "effect"
+
+// Apply effects but discard the results
+const result = Effect.forEach(
+  [1, 2, 3, 4, 5],
+  (n, index) =>
+    Console.log(`Currently at index ${index}`).pipe(Effect.as(n * 2)),
+  { discard: true }
+)
+
+Effect.runPromise(result).then(console.log)
+/*
+Output:
+Currently at index 0
+Currently at index 1
+Currently at index 2
+Currently at index 3
+Currently at index 4
+undefined
+*/
+```
+
+In this case, the effects still run for each element, but the results are discarded, so the final output is `undefined`.
+
+## Collecting
+
+### all
+
+Combines multiple effects into one, returning results based on the input structure.
+
+Use `Effect.all` when you need to run multiple effects and combine their results into a single output. It supports tuples, iterables, structs, and records, making it flexible for different input types.
+
+If any effect fails, it stops execution (short-circuiting) and propagates the error. To change this behavior, you can use the [`mode`](#the-mode-option) option, which allows all effects to run and collect results as [Either](/docs/data-types/either/) or [Option](/docs/data-types/option/).
+
+You can control the execution order (e.g., sequential vs. concurrent) using the [Concurrency Options](/docs/concurrency/basic-concurrency/#concurrency-options).
+
+For instance, if the input is a tuple:
+
+```ts showLineNumbers=false
+//         ┌─── a tuple of effects
+//         ▼
+Effect.all([effect1, effect2, ...])
+```
+
+the effects are executed sequentially, and the result is a new effect containing the results as a tuple. The results in the tuple match the order of the effects passed to `Effect.all`.
+
+Let's explore examples for different types of structures: tuples, iterables, objects, and records.
+
+**Example** (Combining Effects in Tuples)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const tupleOfEffects = [
+  Effect.succeed(42).pipe(Effect.tap(Console.log)),
+  Effect.succeed("Hello").pipe(Effect.tap(Console.log))
+] as const
+
+//      ┌─── Effect<[number, string], never, never>
+//      ▼
+const resultsAsTuple = Effect.all(tupleOfEffects)
+
+Effect.runPromise(resultsAsTuple).then(console.log)
+/*
+Output:
+42
+Hello
+[ 42, 'Hello' ]
+*/
+```
+
+**Example** (Combining Effects in Iterables)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const iterableOfEffects: Iterable<Effect.Effect<number>> = [1, 2, 3].map(
+  (n) => Effect.succeed(n).pipe(Effect.tap(Console.log))
+)
+
+//      ┌─── Effect<number[], never, never>
+//      ▼
+const resultsAsArray = Effect.all(iterableOfEffects)
+
+Effect.runPromise(resultsAsArray).then(console.log)
+/*
+Output:
+1
+2
+3
+[ 1, 2, 3 ]
+*/
+```
+
+**Example** (Combining Effects in Structs)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const structOfEffects = {
+  a: Effect.succeed(42).pipe(Effect.tap(Console.log)),
+  b: Effect.succeed("Hello").pipe(Effect.tap(Console.log))
+}
+
+//      ┌─── Effect<{ a: number; b: string; }, never, never>
+//      ▼
+const resultsAsStruct = Effect.all(structOfEffects)
+
+Effect.runPromise(resultsAsStruct).then(console.log)
+/*
+Output:
+42
+Hello
+{ a: 42, b: 'Hello' }
+*/
+```
+
+**Example** (Combining Effects in Records)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const recordOfEffects: Record<string, Effect.Effect<number>> = {
+  key1: Effect.succeed(1).pipe(Effect.tap(Console.log)),
+  key2: Effect.succeed(2).pipe(Effect.tap(Console.log))
+}
+
+//      ┌─── Effect<{ [x: string]: number; }, never, never>
+//      ▼
+const resultsAsRecord = Effect.all(recordOfEffects)
+
+Effect.runPromise(resultsAsRecord).then(console.log)
+/*
+Output:
+1
+2
+{ key1: 1, key2: 2 }
+*/
+```
+
+#### Short-Circuiting Behavior
+
+The `Effect.all` function stops execution on the first error it encounters, this is called "short-circuiting".
+If any effect in the collection fails, the remaining effects will not run, and the error will be propagated.
+
+**Example** (Bail Out on First Failure)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const program = Effect.all([
+  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
+  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
+  // Won't execute due to earlier failure
+  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
+])
+
+Effect.runPromiseExit(program).then(console.log)
+/*
+Output:
+Task1
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: { _id: 'Cause', _tag: 'Fail', failure: 'Task2: Oh no!' }
+}
+*/
+```
+
+You can override this behavior by using the `mode` option.
+
+#### The `mode` option
+
+The `{ mode: "either" }` option changes the behavior of `Effect.all` to ensure all effects run, even if some fail. Instead of stopping on the first failure, this mode collects both successes and failures, returning an array of `Either` instances where each result is either a `Right` (success) or a `Left` (failure).
+
+**Example** (Collecting Results with `mode: "either"`)
+
+```ts twoslash /{ mode: "either" }/
+import { Effect, Console } from "effect"
+
+const effects = [
+  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
+  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
+  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
+]
+
+const program = Effect.all(effects, { mode: "either" })
+
+Effect.runPromiseExit(program).then(console.log)
+/*
+Output:
+Task1
+Task3
+{
+  _id: 'Exit',
+  _tag: 'Success',
+  value: [
+    { _id: 'Either', _tag: 'Right', right: 'Task1' },
+    { _id: 'Either', _tag: 'Left', left: 'Task2: Oh no!' },
+    { _id: 'Either', _tag: 'Right', right: 'Task3' }
+  ]
+}
+*/
+```
+
+Similarly, the `{ mode: "validate" }` option uses `Option` to indicate success or failure. Each effect returns `None` for success and `Some` with the error for failure.
+
+**Example** (Collecting Results with `mode: "validate"`)
+
+```ts twoslash /{ mode: "validate" }/
+import { Effect, Console } from "effect"
+
+const effects = [
+  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
+  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
+  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
+]
+
+const program = Effect.all(effects, { mode: "validate" })
+
+Effect.runPromiseExit(program).then((result) => console.log("%o", result))
+/*
+Output:
+Task1
+Task3
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: {
+    _id: 'Cause',
+    _tag: 'Fail',
+    failure: [
+      { _id: 'Option', _tag: 'None' },
+      { _id: 'Option', _tag: 'Some', value: 'Task2: Oh no!' },
+      { _id: 'Option', _tag: 'None' }
+    ]
+  }
+}
+*/
+```
+
+> getting-started/installation.mdx\n\n---
+title: Installation
+description: Set up a new Effect project across different platforms like Node.js, Deno, Bun, and Vite + React with step-by-step installation guides.
+sidebar:
+  order: 2
+---
+
+import { Steps, Tabs, TabItem } from "@astrojs/starlight/components"
+
+Requirements:
+
+- TypeScript 5.4 or newer.
+- Node.js, Deno, and Bun are supported.
+
+## Automatic Installation
+
+To quickly set up a new Effect application, we recommend using `create-effect-app`, which will handle all configurations for you. To create a new project, run:
+
+<Tabs syncKey="package-manager">
+
+<TabItem label="npm" icon="seti:npm">
+
+```sh showLineNumbers=false
+npx create-effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="pnpm" icon="pnpm">
+
+```sh showLineNumbers=false
+pnpm create effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="Yarn" icon="seti:yarn">
+
+```sh showLineNumbers=false
+yarn create effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="Bun" icon="bun">
+
+```sh showLineNumbers=false
+bunx create-effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="Deno" icon="deno">
+
+```sh showLineNumbers=false
+deno init --npm effect-app@latest
+```
+
+</TabItem>
+
+</Tabs>
+
+Once you complete the prompts, `create-effect-app` will create a folder with your project name and install all required dependencies.
+
+For more details on the CLI, see the [Create Effect App](/docs/getting-started/create-effect-app/) documentation.
+
+## Manual Installation
+
+### Node.js
+
+Follow these steps to create a new Effect project for [Node.js](https://nodejs.org/):
+
+<Steps>
+
+1. Create a project directory and navigate into it:
+
+   ```sh showLineNumbers=false
+   mkdir hello-effect
+   cd hello-effect
+   ```
+
+2. Initialize a TypeScript project:
+
+   <Tabs syncKey="package-manager">
+
+   <TabItem label="npm" icon="seti:npm">
+
+   ```sh showLineNumbers=false
+   npm init -y
+   npm install --save-dev typescript
+   ```
+
+   </TabItem>
+
+   <TabItem label="pnpm" icon="pnpm">
+
+   ```sh showLineNumbers=false
+   pnpm init -y
+   pnpm add --save-dev typescript
+   ```
+
+   </TabItem>
+
+   <TabItem label="Yarn" icon="seti:yarn">
+
+   ```sh showLineNumbers=false
+   yarn init -y
+   yarn add --dev typescript
+   ```
+
+   </TabItem>
+
+   </Tabs>
+
+   This creates a `package.json` file with an initial setup for your TypeScript project.
+
+3. Initialize TypeScript:
+
+   <Tabs syncKey="package-manager">
+
+   <TabItem label="npm" icon="seti:npm">
+
+   ```sh showLineNumbers=false
+   npm tsc --init
+   ```
+
+   </TabItem>
+
+   <TabItem label="pnpm" icon="pnpm">
+
+   ```sh showLineNumbers=false
+   pnpm tsc --init
+   ```
+
+   </TabItem>
+
+   <TabItem label="Yarn" icon="seti:yarn">
+
+   ```sh showLineNumbers=false
+   yarn tsc --init
+   ```
+
+   </TabItem>
+
+   </Tabs>
+
+   When running this command, it will generate a `tsconfig.json` file that contains configuration options for TypeScript. One of the most important options to consider is the `strict` flag.
+
+   Make sure to open the `tsconfig.json` file and verify that the value of the `strict` option is set to `true`.
+
+   ```json showLineNumbers=false
+   {
+     "compilerOptions": {
+       "strict": true
+     }
+   }
+   ```
+
+4. Install the necessary package as dependency:
+
+   <Tabs syncKey="package-manager">
+
+   <TabItem label="npm" icon="seti:npm">
+
+   ```sh showLineNumbers=false
+   npm install effect
+   ```
+
+   </TabItem>
+
+   <TabItem label="pnpm" icon="pnpm">
+
+   ```sh showLineNumbers=false
+   pnpm add effect
+   ```
+
+   </TabItem>
+
+   <TabItem label="Yarn" icon="seti:yarn">
+
+   ```sh showLineNumbers=false
+   yarn add effect
+   ```
+
+   </TabItem>
+
+   </Tabs>
+
+   This package will provide the foundational functionality for your Effect project.
+
+</Steps>
+
+Let's write and run a simple program to ensure that everything is set up correctly.
+
+In your terminal, execute the following commands:
+
+```sh showLineNumbers=false
+mkdir src
+touch src/index.ts
+```
+
+Open the `index.ts` file and add the following code:
+
+```ts title="src/index.ts"
+import { Effect, Console } from "effect"
+
+const program = Console.log("Hello, World!")
+
+Effect.runSync(program)
+```
+
+Run the `index.ts` file. Here we are using [tsx](https://github.com/privatenumber/tsx) to run the `index.ts` file in the terminal:
+
+```sh showLineNumbers=false
+npx tsx src/index.ts
+```
+
+You should see the message `"Hello, World!"` printed. This confirms that the program is working correctly.
+
+### Deno
+
+Follow these steps to create a new Effect project for [Deno](https://deno.com/):
+
+<Steps>
+
+1. Create a project directory and navigate into it:
+
+   ```sh showLineNumbers=false
+   mkdir hello-effect
+   cd hello-effect
+   ```
+
+2. Initialize Deno:
+
+   ```sh showLineNumbers=false
+   deno init
+   ```
+
+3. Install the necessary package as dependency:
+
+   ```sh showLineNumbers=false
+   deno add npm:effect
+   ```
+
+   This package will provide the foundational functionality for your Effect project.
+
+</Steps>
+
+Let's write and run a simple program to ensure that everything is set up correctly.
+
+Open the `main.ts` file and replace the content with the following code:
+
+```ts title="main.ts"
+import { Effect, Console } from "effect"
+
+const program = Console.log("Hello, World!")
+
+Effect.runSync(program)
+```
+
+Run the `main.ts` file:
+
+```sh showLineNumbers=false
+deno run main.ts
+```
+
+You should see the message `"Hello, World!"` printed. This confirms that the program is working correctly.
+
+### Bun
+
+Follow these steps to create a new Effect project for [Bun](https://bun.sh/):
+
+<Steps>
+
+1. Create a project directory and navigate into it:
+
+   ```sh showLineNumbers=false
+   mkdir hello-effect
+   cd hello-effect
+   ```
+
+2. Initialize Bun:
+
+   ```sh showLineNumbers=false
+   bun init
+   ```
+
+   When running this command, it will generate a `tsconfig.json` file that contains configuration options for TypeScript. One of the most important options to consider is the `strict` flag.
+
+   Make sure to open the `tsconfig.json` file and verify that the value of the `strict` option is set to `true`.
+
+   ```json showLineNumbers=false
+   {
+     "compilerOptions": {
+       "strict": true
+     }
+   }
+   ```
+
+3. Install the necessary package as dependency:
+
+   ```sh showLineNumbers=false
+   bun add effect
+   ```
+
+   This package will provide the foundational functionality for your Effect project.
+
+</Steps>
+
+Let's write and run a simple program to ensure that everything is set up correctly.
+
+Open the `index.ts` file and replace the content with the following code:
+
+```ts title="index.ts"
+import { Effect, Console } from "effect"
+
+const program = Console.log("Hello, World!")
+
+Effect.runSync(program)
+```
+
+Run the `index.ts` file:
+
+```sh showLineNumbers=false
+bun index.ts
+```
+
+You should see the message `"Hello, World!"` printed. This confirms that the program is working correctly.
+
+### Vite + React
+
+Follow these steps to create a new Effect project for [Vite](https://vitejs.dev/guide/) + [React](https://react.dev/):
+
+<Steps>
+
+1. Scaffold your Vite project, open your terminal and run the following command:
+
+   <Tabs syncKey="package-manager">
+
+   <TabItem label="npm" icon="seti:npm">
+
+   ```sh showLineNumbers=false
+   # npm 6.x
+   npm create vite@latest hello-effect --template react-ts
+   # npm 7+, extra double-dash is needed
+   npm create vite@latest hello-effect -- --template react-ts
+   ```
+
+   </TabItem>
+
+   <TabItem label="pnpm" icon="pnpm">
+
+   ```sh showLineNumbers=false
+   pnpm create vite@latest hello-effect -- --template react-ts
+   ```
+
+   </TabItem>
+
+   <TabItem label="Yarn" icon="seti:yarn">
+
+   ```sh showLineNumbers=false
+   yarn create vite@latest hello-effect -- --template react-ts
+   ```
+
+   </TabItem>
+
+   <TabItem label="Bun" icon="bun">
+
+   ```sh showLineNumbers=false
+   bun create vite@latest hello-effect -- --template react-ts
+   ```
+
+   </TabItem>
+
+   <TabItem label="Deno" icon="deno">
+
+   ```sh showLineNumbers=false
+   deno init --npm vite@latest hello-effect -- --template react-ts
+   ```
+
+   </TabItem>
+
+   </Tabs>
+
+   This command will create a new Vite project with React and TypeScript template.
+
+2. Navigate into the newly created project directory and install the required packages:
+
+   <Tabs syncKey="package-manager">
+
+   <TabItem label="npm" icon="seti:npm">
+
+   ```sh showLineNumbers=false
+   cd hello-effect
+   npm install
+   ```
+
+   </TabItem>
+
+   <TabItem label="pnpm" icon="pnpm">
+
+   ```sh showLineNumbers=false
+   cd hello-effect
+   pnpm install
+   ```
+
+   </TabItem>
+
+   <TabItem label="Yarn" icon="seti:yarn">
+
+   ```sh showLineNumbers=false
+   cd hello-effect
+   yarn install
+   ```
+
+   </TabItem>
+
+   <TabItem label="Bun" icon="bun">
+
+   ```sh showLineNumbers=false
+   cd hello-effect
+   bun install
+   ```
+
+   </TabItem>
+
+   <TabItem label="Deno" icon="deno">
+
+   ```sh showLineNumbers=false
+   cd hello-effect
+   deno install
+   ```
+
+   </TabItem>
+
+   </Tabs>
+
+   Once the packages are installed, open the `tsconfig.json` file and ensure that the value of the `strict` option is set to true.
+
+   ```json showLineNumbers=false
+   {
+     "compilerOptions": {
+       "strict": true
+     }
+   }
+   ```
+
+3. Install the necessary package as dependency:
+
+   <Tabs syncKey="package-manager">
+
+   <TabItem label="npm" icon="seti:npm">
+
+   ```sh showLineNumbers=false
+   npm install effect
+   ```
+
+   </TabItem>
+
+   <TabItem label="pnpm" icon="pnpm">
+
+   ```sh showLineNumbers=false
+   pnpm add effect
+   ```
+
+   </TabItem>
+
+   <TabItem label="Yarn" icon="seti:yarn">
+
+   ```sh showLineNumbers=false
+   yarn add effect
+   ```
+
+   </TabItem>
+
+   <TabItem label="Bun" icon="bun">
+
+   ```sh showLineNumbers=false
+   bun add effect
+   ```
+
+   </TabItem>
+
+   <TabItem label="Deno" icon="deno">
+
+   ```sh showLineNumbers=false
+   deno add effect
+   ```
+
+   </TabItem>
+
+   </Tabs>
+
+   This package will provide the foundational functionality for your Effect project.
+
+</Steps>
+
+Now, let's write and run a simple program to ensure that everything is set up correctly.
+
+Open the `src/App.tsx` file and replace its content with the following code:
+
+```diff lang="tsx" title="src/App.tsx"
++import { useState, useMemo, useCallback } from "react"
+import reactLogo from "./assets/react.svg"
+import viteLogo from "/vite.svg"
+import "./App.css"
++import { Effect } from "effect"
+
+function App() {
+  const [count, setCount] = useState(0)
+
++  const task = useMemo(
++    () => Effect.sync(() => setCount((current) => current + 1)),
++    [setCount]
++  )
++
++  const increment = useCallback(() => Effect.runSync(task), [task])
+
+  return (
+    <>
+      <div>
+        <a href="https://vitejs.dev" target="_blank">
+          <img src={viteLogo} className="logo" alt="Vite logo" />
+        </a>
+        <a href="https://react.dev" target="_blank">
+          <img src={reactLogo} className="logo react" alt="React logo" />
+        </a>
+      </div>
+      <h1>Vite + React</h1>
+      <div className="card">
++        <button onClick={increment}>count is {count}</button>
+        <p>
+          Edit <code>src/App.tsx</code> and save to test HMR
+        </p>
+      </div>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
+    </>
+  )
+}
+
+export default App
+```
+
+After making these changes, start the development server by running the following command:
+
+<Tabs syncKey="package-manager">
+
+<TabItem label="npm" icon="seti:npm">
+
+```sh showLineNumbers=false
+npm run dev
+```
+
+</TabItem>
+
+<TabItem label="pnpm" icon="pnpm">
+
+```sh showLineNumbers=false
+pnpm run dev
+```
+
+</TabItem>
+
+<TabItem label="Yarn" icon="seti:yarn">
+
+```sh showLineNumbers=false
+yarn run dev
+```
+
+</TabItem>
+
+<TabItem label="Bun" icon="bun">
+
+```sh showLineNumbers=false
+bun run dev
+```
+
+</TabItem>
+
+<TabItem label="Deno" icon="deno">
+
+```sh showLineNumbers=false
+deno run dev
+```
+
+</TabItem>
+
+</Tabs>
+
+Then, press **o** to open the application in your browser.
+
+When you click the button, you should see the counter increment. This confirms that the program is working correctly.
+
+> getting-started/creating-effects.mdx\n\n---
+title: Creating Effects
+description: Learn to create and manage effects for structured handling of success, failure, and side effects in synchronous and asynchronous workflows.
+sidebar:
+  order: 6
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+Effect provides different ways to create effects, which are units of computation that encapsulate side effects.
+In this guide, we will cover some of the common methods that you can use to create effects.
+
+## Why Not Throw Errors?
+
+In traditional programming, when an error occurs, it is often handled by throwing an exception:
+
+```ts twoslash
+// Type signature doesn't show possible exceptions
+const divide = (a: number, b: number): number => {
+  if (b === 0) {
+    throw new Error("Cannot divide by zero")
+  }
+  return a / b
+}
+```
+
+However, throwing errors can be problematic. The type signatures of functions do not indicate that they can throw exceptions, making it difficult to reason about potential errors.
+
+To address this issue, Effect introduces dedicated constructors for creating effects that represent both success and failure: `Effect.succeed` and `Effect.fail`. These constructors allow you to explicitly handle success and failure cases while **leveraging the type system to track errors**.
+
+### succeed
+
+Creates an `Effect` that always succeeds with a given value.
+
+Use this function when you need an effect that completes successfully with a specific value
+without any errors or external dependencies.
+
+**Example** (Creating a Successful Effect)
+
+```ts twoslash
+import { Effect } from "effect"
+
+//      ┌─── Effect<number, never, never>
+//      ▼
+const success = Effect.succeed(42)
+```
+
+The type of `success` is `Effect<number, never, never>`, which means:
+
+- It produces a value of type `number`.
+- It does not generate any errors (`never` indicates no errors).
+- It requires no additional data or dependencies (`never` indicates no requirements).
+
+```text showLineNumbers=false
+         ┌─── Produces a value of type number
+         │       ┌─── Does not generate any errors
+         │       │      ┌─── Requires no dependencies
+         ▼       ▼      ▼
+Effect<number, never, never>
+```
+
+### fail
+
+Creates an `Effect` that represents an error that can be recovered from.
+
+Use this function to explicitly signal an error in an `Effect`. The error
+will keep propagating unless it is handled. You can handle the error with
+functions like [Effect.catchAll](/docs/error-management/expected-errors/#catchall) or
+[Effect.catchTag](/docs/error-management/expected-errors/#catchtag).
+
+**Example** (Creating a Failed Effect)
+
+```ts twoslash
+import { Effect } from "effect"
+
+//      ┌─── Effect<never, Error, never>
+//      ▼
+const failure = Effect.fail(
+  new Error("Operation failed due to network error")
+)
+```
+
+The type of `failure` is `Effect<never, Error, never>`, which means:
+
+- It never produces a value (`never` indicates that no successful result will be produced).
+- It fails with an error, specifically an `Error`.
+- It requires no additional data or dependencies (`never` indicates no requirements).
+
+```text showLineNumbers=false
+         ┌─── Never produces a value
+         │      ┌─── Fails with an Error
+         │      │      ┌─── Requires no dependencies
+         ▼      ▼      ▼
+Effect<never, Error, never>
+```
+
+Although you can use `Error` objects with `Effect.fail`, you can also pass strings, numbers, or more complex objects depending on your error management strategy.
+
+Using "tagged" errors (objects with a `_tag` field) can help identify error types and works well with standard Effect functions, like [Effect.catchTag](/docs/error-management/expected-errors/#catchtag).
+
+**Example** (Using Tagged Errors)
+
+```ts twoslash
+import { Effect } from "effect"
+
+class HttpError {
+  readonly _tag = "HttpError"
+}
+
+//      ┌─── Effect<never, HttpError, never>
+//      ▼
+const program = Effect.fail(new HttpError())
+```
+
+## Error Tracking
+
+With `Effect.succeed` and `Effect.fail`, you can explicitly handle success and failure cases and the type system will ensure that errors are tracked and accounted for.
+
+**Example** (Rewriting a Division Function)
+
+Here's how you can rewrite the [`divide`](#why-not-throw-errors) function using Effect, making error handling explicit.
+
+```ts twoslash
+import { Effect } from "effect"
+
+const divide = (a: number, b: number): Effect.Effect<number, Error> =>
+  b === 0
+    ? Effect.fail(new Error("Cannot divide by zero"))
+    : Effect.succeed(a / b)
+```
+
+In this example, the `divide` function indicates in its return type `Effect<number, Error>` that the operation can either succeed with a `number` or fail with an `Error`.
+
+```text showLineNumbers=false
+         ┌─── Produces a value of type number
+         │       ┌─── Fails with an Error
+         ▼       ▼
+Effect<number, Error>
+```
+
+This clear type signature helps ensure that errors are handled properly and that anyone calling the function is aware of the possible outcomes.
+
+**Example** (Simulating a User Retrieval Operation)
+
+Let's imagine another scenario where we use `Effect.succeed` and `Effect.fail` to model a simple user retrieval operation where the user data is hardcoded, which could be useful in testing scenarios or when mocking data:
+
+```ts twoslash
+import { Effect } from "effect"
+
+// Define a User type
+interface User {
+  readonly id: number
+  readonly name: string
+}
+
+// A mocked function to simulate fetching a user from a database
+const getUser = (userId: number): Effect.Effect<User, Error> => {
+  // Normally, you would access a database or API here, but we'll mock it
+  const userDatabase: Record<number, User> = {
+    1: { id: 1, name: "John Doe" },
+    2: { id: 2, name: "Jane Smith" }
+  }
+
+  // Check if the user exists in our "database" and return appropriately
+  const user = userDatabase[userId]
+  if (user) {
+    return Effect.succeed(user)
+  } else {
+    return Effect.fail(new Error("User not found"))
+  }
+}
+
+// When executed, this will successfully return the user with id 1
+const exampleUserEffect = getUser(1)
+```
+
+In this example, `exampleUserEffect`, which has the type `Effect<User, Error>`, will either produce a `User` object or an `Error`, depending on whether the user exists in the mocked database.
+
+For a deeper dive into managing errors in your applications, refer to the [Error Management Guide](/docs/error-management/expected-errors/).
+
+## Modeling Synchronous Effects
+
+In JavaScript, you can delay the execution of synchronous computations using "thunks".
+
+<Aside type="note" title="Thunks">
+  A "thunk" is a function that takes no arguments and may return some
+  value.
+</Aside>
+
+Thunks are useful for delaying the computation of a value until it is needed.
+
+To model synchronous side effects, Effect provides the `Effect.sync` and `Effect.try` constructors, which accept a thunk.
+
+### sync
+
+Creates an `Effect` that represents a synchronous side-effectful computation.
+
+Use `Effect.sync` when you are sure the operation will not fail.
+
+The provided function (`thunk`) must not throw errors; if it does, the error will be treated as a ["defect"](/docs/error-management/unexpected-errors/).
+
+This defect is not a standard error but indicates a flaw in the logic that was expected to be error-free.
+You can think of it similar to an unexpected crash in the program, which can be further managed or logged using tools like [Effect.catchAllDefect](/docs/error-management/unexpected-errors/#catchalldefect).
+This feature ensures that even unexpected failures in your application are not lost and can be handled appropriately.
+
+**Example** (Logging a Message)
+
+In the example below, `Effect.sync` is used to defer the side-effect of writing to the console.
+
+```ts twoslash
+import { Effect } from "effect"
+
+const log = (message: string) =>
+  Effect.sync(() => {
+    console.log(message) // side effect
+  })
+
+//      ┌─── Effect<void, never, never>
+//      ▼
+const program = log("Hello, World!")
+```
+
+The side effect (logging to the console) encapsulated within `program` won't occur until the effect is explicitly run (see the [Running Effects](/docs/getting-started/running-effects/) section for more details). This allows you to define side effects at one point in your code and control when they are activated, improving manageability and predictability of side effects in larger applications.
+
+### try
+
+Creates an `Effect` that represents a synchronous computation that might fail.
+
+In situations where you need to perform synchronous operations that might fail, such as parsing JSON, you can use the `Effect.try` constructor.
+This constructor is designed to handle operations that could throw exceptions by capturing those exceptions and transforming them into manageable errors.
+
+**Example** (Safe JSON Parsing)
+
+Suppose you have a function that attempts to parse a JSON string. This operation can fail and throw an error if the input string is not properly formatted as JSON:
+
+```ts twoslash
+import { Effect } from "effect"
+
+const parse = (input: string) =>
+  // This might throw an error if input is not valid JSON
+  Effect.try(() => JSON.parse(input))
+
+//      ┌─── Effect<any, UnknownException, never>
+//      ▼
+const program = parse("")
+```
+
+In this example:
+
+- `parse` is a function that creates an effect encapsulating the JSON parsing operation.
+- If `JSON.parse(input)` throws an error due to invalid input, `Effect.try` catches this error and the effect represented by `program` will fail with an `UnknownException`. This ensures that errors are not silently ignored but are instead handled within the structured flow of effects.
+
+#### Customizing Error Handling
+
+You might want to transform the caught exception into a more specific error or perform additional operations when catching an error. `Effect.try` supports an overload that allows you to specify how caught exceptions should be transformed:
+
+**Example** (Custom Error Handling)
+
+```ts twoslash {8}
+import { Effect } from "effect"
+
+const parse = (input: string) =>
+  Effect.try({
+    // JSON.parse may throw for bad input
+    try: () => JSON.parse(input),
+    // remap the error
+    catch: (unknown) => new Error(`something went wrong ${unknown}`)
+  })
+
+//      ┌─── Effect<any, Error, never>
+//      ▼
+const program = parse("")
+```
+
+You can think of this as a similar pattern to the traditional try-catch block in JavaScript:
+
+```ts showLineNumbers=false
+try {
+  return JSON.parse(input)
+} catch (unknown) {
+  throw new Error(`something went wrong ${unknown}`)
+}
+```
+
+## Modeling Asynchronous Effects
+
+In traditional programming, we often use `Promise`s to handle asynchronous computations. However, dealing with errors in promises can be problematic. By default, `Promise<Value>` only provides the type `Value` for the resolved value, which means errors are not reflected in the type system. This limits the expressiveness and makes it challenging to handle and track errors effectively.
+
+To overcome these limitations, Effect introduces dedicated constructors for creating effects that represent both success and failure in an asynchronous context: `Effect.promise` and `Effect.tryPromise`. These constructors allow you to explicitly handle success and failure cases while **leveraging the type system to track errors**.
+
+### promise
+
+Creates an `Effect` that represents an asynchronous computation guaranteed to succeed.
+
+Use `Effect.promise` when you are sure the operation will not reject.
+
+The provided function (`thunk`) returns a `Promise` that should never reject; if it does, the error will be treated as a ["defect"](/docs/error-management/unexpected-errors/).
+
+This defect is not a standard error but indicates a flaw in the logic that was expected to be error-free.
+You can think of it similar to an unexpected crash in the program, which can be further managed or logged using tools like [Effect.catchAllDefect](/docs/error-management/unexpected-errors/#catchalldefect).
+This feature ensures that even unexpected failures in your application are not lost and can be handled appropriately.
+
+**Example** (Delayed Message)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const delay = (message: string) =>
+  Effect.promise<string>(
+    () =>
+      new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(message)
+        }, 2000)
+      })
+  )
+
+//      ┌─── Effect<string, never, never>
+//      ▼
+const program = delay("Async operation completed successfully!")
+```
+
+The `program` value has the type `Effect<string, never, never>` and can be interpreted as an effect that:
+
+- succeeds with a value of type `string`
+- does not produce any expected error (`never`)
+- does not require any context (`never`)
+
+### tryPromise
+
+Creates an `Effect` that represents an asynchronous computation that might fail.
+
+Unlike `Effect.promise`, this constructor is suitable when the underlying `Promise` might reject.
+It provides a way to catch errors and handle them appropriately.
+By default if an error occurs, it will be caught and propagated to the error channel as as an `UnknownException`.
+
+**Example** (Fetching a TODO Item)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const getTodo = (id: number) =>
+  // Will catch any errors and propagate them as UnknownException
+  Effect.tryPromise(() =>
+    fetch(`https://jsonplaceholder.typicode.com/todos/${id}`)
+  )
+
+//      ┌─── Effect<Response, UnknownException, never>
+//      ▼
+const program = getTodo(1)
+```
+
+The `program` value has the type `Effect<Response, UnknownException, never>` and can be interpreted as an effect that:
+
+- succeeds with a value of type `Response`
+- might produce an error (`UnknownException`)
+- does not require any context (`never`)
+
+#### Customizing Error Handling
+
+If you want more control over what gets propagated to the error channel, you can use an overload of `Effect.tryPromise` that takes a remapping function:
+
+**Example** (Custom Error Handling)
+
+```ts twoslash {7}
+import { Effect } from "effect"
+
+const getTodo = (id: number) =>
+  Effect.tryPromise({
+    try: () => fetch(`https://jsonplaceholder.typicode.com/todos/${id}`),
+    // remap the error
+    catch: (unknown) => new Error(`something went wrong ${unknown}`)
+  })
+
+//      ┌─── Effect<Response, Error, never>
+//      ▼
+const program = getTodo(1)
+```
+
+## From a Callback
+
+Creates an `Effect` from a callback-based asynchronous function.
+
+Sometimes you have to work with APIs that don't support `async/await` or `Promise` and instead use the callback style.
+To handle callback-based APIs, Effect provides the `Effect.async` constructor.
+
+**Example** (Wrapping a Callback API)
+
+Let's wrap the `readFile` function from Node.js's `fs` module into an Effect-based API (make sure `@types/node` is installed):
+
+```ts twoslash
+import { Effect } from "effect"
+import * as NodeFS from "node:fs"
+
+const readFile = (filename: string) =>
+  Effect.async<Buffer, Error>((resume) => {
+    NodeFS.readFile(filename, (error, data) => {
+      if (error) {
+        // Resume with a failed Effect if an error occurs
+        resume(Effect.fail(error))
+      } else {
+        // Resume with a succeeded Effect if successful
+        resume(Effect.succeed(data))
+      }
+    })
+  })
+
+//      ┌─── Effect<Buffer, Error, never>
+//      ▼
+const program = readFile("example.txt")
+```
+
+In the above example, we manually annotate the types when calling `Effect.async`:
+
+```ts showLineNumbers=false "<Buffer, Error>"
+Effect.async<Buffer, Error>((resume) => {
+  // ...
+})
+```
+
+because TypeScript cannot infer the type parameters for a callback
+based on the return value inside the callback body. Annotating the types ensures that the values provided to `resume` match the expected types.
+
+The `resume` function inside `Effect.async` should be called exactly once. Calling it more than once will result in the extra calls being ignored.
+
+**Example** (Ignoring Subsequent `resume` Calls)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.async<number>((resume) => {
+  resume(Effect.succeed(1))
+  resume(Effect.succeed(2)) // This line will be ignored
+})
+
+// Run the program
+Effect.runPromise(program).then(console.log) // Output: 1
+```
+
+### Advanced Usage
+
+For more advanced use cases, `resume` can optionally return an `Effect` that will be executed if the fiber running this effect is interrupted. This can be useful in scenarios where you need to handle resource cleanup if the operation is interrupted.
+
+**Example** (Handling Interruption with Cleanup)
+
+In this example:
+
+- The `writeFileWithCleanup` function writes data to a file.
+- If the fiber running this effect is interrupted, the cleanup effect (which deletes the file) is executed.
+- This ensures that resources like open file handles are cleaned up properly when the operation is canceled.
+
+```ts twoslash
+import { Effect, Fiber } from "effect"
+import * as NodeFS from "node:fs"
+
+// Simulates a long-running operation to write to a file
+const writeFileWithCleanup = (filename: string, data: string) =>
+  Effect.async<void, Error>((resume) => {
+    const writeStream = NodeFS.createWriteStream(filename)
+
+    // Start writing data to the file
+    writeStream.write(data)
+
+    // When the stream is finished, resume with success
+    writeStream.on("finish", () => resume(Effect.void))
+
+    // In case of an error during writing, resume with failure
+    writeStream.on("error", (err) => resume(Effect.fail(err)))
+
+    // Handle interruption by returning a cleanup effect
+    return Effect.sync(() => {
+      console.log(`Cleaning up ${filename}`)
+      NodeFS.unlinkSync(filename)
+    })
+  })
+
+const program = Effect.gen(function* () {
+  const fiber = yield* Effect.fork(
+    writeFileWithCleanup("example.txt", "Some long data...")
+  )
+  // Simulate interrupting the fiber after 1 second
+  yield* Effect.sleep("1 second")
+  yield* Fiber.interrupt(fiber) // This will trigger the cleanup
+})
+
+// Run the program
+Effect.runPromise(program)
+/*
+Output:
+Cleaning up example.txt
+*/
+```
+
+If the operation you're wrapping supports interruption, the `resume` function can receive an `AbortSignal` to handle interruption requests directly.
+
+**Example** (Handling Interruption with `AbortSignal`)
+
+```ts twoslash
+import { Effect, Fiber } from "effect"
+
+// A task that supports interruption using AbortSignal
+const interruptibleTask = Effect.async<void, Error>((resume, signal) => {
+  // Handle interruption
+  signal.addEventListener("abort", () => {
+    console.log("Abort signal received")
+    clearTimeout(timeoutId)
+  })
+
+  // Simulate a long-running task
+  const timeoutId = setTimeout(() => {
+    console.log("Operation completed")
+    resume(Effect.void)
+  }, 2000)
+})
+
+const program = Effect.gen(function* () {
+  const fiber = yield* Effect.fork(interruptibleTask)
+  // Simulate interrupting the fiber after 1 second
+  yield* Effect.sleep("1 second")
+  yield* Fiber.interrupt(fiber)
+})
+
+// Run the program
+Effect.runPromise(program)
+/*
+Output:
+Abort signal received
+*/
+```
+
+## Suspended Effects
+
+`Effect.suspend` is used to delay the creation of an effect.
+It allows you to defer the evaluation of an effect until it is actually needed.
+The `Effect.suspend` function takes a thunk that represents the effect, and it wraps it in a suspended effect.
+
+**Syntax**
+
+```ts showLineNumbers=false
+const suspendedEffect = Effect.suspend(() => effect)
+```
+
+Let's explore some common scenarios where `Effect.suspend` proves useful.
+
+### Lazy Evaluation
+
+When you want to defer the evaluation of an effect until it is required. This can be useful for optimizing the execution of effects, especially when they are not always needed or when their computation is expensive.
+
+Also, when effects with side effects or scoped captures are created, use `Effect.suspend` to re-execute on each invocation.
+
+**Example** (Lazy Evaluation with Side Effects)
+
+```ts twoslash
+import { Effect } from "effect"
+
+let i = 0
+
+const bad = Effect.succeed(i++)
+
+const good = Effect.suspend(() => Effect.succeed(i++))
+
+console.log(Effect.runSync(bad)) // Output: 0
+console.log(Effect.runSync(bad)) // Output: 0
+
+console.log(Effect.runSync(good)) // Output: 1
+console.log(Effect.runSync(good)) // Output: 2
+```
+
+<Aside type="note" title="Running Effects">
+  This example utilizes `Effect.runSync` to execute effects and display
+  their results (refer to [Running
+  Effects](/docs/getting-started/running-effects/#runsync) for more
+  details).
+</Aside>
+
+In this example, `bad` is the result of calling `Effect.succeed(i++)` a single time, which increments the scoped variable but [returns its original value](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Increment#postfix_increment). `Effect.runSync(bad)` does not result in any new computation, because `Effect.succeed(i++)` has already been called. On the other hand, each time `Effect.runSync(good)` is called, the thunk passed to `Effect.suspend()` will be executed, outputting the scoped variable's most recent value.
+
+### Handling Circular Dependencies
+
+`Effect.suspend` is helpful in managing circular dependencies between effects, where one effect depends on another, and vice versa.
+For example it's fairly common for `Effect.suspend` to be used in recursive functions to escape an eager call.
+
+**Example** (Recursive Fibonacci)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const blowsUp = (n: number): Effect.Effect<number> =>
+  n < 2
+    ? Effect.succeed(1)
+    : Effect.zipWith(blowsUp(n - 1), blowsUp(n - 2), (a, b) => a + b)
+
+// console.log(Effect.runSync(blowsUp(32)))
+// crash: JavaScript heap out of memory
+
+const allGood = (n: number): Effect.Effect<number> =>
+  n < 2
+    ? Effect.succeed(1)
+    : Effect.zipWith(
+        Effect.suspend(() => allGood(n - 1)),
+        Effect.suspend(() => allGood(n - 2)),
+        (a, b) => a + b
+      )
+
+console.log(Effect.runSync(allGood(32))) // Output: 3524578
+```
+
+<Aside type="note" title="Running Effects">
+  This example utilizes `Effect.zipWith` to combine the results of two
+  effects (refer to the documentation on
+  [zipping](/docs/getting-started/control-flow/#zipwith) for more
+  details).
+</Aside>
+
+The `blowsUp` function creates a recursive Fibonacci sequence without deferring execution. Each call to `blowsUp` triggers further immediate recursive calls, rapidly increasing the JavaScript call stack size.
+
+Conversely, `allGood` avoids stack overflow by using `Effect.suspend` to defer the recursive calls. This mechanism doesn't immediately execute the recursive effects but schedules them to be run later, thus keeping the call stack shallow and preventing a crash.
+
+### Unifying Return Type
+
+In situations where TypeScript struggles to unify the returned effect type, `Effect.suspend` can be employed to resolve this issue.
+
+**Example** (Using `Effect.suspend` to Help TypeScript Infer Types)
+
+```ts twoslash
+import { Effect } from "effect"
+
+/*
+  Without suspend, TypeScript may struggle with type inference.
+
+  Inferred type:
+    (a: number, b: number) =>
+      Effect<never, Error, never> | Effect<number, never, never>
+*/
+const withoutSuspend = (a: number, b: number) =>
+  b === 0
+    ? Effect.fail(new Error("Cannot divide by zero"))
+    : Effect.succeed(a / b)
+
+/*
+  Using suspend to unify return types.
+
+  Inferred type:
+    (a: number, b: number) => Effect<number, Error, never>
+*/
+const withSuspend = (a: number, b: number) =>
+  Effect.suspend(() =>
+    b === 0
+      ? Effect.fail(new Error("Cannot divide by zero"))
+      : Effect.succeed(a / b)
+  )
+```
+
+## Cheatsheet
+
+The table provides a summary of the available constructors, along with their input and output types, allowing you to choose the appropriate function based on your needs.
+
+| API                     | Given                              | Result                        |
+| ----------------------- | ---------------------------------- | ----------------------------- |
+| `succeed`               | `A`                                | `Effect<A>`                   |
+| `fail`                  | `E`                                | `Effect<never, E>`            |
+| `sync`                  | `() => A`                          | `Effect<A>`                   |
+| `try`                   | `() => A`                          | `Effect<A, UnknownException>` |
+| `try` (overload)        | `() => A`, `unknown => E`          | `Effect<A, E>`                |
+| `promise`               | `() => Promise<A>`                 | `Effect<A>`                   |
+| `tryPromise`            | `() => Promise<A>`                 | `Effect<A, UnknownException>` |
+| `tryPromise` (overload) | `() => Promise<A>`, `unknown => E` | `Effect<A, E>`                |
+| `async`                 | `(Effect<A, E> => void) => void`   | `Effect<A, E>`                |
+| `suspend`               | `() => Effect<A, E, R>`            | `Effect<A, E, R>`             |
+
+For the complete list of constructors, visit the [Effect Constructors Documentation](https://effect-ts.github.io/effect/effect/Effect.ts.html#constructors).
+
+> getting-started/create-effect-app.mdx\n\n---
+title: Create Effect App
+description: Quickly set up a new Effect application with a customizable template or example, streamlining your development start.
+sidebar:
+  order: 3
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components"
+
+The `create-effect-app` CLI allow you to create a new Effect application using a default template or an [example](https://github.com/Effect-TS/examples) from a public Github repository.
+It is the easiest way to get started with Effect.
+
+## CLI
+
+To begin, run the `create-effect-app` command in your terminal using your preferred package manager:
+
+<Tabs syncKey="package-manager">
+
+<TabItem label="npm" icon="seti:npm">
+
+```sh showLineNumbers=false
+npx create-effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="pnpm" icon="pnpm">
+
+```sh showLineNumbers=false
+pnpm create effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="Yarn" icon="seti:yarn">
+
+```sh showLineNumbers=false
+yarn create effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="Bun" icon="bun">
+
+```sh showLineNumbers=false
+bunx create-effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="Deno" icon="deno">
+
+```sh showLineNumbers=false
+deno init --npm effect-app@latest
+```
+
+</TabItem>
+
+</Tabs>
+
+This command starts an interactive setup that guides you through the steps required to bootstrap your project:
+
+![create-effect-app](../_assets/create-effect-app.gif "Animated GIF demonstrating the interactive experience when create-effect-app is run in interactive mode")
+
+After making your selections, `create-effect-app` will generate your new Effect project and configure it based on your choices.
+
+**Example**
+
+For instance, to create a new Effect project in a directory named `"my-effect-app"` using the basic template with ESLint integration, you can run:
+
+```sh showLineNumbers=false
+npx create-effect-app --template basic --eslint my-effect-app
+```
+
+## Non-Interactive Usage
+
+If you prefer, `create-effect-app` can also be used in a non-interactive mode:
+
+```sh showLineNumbers=false
+create-effect-app
+  (-t, --template basic | cli | monorepo)
+  [--changesets]
+  [--flake]
+  [--eslint]
+  [--workflows]
+  [<project-name>]
+create-effect-app
+  (-e, --example http-server)
+  [<project-name>]
+```
+
+Below is a breakdown of the available options to customize an Effect project template:
+
+| Option         | Description                                                                        |
+| -------------- | ---------------------------------------------------------------------------------- |
+| `--changesets` | Initializes your project with the Changesets package for managing version control. |
+| `--flake`      | Initializes your project with a Nix flake for managing system dependencies.        |
+| `--eslint`     | Includes ESLint for code formatting and linting.                                   |
+| `--workflows`  | Sets up Effect's recommended GitHub Action workflows for automation.               |
+
+> getting-started/importing-effect.mdx\n\n---
+title: Importing Effect
+description: Get started with Effect by installing the package and importing essential modules and functions for building type-safe, modular applications.
+sidebar:
+  order: 4
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components"
+
+If you're just getting started, you might feel overwhelmed by the variety of modules and functions that Effect offers.
+
+However, rest assured that you don't need to worry about all of them right away.
+
+This page will provide a simple introduction on how to import modules and functions, and explain that installing the `effect` package is generally all you need to begin.
+
+## Installing Effect
+
+If you haven't already installed the `effect` package, you can do so by running the following command in your terminal:
+
+<Tabs syncKey="package-manager">
+
+<TabItem label="npm" icon="seti:npm">
+
+```sh showLineNumbers=false
+npm install effect
+```
+
+</TabItem>
+
+<TabItem label="pnpm" icon="pnpm">
+
+```sh showLineNumbers=false
+pnpm add effect
+```
+
+</TabItem>
+
+<TabItem label="Yarn" icon="seti:yarn">
+
+```sh showLineNumbers=false
+yarn add effect
+```
+
+</TabItem>
+
+<TabItem label="Bun" icon="bun">
+
+```sh showLineNumbers=false
+bun add effect
+```
+
+</TabItem>
+
+<TabItem label="Deno" icon="deno">
+
+```sh showLineNumbers=false
+deno add npm:effect
+```
+
+</TabItem>
+
+</Tabs>
+
+By installing this package, you get access to the core functionality of Effect.
+
+For detailed installation instructions for platforms like Deno or Bun, refer to the [Installation](/docs/getting-started/installation/) guide, which provides step-by-step guidance.
+
+You can also start a new Effect app using [`create-effect-app`](/docs/getting-started/create-effect-app/), which automatically sets up everything for you.
+
+## Importing Modules and Functions
+
+Once you have installed the `effect` package, you can start using its modules and functions in your projects.
+Importing modules and functions is straightforward and follows the standard JavaScript/TypeScript import syntax.
+
+To import a module or a function from the `effect` package, simply use the `import` statement at the top of your file. Here's how you can import the `Effect` module:
+
+```ts showLineNumbers=false
+import { Effect } from "effect"
+```
+
+Now, you have access to the Effect module, which is the heart of the Effect library. It provides various functions to create, compose, and manipulate effectful computations.
+
+## Namespace imports
+
+In addition to importing the `Effect` module with a named import, as shown previously:
+
+```ts showLineNumbers=false
+import { Effect } from "effect"
+```
+
+You can also import it using a namespace import like this:
+
+```ts showLineNumbers=false
+import * as Effect from "effect/Effect"
+```
+
+Both forms of import allow you to access the functionalities provided by the `Effect` module.
+
+However an important consideration is **tree shaking**, which refers to a process that eliminates unused code during the bundling of your application.
+Named imports may generate tree shaking issues when a bundler doesn't support deep scope analysis.
+
+Here are some bundlers that support deep scope analysis and thus don't have issues with named imports:
+
+- Rollup
+- Webpack 5+
+
+## Functions vs Methods
+
+In the Effect ecosystem, libraries often expose functions rather than methods. This design choice is important for two key reasons: tree shakeability and extendibility.
+
+### Tree Shakeability
+
+Tree shakeability refers to the ability of a build system to eliminate unused code during the bundling process. Functions are tree shakeable, while methods are not.
+
+When functions are used in the Effect ecosystem, only the functions that are actually imported and used in your application will be included in the final bundled code. Unused functions are automatically removed, resulting in a smaller bundle size and improved performance.
+
+On the other hand, methods are attached to objects or prototypes, and they cannot be easily tree shaken. Even if you only use a subset of methods, all methods associated with an object or prototype will be included in the bundle, leading to unnecessary code bloat.
+
+### Extendibility
+
+Another important advantage of using functions in the Effect ecosystem is the ease of extendibility. With methods, extending the functionality of an existing API often requires modifying the prototype of the object, which can be complex and error-prone.
+
+In contrast, with functions, extending the functionality is much simpler. You can define your own "extension methods" as plain old functions without the need to modify the prototypes of objects. This promotes cleaner and more modular code, and it also allows for better compatibility with other libraries and modules.
+
+## Commonly Used Functions
+
+As you start your adventure with Effect, you don't need to dive into every function in the `effect` package right away. Instead, focus on some commonly used functions that will provide a solid foundation for your journey into the world of Effect.
+
+In the upcoming guides, we will explore some of these essential functions, specifically those for creating and running `Effect`s and building pipelines.
+
+But before we dive into those, let's start from the very heart of Effect: understanding the `Effect` type. This will lay the groundwork for your understanding of how Effect brings composability, type safety, and error handling into your applications.
+
+So, let's take the first step and explore the fundamental concepts of the [The Effect Type](/docs/getting-started/the-effect-type/).
+
+> getting-started/why-effect.mdx\n\n---
+title: Why Effect?
+description: Discover how Effect transforms TypeScript programming by using the type system to track errors, context, and success, offering practical solutions for building reliable, maintainable applications.
+sidebar:
+  order: 1
+---
+
+Programming is challenging. When we build libraries and apps, we look to many tools to handle the complexity and make our day-to-day more manageable. Effect presents a new way of thinking about programming in TypeScript.
+
+Effect is an ecosystem of tools that help you build better applications and libraries. As a result, you will also learn more about the TypeScript language and how to use the type system to make your programs more reliable and easier to maintain.
+
+In "typical" TypeScript, without Effect, we write code that assumes that a function is either successful or throws an exception. For example:
+
+```ts twoslash
+const divide = (a: number, b: number): number => {
+  if (b === 0) {
+    throw new Error("Cannot divide by zero")
+  }
+  return a / b
+}
+```
+
+Based on the types, we have no idea that this function can throw an exception. We can only find out by reading the code. This may not seem like much of a problem when you only have one function in your codebase, but when you have hundreds or thousands, it really starts to add up. It's easy to forget that a function can throw an exception, and it's easy to forget to handle that exception.
+
+Often, we will do the "easiest" thing and just wrap the function in a `try/catch` block. This is a good first step to prevent your program from crashing, but it doesn't make it any easier to manage or understand our complex application/library. We can do better.
+
+One of the most important tools we have in TypeScript is the compiler. It is the first line of defense against bugs, domain errors, and general complexity.
+
+## The Effect Pattern
+
+While Effect is a vast ecosystem of many different tools, if it had to be reduced down to just one idea, it would be the following:
+
+Effect's major unique insight is that we can use the type system to track **errors** and **context**, not only **success** values as shown in the divide example above.
+
+Here's the same divide function from above, but with the Effect pattern:
+
+```ts twoslash
+import { Effect } from "effect"
+
+const divide = (
+  a: number,
+  b: number
+): Effect.Effect<number, Error, never> =>
+  b === 0
+    ? Effect.fail(new Error("Cannot divide by zero"))
+    : Effect.succeed(a / b)
+```
+
+With this approach, the function no longer throws exceptions. Instead, errors are handled as values, which can be passed along like success values. The type signature also makes it clear:
+
+- What success value the function returns (`number`).
+- What error can occur (`Error`).
+- What additional context or dependencies are required (`never` indicates none).
+
+```text showLineNumbers=false
+         ┌─── Produces a value of type number
+         │       ┌─── Fails with an Error
+         │       │      ┌─── Requires no dependencies
+         ▼       ▼      ▼
+Effect<number, Error, never>
+```
+
+Additionally, tracking context allows you to provide additional information to your functions without having to pass in everything as an argument. For example, you can swap out implementations of live external services with mocks during your tests without changing any core business logic.
+
+## Don't Re-Invent the Wheel
+
+Application code in TypeScript often solves the same problems over and over again. Interacting with external services, filesystems, databases, etc. are common problems for all application developers. Effect provides a rich ecosystem of libraries that provide standardized solutions to many of these problems. You can use these libraries to build your application, or you can use them to build your own libraries.
+
+Managing challenges like error handling, debugging, tracing, async/promises, retries, streaming, concurrency, caching, resource management, and a lot more are made manageable with Effect. You don't have to re-invent the solutions to these problems, or install tons of dependencies. Effect, under one umbrella, solves many of the problems that you would usually install many different dependencies with different APIs to solve.
+
+## Solving Practical Problems
+
+Effect is heavily inspired by great work done in other languages, like Scala and Haskell. However, it's important to understand that Effect's goal is to be a practical toolkit, and it goes to great lengths to solve real, everyday problems that developers face when building applications and libraries in TypeScript.
+
+## Enjoy Building and Learning
+
+Learning Effect is a lot of fun. Many developers in the Effect ecosystem are using Effect to solve real problems in their day-to-day work, and also experiment with cutting edge ideas for pushing TypeScript to be the most useful language it can be.
+
+You don't have to use all aspects of Effect at once, and can start with the pieces of the ecosystem that make the most sense for the problems you are solving. Effect is a toolkit, and you can pick and choose the pieces that make the most sense for your use case. However, as more and more of your codebase is using Effect, you will probably find yourself wanting to utilize more of the ecosystem!
+
+Effect's concepts may be new to you, and might not completely make sense at first. This is totally normal. Take your time with reading the docs and try to understand the core concepts - this will really pay off later on as you get into the more advanced tooling in the Effect ecosystem. The Effect community is always happy to help you learn and grow. Feel free to hop into our [Discord](https://discord.gg/effect-ts) or discuss on [GitHub](https://github.com/Effect-TS)! We are open to feedback and contributions, and are always looking for ways to improve Effect.
+
+> batching.mdx\n\n---
+title: Batching
+description: Optimize performance by batching requests and reducing redundant API calls, enhancing efficiency in data fetching and processing.
+sidebar:
+  order: 9
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+In typical application development, when interacting with external APIs, databases, or other data sources, we often define functions that perform requests and handle their results or failures accordingly.
+
+### Simple Model Setup
+
+Here's a basic model that outlines the structure of our data and possible errors:
+
+```ts twoslash
+// ------------------------------
+// Model
+// ------------------------------
+
+interface User {
+  readonly _tag: "User"
+  readonly id: number
+  readonly name: string
+  readonly email: string
+}
+
+class GetUserError {
+  readonly _tag = "GetUserError"
+}
+
+interface Todo {
+  readonly _tag: "Todo"
+  readonly id: number
+  readonly message: string
+  readonly ownerId: number
+}
+
+class GetTodosError {
+  readonly _tag = "GetTodosError"
+}
+
+class SendEmailError {
+  readonly _tag = "SendEmailError"
+}
+```
+
+<Aside type="tip" title="Use Precise Types and Detailed Errors">
+  In a real world scenario we may want to use a more precise types instead
+  of directly using primitives for identifiers (see [Branded
+  Types](/docs/code-style/branded-types/)). Additionally, you may want to
+  include more detailed information in the errors.
+</Aside>
+
+### Defining API Functions
+
+Let's define functions that interact with an external API, handling common operations such as fetching todos, retrieving user details, and sending emails.
+
+```ts twoslash collapse={7-31}
+import { Effect } from "effect"
+
+// ------------------------------
+// Model
+// ------------------------------
+
+interface User {
+  readonly _tag: "User"
+  readonly id: number
+  readonly name: string
+  readonly email: string
+}
+
+class GetUserError {
+  readonly _tag = "GetUserError"
+}
+
+interface Todo {
+  readonly _tag: "Todo"
+  readonly id: number
+  readonly message: string
+  readonly ownerId: number
+}
+
+class GetTodosError {
+  readonly _tag = "GetTodosError"
+}
+
+class SendEmailError {
+  readonly _tag = "SendEmailError"
+}
+
+// ------------------------------
+// API
+// ------------------------------
+
+// Fetches a list of todos from an external API
+const getTodos = Effect.tryPromise({
+  try: () =>
+    fetch("https://api.example.demo/todos").then(
+      (res) => res.json() as Promise<Array<Todo>>
+    ),
+  catch: () => new GetTodosError()
+})
+
+// Retrieves a user by their ID from an external API
+const getUserById = (id: number) =>
+  Effect.tryPromise({
+    try: () =>
+      fetch(`https://api.example.demo/getUserById?id=${id}`).then(
+        (res) => res.json() as Promise<User>
+      ),
+    catch: () => new GetUserError()
+  })
+
+// Sends an email via an external API
+const sendEmail = (address: string, text: string) =>
+  Effect.tryPromise({
+    try: () =>
+      fetch("https://api.example.demo/sendEmail", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ address, text })
+      }).then((res) => res.json() as Promise<void>),
+    catch: () => new SendEmailError()
+  })
+
+// Sends an email to a user by fetching their details first
+const sendEmailToUser = (id: number, message: string) =>
+  getUserById(id).pipe(
+    Effect.andThen((user) => sendEmail(user.email, message))
+  )
+
+// Notifies the owner of a todo by sending them an email
+const notifyOwner = (todo: Todo) =>
+  getUserById(todo.ownerId).pipe(
+    Effect.andThen((user) =>
+      sendEmailToUser(user.id, `hey ${user.name} you got a todo!`)
+    )
+  )
+```
+
+<Aside type="tip" title="Validating API Responses">
+  In a real-world scenario, you might not want to trust your APIs to
+  always return the expected data - for this, you can use
+  [`effect/Schema`](/docs/schema/introduction/) or similar alternatives
+  such as `zod`.
+</Aside>
+
+While this approach is straightforward and readable, it may not be the most efficient. Repeated API calls, especially when many todos share the same owner, can significantly increase network overhead and slow down your application.
+
+### Using the API Functions
+
+While these functions are clear and easy to understand, their use may not be the most efficient. For example, notifying todo owners involves repeated API calls which can be optimized.
+
+```ts twoslash collapse={7-31,37-82}
+import { Effect } from "effect"
+
+// ------------------------------
+// Model
+// ------------------------------
+
+interface User {
+  readonly _tag: "User"
+  readonly id: number
+  readonly name: string
+  readonly email: string
+}
+
+class GetUserError {
+  readonly _tag = "GetUserError"
+}
+
+interface Todo {
+  readonly _tag: "Todo"
+  readonly id: number
+  readonly message: string
+  readonly ownerId: number
+}
+
+class GetTodosError {
+  readonly _tag = "GetTodosError"
+}
+
+class SendEmailError {
+  readonly _tag = "SendEmailError"
+}
+
+// ------------------------------
+// API
+// ------------------------------
+
+// Fetches a list of todos from an external API
+const getTodos = Effect.tryPromise({
+  try: () =>
+    fetch("https://api.example.demo/todos").then(
+      (res) => res.json() as Promise<Array<Todo>>
+    ),
+  catch: () => new GetTodosError()
+})
+
+// Retrieves a user by their ID from an external API
+const getUserById = (id: number) =>
+  Effect.tryPromise({
+    try: () =>
+      fetch(`https://api.example.demo/getUserById?id=${id}`).then(
+        (res) => res.json() as Promise<User>
+      ),
+    catch: () => new GetUserError()
+  })
+
+// Sends an email via an external API
+const sendEmail = (address: string, text: string) =>
+  Effect.tryPromise({
+    try: () =>
+      fetch("https://api.example.demo/sendEmail", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ address, text })
+      }).then((res) => res.json() as Promise<void>),
+    catch: () => new SendEmailError()
+  })
+
+// Sends an email to a user by fetching their details first
+const sendEmailToUser = (id: number, message: string) =>
+  getUserById(id).pipe(
+    Effect.andThen((user) => sendEmail(user.email, message))
+  )
+
+// Notifies the owner of a todo by sending them an email
+const notifyOwner = (todo: Todo) =>
+  getUserById(todo.ownerId).pipe(
+    Effect.andThen((user) =>
+      sendEmailToUser(user.id, `hey ${user.name} you got a todo!`)
+    )
+  )
+
+// Orchestrates operations on todos, notifying their owners
+const program = Effect.gen(function* () {
+  const todos = yield* getTodos
+  yield* Effect.forEach(todos, (todo) => notifyOwner(todo), {
+    concurrency: "unbounded"
+  })
+})
+```
+
+This implementation performs an API call for each todo to fetch the owner's details and send an email. If multiple todos have the same owner, this results in redundant API calls.
+
+<Aside type="tip" title="Improving Efficiency with Batch Calls">
+  To optimize, consider implementing batch API calls if your backend
+  supports them. This reduces the number of HTTP requests by grouping
+  multiple operations into a single request, thereby enhancing performance
+  and reducing load.
+</Aside>
+
+## Batching
+
+Let's assume that `getUserById` and `sendEmail` can be batched. This means that we can send multiple requests in a single HTTP call, reducing the number of API requests and improving performance.
+
+**Step-by-Step Guide to Batching**
+
+1. **Declaring Requests:** We'll start by transforming our requests into structured data models. This involves detailing input parameters, expected outputs, and possible errors. Structuring requests this way not only helps in efficiently managing data but also in comparing different requests to understand if they refer to the same input parameters.
+
+2. **Declaring Resolvers:** Resolvers are designed to handle multiple requests simultaneously. By leveraging the ability to compare requests (ensuring they refer to the same input parameters), resolvers can execute several requests in one go, maximizing the utility of batching.
+
+3. **Defining Queries:** Finally, we'll define queries that utilize these batch-resolvers to perform operations. This step ties together the structured requests and their corresponding resolvers into functional components of the application.
+
+<Aside type="caution" title="Ensuring Request Comparability">
+  It's crucial for the requests to be modeled in a way that allows them to
+  be comparable. This means implementing comparability (using methods like
+  [Equals.equals](/docs/trait/equal/)) to identify and batch identical
+  requests effectively.
+</Aside>
+
+### Declaring Requests
+
+We'll design a model using the concept of a `Request` that a data source might support:
+
+```ts showLineNumbers=false
+Request<Value, Error>
+```
+
+A `Request` is a construct representing a request for a value of type `Value`, which might fail with an error of type `Error`.
+
+Let's start by defining a structured model for the types of requests our data sources can handle.
+
+```ts twoslash collapse={7-31}
+import { Request } from "effect"
+
+// ------------------------------
+// Model
+// ------------------------------
+
+interface User {
+  readonly _tag: "User"
+  readonly id: number
+  readonly name: string
+  readonly email: string
+}
+
+class GetUserError {
+  readonly _tag = "GetUserError"
+}
+
+interface Todo {
+  readonly _tag: "Todo"
+  readonly id: number
+  readonly message: string
+  readonly ownerId: number
+}
+
+class GetTodosError {
+  readonly _tag = "GetTodosError"
+}
+
+class SendEmailError {
+  readonly _tag = "SendEmailError"
+}
+
+// ------------------------------
+// Requests
+// ------------------------------
+
+// Define a request to get multiple Todo items which might
+// fail with a GetTodosError
+interface GetTodos extends Request.Request<Array<Todo>, GetTodosError> {
+  readonly _tag: "GetTodos"
+}
+
+// Create a tagged constructor for GetTodos requests
+const GetTodos = Request.tagged<GetTodos>("GetTodos")
+
+// Define a request to fetch a User by ID which might
+// fail with a GetUserError
+interface GetUserById extends Request.Request<User, GetUserError> {
+  readonly _tag: "GetUserById"
+  readonly id: number
+}
+
+// Create a tagged constructor for GetUserById requests
+const GetUserById = Request.tagged<GetUserById>("GetUserById")
+
+// Define a request to send an email which might
+// fail with a SendEmailError
+interface SendEmail extends Request.Request<void, SendEmailError> {
+  readonly _tag: "SendEmail"
+  readonly address: string
+  readonly text: string
+}
+
+// Create a tagged constructor for SendEmail requests
+const SendEmail = Request.tagged<SendEmail>("SendEmail")
+```
+
+Each request is defined with a specific data structure that extends from a generic `Request` type, ensuring that each request carries its unique data requirements along with a specific error type.
+
+By using tagged constructors like `Request.tagged`, we can easily instantiate request objects that are recognizable and manageable throughout the application.
+
+### Declaring Resolvers
+
+After defining our requests, the next step is configuring how Effect resolves these requests using `RequestResolver`:
+
+```ts showLineNumbers=false
+RequestResolver<A, R>
+```
+
+A `RequestResolver` requires an environment `R` and is capable of executing requests of type `A`.
+
+In this section, we'll create individual resolvers for each type of request. The granularity of your resolvers can vary, but typically, they are divided based on the batching capabilities of the corresponding API calls.
+
+```ts twoslash collapse={7-31,37-65}
+import { Effect, Request, RequestResolver } from "effect"
+
+// ------------------------------
+// Model
+// ------------------------------
+
+interface User {
+  readonly _tag: "User"
+  readonly id: number
+  readonly name: string
+  readonly email: string
+}
+
+class GetUserError {
+  readonly _tag = "GetUserError"
+}
+
+interface Todo {
+  readonly _tag: "Todo"
+  readonly id: number
+  readonly message: string
+  readonly ownerId: number
+}
+
+class GetTodosError {
+  readonly _tag = "GetTodosError"
+}
+
+class SendEmailError {
+  readonly _tag = "SendEmailError"
+}
+
+// ------------------------------
+// Requests
+// ------------------------------
+
+// Define a request to get multiple Todo items which might
+// fail with a GetTodosError
+interface GetTodos extends Request.Request<Array<Todo>, GetTodosError> {
+  readonly _tag: "GetTodos"
+}
+
+// Create a tagged constructor for GetTodos requests
+const GetTodos = Request.tagged<GetTodos>("GetTodos")
+
+// Define a request to fetch a User by ID which might
+// fail with a GetUserError
+interface GetUserById extends Request.Request<User, GetUserError> {
+  readonly _tag: "GetUserById"
+  readonly id: number
+}
+
+// Create a tagged constructor for GetUserById requests
+const GetUserById = Request.tagged<GetUserById>("GetUserById")
+
+// Define a request to send an email which might
+// fail with a SendEmailError
+interface SendEmail extends Request.Request<void, SendEmailError> {
+  readonly _tag: "SendEmail"
+  readonly address: string
+  readonly text: string
+}
+
+// Create a tagged constructor for SendEmail requests
+const SendEmail = Request.tagged<SendEmail>("SendEmail")
+
+// ------------------------------
+// Resolvers
+// ------------------------------
+
+// Assuming GetTodos cannot be batched, we create a standard resolver
+const GetTodosResolver = RequestResolver.fromEffect(
+  (_: GetTodos): Effect.Effect<Todo[], GetTodosError> =>
+    Effect.tryPromise({
+      try: () =>
+        fetch("https://api.example.demo/todos").then(
+          (res) => res.json() as Promise<Array<Todo>>
+        ),
+      catch: () => new GetTodosError()
+    })
+)
+
+// Assuming GetUserById can be batched, we create a batched resolver
+const GetUserByIdResolver = RequestResolver.makeBatched(
+  (requests: ReadonlyArray<GetUserById>) =>
+    Effect.tryPromise({
+      try: () =>
+        fetch("https://api.example.demo/getUserByIdBatch", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            users: requests.map(({ id }) => ({ id }))
+          })
+        }).then((res) => res.json()) as Promise<Array<User>>,
+      catch: () => new GetUserError()
+    }).pipe(
+      Effect.andThen((users) =>
+        Effect.forEach(requests, (request, index) =>
+          Request.completeEffect(request, Effect.succeed(users[index]!))
+        )
+      ),
+      Effect.catchAll((error) =>
+        Effect.forEach(requests, (request) =>
+          Request.completeEffect(request, Effect.fail(error))
+        )
+      )
+    )
+)
+
+// Assuming SendEmail can be batched, we create a batched resolver
+const SendEmailResolver = RequestResolver.makeBatched(
+  (requests: ReadonlyArray<SendEmail>) =>
+    Effect.tryPromise({
+      try: () =>
+        fetch("https://api.example.demo/sendEmailBatch", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            emails: requests.map(({ address, text }) => ({
+              address,
+              text
+            }))
+          })
+        }).then((res) => res.json() as Promise<void>),
+      catch: () => new SendEmailError()
+    }).pipe(
+      Effect.andThen(
+        Effect.forEach(requests, (request) =>
+          Request.completeEffect(request, Effect.void)
+        )
+      ),
+      Effect.catchAll((error) =>
+        Effect.forEach(requests, (request) =>
+          Request.completeEffect(request, Effect.fail(error))
+        )
+      )
+    )
+)
+```
+
+<Aside type="tip" title="Accessing Context in Resolvers">
+  Resolvers can also access the context like any other effect, and there
+  are many different ways to create resolvers. For further details,
+  consider exploring the reference documentation for the
+  [RequestResolver](https://effect-ts.github.io/effect/effect/RequestResolver.ts.html)
+  module.
+</Aside>
+
+In this configuration:
+
+- **GetTodosResolver** handles the fetching of multiple `Todo` items. It's set up as a standard resolver since we assume it cannot be batched.
+- **GetUserByIdResolver** and **SendEmailResolver** are configured as batched resolvers. This setup is based on the assumption that these requests can be processed in batches, enhancing performance and reducing the number of API calls.
+
+### Defining Queries
+
+Now that we've set up our resolvers, we're ready to tie all the pieces together to define our This step will enable us to perform data operations effectively within our application.
+
+```ts twoslash collapse={7-31,37-65,71-142}
+import { Effect, Request, RequestResolver } from "effect"
+
+// ------------------------------
+// Model
+// ------------------------------
+
+interface User {
+  readonly _tag: "User"
+  readonly id: number
+  readonly name: string
+  readonly email: string
+}
+
+class GetUserError {
+  readonly _tag = "GetUserError"
+}
+
+interface Todo {
+  readonly _tag: "Todo"
+  readonly id: number
+  readonly message: string
+  readonly ownerId: number
+}
+
+class GetTodosError {
+  readonly _tag = "GetTodosError"
+}
+
+class SendEmailError {
+  readonly _tag = "SendEmailError"
+}
+
+// ------------------------------
+// Requests
+// ------------------------------
+
+// Define a request to get multiple Todo items which might
+// fail with a GetTodosError
+interface GetTodos extends Request.Request<Array<Todo>, GetTodosError> {
+  readonly _tag: "GetTodos"
+}
+
+// Create a tagged constructor for GetTodos requests
+const GetTodos = Request.tagged<GetTodos>("GetTodos")
+
+// Define a request to fetch a User by ID which might
+// fail with a GetUserError
+interface GetUserById extends Request.Request<User, GetUserError> {
+  readonly _tag: "GetUserById"
+  readonly id: number
+}
+
+// Create a tagged constructor for GetUserById requests
+const GetUserById = Request.tagged<GetUserById>("GetUserById")
+
+// Define a request to send an email which might
+// fail with a SendEmailError
+interface SendEmail extends Request.Request<void, SendEmailError> {
+  readonly _tag: "SendEmail"
+  readonly address: string
+  readonly text: string
+}
+
+// Create a tagged constructor for SendEmail requests
+const SendEmail = Request.tagged<SendEmail>("SendEmail")
+
+// ------------------------------
+// Resolvers
+// ------------------------------
+
+// Assuming GetTodos cannot be batched, we create a standard resolver
+const GetTodosResolver = RequestResolver.fromEffect(
+  (_: GetTodos): Effect.Effect<Todo[], GetTodosError> =>
+    Effect.tryPromise({
+      try: () =>
+        fetch("https://api.example.demo/todos").then(
+          (res) => res.json() as Promise<Array<Todo>>
+        ),
+      catch: () => new GetTodosError()
+    })
+)
+
+// Assuming GetUserById can be batched, we create a batched resolver
+const GetUserByIdResolver = RequestResolver.makeBatched(
+  (requests: ReadonlyArray<GetUserById>) =>
+    Effect.tryPromise({
+      try: () =>
+        fetch("https://api.example.demo/getUserByIdBatch", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            users: requests.map(({ id }) => ({ id }))
+          })
+        }).then((res) => res.json()) as Promise<Array<User>>,
+      catch: () => new GetUserError()
+    }).pipe(
+      Effect.andThen((users) =>
+        Effect.forEach(requests, (request, index) =>
+          Request.completeEffect(request, Effect.succeed(users[index]!))
+        )
+      ),
+      Effect.catchAll((error) =>
+        Effect.forEach(requests, (request) =>
+          Request.completeEffect(request, Effect.fail(error))
+        )
+      )
+    )
+)
+
+// Assuming SendEmail can be batched, we create a batched resolver
+const SendEmailResolver = RequestResolver.makeBatched(
+  (requests: ReadonlyArray<SendEmail>) =>
+    Effect.tryPromise({
+      try: () =>
+        fetch("https://api.example.demo/sendEmailBatch", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            emails: requests.map(({ address, text }) => ({
+              address,
+              text
+            }))
+          })
+        }).then((res) => res.json() as Promise<void>),
+      catch: () => new SendEmailError()
+    }).pipe(
+      Effect.andThen(
+        Effect.forEach(requests, (request) =>
+          Request.completeEffect(request, Effect.void)
+        )
+      ),
+      Effect.catchAll((error) =>
+        Effect.forEach(requests, (request) =>
+          Request.completeEffect(request, Effect.fail(error))
+        )
+      )
+    )
+)
+
+// ------------------------------
+// Queries
+// ------------------------------
+
+// Defines a query to fetch all Todo items
+const getTodos: Effect.Effect<
+  Array<Todo>,
+  GetTodosError
+> = Effect.request(GetTodos({}), GetTodosResolver)
+
+// Defines a query to fetch a user by their ID
+const getUserById = (id: number) =>
+  Effect.request(GetUserById({ id }), GetUserByIdResolver)
+
+// Defines a query to send an email to a specific address
+const sendEmail = (address: string, text: string) =>
+  Effect.request(SendEmail({ address, text }), SendEmailResolver)
+
+// Composes getUserById and sendEmail to send an email to a specific user
+const sendEmailToUser = (id: number, message: string) =>
+  getUserById(id).pipe(
+    Effect.andThen((user) => sendEmail(user.email, message))
+  )
+
+// Uses getUserById to fetch the owner of a Todo and then sends them an email notification
+const notifyOwner = (todo: Todo) =>
+  getUserById(todo.ownerId).pipe(
+    Effect.andThen((user) =>
+      sendEmailToUser(user.id, `hey ${user.name} you got a todo!`)
+    )
+  )
+```
+
+By using the `Effect.request` function, we integrate the resolvers with the request model effectively. This approach ensures that each query is optimally resolved using the appropriate resolver.
+
+Although the code structure looks similar to earlier examples, employing resolvers significantly enhances efficiency by optimizing how requests are handled and reducing unnecessary API calls.
+
+```ts {4} showLineNumbers=false
+const program = Effect.gen(function* () {
+  const todos = yield* getTodos
+  yield* Effect.forEach(todos, (todo) => notifyOwner(todo), {
+    batching: true
+  })
+})
+```
+
+In the final setup, this program will execute only **3** queries to the APIs, regardless of the number of todos. This contrasts sharply with the traditional approach, which would potentially execute **1 + 2n** queries, where **n** is the number of todos. This represents a significant improvement in efficiency, especially for applications with a high volume of data interactions.
+
+### Disabling Batching
+
+Batching can be locally disabled using the `Effect.withRequestBatching` utility in the following way:
+
+```ts {6} showLineNumbers=false
+const program = Effect.gen(function* () {
+  const todos = yield* getTodos
+  yield* Effect.forEach(todos, (todo) => notifyOwner(todo), {
+    concurrency: "unbounded"
+  })
+}).pipe(Effect.withRequestBatching(false))
+```
+
+### Resolvers with Context
+
+In complex applications, resolvers often need access to shared services or configurations to handle requests effectively. However, maintaining the ability to batch requests while providing the necessary context can be challenging. Here, we'll explore how to manage context in resolvers to ensure that batching capabilities are not compromised.
+
+When creating request resolvers, it's crucial to manage the context carefully. Providing too much context or providing varying services to resolvers can make them incompatible for batching. To prevent such issues, the context for the resolver used in `Effect.request` is explicitly set to `never`. This forces developers to clearly define how the context is accessed and used within resolvers.
+
+Consider the following example where we set up an HTTP service that the resolvers can use to execute API calls:
+
+```ts twoslash collapse={7-31,37-65}
+import { Effect, Context, RequestResolver, Request } from "effect"
+
+// ------------------------------
+// Model
+// ------------------------------
+
+interface User {
+  readonly _tag: "User"
+  readonly id: number
+  readonly name: string
+  readonly email: string
+}
+
+class GetUserError {
+  readonly _tag = "GetUserError"
+}
+
+interface Todo {
+  readonly _tag: "Todo"
+  readonly id: number
+  readonly message: string
+  readonly ownerId: number
+}
+
+class GetTodosError {
+  readonly _tag = "GetTodosError"
+}
+
+class SendEmailError {
+  readonly _tag = "SendEmailError"
+}
+
+// ------------------------------
+// Requests
+// ------------------------------
+
+// Define a request to get multiple Todo items which might
+// fail with a GetTodosError
+interface GetTodos extends Request.Request<Array<Todo>, GetTodosError> {
+  readonly _tag: "GetTodos"
+}
+
+// Create a tagged constructor for GetTodos requests
+const GetTodos = Request.tagged<GetTodos>("GetTodos")
+
+// Define a request to fetch a User by ID which might
+// fail with a GetUserError
+interface GetUserById extends Request.Request<User, GetUserError> {
+  readonly _tag: "GetUserById"
+  readonly id: number
+}
+
+// Create a tagged constructor for GetUserById requests
+const GetUserById = Request.tagged<GetUserById>("GetUserById")
+
+// Define a request to send an email which might
+// fail with a SendEmailError
+interface SendEmail extends Request.Request<void, SendEmailError> {
+  readonly _tag: "SendEmail"
+  readonly address: string
+  readonly text: string
+}
+
+// Create a tagged constructor for SendEmail requests
+const SendEmail = Request.tagged<SendEmail>("SendEmail")
+
+// ------------------------------
+// Resolvers With Context
+// ------------------------------
+
+class HttpService extends Context.Tag("HttpService")<
+  HttpService,
+  { fetch: typeof fetch }
+>() {}
+
+const GetTodosResolver =
+  // we create a normal resolver like we did before
+  RequestResolver.fromEffect((_: GetTodos) =>
+    Effect.andThen(HttpService, (http) =>
+      Effect.tryPromise({
+        try: () =>
+          http
+            .fetch("https://api.example.demo/todos")
+            .then((res) => res.json() as Promise<Array<Todo>>),
+        catch: () => new GetTodosError()
+      })
+    )
+  ).pipe(
+    // we list the tags that the resolver can access
+    RequestResolver.contextFromServices(HttpService)
+  )
+```
+
+We can see now that the type of `GetTodosResolver` is no longer a `RequestResolver` but instead it is:
+
+```ts showLineNumbers=false
+const GetTodosResolver: Effect<
+  RequestResolver<GetTodos, never>,
+  never,
+  HttpService
+>
+```
+
+which is an effect that access the `HttpService` and returns a composed resolver that has the minimal context ready to use.
+
+Once we have such effect we can directly use it in our query definition:
+
+```ts showLineNumbers=false
+const getTodos: Effect.Effect<Todo[], GetTodosError, HttpService> =
+  Effect.request(GetTodos({}), GetTodosResolver)
+```
+
+We can see that the Effect correctly requires `HttpService` to be provided.
+
+Alternatively you can create `RequestResolver`s as part of layers direcly accessing or closing over context from construction.
+
+**Example**
+
+```ts twoslash collapse={7-31,37-65,71-91}
+import { Effect, Context, RequestResolver, Request, Layer } from "effect"
+
+// ------------------------------
+// Model
+// ------------------------------
+
+interface User {
+  readonly _tag: "User"
+  readonly id: number
+  readonly name: string
+  readonly email: string
+}
+
+class GetUserError {
+  readonly _tag = "GetUserError"
+}
+
+interface Todo {
+  readonly _tag: "Todo"
+  readonly id: number
+  readonly message: string
+  readonly ownerId: number
+}
+
+class GetTodosError {
+  readonly _tag = "GetTodosError"
+}
+
+class SendEmailError {
+  readonly _tag = "SendEmailError"
+}
+
+// ------------------------------
+// Requests
+// ------------------------------
+
+// Define a request to get multiple Todo items which might
+// fail with a GetTodosError
+interface GetTodos extends Request.Request<Array<Todo>, GetTodosError> {
+  readonly _tag: "GetTodos"
+}
+
+// Create a tagged constructor for GetTodos requests
+const GetTodos = Request.tagged<GetTodos>("GetTodos")
+
+// Define a request to fetch a User by ID which might
+// fail with a GetUserError
+interface GetUserById extends Request.Request<User, GetUserError> {
+  readonly _tag: "GetUserById"
+  readonly id: number
+}
+
+// Create a tagged constructor for GetUserById requests
+const GetUserById = Request.tagged<GetUserById>("GetUserById")
+
+// Define a request to send an email which might
+// fail with a SendEmailError
+interface SendEmail extends Request.Request<void, SendEmailError> {
+  readonly _tag: "SendEmail"
+  readonly address: string
+  readonly text: string
+}
+
+// Create a tagged constructor for SendEmail requests
+const SendEmail = Request.tagged<SendEmail>("SendEmail")
+
+// ------------------------------
+// Resolvers With Context
+// ------------------------------
+
+class HttpService extends Context.Tag("HttpService")<
+  HttpService,
+  { fetch: typeof fetch }
+>() {}
+
+const GetTodosResolver =
+  // we create a normal resolver like we did before
+  RequestResolver.fromEffect((_: GetTodos) =>
+    Effect.andThen(HttpService, (http) =>
+      Effect.tryPromise({
+        try: () =>
+          http
+            .fetch("https://api.example.demo/todos")
+            .then((res) => res.json() as Promise<Array<Todo>>),
+        catch: () => new GetTodosError()
+      })
+    )
+  ).pipe(
+    // we list the tags that the resolver can access
+    RequestResolver.contextFromServices(HttpService)
+  )
+
+// ------------------------------
+// Layers
+// ------------------------------
+
+class TodosService extends Context.Tag("TodosService")<
+  TodosService,
+  {
+    getTodos: Effect.Effect<Array<Todo>, GetTodosError>
+  }
+>() {}
+
+const TodosServiceLive = Layer.effect(
+  TodosService,
+  Effect.gen(function* () {
+    const http = yield* HttpService
+    const resolver = RequestResolver.fromEffect((_: GetTodos) =>
+      Effect.tryPromise({
+        try: () =>
+          http
+            .fetch("https://api.example.demo/todos")
+            .then<any, Todo[]>((res) => res.json()),
+        catch: () => new GetTodosError()
+      })
+    )
+    return {
+      getTodos: Effect.request(GetTodos({}), resolver)
+    }
+  })
+)
+
+const getTodos: Effect.Effect<
+  Array<Todo>,
+  GetTodosError,
+  TodosService
+> = Effect.andThen(TodosService, (service) => service.getTodos)
+```
+
+This way is probably the best for most of the cases given that layers are the natural primitive where to wire services together.
+
+## Caching
+
+While we have significantly optimized request batching, there's another area that can enhance our application's efficiency: caching. Without caching, even with optimized batch processing, the same requests could be executed multiple times, leading to unnecessary data fetching.
+
+In the Effect library, caching is handled through built-in utilities that allow requests to be stored temporarily, preventing the need to re-fetch data that hasn't changed. This feature is crucial for reducing the load on both the server and the network, especially in applications that make frequent similar requests.
+
+Here's how you can implement caching for the `getUserById` query:
+
+```ts {3} showLineNumbers=false
+const getUserById = (id: number) =>
+  Effect.request(GetUserById({ id }), GetUserByIdResolver).pipe(
+    Effect.withRequestCaching(true)
+  )
+```
+
+## Final Program
+
+Assuming you've wired everything up correctly:
+
+```ts showLineNumbers=false
+const program = Effect.gen(function* () {
+  const todos = yield* getTodos
+  yield* Effect.forEach(todos, (todo) => notifyOwner(todo), {
+    concurrency: "unbounded"
+  })
+}).pipe(Effect.repeat(Schedule.fixed("10 seconds")))
+```
+
+With this program, the `getTodos` operation retrieves the todos for each user. Then, the `Effect.forEach` function is used to notify the owner of each todo concurrently, without waiting for the notifications to complete.
+
+The `repeat` function is applied to the entire chain of operations, and it ensures that the program repeats every 10 seconds using a fixed schedule. This means that the entire process, including fetching todos and sending notifications, will be executed repeatedly with a 10-second interval.
+
+The program incorporates a caching mechanism, which prevents the same `GetUserById` operation from being executed more than once within a span of 1 minute. This default caching behavior helps optimize the program's execution and reduces unnecessary requests to fetch user data.
+
+Furthermore, the program is designed to send emails in batches, allowing for efficient processing and better utilization of resources.
+
+## Customizing Request Caching
+
+In real-world applications, effective caching strategies can significantly improve performance by reducing redundant data fetching. The Effect library provides flexible caching mechanisms that can be tailored for specific parts of your application or applied globally.
+
+There may be scenarios where different parts of your application have unique caching requirements—some might benefit from a localized cache, while others might need a global cache setup. Let’s explore how you can configure a custom cache to meet these varied needs.
+
+### Creating a Custom Cache
+
+Here's how you can create a custom cache and apply it to part of your application. This example demonstrates setting up a cache that repeats a task every 10 seconds, caching requests with specific parameters like capacity and TTL (time-to-live).
+
+```ts showLineNumbers=false
+const program = Effect.gen(function* () {
+  const todos = yield* getTodos
+  yield* Effect.forEach(todos, (todo) => notifyOwner(todo), {
+    concurrency: "unbounded"
+  })
+}).pipe(
+  Effect.repeat(Schedule.fixed("10 seconds")),
+  Effect.provide(
+    Layer.setRequestCache(
+      Request.makeCache({ capacity: 256, timeToLive: "60 minutes" })
+    )
+  )
+)
+```
+
+### Direct Cache Application
+
+You can also construct a cache using `Request.makeCache` and apply it directly to a specific program using `Effect.withRequestCache`. This method ensures that all requests originating from the specified program are managed through the custom cache, provided that caching is enabled.
 
 > stream/operations.mdx\n\n---
 title: Operations
@@ -29801,5541 +38801,6 @@ Output:
 */
 ```
 
-> caching/cache.mdx\n\n---
-title: Cache
-description: Optimize performance with cache for concurrent, compositional, and efficient value retrieval.
-sidebar:
-  order: 1
----
-
-In many applications, handling overlapping work is common. For example, in services that process incoming requests, it's important to avoid redundant work like handling the same request multiple times. The Cache module helps improve performance by preventing duplicate work.
-
-Key Features of Cache:
-
-| Feature                           | Description                                                                                                            |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Compositionality**              | Allows overlapping work across different parts of the application while preserving compositional programming.          |
-| **Unified Sync and Async Caches** | Integrates both synchronous and asynchronous caches through a unified lookup function that computes values either way. |
-| **Effect Integration**            | Works natively with the Effect library, supporting concurrent lookups, failure handling, and interruption.             |
-| **Cache Metrics**                 | Tracks key metrics like entries, hits, and misses, providing insights for performance optimization.                    |
-
-## Creating a Cache
-
-A cache is defined by a lookup function that computes the value for a given key if it's not already cached:
-
-```ts showLineNumbers=false
-type Lookup<Key, Value, Error, Requirements> = (
-  key: Key
-) => Effect<Value, Error, Requirements>
-```
-
-The lookup function takes a `Key` and returns an `Effect`, which describes how to compute the value (`Value`). This `Effect` may require an environment (`Requirements`), can fail with an `Error`, and succeed with a `Value`. Since it returns an `Effect`, it can handle both synchronous and asynchronous workflows.
-
-You create a cache by providing a lookup function along with a maximum size and a time-to-live (TTL) for cached values.
-
-```ts showLineNumbers=false
-declare const make: <Key, Value, Error, Requirements>(options: {
-  readonly capacity: number
-  readonly timeToLive: Duration.DurationInput
-  readonly lookup: Lookup<Key, Value, Error, Requirements>
-}) => Effect<Cache<Key, Value, Error>, never, Requirements>
-```
-
-Once a cache is created, the most idiomatic way to work with it is the `get` method.
-The `get` method returns the current value in the cache if it exists, or computes a new value, puts it in the cache, and returns it.
-
-If multiple concurrent processes request the same value, it will only be computed once. All other processes will receive the computed value as soon as it is available. This is managed using Effect's fiber-based concurrency model without blocking the underlying thread.
-
-**Example** (Concurrent Cache Lookups)
-
-In this example, we call `timeConsumingEffect` three times concurrently with the same key.
-The cache runs this effect only once, so concurrent lookups will wait until the value is available:
-
-```ts twoslash
-import { Effect, Cache, Duration } from "effect"
-
-// Simulating an expensive lookup with a delay
-const expensiveLookup = (key: string) =>
-  Effect.sleep("2 seconds").pipe(Effect.as(key.length))
-
-const program = Effect.gen(function* () {
-  // Create a cache with a capacity of 100 and an infinite TTL
-  const cache = yield* Cache.make({
-    capacity: 100,
-    timeToLive: Duration.infinity,
-    lookup: expensiveLookup
-  })
-
-  // Perform concurrent lookups using the same key
-  const result = yield* Effect.all(
-    [cache.get("key1"), cache.get("key1"), cache.get("key1")],
-    { concurrency: "unbounded" }
-  )
-  console.log(
-    "Result of parallel execution of three effects" +
-      `with the same key: ${result}`
-  )
-
-  // Fetch and display cache stats
-  const hits = yield* cache.cacheStats.pipe(
-    Effect.map((stats) => stats.hits)
-  )
-  console.log(`Number of cache hits: ${hits}`)
-  const misses = yield* cache.cacheStats.pipe(
-    Effect.map((stats) => stats.misses)
-  )
-  console.log(`Number of cache misses: ${misses}`)
-})
-
-Effect.runPromise(program)
-/*
-Output:
-Result of parallel execution of three effects with the same key: 4,4,4
-Number of cache hits: 2
-Number of cache misses: 1
-*/
-```
-
-## Concurrent Access
-
-The cache is designed to be safe for concurrent access and efficient under concurrent conditions. If two concurrent processes request the same value and it is not in the cache, the value will be computed once and provided to both processes as soon as it is available. Concurrent processes will wait for the value without blocking the underlying thread.
-
-If the lookup function fails or is interrupted, the error will be propagated to all concurrent processes waiting for the value. Failures are cached to prevent repeated computation of the same failed value. If interrupted, the key will be removed from the cache, so subsequent calls will attempt to compute the value again.
-
-## Capacity
-
-A cache is created with a specified capacity. When the cache reaches capacity, the least recently accessed values will be removed first. The cache size may slightly exceed the specified capacity between operations.
-
-## Time To Live (TTL)
-
-A cache can also have a specified time to live (TTL). Values older than the TTL will not be returned. The age is calculated from when the value was loaded into the cache.
-
-## Methods
-
-In addition to `get`, the cache provides several other methods:
-
-| Method          | Description                                                                                                                                                                |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `refresh`       | Triggers a recomputation of the value for a key without removing the old value, allowing continued access.                                                                 |
-| `size`          | Returns the current size of the cache. The size is approximate under concurrent conditions.                                                                                |
-| `contains`      | Checks if a value associated with a specified key exists in the cache. Under concurrent access, the result is valid as of the check time but may change immediately after. |
-| `invalidate`    | Evicts the value associated with a specific key.                                                                                                                           |
-| `invalidateAll` | Evicts all values from the cache.                                                                                                                                          |
-
-> caching/caching-effects.mdx\n\n---
-title: Caching Effects
-description: Efficiently manage caching and memoization of effects with reusable tools.
-sidebar:
-  order: 0
----
-
-This section covers several functions from the library that help manage caching and memoization in your application.
-
-## cachedFunction
-
-Memoizes a function with effects, caching results for the same inputs to avoid recomputation.
-
-**Example** (Memoizing a Random Number Generator)
-
-```ts twoslash
-import { Effect, Random } from "effect"
-
-const program = Effect.gen(function* () {
-  const randomNumber = (n: number) => Random.nextIntBetween(1, n)
-  console.log("non-memoized version:")
-  console.log(yield* randomNumber(10)) // Generates a new random number
-  console.log(yield* randomNumber(10)) // Generates a different number
-
-  console.log("memoized version:")
-  const memoized = yield* Effect.cachedFunction(randomNumber)
-  console.log(yield* memoized(10)) // Generates and caches the result
-  console.log(yield* memoized(10)) // Reuses the cached result
-})
-
-Effect.runFork(program)
-/*
-Example Output:
-non-memoized version:
-2
-8
-memoized version:
-5
-5
-*/
-```
-
-## once
-
-Ensures an effect is executed only once, even if invoked multiple times.
-
-**Example** (Single Execution of an Effect)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const program = Effect.gen(function* () {
-  const task1 = Console.log("task1")
-
-  // Repeats task1 three times
-  yield* Effect.repeatN(task1, 2)
-
-  // Ensures task2 is executed only once
-  const task2 = yield* Effect.once(Console.log("task2"))
-
-  // Attempts to repeat task2, but it will only execute once
-  yield* Effect.repeatN(task2, 2)
-})
-
-Effect.runFork(program)
-/*
-Output:
-task1
-task1
-task1
-task2
-*/
-```
-
-## cached
-
-Returns an effect that computes a result lazily and caches it. Subsequent evaluations of this effect will return the cached result without re-executing the logic.
-
-**Example** (Lazy Caching of an Expensive Task)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-let i = 1
-
-// Simulating an expensive task with a delay
-const expensiveTask = Effect.promise<string>(() => {
-  console.log("expensive task...")
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(`result ${i++}`)
-    }, 100)
-  })
-})
-
-const program = Effect.gen(function* () {
-  // Without caching, the task is executed each time
-  console.log("-- non-cached version:")
-  yield* expensiveTask.pipe(Effect.andThen(Console.log))
-  yield* expensiveTask.pipe(Effect.andThen(Console.log))
-
-  // With caching, the result is reused after the first run
-  console.log("-- cached version:")
-  const cached = yield* Effect.cached(expensiveTask)
-  yield* cached.pipe(Effect.andThen(Console.log))
-  yield* cached.pipe(Effect.andThen(Console.log))
-})
-
-Effect.runFork(program)
-/*
-Output:
--- non-cached version:
-expensive task...
-result 1
-expensive task...
-result 2
--- cached version:
-expensive task...
-result 3
-result 3
-*/
-```
-
-## cachedWithTTL
-
-Returns an effect that caches its result for a specified duration, known as the `timeToLive`. When the cache expires after the duration, the effect will be recomputed upon next evaluation.
-
-**Example** (Caching with Time-to-Live)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-let i = 1
-
-// Simulating an expensive task with a delay
-const expensiveTask = Effect.promise<string>(() => {
-  console.log("expensive task...")
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(`result ${i++}`)
-    }, 100)
-  })
-})
-
-const program = Effect.gen(function* () {
-  // Caches the result for 150 milliseconds
-  const cached = yield* Effect.cachedWithTTL(expensiveTask, "150 millis")
-
-  // First evaluation triggers the task
-  yield* cached.pipe(Effect.andThen(Console.log))
-
-  // Second evaluation returns the cached result
-  yield* cached.pipe(Effect.andThen(Console.log))
-
-  // Wait for 100 milliseconds, ensuring the cache expires
-  yield* Effect.sleep("100 millis")
-
-  // Recomputes the task after cache expiration
-  yield* cached.pipe(Effect.andThen(Console.log))
-})
-
-Effect.runFork(program)
-/*
-Output:
-expensive task...
-result 1
-result 1
-expensive task...
-result 2
-*/
-```
-
-## cachedInvalidateWithTTL
-
-Similar to `Effect.cachedWithTTL`, this function caches an effect's result for a specified duration. It also includes an additional effect for manually invalidating the cached value before it naturally expires.
-
-**Example** (Invalidating Cache Manually)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-let i = 1
-
-// Simulating an expensive task with a delay
-const expensiveTask = Effect.promise<string>(() => {
-  console.log("expensive task...")
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(`result ${i++}`)
-    }, 100)
-  })
-})
-
-const program = Effect.gen(function* () {
-  // Caches the result for 150 milliseconds
-  const [cached, invalidate] = yield* Effect.cachedInvalidateWithTTL(
-    expensiveTask,
-    "150 millis"
-  )
-
-  // First evaluation triggers the task
-  yield* cached.pipe(Effect.andThen(Console.log))
-
-  // Second evaluation returns the cached result
-  yield* cached.pipe(Effect.andThen(Console.log))
-
-  // Invalidate the cache before it naturally expires
-  yield* invalidate
-
-  // Third evaluation triggers the task again
-  // since the cache was invalidated
-  yield* cached.pipe(Effect.andThen(Console.log))
-})
-
-Effect.runFork(program)
-/*
-Output:
-expensive task...
-result 1
-result 1
-expensive task...
-result 2
-*/
-```
-
-> concurrency/fibers.mdx\n\n---
-title: Fibers
-description: Understand fibers in Effect, lightweight virtual threads enabling powerful concurrency, structured lifecycles, and efficient resource management for responsive applications.
-sidebar:
-  order: 2
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-Effect is a highly concurrent framework powered by fibers. Fibers are lightweight virtual threads with resource-safe cancellation capabilities, enabling many features in Effect.
-
-In this section, you will learn the basics of fibers and get familiar with some of the powerful low-level operators that utilize fibers.
-
-## What Are Virtual Threads?
-
-JavaScript is inherently single-threaded, meaning it executes code in a single sequence of instructions. However, modern JavaScript environments use an event loop to manage asynchronous operations, creating the illusion of multitasking. In this context, virtual threads, or fibers, are logical threads simulated by the Effect runtime. They allow concurrent execution without relying on true multi-threading, which is not natively supported in JavaScript.
-
-## How Fibers work
-
-All effects in Effect are executed by fibers. If you didn't create the fiber yourself, it was created by an operation you're using (if it's concurrent) or by the Effect runtime system.
-
-A fiber is created any time an effect is run. When running effects concurrently, a fiber is created for each concurrent effect.
-
-Even if you write "single-threaded" code with no concurrent operations, there will always be at least one fiber: the "main" fiber that executes your effect.
-
-Effect fibers have a well-defined lifecycle based on the effect they are executing.
-
-Every fiber exits with either a failure or success, depending on whether the effect it is executing fails or succeeds.
-
-Effect fibers have unique identities, local state, and a status (such as done, running, or suspended).
-
-To summarize:
-
-- An `Effect` is a higher-level concept that describes an effectful computation. It is lazy and immutable, meaning it represents a computation that may produce a value or fail but does not immediately execute.
-- A fiber, on the other hand, represents the running execution of an `Effect`. It can be interrupted or awaited to retrieve its result. Think of it as a way to control and interact with the ongoing computation.
-
-## The Fiber Data Type
-
-The `Fiber` data type in Effect represents a "handle" on the execution of an effect.
-
-Here is the general form of a `Fiber`:
-
-```text showLineNumbers=false
-        ┌─── Represents the success type
-        │        ┌─── Represents the error type
-        │        │
-        ▼        ▼
-Fiber<Success, Error>
-```
-
-This type indicates that a fiber:
-
-- Succeeds and returns a value of type `Success`
-- Fails with an error of type `Error`
-
-Fibers do not have an `Requirements` type parameter because they only execute effects that have already had their requirements provided to them.
-
-## Forking Effects
-
-You can create a new fiber by **forking** an effect. This starts the effect in a new fiber, and you receive a reference to that fiber.
-
-**Example** (Forking a Fiber)
-
-In this example, the Fibonacci calculation is forked into its own fiber, allowing it to run independently of the main fiber. The reference to the `fib10Fiber` can be used later to join or interrupt the fiber.
-
-```ts twoslash
-import { Effect } from "effect"
-
-const fib = (n: number): Effect.Effect<number> =>
-  n < 2
-    ? Effect.succeed(n)
-    : Effect.zipWith(fib(n - 1), fib(n - 2), (a, b) => a + b)
-
-//      ┌─── Effect<RuntimeFiber<number, never>, never, never>
-//      ▼
-const fib10Fiber = Effect.fork(fib(10))
-```
-
-## Joining Fibers
-
-One common operation with fibers is **joining** them. By using the `Fiber.join` function, you can wait for a fiber to complete and retrieve its result. The joined fiber will either succeed or fail, and the `Effect` returned by `join` reflects the outcome of the fiber.
-
-**Example** (Joining a Fiber)
-
-```ts twoslash
-import { Effect, Fiber } from "effect"
-
-const fib = (n: number): Effect.Effect<number> =>
-  n < 2
-    ? Effect.succeed(n)
-    : Effect.zipWith(fib(n - 1), fib(n - 2), (a, b) => a + b)
-
-//      ┌─── Effect<RuntimeFiber<number, never>, never, never>
-//      ▼
-const fib10Fiber = Effect.fork(fib(10))
-
-const program = Effect.gen(function* () {
-  // Retrieve the fiber
-  const fiber = yield* fib10Fiber
-  // Join the fiber and get the result
-  const n = yield* Fiber.join(fiber)
-  console.log(n)
-})
-
-Effect.runFork(program) // Output: 55
-```
-
-## Awaiting Fibers
-
-The `Fiber.await` function is a helpful tool when working with fibers. It allows you to wait for a fiber to complete and retrieve detailed information about how it finished. The result is encapsulated in an [Exit](/docs/data-types/exit/) value, which gives you insight into whether the fiber succeeded, failed, or was interrupted.
-
-**Example** (Awaiting Fiber Completion)
-
-```ts twoslash
-import { Effect, Fiber } from "effect"
-
-const fib = (n: number): Effect.Effect<number> =>
-  n < 2
-    ? Effect.succeed(n)
-    : Effect.zipWith(fib(n - 1), fib(n - 2), (a, b) => a + b)
-
-//      ┌─── Effect<RuntimeFiber<number, never>, never, never>
-//      ▼
-const fib10Fiber = Effect.fork(fib(10))
-
-const program = Effect.gen(function* () {
-  // Retrieve the fiber
-  const fiber = yield* fib10Fiber
-  // Await its completion and get the Exit result
-  const exit = yield* Fiber.await(fiber)
-  console.log(exit)
-})
-
-Effect.runFork(program)
-/*
-Output:
-{ _id: 'Exit', _tag: 'Success', value: 55 }
-*/
-```
-
-## Interruption Model
-
-While developing concurrent applications, there are several cases that we need to interrupt the execution of other fibers, for example:
-
-1. A parent fiber might start some child fibers to perform a task, and later the parent might decide that, it doesn't need the result of some or all of the child fibers.
-
-2. Two or more fibers start race with each other. The fiber whose result is computed first wins, and all other fibers are no longer needed, and should be interrupted.
-
-3. In interactive applications, a user may want to stop some already running tasks, such as clicking on the "stop" button to prevent downloading more files.
-
-4. Computations that run longer than expected should be aborted by using timeout operations.
-
-5. When we have an application that perform compute-intensive tasks based on the user inputs, if the user changes the input we should cancel the current task and perform another one.
-
-### Polling vs. Asynchronous Interruption
-
-When it comes to interrupting fibers, a naive approach is to allow one fiber to forcefully terminate another fiber. However, this approach is not ideal because it can leave shared state in an inconsistent and unreliable state if the target fiber is in the middle of modifying that state. Therefore, it does not guarantee internal consistency of the shared mutable state.
-
-Instead, there are two popular and valid solutions to tackle this problem:
-
-1. **Semi-asynchronous Interruption (Polling for Interruption)**: Imperative languages often employ polling as a semi-asynchronous signaling mechanism, such as Java. In this model, a fiber sends an interruption request to another fiber. The target fiber continuously polls the interrupt status and checks whether it has received any interruption requests from other fibers. If an interruption request is detected, the target fiber terminates itself as soon as possible.
-
-   With this solution, the fiber itself handles critical sections. So, if a fiber is in the middle of a critical section and receives an interruption request, it ignores the interruption and defers its handling until after the critical section.
-
-   However, one drawback of this approach is that if the programmer forgets to poll regularly, the target fiber can become unresponsive, leading to deadlocks. Additionally, polling a global flag is not aligned with the functional paradigm followed by Effect.
-
-2. **Asynchronous Interruption**: In asynchronous interruption, a fiber is allowed to terminate another fiber. The target fiber is not responsible for polling the interrupt status. Instead, during critical sections, the target fiber disables the interruptibility of those regions. This is a purely functional solution that doesn't require polling a global state. Effect adopts this solution for its interruption model, which is a fully asynchronous signaling mechanism.
-
-   This mechanism overcomes the drawback of forgetting to poll regularly. It is also fully compatible with the functional paradigm because in a purely functional computation, we can abort the computation at any point, except during critical sections where interruption is disabled.
-
-### Interrupting Fibers
-
-Fibers can be interrupted if their result is no longer needed. This action immediately stops the fiber and safely runs all finalizers to release any resources.
-
-Like `Fiber.await`, the `Fiber.interrupt` function returns an [Exit](/docs/data-types/exit/) value that provides detailed information about how the fiber ended.
-
-**Example** (Interrupting a Fiber)
-
-```ts twoslash
-import { Effect, Fiber } from "effect"
-
-const program = Effect.gen(function* () {
-  // Fork a fiber that runs indefinitely, printing "Hi!"
-  const fiber = yield* Effect.fork(
-    Effect.forever(Effect.log("Hi!").pipe(Effect.delay("10 millis")))
-  )
-  yield* Effect.sleep("30 millis")
-  // Interrupt the fiber and get an Exit value detailing how it finished
-  const exit = yield* Fiber.interrupt(fiber)
-  console.log(exit)
-})
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#1 message=Hi!
-timestamp=... level=INFO fiber=#1 message=Hi!
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: {
-    _id: 'Cause',
-    _tag: 'Interrupt',
-    fiberId: {
-      _id: 'FiberId',
-      _tag: 'Runtime',
-      id: 0,
-      startTimeMillis: ...
-    }
-  }
-}
-*/
-```
-
-By default, the effect returned by `Fiber.interrupt` waits until the fiber has fully terminated before resuming. This ensures that no new fibers are started before the previous ones have finished, a behavior known as "back-pressuring."
-
-If you do not require this waiting behavior, you can fork the interruption itself, allowing the main program to proceed without waiting for the fiber to terminate:
-
-**Example** (Forking an Interruption)
-
-```ts twoslash
-import { Effect, Fiber } from "effect"
-
-const program = Effect.gen(function* () {
-  const fiber = yield* Effect.fork(
-    Effect.forever(Effect.log("Hi!").pipe(Effect.delay("10 millis")))
-  )
-  yield* Effect.sleep("30 millis")
-  const _ = yield* Effect.fork(Fiber.interrupt(fiber))
-  console.log("Do something else...")
-})
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#1 message=Hi!
-timestamp=... level=INFO fiber=#1 message=Hi!
-Do something else...
-*/
-```
-
-There is also a shorthand for background interruption called `Fiber.interruptFork`.
-
-```ts twoslash del={8} ins={9}
-import { Effect, Fiber } from "effect"
-
-const program = Effect.gen(function* () {
-  const fiber = yield* Effect.fork(
-    Effect.forever(Effect.log("Hi!").pipe(Effect.delay("10 millis")))
-  )
-  yield* Effect.sleep("30 millis")
-  // const _ = yield* Effect.fork(Fiber.interrupt(fiber))
-  const _ = yield* Fiber.interruptFork(fiber)
-  console.log("Do something else...")
-})
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#1 message=Hi!
-timestamp=... level=INFO fiber=#1 message=Hi!
-Do something else...
-*/
-```
-
-<Aside type="tip" title="Interrupting via Effect.interrupt">
-  You can also interrupt fibers using the high-level API
-  `Effect.interrupt`. For more details, refer to the [Effect.interrupt
-  documentation](/docs/concurrency/basic-concurrency/#interruptions).
-</Aside>
-
-## Composing Fibers
-
-The `Fiber.zip` and `Fiber.zipWith` functions allow you to combine two fibers into one. The resulting fiber will produce the results of both input fibers. If either fiber fails, the combined fiber will also fail.
-
-**Example** (Combining Fibers with `Fiber.zip`)
-
-In this example, both fibers run concurrently, and the results are combined into a tuple.
-
-```ts twoslash
-import { Effect, Fiber } from "effect"
-
-const program = Effect.gen(function* () {
-  // Fork two fibers that each produce a string
-  const fiber1 = yield* Effect.fork(Effect.succeed("Hi!"))
-  const fiber2 = yield* Effect.fork(Effect.succeed("Bye!"))
-
-  // Combine the two fibers using Fiber.zip
-  const fiber = Fiber.zip(fiber1, fiber2)
-
-  // Join the combined fiber and get the result as a tuple
-  const tuple = yield* Fiber.join(fiber)
-  console.log(tuple)
-})
-
-Effect.runFork(program)
-/*
-Output:
-[ 'Hi!', 'Bye!' ]
-*/
-```
-
-Another way to compose fibers is by using `Fiber.orElse`. This function allows you to provide an alternative fiber that will execute if the first one fails. If the first fiber succeeds, its result will be returned. If it fails, the second fiber will run instead, and its result will be returned regardless of its outcome.
-
-**Example** (Providing a Fallback Fiber with `Fiber.orElse`)
-
-```ts twoslash
-import { Effect, Fiber } from "effect"
-
-const program = Effect.gen(function* () {
-  // Fork a fiber that will fail
-  const fiber1 = yield* Effect.fork(Effect.fail("Uh oh!"))
-  // Fork another fiber that will succeed
-  const fiber2 = yield* Effect.fork(Effect.succeed("Hurray!"))
-  // If fiber1 fails, fiber2 will be used as a fallback
-  const fiber = Fiber.orElse(fiber1, fiber2)
-  const message = yield* Fiber.join(fiber)
-  console.log(message)
-})
-
-Effect.runFork(program)
-/*
-Output:
-Hurray!
-*/
-```
-
-## Lifetime of Child Fibers
-
-When we fork fibers, depending on how we fork them we can have four different lifetime strategies for the child fibers:
-
-1. **Fork With Automatic Supervision**. If we use the ordinary `Effect.fork` operation, the child fiber will be automatically supervised by the parent fiber. The lifetime child fibers are tied to the lifetime of their parent fiber. This means that these fibers will be terminated either when they end naturally, or when their parent fiber is terminated.
-
-2. **Fork in Global Scope (Daemon)**. Sometimes we want to run long-running background fibers that aren't tied to their parent fiber, and also we want to fork them in a global scope. Any fiber that is forked in global scope will become daemon fiber. This can be achieved by using the `Effect.forkDaemon` operator. As these fibers have no parent, they are not supervised, and they will be terminated when they end naturally, or when our application is terminated.
-
-3. **Fork in Local Scope**. Sometimes, we want to run a background fiber that isn't tied to its parent fiber, but we want to live that fiber in the local scope. We can fork fibers in the local scope by using `Effect.forkScoped`. Such fibers can outlive their parent fiber (so they are not supervised by their parents), and they will be terminated when their life end or their local scope is closed.
-
-4. **Fork in Specific Scope**. This is similar to the previous strategy, but we can have more fine-grained control over the lifetime of the child fiber by forking it in a specific scope. We can do this by using the `Effect.forkIn` operator.
-
-### Fork with Automatic Supervision
-
-Effect follows a **structured concurrency** model, where child fibers' lifetimes are tied to their parent. Simply put, the lifespan of a fiber depends on the lifespan of its parent fiber.
-
-**Example** (Automatically Supervised Child Fiber)
-
-In this scenario, the `parent` fiber spawns a `child` fiber that repeatedly prints a message every second.
-The `child` fiber will be terminated when the `parent` fiber completes.
-
-```ts twoslash
-import { Effect, Console, Schedule } from "effect"
-
-// Child fiber that logs a message repeatedly every second
-const child = Effect.repeat(
-  Console.log("child: still running!"),
-  Schedule.fixed("1 second")
-)
-
-const parent = Effect.gen(function* () {
-  console.log("parent: started!")
-  // Child fiber is supervised by the parent
-  yield* Effect.fork(child)
-  yield* Effect.sleep("3 seconds")
-  console.log("parent: finished!")
-})
-
-Effect.runFork(parent)
-/*
-Output:
-parent: started!
-child: still running!
-child: still running!
-child: still running!
-parent: finished!
-*/
-```
-
-This behavior can be extended to any level of nested fibers, ensuring a predictable and controlled fiber lifecycle.
-
-### Fork in Global Scope (Daemon)
-
-You can create a long-running background fiber using `Effect.forkDaemon`. This type of fiber, known as a daemon fiber, is not tied to the lifecycle of its parent fiber. Instead, its lifetime is linked to the global scope. A daemon fiber continues running even if its parent fiber is terminated and will only stop when the global scope is closed or the fiber completes naturally.
-
-**Example** (Creating a Daemon Fiber)
-
-This example shows how daemon fibers can continue running in the background even after the parent fiber has finished.
-
-```ts twoslash
-import { Effect, Console, Schedule } from "effect"
-
-// Daemon fiber that logs a message repeatedly every second
-const daemon = Effect.repeat(
-  Console.log("daemon: still running!"),
-  Schedule.fixed("1 second")
-)
-
-const parent = Effect.gen(function* () {
-  console.log("parent: started!")
-  // Daemon fiber running independently
-  yield* Effect.forkDaemon(daemon)
-  yield* Effect.sleep("3 seconds")
-  console.log("parent: finished!")
-})
-
-Effect.runFork(parent)
-/*
-Output:
-parent: started!
-daemon: still running!
-daemon: still running!
-daemon: still running!
-parent: finished!
-daemon: still running!
-daemon: still running!
-daemon: still running!
-daemon: still running!
-daemon: still running!
-...etc...
-*/
-```
-
-Even if the parent fiber is interrupted, the daemon fiber will continue running independently.
-
-**Example** (Interrupting the Parent Fiber)
-
-In this example, interrupting the parent fiber doesn't affect the daemon fiber, which continues to run in the background.
-
-```ts twoslash
-import { Effect, Console, Schedule, Fiber } from "effect"
-
-// Daemon fiber that logs a message repeatedly every second
-const daemon = Effect.repeat(
-  Console.log("daemon: still running!"),
-  Schedule.fixed("1 second")
-)
-
-const parent = Effect.gen(function* () {
-  console.log("parent: started!")
-  // Daemon fiber running independently
-  yield* Effect.forkDaemon(daemon)
-  yield* Effect.sleep("3 seconds")
-  console.log("parent: finished!")
-}).pipe(Effect.onInterrupt(() => Console.log("parent: interrupted!")))
-
-// Program that interrupts the parent fiber after 2 seconds
-const program = Effect.gen(function* () {
-  const fiber = yield* Effect.fork(parent)
-  yield* Effect.sleep("2 seconds")
-  yield* Fiber.interrupt(fiber) // Interrupt the parent fiber
-})
-
-Effect.runFork(program)
-/*
-Output:
-parent: started!
-daemon: still running!
-daemon: still running!
-parent: interrupted!
-daemon: still running!
-daemon: still running!
-daemon: still running!
-daemon: still running!
-daemon: still running!
-...etc...
-*/
-```
-
-### Fork in Local Scope
-
-Sometimes we want to create a fiber that is tied to a local [scope](/docs/resource-management/scope/), meaning its lifetime is not dependent on its parent fiber but is bound to the local scope in which it was forked. This can be done using the `Effect.forkScoped` operator.
-
-Fibers created with `Effect.forkScoped` can outlive their parent fibers and will only be terminated when the local scope itself is closed.
-
-**Example** (Forking a Fiber in a Local Scope)
-
-In this example, the `child` fiber continues to run beyond the lifetime of the `parent` fiber. The `child` fiber is tied to the local scope and will be terminated only when the scope ends.
-
-```ts twoslash
-import { Effect, Console, Schedule } from "effect"
-
-// Child fiber that logs a message repeatedly every second
-const child = Effect.repeat(
-  Console.log("child: still running!"),
-  Schedule.fixed("1 second")
-)
-
-//      ┌─── Effect<void, never, Scope>
-//      ▼
-const parent = Effect.gen(function* () {
-  console.log("parent: started!")
-  // Child fiber attached to local scope
-  yield* Effect.forkScoped(child)
-  yield* Effect.sleep("3 seconds")
-  console.log("parent: finished!")
-})
-
-// Program runs within a local scope
-const program = Effect.scoped(
-  Effect.gen(function* () {
-    console.log("Local scope started!")
-    yield* Effect.fork(parent)
-    // Scope lasts for 5 seconds
-    yield* Effect.sleep("5 seconds")
-    console.log("Leaving the local scope!")
-  })
-)
-
-Effect.runFork(program)
-/*
-Output:
-Local scope started!
-parent: started!
-child: still running!
-child: still running!
-child: still running!
-parent: finished!
-child: still running!
-child: still running!
-Leaving the local scope!
-*/
-```
-
-### Fork in Specific Scope
-
-There are some cases where we need more fine-grained control, so we want to fork a fiber in a specific scope.
-We can use the `Effect.forkIn` operator which takes the target scope as an argument.
-
-**Example** (Forking a Fiber in a Specific Scope)
-
-In this example, the `child` fiber is forked into the `outerScope`, allowing it to outlive the inner scope but still be terminated when the `outerScope` is closed.
-
-```ts twoslash
-import { Console, Effect, Schedule } from "effect"
-
-// Child fiber that logs a message repeatedly every second
-const child = Effect.repeat(
-  Console.log("child: still running!"),
-  Schedule.fixed("1 second")
-)
-
-const program = Effect.scoped(
-  Effect.gen(function* () {
-    yield* Effect.addFinalizer(() =>
-      Console.log("The outer scope is about to be closed!")
-    )
-
-    // Capture the outer scope
-    const outerScope = yield* Effect.scope
-
-    // Create an inner scope
-    yield* Effect.scoped(
-      Effect.gen(function* () {
-        yield* Effect.addFinalizer(() =>
-          Console.log("The inner scope is about to be closed!")
-        )
-        // Fork the child fiber in the outer scope
-        yield* Effect.forkIn(child, outerScope)
-        yield* Effect.sleep("3 seconds")
-      })
-    )
-
-    yield* Effect.sleep("5 seconds")
-  })
-)
-
-Effect.runFork(program)
-/*
-Output:
-child: still running!
-child: still running!
-child: still running!
-The inner scope is about to be closed!
-child: still running!
-child: still running!
-child: still running!
-child: still running!
-child: still running!
-child: still running!
-The outer scope is about to be closed!
-*/
-```
-
-## When do Fibers run?
-
-Forked fibers begin execution after the current fiber completes or yields.
-
-**Example** (Late Fiber Start Captures Only One Value)
-
-In the following example, the `changes` stream only captures a single value, `2`.
-This happens because the fiber created by `Effect.fork` starts **after** the value is updated.
-
-```ts twoslash
-import { Effect, SubscriptionRef, Stream, Console } from "effect"
-
-const program = Effect.gen(function* () {
-  const ref = yield* SubscriptionRef.make(0)
-  yield* ref.changes.pipe(
-    // Log each change in SubscriptionRef
-    Stream.tap((n) => Console.log(`SubscriptionRef changed to ${n}`)),
-    Stream.runDrain,
-    // Fork a fiber to run the stream
-    Effect.fork
-  )
-  yield* SubscriptionRef.set(ref, 1)
-  yield* SubscriptionRef.set(ref, 2)
-})
-
-Effect.runFork(program)
-/*
-Output:
-SubscriptionRef changed to 2
-*/
-```
-
-If you add a short delay with `Effect.sleep()` or call `Effect.yieldNow()`, you allow the current fiber to yield. This gives the forked fiber enough time to start and collect all values before they are updated.
-
-<Aside type="caution" title="Fiber Execution is Non-Deterministic">
-  Keep in mind that the timing of fiber execution is not deterministic,
-  and many factors can affect when a fiber starts. Do not rely on the idea
-  that a single yield always ensures your fiber begins at a particular
-  time.
-</Aside>
-
-**Example** (Delay Allows Fiber to Capture All Values)
-
-```ts twoslash ins={14}
-import { Effect, SubscriptionRef, Stream, Console } from "effect"
-
-const program = Effect.gen(function* () {
-  const ref = yield* SubscriptionRef.make(0)
-  yield* ref.changes.pipe(
-    // Log each change in SubscriptionRef
-    Stream.tap((n) => Console.log(`SubscriptionRef changed to ${n}`)),
-    Stream.runDrain,
-    // Fork a fiber to run the stream
-    Effect.fork
-  )
-
-  // Allow the fiber a chance to start
-  yield* Effect.sleep("100 millis")
-
-  yield* SubscriptionRef.set(ref, 1)
-  yield* SubscriptionRef.set(ref, 2)
-})
-
-Effect.runFork(program)
-/*
-Output:
-SubscriptionRef changed to 0
-SubscriptionRef changed to 1
-SubscriptionRef changed to 2
-*/
-```
-
-> concurrency/queue.mdx\n\n---
-title: Queue
-description: Learn how to use Effect's Queue for lightweight, type-safe, and asynchronous workflows with built-in back-pressure.
-sidebar:
-  order: 5
----
-
-A `Queue` is a lightweight in-memory queue with built-in back-pressure, enabling asynchronous, purely-functional, and type-safe handling of data.
-
-## Basic Operations
-
-A `Queue<A>` stores values of type `A` and provides two fundamental operations:
-
-| API           | Description                                          |
-| ------------- | ---------------------------------------------------- |
-| `Queue.offer` | Adds a value of type `A` to the queue.               |
-| `Queue.take`  | Removes and returns the oldest value from the queue. |
-
-**Example** (Adding and Retrieving an Item)
-
-```ts twoslash
-import { Effect, Queue } from "effect"
-
-const program = Effect.gen(function* () {
-  // Creates a bounded queue with capacity 100
-  const queue = yield* Queue.bounded<number>(100)
-  // Adds 1 to the queue
-  yield* Queue.offer(queue, 1)
-  // Retrieves and removes the oldest value
-  const value = yield* Queue.take(queue)
-  return value
-})
-
-Effect.runPromise(program).then(console.log)
-// Output: 1
-```
-
-## Creating a Queue
-
-Queues can be **bounded** (with a specified capacity) or **unbounded** (without a limit). Different types of queues handle new values differently when they reach capacity.
-
-### Bounded Queue
-
-A bounded queue applies back-pressure when full, meaning any `Queue.offer` operation will suspend until there is space.
-
-**Example** (Creating a Bounded Queue)
-
-```ts twoslash
-import { Queue } from "effect"
-
-// Creating a bounded queue with a capacity of 100
-const boundedQueue = Queue.bounded<number>(100)
-```
-
-### Dropping Queue
-
-A dropping queue discards new values if the queue is full.
-
-**Example** (Creating a Dropping Queue)
-
-```ts twoslash
-import { Queue } from "effect"
-
-// Creating a dropping queue with a capacity of 100
-const droppingQueue = Queue.dropping<number>(100)
-```
-
-### Sliding Queue
-
-A sliding queue removes old values to make space for new ones when it reaches capacity.
-
-**Example** (Creating a Sliding Queue)
-
-```ts twoslash
-import { Queue } from "effect"
-
-// Creating a sliding queue with a capacity of 100
-const slidingQueue = Queue.sliding<number>(100)
-```
-
-### Unbounded Queue
-
-An unbounded queue has no capacity limit, allowing unrestricted additions.
-
-**Example** (Creating an Unbounded Queue)
-
-```ts twoslash
-import { Queue } from "effect"
-
-// Creates an unbounded queue without a capacity limit
-const unboundedQueue = Queue.unbounded<number>()
-```
-
-## Adding Items to a Queue
-
-### offer
-
-Use `Queue.offer` to add values to the queue.
-
-**Example** (Adding a Single Item)
-
-```ts twoslash
-import { Effect, Queue } from "effect"
-
-const program = Effect.gen(function* () {
-  const queue = yield* Queue.bounded<number>(100)
-  // Adds 1 to the queue
-  yield* Queue.offer(queue, 1)
-})
-```
-
-When using a back-pressured queue, `Queue.offer` suspends if the queue is full. To avoid blocking the main fiber, you can fork the `Queue.offer` operation.
-
-**Example** (Handling a Full Queue with `Effect.fork`)
-
-```ts twoslash
-import { Effect, Queue, Fiber } from "effect"
-
-const program = Effect.gen(function* () {
-  const queue = yield* Queue.bounded<number>(1)
-  // Fill the queue with one item
-  yield* Queue.offer(queue, 1)
-  // Attempting to add a second item will suspend as the queue is full
-  const fiber = yield* Effect.fork(Queue.offer(queue, 2))
-  // Empties the queue to make space
-  yield* Queue.take(queue)
-  // Joins the fiber, completing the suspended offer
-  yield* Fiber.join(fiber)
-  // Returns the size of the queue after additions
-  return yield* Queue.size(queue)
-})
-
-Effect.runPromise(program).then(console.log)
-// Output: 1
-```
-
-### offerAll
-
-You can also add multiple items at once using `Queue.offerAll`.
-
-**Example** (Adding Multiple Items)
-
-```ts twoslash
-import { Effect, Queue, Array } from "effect"
-
-const program = Effect.gen(function* () {
-  const queue = yield* Queue.bounded<number>(100)
-  const items = Array.range(1, 10)
-  // Adds all items to the queue at once
-  yield* Queue.offerAll(queue, items)
-  // Returns the size of the queue after additions
-  return yield* Queue.size(queue)
-})
-
-Effect.runPromise(program).then(console.log)
-// Output: 10
-```
-
-## Consuming Items from a Queue
-
-### take
-
-The `Queue.take` operation removes and returns the oldest item from the queue. If the queue is empty, `Queue.take` will suspend and only resume when an item is added. To prevent blocking, you can fork the `Queue.take` operation into a new fiber.
-
-**Example** (Waiting for an Item in a Fiber)
-
-```ts twoslash
-import { Effect, Queue, Fiber } from "effect"
-
-const program = Effect.gen(function* () {
-  const queue = yield* Queue.bounded<string>(100)
-  // This take operation will suspend because the queue is empty
-  const fiber = yield* Effect.fork(Queue.take(queue))
-  // Adds an item to the queue
-  yield* Queue.offer(queue, "something")
-  // Joins the fiber to get the result of the take operation
-  const value = yield* Fiber.join(fiber)
-  return value
-})
-
-Effect.runPromise(program).then(console.log)
-// Output: something
-```
-
-### poll
-
-To retrieve the queue's first item without suspending, use `Queue.poll`. If the queue is empty, `Queue.poll` returns `None`; if it has an item, it wraps it in `Some`.
-
-**Example** (Polling an Item)
-
-```ts twoslash
-import { Effect, Queue } from "effect"
-
-const program = Effect.gen(function* () {
-  const queue = yield* Queue.bounded<number>(100)
-  // Adds items to the queue
-  yield* Queue.offer(queue, 10)
-  yield* Queue.offer(queue, 20)
-  // Retrieves the first item if available
-  const head = yield* Queue.poll(queue)
-  return head
-})
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-{
-  _id: "Option",
-  _tag: "Some",
-  value: 10
-}
-*/
-```
-
-### takeUpTo
-
-To retrieve multiple items, use `Queue.takeUpTo`, which returns up to the specified number of items.
-If there aren't enough items, it returns all available items without waiting for more.
-
-This function is particularly useful for batch processing when an exact number of items is not required. It ensures the program continues working with whatever data is currently available.
-
-If you need to wait for an exact number of items before proceeding, consider using [takeN](#taken).
-
-**Example** (Taking Up to N Items)
-
-```ts twoslash
-import { Effect, Queue } from "effect"
-
-const program = Effect.gen(function* () {
-  const queue = yield* Queue.bounded<number>(100)
-
-  // Adds items to the queue
-  yield* Queue.offer(queue, 1)
-  yield* Queue.offer(queue, 2)
-  yield* Queue.offer(queue, 3)
-
-  // Retrieves up to 2 items
-  const chunk = yield* Queue.takeUpTo(queue, 2)
-  console.log(chunk)
-
-  return "some result"
-})
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-{ _id: 'Chunk', values: [ 1, 2 ] }
-some result
-*/
-```
-
-### takeN
-
-Takes a specified number of elements from a queue. If the queue does not contain enough elements, the operation suspends until the required number of elements become available.
-
-This function is useful for scenarios where processing requires an exact number of items at a time, ensuring that the operation does not proceed until the batch is complete.
-
-**Example** (Taking a Fixed Number of Items)
-
-```ts twoslash
-import { Effect, Queue, Fiber } from "effect"
-
-const program = Effect.gen(function* () {
-  // Create a queue that can hold up to 100 elements
-  const queue = yield* Queue.bounded<number>(100)
-
-  // Fork a fiber that attempts to take 3 items from the queue
-  const fiber = yield* Effect.fork(
-    Effect.gen(function* () {
-      console.log("Attempting to take 3 items from the queue...")
-      const chunk = yield* Queue.takeN(queue, 3)
-      console.log(`Successfully took 3 items: ${chunk}`)
-    })
-  )
-
-  // Offer only 2 items initially
-  yield* Queue.offer(queue, 1)
-  yield* Queue.offer(queue, 2)
-  console.log(
-    "Offered 2 items. The fiber is now waiting for the 3rd item..."
-  )
-
-  // Simulate some delay
-  yield* Effect.sleep("2 seconds")
-
-  // Offer the 3rd item, which will unblock the takeN call
-  yield* Queue.offer(queue, 3)
-  console.log("Offered the 3rd item, which should unblock the fiber.")
-
-  // Wait for the fiber to finish
-  yield* Fiber.join(fiber)
-  return "some result"
-})
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-Offered 2 items. The fiber is now waiting for the 3rd item...
-Attempting to take 3 items from the queue...
-Offered the 3rd item, which should unblock the fiber.
-Successfully took 3 items: {
-  "_id": "Chunk",
-  "values": [
-    1,
-    2,
-    3
-  ]
-}
-some result
-*/
-```
-
-### takeAll
-
-To retrieve all items from the queue at once, use `Queue.takeAll`. This operation completes immediately, returning an empty collection if the queue is empty.
-
-**Example** (Taking All Items)
-
-```ts twoslash
-import { Effect, Queue } from "effect"
-
-const program = Effect.gen(function* () {
-  const queue = yield* Queue.bounded<number>(100)
-  // Adds items to the queue
-  yield* Queue.offer(queue, 10)
-  yield* Queue.offer(queue, 20)
-  yield* Queue.offer(queue, 30)
-  // Retrieves all items from the queue
-  const chunk = yield* Queue.takeAll(queue)
-  return chunk
-})
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-{
-  _id: "Chunk",
-  values: [ 10, 20, 30 ]
-}
-*/
-```
-
-## Shutting Down a Queue
-
-### shutdown
-
-The `Queue.shutdown` operation allows you to interrupt all fibers that are currently suspended on `offer*` or `take*` operations. This action also empties the queue and makes any future `offer*` and `take*` calls terminate immediately.
-
-**Example** (Interrupting Fibers on Queue Shutdown)
-
-```ts twoslash
-import { Effect, Queue, Fiber } from "effect"
-
-const program = Effect.gen(function* () {
-  const queue = yield* Queue.bounded<number>(3)
-  // Forks a fiber that waits to take an item from the queue
-  const fiber = yield* Effect.fork(Queue.take(queue))
-  // Shuts down the queue, interrupting the fiber
-  yield* Queue.shutdown(queue)
-  // Joins the interrupted fiber
-  yield* Fiber.join(fiber)
-})
-```
-
-### awaitShutdown
-
-The `Queue.awaitShutdown` operation can be used to run an effect when the queue shuts down. It waits until the queue is closed and resumes immediately if the queue is already shut down.
-
-**Example** (Waiting for Queue Shutdown)
-
-```ts twoslash
-import { Effect, Queue, Fiber, Console } from "effect"
-
-const program = Effect.gen(function* () {
-  const queue = yield* Queue.bounded<number>(3)
-  // Forks a fiber to await queue shutdown and log a message
-  const fiber = yield* Effect.fork(
-    Queue.awaitShutdown(queue).pipe(
-      Effect.andThen(Console.log("shutting down"))
-    )
-  )
-  // Shuts down the queue, triggering the await in the fiber
-  yield* Queue.shutdown(queue)
-  yield* Fiber.join(fiber)
-})
-
-Effect.runPromise(program)
-// Output: shutting down
-```
-
-## Offer-only / Take-only Queues
-
-Sometimes, you might want certain parts of your code to only add values to a queue (`Enqueue`) or only retrieve values from a queue (`Dequeue`). Effect provides interfaces to enforce these specific capabilities.
-
-### Enqueue
-
-All methods for adding values to a queue are defined by the `Enqueue` interface. This restricts the queue to only offer operations.
-
-**Example** (Restricting Queue to Offer-only Operations)
-
-```ts twoslash
-import { Queue } from "effect"
-
-const send = (offerOnlyQueue: Queue.Enqueue<number>, value: number) => {
-  // This queue is restricted to offer operations only
-
-  // Error: cannot use take on an offer-only queue
-  // @ts-expect-error
-  Queue.take(offerOnlyQueue)
-
-  // Valid offer operation
-  return Queue.offer(offerOnlyQueue, value)
-}
-```
-
-### Dequeue
-
-Similarly, all methods for retrieving values from a queue are defined by the `Dequeue` interface, which restricts the queue to only take operations.
-
-**Example** (Restricting Queue to Take-only Operations)
-
-```ts twoslash
-import { Queue } from "effect"
-
-const receive = (takeOnlyQueue: Queue.Dequeue<number>) => {
-  // This queue is restricted to take operations only
-
-  // Error: cannot use offer on a take-only queue
-  // @ts-expect-error
-  Queue.offer(takeOnlyQueue, 1)
-
-  // Valid take operation
-  return Queue.take(takeOnlyQueue)
-}
-```
-
-The `Queue` type combines both `Enqueue` and `Dequeue`, so you can easily pass it to different parts of your code, enforcing only `Enqueue` or `Dequeue` behaviors as needed.
-
-**Example** (Using Offer-only and Take-only Queues Together)
-
-```ts twoslash
-import { Effect, Queue } from "effect"
-
-const send = (offerOnlyQueue: Queue.Enqueue<number>, value: number) => {
-  return Queue.offer(offerOnlyQueue, value)
-}
-
-const receive = (takeOnlyQueue: Queue.Dequeue<number>) => {
-  return Queue.take(takeOnlyQueue)
-}
-
-const program = Effect.gen(function* () {
-  const queue = yield* Queue.unbounded<number>()
-
-  // Add values to the queue
-  yield* send(queue, 1)
-  yield* send(queue, 2)
-
-  // Retrieve values from the queue
-  console.log(yield* receive(queue))
-  console.log(yield* receive(queue))
-})
-
-Effect.runFork(program)
-/*
-Output:
-1
-2
-*/
-```
-
-> concurrency/basic-concurrency.mdx\n\n---
-title: Basic Concurrency
-description: Manage and control effect execution with concurrency, interruptions, and racing.
-sidebar:
-  order: 0
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-## Concurrency Options
-
-Effect provides options to manage how effects are executed, particularly focusing on controlling how many effects run concurrently.
-
-```ts showLineNumbers=false
-type Options = {
-  readonly concurrency?: Concurrency
-}
-```
-
-The `concurrency` option is used to determine the level of concurrency, with the following values:
-
-```ts showLineNumbers=false
-type Concurrency = number | "unbounded" | "inherit"
-```
-
-Let's explore each configuration in detail.
-
-<Aside type="tip" title="Applicability of Concurrency Options">
-  The examples here use the `Effect.all` function, but these options apply
-  to many other Effect APIs.
-</Aside>
-
-### Sequential Execution (Default)
-
-By default, if you don't specify any concurrency option, effects will run sequentially, one after the other. This means each effect starts only after the previous one completes.
-
-**Example** (Sequential Execution)
-
-```ts twoslash
-import { Effect, Duration } from "effect"
-
-// Helper function to simulate a task with a delay
-const makeTask = (n: number, delay: Duration.DurationInput) =>
-  Effect.promise(
-    () =>
-      new Promise<void>((resolve) => {
-        console.log(`start task${n}`) // Logs when the task starts
-        setTimeout(() => {
-          console.log(`task${n} done`) // Logs when the task finishes
-          resolve()
-        }, Duration.toMillis(delay))
-      })
-  )
-
-const task1 = makeTask(1, "200 millis")
-const task2 = makeTask(2, "100 millis")
-
-const sequential = Effect.all([task1, task2])
-
-Effect.runPromise(sequential)
-/*
-Output:
-start task1
-task1 done
-start task2 <-- task2 starts only after task1 completes
-task2 done
-*/
-```
-
-### Numbered Concurrency
-
-You can control how many effects run concurrently by setting a `number` for `concurrency`. For example, `concurrency: 2` allows up to two effects to run at the same time.
-
-**Example** (Limiting to 2 Concurrent Tasks)
-
-```ts twoslash
-import { Effect, Duration } from "effect"
-
-// Helper function to simulate a task with a delay
-const makeTask = (n: number, delay: Duration.DurationInput) =>
-  Effect.promise(
-    () =>
-      new Promise<void>((resolve) => {
-        console.log(`start task${n}`) // Logs when the task starts
-        setTimeout(() => {
-          console.log(`task${n} done`) // Logs when the task finishes
-          resolve()
-        }, Duration.toMillis(delay))
-      })
-  )
-
-const task1 = makeTask(1, "200 millis")
-const task2 = makeTask(2, "100 millis")
-const task3 = makeTask(3, "210 millis")
-const task4 = makeTask(4, "110 millis")
-const task5 = makeTask(5, "150 millis")
-
-const numbered = Effect.all([task1, task2, task3, task4, task5], {
-  concurrency: 2
-})
-
-Effect.runPromise(numbered)
-/*
-Output:
-start task1
-start task2 <-- active tasks: task1, task2
-task2 done
-start task3 <-- active tasks: task1, task3
-task1 done
-start task4 <-- active tasks: task3, task4
-task4 done
-start task5 <-- active tasks: task3, task5
-task3 done
-task5 done
-*/
-```
-
-### Unbounded Concurrency
-
-When `concurrency: "unbounded"` is used, there's no limit to the number of effects running concurrently.
-
-**Example** (Unbounded Concurrency)
-
-```ts twoslash
-import { Effect, Duration } from "effect"
-
-// Helper function to simulate a task with a delay
-const makeTask = (n: number, delay: Duration.DurationInput) =>
-  Effect.promise(
-    () =>
-      new Promise<void>((resolve) => {
-        console.log(`start task${n}`) // Logs when the task starts
-        setTimeout(() => {
-          console.log(`task${n} done`) // Logs when the task finishes
-          resolve()
-        }, Duration.toMillis(delay))
-      })
-  )
-
-const task1 = makeTask(1, "200 millis")
-const task2 = makeTask(2, "100 millis")
-const task3 = makeTask(3, "210 millis")
-const task4 = makeTask(4, "110 millis")
-const task5 = makeTask(5, "150 millis")
-
-const unbounded = Effect.all([task1, task2, task3, task4, task5], {
-  concurrency: "unbounded"
-})
-
-Effect.runPromise(unbounded)
-/*
-Output:
-start task1
-start task2
-start task3
-start task4
-start task5
-task2 done
-task4 done
-task5 done
-task1 done
-task3 done
-*/
-```
-
-### Inherit Concurrency
-
-When using `concurrency: "inherit"`, the concurrency level is inherited from the surrounding context. This context can be set using `Effect.withConcurrency(number | "unbounded")`. If no context is provided, the default is `"unbounded"`.
-
-**Example** (Inheriting Concurrency from Context)
-
-```ts twoslash
-import { Effect, Duration } from "effect"
-
-// Helper function to simulate a task with a delay
-const makeTask = (n: number, delay: Duration.DurationInput) =>
-  Effect.promise(
-    () =>
-      new Promise<void>((resolve) => {
-        console.log(`start task${n}`) // Logs when the task starts
-        setTimeout(() => {
-          console.log(`task${n} done`) // Logs when the task finishes
-          resolve()
-        }, Duration.toMillis(delay))
-      })
-  )
-
-const task1 = makeTask(1, "200 millis")
-const task2 = makeTask(2, "100 millis")
-const task3 = makeTask(3, "210 millis")
-const task4 = makeTask(4, "110 millis")
-const task5 = makeTask(5, "150 millis")
-
-// Running all tasks with concurrency: "inherit",
-// which defaults to "unbounded"
-const inherit = Effect.all([task1, task2, task3, task4, task5], {
-  concurrency: "inherit"
-})
-
-Effect.runPromise(inherit)
-/*
-Output:
-start task1
-start task2
-start task3
-start task4
-start task5
-task2 done
-task4 done
-task5 done
-task1 done
-task3 done
-*/
-```
-
-If you use `Effect.withConcurrency`, the concurrency configuration will adjust to the specified option.
-
-**Example** (Setting Concurrency Option)
-
-```ts twoslash
-import { Effect, Duration } from "effect"
-
-// Helper function to simulate a task with a delay
-const makeTask = (n: number, delay: Duration.DurationInput) =>
-  Effect.promise(
-    () =>
-      new Promise<void>((resolve) => {
-        console.log(`start task${n}`) // Logs when the task starts
-        setTimeout(() => {
-          console.log(`task${n} done`) // Logs when the task finishes
-          resolve()
-        }, Duration.toMillis(delay))
-      })
-  )
-
-const task1 = makeTask(1, "200 millis")
-const task2 = makeTask(2, "100 millis")
-const task3 = makeTask(3, "210 millis")
-const task4 = makeTask(4, "110 millis")
-const task5 = makeTask(5, "150 millis")
-
-// Running tasks with concurrency: "inherit",
-// which will inherit the surrounding context
-const inherit = Effect.all([task1, task2, task3, task4, task5], {
-  concurrency: "inherit"
-})
-
-// Setting a concurrency limit of 2
-const withConcurrency = inherit.pipe(Effect.withConcurrency(2))
-
-Effect.runPromise(withConcurrency)
-/*
-Output:
-start task1
-start task2 <-- active tasks: task1, task2
-task2 done
-start task3 <-- active tasks: task1, task3
-task1 done
-start task4 <-- active tasks: task3, task4
-task4 done
-start task5 <-- active tasks: task3, task5
-task3 done
-task5 done
-*/
-```
-
-## Interruptions
-
-All effects in Effect are executed by [fibers](/docs/concurrency/fibers/). If you didn't create the fiber yourself, it was created by an operation you're using (if it's concurrent) or by the Effect [runtime](/docs/runtime/) system.
-
-A fiber is created any time an effect is run. When running effects concurrently, a fiber is created for each concurrent effect.
-
-To summarize:
-
-- An `Effect` is a higher-level concept that describes an effectful computation. It is lazy and immutable, meaning it represents a computation that may produce a value or fail but does not immediately execute.
-- A fiber, on the other hand, represents the running execution of an `Effect`. It can be interrupted or awaited to retrieve its result. Think of it as a way to control and interact with the ongoing computation.
-
-Fibers can be interrupted in various ways. Let's explore some of these scenarios and see examples of how to interrupt fibers in Effect.
-
-### interrupt
-
-A fiber can be interrupted using the `Effect.interrupt` effect on that particular fiber.
-
-This effect models the explicit interruption of the fiber in which it runs.
-When executed, it causes the fiber to stop its operation immediately, capturing the interruption details such as the fiber's ID and its start time.
-The resulting interruption can be observed in the [Exit](/docs/data-types/exit/) type if the effect is run with functions like [runPromiseExit](/docs/getting-started/running-effects/#runpromiseexit).
-
-**Example** (Without Interruption)
-
-In this case, the program runs without any interruption, logging the start and completion of the task.
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  console.log("start")
-  yield* Effect.sleep("2 seconds")
-  console.log("done")
-  return "some result"
-})
-
-Effect.runPromiseExit(program).then(console.log)
-/*
-Output:
-start
-done
-{ _id: 'Exit', _tag: 'Success', value: 'some result' }
-*/
-```
-
-**Example** (With Interruption)
-
-Here, the fiber is interrupted after the log `"start"` but before the `"done"` log. The `Effect.interrupt` stops the fiber, and it never reaches the final log.
-
-```ts {6} twoslash
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  console.log("start")
-  yield* Effect.sleep("2 seconds")
-  yield* Effect.interrupt
-  console.log("done")
-  return "some result"
-})
-
-Effect.runPromiseExit(program).then(console.log)
-/*
-Output:
-start
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: {
-    _id: 'Cause',
-    _tag: 'Interrupt',
-    fiberId: {
-      _id: 'FiberId',
-      _tag: 'Runtime',
-      id: 0,
-      startTimeMillis: ...
-    }
-  }
-}
-*/
-```
-
-### onInterrupt
-
-Registers a cleanup effect to run when an effect is interrupted.
-
-This function allows you to specify an effect to run when the fiber is interrupted. This effect will be executed
-when the fiber is interrupted, allowing you to perform cleanup or other actions.
-
-**Example** (Running a Cleanup Action on Interruption)
-
-In this example, we set up a handler that logs "Cleanup completed" whenever the fiber is interrupted. We then show three cases: a successful effect, a failing effect, and an interrupted effect, demonstrating how the handler is triggered depending on how the effect ends.
-
-```ts twoslash
-import { Console, Effect } from "effect"
-
-// This handler is executed when the fiber is interrupted
-const handler = Effect.onInterrupt((_fibers) =>
-  Console.log("Cleanup completed")
-)
-
-const success = Console.log("Task completed").pipe(
-  Effect.as("some result"),
-  handler
-)
-
-Effect.runFork(success)
-/*
-Output:
-Task completed
-*/
-
-const failure = Console.log("Task failed").pipe(
-  Effect.andThen(Effect.fail("some error")),
-  handler
-)
-
-Effect.runFork(failure)
-/*
-Output:
-Task failed
-*/
-
-const interruption = Console.log("Task interrupted").pipe(
-  Effect.andThen(Effect.interrupt),
-  handler
-)
-
-Effect.runFork(interruption)
-/*
-Output:
-Task interrupted
-Cleanup completed
-*/
-```
-
-### Interruption of Concurrent Effects
-
-When running multiple effects concurrently, such as with `Effect.forEach`, if one of the effects is interrupted, it causes all concurrent effects to be interrupted as well.
-
-The resulting [cause](/docs/data-types/cause/) includes information about which fibers were interrupted.
-
-**Example** (Interrupting Concurrent Effects)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const program = Effect.forEach(
-  [1, 2, 3],
-  (n) =>
-    Effect.gen(function* () {
-      console.log(`start #${n}`)
-      yield* Effect.sleep(`${n} seconds`)
-      if (n > 1) {
-        yield* Effect.interrupt
-      }
-      console.log(`done #${n}`)
-    }).pipe(Effect.onInterrupt(() => Console.log(`interrupted #${n}`))),
-  { concurrency: "unbounded" }
-)
-
-Effect.runPromiseExit(program).then((exit) =>
-  console.log(JSON.stringify(exit, null, 2))
-)
-/*
-Output:
-start #1
-start #2
-start #3
-done #1
-interrupted #2
-interrupted #3
-{
-  "_id": "Exit",
-  "_tag": "Failure",
-  "cause": {
-    "_id": "Cause",
-    "_tag": "Parallel",
-    "left": {
-      "_id": "Cause",
-      "_tag": "Interrupt",
-      "fiberId": {
-        "_id": "FiberId",
-        "_tag": "Runtime",
-        "id": 3,
-        "startTimeMillis": ...
-      }
-    },
-    "right": {
-      "_id": "Cause",
-      "_tag": "Sequential",
-      "left": {
-        "_id": "Cause",
-        "_tag": "Empty"
-      },
-      "right": {
-        "_id": "Cause",
-        "_tag": "Interrupt",
-        "fiberId": {
-          "_id": "FiberId",
-          "_tag": "Runtime",
-          "id": 0,
-          "startTimeMillis": ...
-        }
-      }
-    }
-  }
-}
-*/
-```
-
-## Racing
-
-### race
-
-This function takes two effects and runs them concurrently. The first effect
-that successfully completes will determine the result of the race, and the
-other effect will be interrupted.
-
-If neither effect succeeds, the function will fail with a [cause](/docs/data-types/cause/) containing all the errors.
-
-This is useful when you want to run two effects concurrently, but only care
-about the first one to succeed. It is commonly used in cases like timeouts,
-retries, or when you want to optimize for the faster response without
-worrying about the other effect.
-
-**Example** (Both Tasks Succeed)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.succeed("task1").pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Console.log("task1 done")),
-  Effect.onInterrupt(() => Console.log("task1 interrupted"))
-)
-const task2 = Effect.succeed("task2").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Console.log("task2 done")),
-  Effect.onInterrupt(() => Console.log("task2 interrupted"))
-)
-
-const program = Effect.race(task1, task2)
-
-Effect.runFork(program)
-/*
-Output:
-task1 done
-task2 interrupted
-*/
-```
-
-**Example** (One Task Fails, One Succeeds)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.fail("task1").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Console.log("task1 done")),
-  Effect.onInterrupt(() => Console.log("task1 interrupted"))
-)
-const task2 = Effect.succeed("task2").pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Console.log("task2 done")),
-  Effect.onInterrupt(() => Console.log("task2 interrupted"))
-)
-
-const program = Effect.race(task1, task2)
-
-Effect.runFork(program)
-/*
-Output:
-task2 done
-*/
-```
-
-**Example** (Both Tasks Fail)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.fail("task1").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Console.log("task1 done")),
-  Effect.onInterrupt(() => Console.log("task1 interrupted"))
-)
-const task2 = Effect.fail("task2").pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Console.log("task2 done")),
-  Effect.onInterrupt(() => Console.log("task2 interrupted"))
-)
-
-const program = Effect.race(task1, task2)
-
-Effect.runPromiseExit(program).then(console.log)
-/*
-Output:
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: {
-    _id: 'Cause',
-    _tag: 'Parallel',
-    left: { _id: 'Cause', _tag: 'Fail', failure: 'task1' },
-    right: { _id: 'Cause', _tag: 'Fail', failure: 'task2' }
-  }
-}
-*/
-```
-
-If you want to handle the result of whichever task completes first, whether it succeeds or fails, you can use the `Effect.either` function. This function wraps the result in an [Either](/docs/data-types/either/) type, allowing you to see if the result was a success (`Right`) or a failure (`Left`):
-
-**Example** (Handling Success or Failure with Either)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.fail("task1").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Console.log("task1 done")),
-  Effect.onInterrupt(() => Console.log("task1 interrupted"))
-)
-const task2 = Effect.succeed("task2").pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Console.log("task2 done")),
-  Effect.onInterrupt(() => Console.log("task2 interrupted"))
-)
-
-// Run both tasks concurrently, wrapping the result
-// in Either to capture success or failure
-const program = Effect.race(Effect.either(task1), Effect.either(task2))
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-task2 interrupted
-{ _id: 'Either', _tag: 'Left', left: 'task1' }
-*/
-```
-
-### raceAll
-
-This function runs multiple effects concurrently and returns the result of the first one to succeed. If one effect succeeds, the others will be interrupted.
-
-If none of the effects succeed, the function will fail with the last error encountered.
-
-This is useful when you want to race multiple effects, but only care
-about the first one to succeed. It is commonly used in cases like timeouts,
-retries, or when you want to optimize for the faster response without
-worrying about the other effects.
-
-**Example** (All Tasks Succeed)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.succeed("task1").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Console.log("task1 done")),
-  Effect.onInterrupt(() => Console.log("task1 interrupted"))
-)
-const task2 = Effect.succeed("task2").pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Console.log("task2 done")),
-  Effect.onInterrupt(() => Console.log("task2 interrupted"))
-)
-
-const task3 = Effect.succeed("task3").pipe(
-  Effect.delay("150 millis"),
-  Effect.tap(Console.log("task3 done")),
-  Effect.onInterrupt(() => Console.log("task3 interrupted"))
-)
-
-const program = Effect.raceAll([task1, task2, task3])
-
-Effect.runFork(program)
-/*
-Output:
-task1 done
-task2 interrupted
-task3 interrupted
-*/
-```
-
-**Example** (One Task Fails, Two Tasks Succeed)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.fail("task1").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Console.log("task1 done")),
-  Effect.onInterrupt(() => Console.log("task1 interrupted"))
-)
-const task2 = Effect.succeed("task2").pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Console.log("task2 done")),
-  Effect.onInterrupt(() => Console.log("task2 interrupted"))
-)
-
-const task3 = Effect.succeed("task3").pipe(
-  Effect.delay("150 millis"),
-  Effect.tap(Console.log("task3 done")),
-  Effect.onInterrupt(() => Console.log("task3 interrupted"))
-)
-
-const program = Effect.raceAll([task1, task2, task3])
-
-Effect.runFork(program)
-/*
-Output:
-task3 done
-task2 interrupted
-*/
-```
-
-**Example** (All Tasks Fail)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.fail("task1").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Console.log("task1 done")),
-  Effect.onInterrupt(() => Console.log("task1 interrupted"))
-)
-const task2 = Effect.fail("task2").pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Console.log("task2 done")),
-  Effect.onInterrupt(() => Console.log("task2 interrupted"))
-)
-
-const task3 = Effect.fail("task3").pipe(
-  Effect.delay("150 millis"),
-  Effect.tap(Console.log("task3 done")),
-  Effect.onInterrupt(() => Console.log("task3 interrupted"))
-)
-
-const program = Effect.raceAll([task1, task2, task3])
-
-Effect.runPromiseExit(program).then(console.log)
-/*
-Output:
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: { _id: 'Cause', _tag: 'Fail', failure: 'task2' }
-}
-*/
-```
-
-### raceFirst
-
-This function takes two effects and runs them concurrently, returning the
-result of the first one that completes, regardless of whether it succeeds or
-fails.
-
-This function is useful when you want to race two operations, and you want to
-proceed with whichever one finishes first, regardless of whether it succeeds
-or fails.
-
-**Example** (Both Tasks Succeed)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.succeed("task1").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Console.log("task1 done")),
-  Effect.onInterrupt(() =>
-    Console.log("task1 interrupted").pipe(Effect.delay("100 millis"))
-  )
-)
-const task2 = Effect.succeed("task2").pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Console.log("task2 done")),
-  Effect.onInterrupt(() =>
-    Console.log("task2 interrupted").pipe(Effect.delay("100 millis"))
-  )
-)
-
-const program = Effect.raceFirst(task1, task2).pipe(
-  Effect.tap(Console.log("more work..."))
-)
-
-Effect.runPromiseExit(program).then(console.log)
-/*
-Output:
-task1 done
-task2 interrupted
-more work...
-{ _id: 'Exit', _tag: 'Success', value: 'task1' }
-*/
-```
-
-**Example** (One Task Fails, One Succeeds)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.fail("task1").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Console.log("task1 done")),
-  Effect.onInterrupt(() =>
-    Console.log("task1 interrupted").pipe(Effect.delay("100 millis"))
-  )
-)
-const task2 = Effect.succeed("task2").pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Console.log("task2 done")),
-  Effect.onInterrupt(() =>
-    Console.log("task2 interrupted").pipe(Effect.delay("100 millis"))
-  )
-)
-
-const program = Effect.raceFirst(task1, task2).pipe(
-  Effect.tap(Console.log("more work..."))
-)
-
-Effect.runPromiseExit(program).then(console.log)
-/*
-Output:
-task2 interrupted
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: { _id: 'Cause', _tag: 'Fail', failure: 'task1' }
-}
-*/
-```
-
-#### Disconnecting Effects
-
-The `Effect.raceFirst` function safely interrupts the "loser" effect once the other completes, but it will not resume until the loser is cleanly terminated.
-
-If you want a quicker return, you can disconnect the interrupt signal for both effects. Instead of calling:
-
-```ts showLineNumbers=false
-Effect.raceFirst(task1, task2)
-```
-
-You can use:
-
-```ts showLineNumbers=false
-Effect.raceFirst(Effect.disconnect(task1), Effect.disconnect(task2))
-```
-
-This allows both effects to complete independently while still terminating the losing effect in the background.
-
-**Example** (Using `Effect.disconnect` for Quicker Return)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.succeed("task1").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Console.log("task1 done")),
-  Effect.onInterrupt(() =>
-    Console.log("task1 interrupted").pipe(Effect.delay("100 millis"))
-  )
-)
-const task2 = Effect.succeed("task2").pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Console.log("task2 done")),
-  Effect.onInterrupt(() =>
-    Console.log("task2 interrupted").pipe(Effect.delay("100 millis"))
-  )
-)
-
-// Race the two tasks with disconnect to allow quicker return
-const program = Effect.raceFirst(
-  Effect.disconnect(task1),
-  Effect.disconnect(task2)
-).pipe(Effect.tap(Console.log("more work...")))
-
-Effect.runPromiseExit(program).then(console.log)
-/*
-Output:
-task1 done
-more work...
-{ _id: 'Exit', _tag: 'Success', value: 'task1' }
-task2 interrupted
-*/
-```
-
-### raceWith
-
-This function runs two effects concurrently and calls a specified "finisher" function once one of the effects completes, regardless of whether it succeeds or fails.
-
-The finisher functions for each effect allow you to handle the results of each effect as soon as they complete.
-
-The function takes two finisher callbacks, one for each effect, and allows you to specify how to handle the result of the race.
-
-This function is useful when you need to react to the completion of either effect without waiting for both to finish. It can be used whenever you want to take action based on the first available result.
-
-**Example** (Handling Results of Concurrent Tasks)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.succeed("task1").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Console.log("task1 done")),
-  Effect.onInterrupt(() =>
-    Console.log("task1 interrupted").pipe(Effect.delay("100 millis"))
-  )
-)
-const task2 = Effect.succeed("task2").pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Console.log("task2 done")),
-  Effect.onInterrupt(() =>
-    Console.log("task2 interrupted").pipe(Effect.delay("100 millis"))
-  )
-)
-
-const program = Effect.raceWith(task1, task2, {
-  onSelfDone: (exit) => Console.log(`task1 exited with ${exit}`),
-  onOtherDone: (exit) => Console.log(`task2 exited with ${exit}`)
-})
-
-Effect.runFork(program)
-/*
-Output:
-task1 done
-task1 exited with {
-  "_id": "Exit",
-  "_tag": "Success",
-  "value": "task1"
-}
-task2 interrupted
-*/
-```
-
-> concurrency/pubsub.mdx\n\n---
-title: PubSub
-description: Effortless message broadcasting and asynchronous communication with PubSub in Effect.
-sidebar:
-  order: 6
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-A `PubSub` serves as an asynchronous message hub, allowing publishers to send messages that can be received by all current subscribers.
-
-Unlike a [Queue](/docs/concurrency/queue/), where each value is delivered to only one consumer, a `PubSub` broadcasts each published message to all subscribers. This makes `PubSub` ideal for scenarios requiring message broadcasting rather than load distribution.
-
-## Basic Operations
-
-A `PubSub<A>` stores messages of type `A` and provides two fundamental operations:
-
-| API                | Description                                                                                                                                                                                                                           |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PubSub.publish`   | Sends a message of type `A` to the `PubSub`, returning an effect indicating if the message was successfully published.                                                                                                                |
-| `PubSub.subscribe` | Creates a scoped effect that allows subscription to the `PubSub`, automatically unsubscribing when the scope ends. Subscribers receive messages through a [Dequeue](/docs/concurrency/queue/#dequeue) which holds published messages. |
-
-**Example** (Publishing a Message to Multiple Subscribers)
-
-```ts twoslash
-import { Effect, PubSub, Queue } from "effect"
-
-const program = Effect.scoped(
-  Effect.gen(function* () {
-    const pubsub = yield* PubSub.bounded<string>(2)
-
-    // Two subscribers
-    const dequeue1 = yield* PubSub.subscribe(pubsub)
-    const dequeue2 = yield* PubSub.subscribe(pubsub)
-
-    // Publish a message to the pubsub
-    yield* PubSub.publish(pubsub, "Hello from a PubSub!")
-
-    // Each subscriber receives the message
-    console.log("Subscriber 1: " + (yield* Queue.take(dequeue1)))
-    console.log("Subscriber 2: " + (yield* Queue.take(dequeue2)))
-  })
-)
-
-Effect.runFork(program)
-/*
-Output:
-Subscriber 1: Hello from a PubSub!
-Subscriber 2: Hello from a PubSub!
-*/
-```
-
-<Aside type="caution" title="Subscribe Before Publishing">
-  A subscriber only receives messages published while it is actively
-  subscribed. To ensure a subscriber receives a particular message,
-  establish the subscription before publishing the message.
-</Aside>
-
-## Creating a PubSub
-
-### Bounded PubSub
-
-A bounded `PubSub` applies back pressure to publishers when it reaches capacity, suspending additional publishing until space becomes available.
-
-Back pressure ensures that all subscribers receive all messages while they are subscribed. However, it can lead to slower message delivery if a subscriber is slow.
-
-**Example** (Bounded PubSub Creation)
-
-```ts twoslash
-import { PubSub } from "effect"
-
-// Creates a bounded PubSub with a capacity of 2
-const boundedPubSub = PubSub.bounded<string>(2)
-```
-
-### Dropping PubSub
-
-A dropping `PubSub` discards new values when full. The `PubSub.publish` operation returns `false` if the message is dropped.
-
-In a dropping pubsub, publishers can continue to publish new values, but subscribers are not guaranteed to receive all messages.
-
-**Example** (Dropping PubSub Creation)
-
-```ts twoslash
-import { PubSub } from "effect"
-
-// Creates a dropping PubSub with a capacity of 2
-const droppingPubSub = PubSub.dropping<string>(2)
-```
-
-### Sliding PubSub
-
-A sliding `PubSub` removes the oldest message to make space for new ones, ensuring that publishing never blocks.
-
-A sliding pubsub prevents slow subscribers from impacting the message delivery rate. However, there's still a risk that slow subscribers may miss some messages.
-
-**Example** (Sliding PubSub Creation)
-
-```ts twoslash
-import { PubSub } from "effect"
-
-// Creates a sliding PubSub with a capacity of 2
-const slidingPubSub = PubSub.sliding<string>(2)
-```
-
-### Unbounded PubSub
-
-An unbounded `PubSub` has no capacity limit, so publishing always succeeds immediately.
-
-Unbounded pubsubs guarantee that all subscribers receive all messages without slowing down message delivery. However, they can grow indefinitely if messages are published faster than they are consumed.
-
-Generally, it's recommended to use bounded, dropping, or sliding pubsubs unless you have specific use cases for unbounded pubsubs.
-
-**Example**
-
-```ts twoslash
-import { PubSub } from "effect"
-
-// Creates an unbounded PubSub with unlimited capacity
-const unboundedPubSub = PubSub.unbounded<string>()
-```
-
-## Operators On PubSubs
-
-### publishAll
-
-The `PubSub.publishAll` function lets you publish multiple values to the pubsub at once.
-
-**Example** (Publishing Multiple Messages)
-
-```ts twoslash
-import { Effect, PubSub, Queue } from "effect"
-
-const program = Effect.scoped(
-  Effect.gen(function* () {
-    const pubsub = yield* PubSub.bounded<string>(2)
-    const dequeue = yield* PubSub.subscribe(pubsub)
-    yield* PubSub.publishAll(pubsub, ["Message 1", "Message 2"])
-    console.log(yield* Queue.takeAll(dequeue))
-  })
-)
-
-Effect.runFork(program)
-/*
-Output:
-{ _id: 'Chunk', values: [ 'Message 1', 'Message 2' ] }
-*/
-```
-
-### capacity / size
-
-You can check the capacity and current size of a pubsub using `PubSub.capacity` and `PubSub.size`, respectively.
-
-Note that `PubSub.capacity` returns a `number` because the capacity is set at pubsub creation and never changes.
-In contrast, `PubSub.size` returns an effect that determines the current size of the pubsub since the number of messages in the pubsub can change over time.
-
-**Example** (Retrieving PubSub Capacity and Size)
-
-```ts twoslash
-import { Effect, PubSub } from "effect"
-
-const program = Effect.gen(function* () {
-  const pubsub = yield* PubSub.bounded<number>(2)
-  console.log(`capacity: ${PubSub.capacity(pubsub)}`)
-  console.log(`size: ${yield* PubSub.size(pubsub)}`)
-})
-
-Effect.runFork(program)
-/*
-Output:
-capacity: 2
-size: 0
-*/
-```
-
-### Shutting Down a PubSub
-
-To shut down a pubsub, use `PubSub.shutdown`. You can also verify if it has been shut down with `PubSub.isShutdown`, or wait for the shutdown to complete with `PubSub.awaitShutdown`. Shutting down a pubsub also terminates all associated queues, ensuring that the shutdown signal is effectively communicated.
-
-## PubSub as an Enqueue
-
-`PubSub` operators mirror those of [Queue](/docs/concurrency/queue/) with the main difference being that `PubSub.publish` and `PubSub.subscribe` are used in place of `Queue.offer` and `Queue.take`. If you're already familiar with using a `Queue`, you’ll find `PubSub` straightforward.
-
-Essentially, a `PubSub` can be seen as a `Enqueue` that only allows writes:
-
-```ts twoslash showLineNumbers=false
-import type { Queue } from "effect"
-
-interface PubSub<A> extends Queue.Enqueue<A> {}
-```
-
-Here, the `Enqueue` type refers to a queue that only accepts enqueues (or writes). Any value enqueued here is published to the pubsub, and operations like shutdown will also affect the pubsub.
-
-This design makes `PubSub` highly flexible, letting you use it anywhere you need a `Enqueue` that only accepts published values.
-
-> concurrency/latch.mdx\n\n---
-title: Latch
-description: A Latch synchronizes fibers by allowing them to wait until a specific event occurs, controlling access based on its open or closed state.
-sidebar:
-  order: 8
----
-
-A Latch is a synchronization tool that works like a gate, letting fibers wait until the latch is opened before they continue. The latch can be either open or closed:
-
-- When closed, fibers that reach the latch wait until it opens.
-- When open, fibers pass through immediately.
-
-Once opened, a latch typically stays open, although you can close it again if needed
-
-Imagine an application that processes requests only after completing an initial setup (like loading configuration data or establishing a database connection).
-You can create a latch in a closed state while the setup is happening.
-Any incoming requests, represented as fibers, would wait at the latch until it opens.
-Once the setup is finished, you call `latch.open` so the requests can proceed.
-
-## The Latch Interface
-
-A `Latch` includes several operations that let you control and observe its state:
-
-| Operation  | Description                                                                                              |
-| ---------- | -------------------------------------------------------------------------------------------------------- |
-| `whenOpen` | Runs a given effect only if the latch is open, otherwise, waits until it opens.                          |
-| `open`     | Opens the latch so that any waiting fibers can proceed.                                                  |
-| `close`    | Closes the latch, causing fibers to wait when they reach this latch in the future.                       |
-| `await`    | Suspends the current fiber until the latch is opened. If the latch is already open, returns immediately. |
-| `release`  | Allows waiting fibers to continue without permanently opening the latch.                                 |
-
-## Creating a Latch
-
-Use the `Effect.makeLatch` function to create a latch in an open or closed state by passing a boolean. The default is `false`, which means it starts closed.
-
-**Example** (Creating and Using a Latch)
-
-In this example, the latch starts closed. A fiber logs "open sesame" only when the latch is open. After waiting for one second, the latch is opened, releasing the fiber:
-
-```ts twoslash
-import { Console, Effect } from "effect"
-
-// A generator function that demonstrates latch usage
-const program = Effect.gen(function* () {
-  // Create a latch, starting in the closed state
-  const latch = yield* Effect.makeLatch()
-
-  // Fork a fiber that logs "open sesame" only when the latch is open
-  const fiber = yield* Console.log("open sesame").pipe(
-    latch.whenOpen, // Waits for the latch to open
-    Effect.fork // Fork the effect into a new fiber
-  )
-
-  // Wait for 1 second
-  yield* Effect.sleep("1 second")
-
-  // Open the latch, releasing the fiber
-  yield* latch.open
-
-  // Wait for the forked fiber to finish
-  yield* fiber.await
-})
-
-Effect.runFork(program)
-// Output: open sesame (after 1 second)
-```
-
-## Latch vs Semaphore
-
-A latch is good when you have a one-time event or condition that determines whether fibers can proceed. For example, you might use a latch to block all fibers until a setup step is finished, and then open the latch so everyone can continue.
-
-A [semaphore](/docs/concurrency/semaphore/) with one lock (often called a binary semaphore or a mutex) is usually for mutual exclusion: it ensures that only one fiber at a time accesses a shared resource or section of code. Once a fiber acquires the lock, no other fiber can enter the protected area until the lock is released.
-
-In short:
-
-- Use a **latch** if you're gating a set of fibers on a specific event ("Wait here until this becomes true").
-- Use a **semaphore (with one lock)** if you need to ensure only one fiber at a time is in a critical section or using a shared resource.
-
-> concurrency/deferred.mdx\n\n---
-title: Deferred
-description: Master asynchronous coordination with Deferred, a one-time variable for managing effect synchronization and communication.
-sidebar:
-  order: 4
----
-
-A `Deferred<Success, Error>` is a specialized subtype of `Effect` that acts like a one-time variable with some unique characteristics. It can only be completed once, making it a useful tool for managing asynchronous operations and synchronization between different parts of your program.
-
-A deferred is essentially a synchronization primitive that represents a value that may not be available right away. When you create a deferred, it starts out empty. Later, it can be completed with either a success value `Success` or an error value `Error`:
-
-```text showLineNumbers=false
-           ┌─── Represents the success type
-           │        ┌─── Represents the error type
-           │        │
-           ▼        ▼
-Deferred<Success, Error>
-```
-
-Once completed, it cannot be changed again.
-
-When a fiber calls `Deferred.await`, it will pause until the deferred is completed. While the fiber is waiting, it doesn't block the thread, it only blocks semantically. This means other fibers can still run, ensuring efficient concurrency.
-
-A deferred is conceptually similar to JavaScript's `Promise`.
-The key difference is that it supports both success and error types, giving more type safety.
-
-## Creating a Deferred
-
-A deferred can be created using the `Deferred.make` constructor. This returns an effect that represents the creation of the deferred. Since the creation of a deferred involves memory allocation, it must be done within an effect to ensure safe management of resources.
-
-**Example** (Creating a Deferred)
-
-```ts twoslash
-import { Deferred } from "effect"
-
-//      ┌─── Effect<Deferred<string, Error>>
-//      ▼
-const deferred = Deferred.make<string, Error>()
-```
-
-## Awaiting
-
-To retrieve a value from a deferred, you can use `Deferred.await`. This operation suspends the calling fiber until the deferred is completed with a value or an error.
-
-```ts twoslash
-import { Effect, Deferred } from "effect"
-
-//      ┌─── Effect<Deferred<string, Error>, never, never>
-//      ▼
-const deferred = Deferred.make<string, Error>()
-
-//      ┌─── Effect<string, Error, never>
-//      ▼
-const value = deferred.pipe(Effect.andThen(Deferred.await))
-```
-
-## Completing
-
-You can complete a deferred in several ways, depending on whether you want to succeed, fail, or interrupt the waiting fibers:
-
-| API                     | Description                                                                                                     |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `Deferred.succeed`      | Completes the deferred successfully with a value.                                                               |
-| `Deferred.done`         | Completes the deferred with an [Exit](/docs/data-types/exit/) value.                                            |
-| `Deferred.complete`     | Completes the deferred with the result of an effect.                                                            |
-| `Deferred.completeWith` | Completes the deferred with an effect. This effect will be executed by each waiting fiber, so use it carefully. |
-| `Deferred.fail`         | Fails the deferred with an error.                                                                               |
-| `Deferred.die`          | Defects the deferred with a user-defined error.                                                                 |
-| `Deferred.failCause`    | Fails or defects the deferred with a [Cause](/docs/data-types/cause/).                                          |
-| `Deferred.interrupt`    | Interrupts the deferred, forcefully stopping or interrupting the waiting fibers.                                |
-
-**Example** (Completing a Deferred with Success)
-
-```ts twoslash
-import { Effect, Deferred } from "effect"
-
-const program = Effect.gen(function* () {
-  const deferred = yield* Deferred.make<number, string>()
-
-  // Complete the Deferred successfully
-  yield* Deferred.succeed(deferred, 1)
-
-  // Awaiting the Deferred to get its value
-  const value = yield* Deferred.await(deferred)
-
-  console.log(value)
-})
-
-Effect.runFork(program)
-// Output: 1
-```
-
-Completing a deferred produces an `Effect<boolean>`. This effect returns `true` if the deferred was successfully completed, and `false` if it had already been completed previously. This can be useful for tracking the state of the deferred.
-
-**Example** (Checking Completion Status)
-
-```ts twoslash
-import { Effect, Deferred } from "effect"
-
-const program = Effect.gen(function* () {
-  const deferred = yield* Deferred.make<number, string>()
-
-  // Attempt to fail the Deferred
-  const firstAttempt = yield* Deferred.fail(deferred, "oh no!")
-
-  // Attempt to succeed after it has already been completed
-  const secondAttempt = yield* Deferred.succeed(deferred, 1)
-
-  console.log([firstAttempt, secondAttempt])
-})
-
-Effect.runFork(program)
-// Output: [ true, false ]
-```
-
-## Checking Completion Status
-
-Sometimes, you might need to check if a deferred has been completed without suspending the fiber. This can be done using the `Deferred.poll` method. Here's how it works:
-
-- `Deferred.poll` returns an `Option<Effect<A, E>>`:
-  - If the `Deferred` is incomplete, it returns `None`.
-  - If the `Deferred` is complete, it returns `Some`, which contains the result or error.
-
-Additionally, you can use the `Deferred.isDone` function to check if a deferred has been completed. This method returns an `Effect<boolean>`, which evaluates to `true` if the `Deferred` is completed, allowing you to quickly check its state.
-
-**Example** (Polling and Checking Completion Status)
-
-```ts twoslash
-import { Effect, Deferred } from "effect"
-
-const program = Effect.gen(function* () {
-  const deferred = yield* Deferred.make<number, string>()
-
-  // Polling the Deferred to check if it's completed
-  const done1 = yield* Deferred.poll(deferred)
-
-  // Checking if the Deferred has been completed
-  const done2 = yield* Deferred.isDone(deferred)
-
-  console.log([done1, done2])
-})
-
-Effect.runFork(program)
-/*
-Output:
-[ { _id: 'Option', _tag: 'None' }, false ]
-*/
-```
-
-## Common Use Cases
-
-`Deferred` becomes useful when you need to wait for something specific to happen in your program.
-It's ideal for scenarios where you want one part of your code to signal another part when it's ready.
-
-Here are a few common use cases:
-
-| **Use Case**             | **Description**                                                                                                                                                           |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Coordinating Fibers**  | When you have multiple concurrent tasks and need to coordinate their actions, `Deferred` can help one fiber signal to another when it has completed its task.             |
-| **Synchronization**      | Anytime you want to ensure that one piece of code doesn't proceed until another piece of code has finished its work, `Deferred` can provide the synchronization you need. |
-| **Handing Over Work**    | You can use `Deferred` to hand over work from one fiber to another. For example, one fiber can prepare some data, and then a second fiber can continue processing it.     |
-| **Suspending Execution** | When you want a fiber to pause its execution until some condition is met, a `Deferred` can be used to block it until the condition is satisfied.                          |
-
-**Example** (Using Deferred to Coordinate Two Fibers)
-
-In this example, a deferred is used to pass a value between two fibers.
-
-By running both fibers concurrently and using the deferred as a synchronization point, we can ensure that `fiberB` only proceeds after `fiberA` has completed its task.
-
-```ts twoslash
-import { Effect, Deferred, Fiber } from "effect"
-
-const program = Effect.gen(function* () {
-  const deferred = yield* Deferred.make<string, string>()
-
-  // Completes the Deferred with a value after a delay
-  const taskA = Effect.gen(function* () {
-    console.log("Starting task to complete the Deferred")
-    yield* Effect.sleep("1 second")
-    console.log("Completing the Deferred")
-    return yield* Deferred.succeed(deferred, "hello world")
-  })
-
-  // Waits for the Deferred and prints the value
-  const taskB = Effect.gen(function* () {
-    console.log("Starting task to get the value from the Deferred")
-    const value = yield* Deferred.await(deferred)
-    console.log("Got the value from the Deferred")
-    return value
-  })
-
-  // Run both fibers concurrently
-  const fiberA = yield* Effect.fork(taskA)
-  const fiberB = yield* Effect.fork(taskB)
-
-  // Wait for both fibers to complete
-  const both = yield* Fiber.join(Fiber.zip(fiberA, fiberB))
-
-  console.log(both)
-})
-
-Effect.runFork(program)
-/*
-Starting task to complete the Deferred
-Starting task to get the value from the Deferred
-Completing the Deferred
-Got the value from the Deferred
-[ true, 'hello world' ]
-*/
-```
-
-> concurrency/semaphore.mdx\n\n---
-title: Semaphore
-description: Learn to use semaphores in Effect for precise control of concurrency, managing resource access, and coordinating asynchronous tasks effectively.
-sidebar:
-  order: 7
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-A semaphore is a synchronization mechanism used to manage access to a shared resource. In Effect, semaphores help control resource access or coordinate tasks within asynchronous, concurrent operations.
-
-A semaphore acts as a generalized mutex, allowing a set number of **permits** to be held and released concurrently. Permits act like tickets, giving tasks or fibers controlled access to a shared resource. When no permits are available, tasks trying to acquire one will wait until a permit is released.
-
-## Creating a Semaphore
-
-The `Effect.makeSemaphore` function initializes a semaphore with a specified number of permits.
-Each permit allows one task to access a resource or perform an operation concurrently, and multiple permits enable a configurable level of concurrency.
-
-**Example** (Creating a Semaphore with 3 Permits)
-
-```ts twoslash
-import { Effect } from "effect"
-
-// Create a semaphore with 3 permits
-const mutex = Effect.makeSemaphore(3)
-```
-
-## withPermits
-
-The `withPermits` method lets you specify the number of permits required to run an effect. Once the specified permits are available, it runs the effect, automatically releasing the permits when the task completes.
-
-**Example** (Forcing Sequential Task Execution with a One-Permit Semaphore)
-
-In this example, three tasks are started concurrently, but they run sequentially because the one-permit semaphore only allows one task to proceed at a time.
-
-```ts twoslash
-import { Effect } from "effect"
-
-const task = Effect.gen(function* () {
-  yield* Effect.log("start")
-  yield* Effect.sleep("2 seconds")
-  yield* Effect.log("end")
-})
-
-const program = Effect.gen(function* () {
-  const mutex = yield* Effect.makeSemaphore(1)
-
-  // Wrap the task to require one permit, forcing sequential execution
-  const semTask = mutex
-    .withPermits(1)(task)
-    .pipe(Effect.withLogSpan("elapsed"))
-
-  // Run 3 tasks concurrently, but they execute sequentially
-  // due to the one-permit semaphore
-  yield* Effect.all([semTask, semTask, semTask], {
-    concurrency: "unbounded"
-  })
-})
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#1 message=start elapsed=3ms
-timestamp=... level=INFO fiber=#1 message=end elapsed=2010ms
-timestamp=... level=INFO fiber=#2 message=start elapsed=2012ms
-timestamp=... level=INFO fiber=#2 message=end elapsed=4017ms
-timestamp=... level=INFO fiber=#3 message=start elapsed=4018ms
-timestamp=... level=INFO fiber=#3 message=end elapsed=6026ms
-*/
-```
-
-**Example** (Using Multiple Permits to Control Concurrent Task Execution)
-
-In this example, we create a semaphore with five permits and use `withPermits(n)` to allocate a different number of permits for each task:
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  const mutex = yield* Effect.makeSemaphore(5)
-
-  const tasks = [1, 2, 3, 4, 5].map((n) =>
-    mutex
-      .withPermits(n)(
-        Effect.delay(Effect.log(`process: ${n}`), "2 seconds")
-      )
-      .pipe(Effect.withLogSpan("elapsed"))
-  )
-
-  yield* Effect.all(tasks, { concurrency: "unbounded" })
-})
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#1 message="process: 1" elapsed=2011ms
-timestamp=... level=INFO fiber=#2 message="process: 2" elapsed=2017ms
-timestamp=... level=INFO fiber=#3 message="process: 3" elapsed=4020ms
-timestamp=... level=INFO fiber=#4 message="process: 4" elapsed=6025ms
-timestamp=... level=INFO fiber=#5 message="process: 5" elapsed=8034ms
-*/
-```
-
-<Aside type="note" title="Permit Release Guarantee">
-  The `withPermits` method guarantees that permits are released after each
-  task, even if the task fails or is interrupted.
-</Aside>
-
-> resource-management/patterns.mdx\n\n---
-title: Patterns
-description: Learn how to handle sequential operations in Effect, ensuring either full success or rollback on failure, with efficient error handling and resource management.
-sidebar:
-  order: 1
----
-
-## Sequencing Operations
-
-In certain scenarios, you might need to perform a sequence of chained operations where the success of each operation depends on the previous one. However, if any of the operations fail, you would want to reverse the effects of all previous successful operations. This pattern is valuable when you need to ensure that either all operations succeed, or none of them have any effect at all.
-
-Effect offers a way to achieve this pattern using the [Effect.acquireRelease](/docs/resource-management/scope/#defining-resources) function in combination with the [Exit](/docs/data-types/exit/) type.
-The [Effect.acquireRelease](/docs/resource-management/scope/#defining-resources) function allows you to acquire a resource, perform operations with it, and release the resource when you're done.
-The [Exit](/docs/data-types/exit/) type represents the outcome of an effectful computation, indicating whether it succeeded or failed.
-
-Let's go through an example of implementing this pattern. Suppose we want to create a "Workspace" in our application, which involves creating an S3 bucket, an ElasticSearch index, and a Database entry that relies on the previous two.
-
-To begin, we define the domain model for the required [services](/docs/requirements-management/services/):
-
-- `S3`
-- `ElasticSearch`
-- `Database`
-
-```ts twoslash
-import { Effect, Context } from "effect"
-
-class S3Error {
-  readonly _tag = "S3Error"
-}
-
-interface Bucket {
-  readonly name: string
-}
-
-class S3 extends Context.Tag("S3")<
-  S3,
-  {
-    readonly createBucket: Effect.Effect<Bucket, S3Error>
-    readonly deleteBucket: (bucket: Bucket) => Effect.Effect<void>
-  }
->() {}
-
-class ElasticSearchError {
-  readonly _tag = "ElasticSearchError"
-}
-
-interface Index {
-  readonly id: string
-}
-
-class ElasticSearch extends Context.Tag("ElasticSearch")<
-  ElasticSearch,
-  {
-    readonly createIndex: Effect.Effect<Index, ElasticSearchError>
-    readonly deleteIndex: (index: Index) => Effect.Effect<void>
-  }
->() {}
-
-class DatabaseError {
-  readonly _tag = "DatabaseError"
-}
-
-interface Entry {
-  readonly id: string
-}
-
-class Database extends Context.Tag("Database")<
-  Database,
-  {
-    readonly createEntry: (
-      bucket: Bucket,
-      index: Index
-    ) => Effect.Effect<Entry, DatabaseError>
-    readonly deleteEntry: (entry: Entry) => Effect.Effect<void>
-  }
->() {}
-```
-
-Next, we define the three create actions and the overall transaction (`make`) for the
-
-```ts twoslash collapse={3-52}
-import { Effect, Context, Exit } from "effect"
-
-class S3Error {
-  readonly _tag = "S3Error"
-}
-
-interface Bucket {
-  readonly name: string
-}
-
-class S3 extends Context.Tag("S3")<
-  S3,
-  {
-    readonly createBucket: Effect.Effect<Bucket, S3Error>
-    readonly deleteBucket: (bucket: Bucket) => Effect.Effect<void>
-  }
->() {}
-
-class ElasticSearchError {
-  readonly _tag = "ElasticSearchError"
-}
-
-interface Index {
-  readonly id: string
-}
-
-class ElasticSearch extends Context.Tag("ElasticSearch")<
-  ElasticSearch,
-  {
-    readonly createIndex: Effect.Effect<Index, ElasticSearchError>
-    readonly deleteIndex: (index: Index) => Effect.Effect<void>
-  }
->() {}
-
-class DatabaseError {
-  readonly _tag = "DatabaseError"
-}
-
-interface Entry {
-  readonly id: string
-}
-
-class Database extends Context.Tag("Database")<
-  Database,
-  {
-    readonly createEntry: (
-      bucket: Bucket,
-      index: Index
-    ) => Effect.Effect<Entry, DatabaseError>
-    readonly deleteEntry: (entry: Entry) => Effect.Effect<void>
-  }
->() {}
-
-// Create a bucket, and define the release function that deletes the
-// bucket if the operation fails.
-const createBucket = Effect.gen(function* () {
-  const { createBucket, deleteBucket } = yield* S3
-  return yield* Effect.acquireRelease(createBucket, (bucket, exit) =>
-    // The release function for the Effect.acquireRelease operation is
-    // responsible for handling the acquired resource (bucket) after the
-    // main effect has completed. It is called regardless of whether the
-    // main effect succeeded or failed. If the main effect failed,
-    // Exit.isFailure(exit) will be true, and the function will perform
-    // a rollback by calling deleteBucket(bucket). If the main effect
-    // succeeded, Exit.isFailure(exit) will be false, and the function
-    // will return Effect.void, representing a successful, but
-    // do-nothing effect.
-    Exit.isFailure(exit) ? deleteBucket(bucket) : Effect.void
-  )
-})
-
-// Create an index, and define the release function that deletes the
-// index if the operation fails.
-const createIndex = Effect.gen(function* () {
-  const { createIndex, deleteIndex } = yield* ElasticSearch
-  return yield* Effect.acquireRelease(createIndex, (index, exit) =>
-    Exit.isFailure(exit) ? deleteIndex(index) : Effect.void
-  )
-})
-
-// Create an entry in the database, and define the release function that
-// deletes the entry if the operation fails.
-const createEntry = (bucket: Bucket, index: Index) =>
-  Effect.gen(function* () {
-    const { createEntry, deleteEntry } = yield* Database
-    return yield* Effect.acquireRelease(
-      createEntry(bucket, index),
-      (entry, exit) =>
-        Exit.isFailure(exit) ? deleteEntry(entry) : Effect.void
-    )
-  })
-
-const make = Effect.scoped(
-  Effect.gen(function* () {
-    const bucket = yield* createBucket
-    const index = yield* createIndex
-    return yield* createEntry(bucket, index)
-  })
-)
-```
-
-We then create simple service implementations to test the behavior of our Workspace code.
-To achieve this, we will utilize [layers](/docs/requirements-management/layers/) to construct test
-These layers will be able to handle various scenarios, including errors, which we can control using the `FailureCase` type.
-
-```ts twoslash collapse={3-99}
-import { Effect, Context, Layer, Console, Exit } from "effect"
-
-class S3Error {
-  readonly _tag = "S3Error"
-}
-
-interface Bucket {
-  readonly name: string
-}
-
-class S3 extends Context.Tag("S3")<
-  S3,
-  {
-    readonly createBucket: Effect.Effect<Bucket, S3Error>
-    readonly deleteBucket: (bucket: Bucket) => Effect.Effect<void>
-  }
->() {}
-
-class ElasticSearchError {
-  readonly _tag = "ElasticSearchError"
-}
-
-interface Index {
-  readonly id: string
-}
-
-class ElasticSearch extends Context.Tag("ElasticSearch")<
-  ElasticSearch,
-  {
-    readonly createIndex: Effect.Effect<Index, ElasticSearchError>
-    readonly deleteIndex: (index: Index) => Effect.Effect<void>
-  }
->() {}
-
-class DatabaseError {
-  readonly _tag = "DatabaseError"
-}
-
-interface Entry {
-  readonly id: string
-}
-
-class Database extends Context.Tag("Database")<
-  Database,
-  {
-    readonly createEntry: (
-      bucket: Bucket,
-      index: Index
-    ) => Effect.Effect<Entry, DatabaseError>
-    readonly deleteEntry: (entry: Entry) => Effect.Effect<void>
-  }
->() {}
-
-// Create a bucket, and define the release function that deletes the
-// bucket if the operation fails.
-const createBucket = Effect.gen(function* () {
-  const { createBucket, deleteBucket } = yield* S3
-  return yield* Effect.acquireRelease(createBucket, (bucket, exit) =>
-    // The release function for the Effect.acquireRelease operation is
-    // responsible for handling the acquired resource (bucket) after the
-    // main effect has completed. It is called regardless of whether the
-    // main effect succeeded or failed. If the main effect failed,
-    // Exit.isFailure(exit) will be true, and the function will perform
-    // a rollback by calling deleteBucket(bucket). If the main effect
-    // succeeded, Exit.isFailure(exit) will be false, and the function
-    // will return Effect.void, representing a successful, but
-    // do-nothing effect.
-    Exit.isFailure(exit) ? deleteBucket(bucket) : Effect.void
-  )
-})
-
-// Create an index, and define the release function that deletes the
-// index if the operation fails.
-const createIndex = Effect.gen(function* () {
-  const { createIndex, deleteIndex } = yield* ElasticSearch
-  return yield* Effect.acquireRelease(createIndex, (index, exit) =>
-    Exit.isFailure(exit) ? deleteIndex(index) : Effect.void
-  )
-})
-
-// Create an entry in the database, and define the release function that
-// deletes the entry if the operation fails.
-const createEntry = (bucket: Bucket, index: Index) =>
-  Effect.gen(function* () {
-    const { createEntry, deleteEntry } = yield* Database
-    return yield* Effect.acquireRelease(
-      createEntry(bucket, index),
-      (entry, exit) =>
-        Exit.isFailure(exit) ? deleteEntry(entry) : Effect.void
-    )
-  })
-
-const make = Effect.scoped(
-  Effect.gen(function* () {
-    const bucket = yield* createBucket
-    const index = yield* createIndex
-    return yield* createEntry(bucket, index)
-  })
-)
-
-// The `FailureCaseLiterals` type allows us to provide different error
-// scenarios while testing our
-//
-// For example, by providing the value "S3", we can simulate an error
-// scenario specific to the S3 service. This helps us ensure that our
-// program handles errors correctly and behaves as expected in various
-// situations.
-//
-// Similarly, we can provide other values like "ElasticSearch" or
-// "Database" to simulate error scenarios for those  In cases
-// where we want to test the absence of errors, we can provide
-// `undefined`. By using this parameter, we can thoroughly test our
-// services and verify their behavior under different error conditions.
-type FailureCaseLiterals = "S3" | "ElasticSearch" | "Database" | undefined
-
-class FailureCase extends Context.Tag("FailureCase")<
-  FailureCase,
-  FailureCaseLiterals
->() {}
-
-// Create a test layer for the S3 service
-
-const S3Test = Layer.effect(
-  S3,
-  Effect.gen(function* () {
-    const failureCase = yield* FailureCase
-    return {
-      createBucket: Effect.gen(function* () {
-        console.log("[S3] creating bucket")
-        if (failureCase === "S3") {
-          return yield* Effect.fail(new S3Error())
-        } else {
-          return { name: "<bucket.name>" }
-        }
-      }),
-      deleteBucket: (bucket) =>
-        Console.log(`[S3] delete bucket ${bucket.name}`)
-    }
-  })
-)
-
-// Create a test layer for the ElasticSearch service
-
-const ElasticSearchTest = Layer.effect(
-  ElasticSearch,
-  Effect.gen(function* () {
-    const failureCase = yield* FailureCase
-    return {
-      createIndex: Effect.gen(function* () {
-        console.log("[ElasticSearch] creating index")
-        if (failureCase === "ElasticSearch") {
-          return yield* Effect.fail(new ElasticSearchError())
-        } else {
-          return { id: "<index.id>" }
-        }
-      }),
-      deleteIndex: (index) =>
-        Console.log(`[ElasticSearch] delete index ${index.id}`)
-    }
-  })
-)
-
-// Create a test layer for the Database service
-
-const DatabaseTest = Layer.effect(
-  Database,
-  Effect.gen(function* () {
-    const failureCase = yield* FailureCase
-    return {
-      createEntry: (bucket, index) =>
-        Effect.gen(function* () {
-          console.log(
-            "[Database] creating entry for bucket" +
-              `${bucket.name} and index ${index.id}`
-          )
-          if (failureCase === "Database") {
-            return yield* Effect.fail(new DatabaseError())
-          } else {
-            return { id: "<entry.id>" }
-          }
-        }),
-      deleteEntry: (entry) =>
-        Console.log(`[Database] delete entry ${entry.id}`)
-    }
-  })
-)
-
-// Merge all the test layers for S3, ElasticSearch, and Database
-// services into a single layer
-const layer = Layer.mergeAll(S3Test, ElasticSearchTest, DatabaseTest)
-
-// Create a runnable effect to test the Workspace code. The effect is
-// provided with the test layer and a FailureCase service with undefined
-// value (no failure case).
-const runnable = make.pipe(
-  Effect.provide(layer),
-  Effect.provideService(FailureCase, undefined)
-)
-
-Effect.runPromise(Effect.either(runnable)).then(console.log)
-```
-
-Let's examine the test results for the scenario where `FailureCase` is set to `undefined` (happy path):
-
-```ansi showLineNumbers=false
-[S3] creating bucket
-[ElasticSearch] creating index
-[Database] creating entry for bucket <bucket.name> and index <index.id>
-{
-  _id: "Either",
-  _tag: "Right",
-  right: {
-    id: "<entry.id>"
-  }
-}
-```
-
-In this case, all operations succeed, and we see a successful result with `right({ id: '<entry.id>' })`.
-
-Now, let's simulate a failure in the `Database`:
-
-```ts showLineNumbers=false
-const runnable = make.pipe(
-  Effect.provide(layer),
-  Effect.provideService(FailureCase, "Database")
-)
-```
-
-The console output will be:
-
-```ansi showLineNumbers=false
-[S3] creating bucket
-[ElasticSearch] creating index
-[Database] creating entry for bucket <bucket.name> and index <index.id>
-[ElasticSearch] delete index <index.id>
-[S3] delete bucket <bucket.name>
-{
-  _id: "Either",
-  _tag: "Left",
-  left: {
-    _tag: "DatabaseError"
-  }
-}
-```
-
-You can observe that once the `Database` error occurs, there is a complete rollback that deletes the `ElasticSearch` index first and then the associated `S3` bucket. The result is a failure with `left(new DatabaseError())`.
-
-Let's now make the index creation fail instead:
-
-```ts showLineNumbers=false
-const runnable = make.pipe(
-  Effect.provide(layer),
-  Effect.provideService(FailureCase, "ElasticSearch")
-)
-```
-
-In this case, the console output will be:
-
-```ansi showLineNumbers=false
-[S3] creating bucket
-[ElasticSearch] creating index
-[S3] delete bucket <bucket.name>
-{
-  _id: "Either",
-  _tag: "Left",
-  left: {
-    _tag: "ElasticSearchError"
-  }
-}
-```
-
-As expected, once the `ElasticSearch` index creation fails, there is a rollback that deletes the `S3` bucket. The result is a failure with `left(new ElasticSearchError())`.
-
-> resource-management/scope.mdx\n\n---
-title: Scope
-description: Learn how Effect simplifies resource management with Scopes, ensuring efficient cleanup and safe resource handling in long-running applications.
-sidebar:
-  order: 0
----
-
-import { Aside, Tabs, TabItem } from "@astrojs/starlight/components"
-
-In long-running applications, managing resources efficiently is essential, particularly when building large-scale systems. If resources like socket connections, database connections, or file descriptors are not properly managed, it can lead to resource leaks, which degrade application performance and reliability. Effect provides constructs that help ensure resources are properly managed and released, even in cases where exceptions occur.
-
-By ensuring that every time a resource is acquired, there is a corresponding mechanism to release it, Effect simplifies the process of resource management in your application.
-
-## The Scope Data Type
-
-The `Scope` data type is a core construct in Effect for managing resources in a safe and composable way.
-
-A scope represents the lifetime of one or more resources. When the scope is closed, all the resources within it are released, ensuring that no resources are leaked. Scopes also allow the addition of **finalizers**, which define how to release resources.
-
-With the `Scope` data type, you can:
-
-- **Add finalizers**: A finalizer specifies the cleanup logic for a resource.
-- **Close the scope**: When the scope is closed, all resources are released, and the finalizers are executed.
-
-**Example** (Managing a Scope)
-
-```ts twoslash
-import { Scope, Effect, Console, Exit } from "effect"
-
-const program =
-  // create a new scope
-  Scope.make().pipe(
-    // add finalizer 1
-    Effect.tap((scope) =>
-      Scope.addFinalizer(scope, Console.log("finalizer 1"))
-    ),
-    // add finalizer 2
-    Effect.tap((scope) =>
-      Scope.addFinalizer(scope, Console.log("finalizer 2"))
-    ),
-    // close the scope
-    Effect.andThen((scope) =>
-      Scope.close(scope, Exit.succeed("scope closed successfully"))
-    )
-  )
-
-Effect.runPromise(program)
-/*
-Output:
-finalizer 2 <-- finalizers are closed in reverse order
-finalizer 1
-*/
-```
-
-In the above example, finalizers are added to the scope, and when the scope is closed, the finalizers are **executed in the reverse order**.
-
-This reverse order is important because it ensures that resources are released in the correct sequence.
-
-For instance, if you acquire a network connection and then access a file on a remote server, the file must be closed before the network connection to avoid errors.
-
-<Aside type="tip" title="High-Level Resource Management">
-  Although managing scopes directly with `Scope` is possible, it's more
-  common to use higher-level functions like
-  [Effect.addFinalizer](#addfinalizer) or
-  [Effect.acquireUseRelease](#acquireuserelease), which handle much of the
-  complexity for you.
-</Aside>
-
-## addFinalizer
-
-The `Effect.addFinalizer` function is a high-level API that allows you to add finalizers to the scope of an effect. A finalizer is a piece of code that is guaranteed to run when the associated scope is closed. The behavior of the finalizer can vary based on the [Exit](/docs/data-types/exit/) value, which represents how the scope was closed—whether successfully or with an error.
-
-**Example** (Adding a Finalizer on Success)
-
-<Tabs syncKey="pipe-vs-gen">
-
-<TabItem label="Using Effect.gen">
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-//      ┌─── Effect<string, never, Scope>
-//      ▼
-const program = Effect.gen(function* () {
-  yield* Effect.addFinalizer((exit) =>
-    Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
-  )
-  return "some result"
-})
-
-// Wrapping the effect in a scope
-//
-//      ┌─── Effect<string, never, never>
-//      ▼
-const runnable = Effect.scoped(program)
-
-Effect.runPromiseExit(runnable).then(console.log)
-/*
-Output:
-Finalizer executed. Exit status: Success
-{ _id: 'Exit', _tag: 'Success', value: 'some result' }
-*/
-```
-
-</TabItem>
-
-<TabItem label="Using pipe">
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-//      ┌─── Effect<string, never, Scope>
-//      ▼
-const program = Effect.addFinalizer((exit) =>
-  Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
-).pipe(Effect.andThen(Effect.succeed("some result")))
-
-// Wrapping the effect in a scope
-//
-//      ┌─── Effect<string, never, never>
-//      ▼
-const runnable = Effect.scoped(program)
-
-Effect.runPromiseExit(runnable).then(console.log)
-/*
-Output:
-Finalizer executed. Exit status: Success
-{ _id: 'Exit', _tag: 'Success', value: 'some result' }
-*/
-```
-
-</TabItem>
-
-</Tabs>
-
-In this example, we use `Effect.addFinalizer` to add a finalizer that logs the exit state after the scope is closed. The finalizer will execute when the effect finishes, and it will log whether the effect completed successfully or failed.
-
-The type signature:
-
-```ts showLineNumbers=false "Scope"
-const program: Effect<string, never, Scope>
-```
-
-shows that the workflow requires a `Scope` to run. You can provide this `Scope` using the `Effect.scoped` function, which creates a new scope, runs the effect within it, and ensures the finalizers are executed when the scope is closed.
-
-<Aside type="note" title="Finalizer Execution Order">
-  Finalizers are executed in reverse order of how they were added,
-  ensuring that resources are released in the proper sequence, just like
-  in stack unwinding.
-</Aside>
-
-**Example** (Adding a Finalizer on Failure)
-
-<Tabs syncKey="pipe-vs-gen">
-
-<TabItem label="Using Effect.gen">
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-//      ┌─── Effect<never, string, Scope>
-//      ▼
-const program = Effect.gen(function* () {
-  yield* Effect.addFinalizer((exit) =>
-    Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
-  )
-  return yield* Effect.fail("Uh oh!")
-})
-
-// Wrapping the effect in a scope
-//
-//      ┌─── Effect<never, string, never>
-//      ▼
-const runnable = Effect.scoped(program)
-
-Effect.runPromiseExit(runnable).then(console.log)
-/*
-Output:
-Finalizer executed. Exit status: Failure
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: { _id: 'Cause', _tag: 'Fail', failure: 'Uh oh!' }
-}
-*/
-```
-
-</TabItem>
-
-<TabItem label="Using pipe">
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-//      ┌─── Effect<never, string, Scope>
-//      ▼
-const program = Effect.addFinalizer((exit) =>
-  Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
-).pipe(Effect.andThen(Effect.fail("Uh oh!")))
-
-// Wrapping the effect in a scope
-//
-//      ┌─── Effect<never, string, never>
-//      ▼
-const runnable = Effect.scoped(program)
-
-Effect.runPromiseExit(runnable).then(console.log)
-/*
-Output:
-Finalizer executed. Exit status: Failure
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: { _id: 'Cause', _tag: 'Fail', failure: 'Uh oh!' }
-}
-*/
-```
-
-</TabItem>
-
-</Tabs>
-
-In this case, the finalizer is executed even when the effect fails. The log output reflects that the finalizer runs after the failure, and it logs the failure details.
-
-**Example** (Adding a Finalizer on [Interruption](/docs/concurrency/basic-concurrency/#interruptions))
-
-<Tabs syncKey="pipe-vs-gen">
-
-<TabItem label="Using Effect.gen">
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-//      ┌─── Effect<never, never, Scope>
-//      ▼
-const program = Effect.gen(function* () {
-  yield* Effect.addFinalizer((exit) =>
-    Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
-  )
-  return yield* Effect.interrupt
-})
-
-// Wrapping the effect in a scope
-//
-//      ┌─── Effect<never, never, never>
-//      ▼
-const runnable = Effect.scoped(program)
-
-Effect.runPromiseExit(runnable).then(console.log)
-/*
-Output:
-Finalizer executed. Exit status: Failure
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: {
-    _id: 'Cause',
-    _tag: 'Interrupt',
-    fiberId: {
-      _id: 'FiberId',
-      _tag: 'Runtime',
-      id: 0,
-      startTimeMillis: ...
-    }
-  }
-}
-*/
-```
-
-</TabItem>
-
-<TabItem label="Using pipe">
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-//      ┌─── Effect<never, never, Scope>
-//      ▼
-const program = Effect.addFinalizer((exit) =>
-  Console.log(`Finalizer executed. Exit status: ${exit._tag}`)
-).pipe(Effect.andThen(Effect.interrupt))
-
-// Wrapping the effect in a scope
-//
-//      ┌─── Effect<never, never, never>
-//      ▼
-const runnable = Effect.scoped(program)
-
-Effect.runPromiseExit(runnable).then(console.log)
-/*
-Output:
-Finalizer executed. Exit status: Failure
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: {
-    _id: 'Cause',
-    _tag: 'Interrupt',
-    fiberId: {
-      _id: 'FiberId',
-      _tag: 'Runtime',
-      id: 0,
-      startTimeMillis: ...
-    }
-  }
-}
-*/
-```
-
-</TabItem>
-
-</Tabs>
-
-This example shows how a finalizer behaves when the effect is interrupted. The finalizer runs after the interruption, and the exit status reflects that the effect was stopped mid-execution.
-
-## Manually Create and Close Scopes
-
-When you're working with multiple scoped resources within a single operation, it's important to understand how their scopes interact.
-By default, these scopes are merged into one, but you can have more fine-grained control over when each scope is closed by manually creating and closing them.
-
-Let's start by looking at how scopes are merged by default:
-
-**Example** (Merging Scopes)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Effect.gen(function* () {
-  console.log("task 1")
-  yield* Effect.addFinalizer(() => Console.log("finalizer after task 1"))
-})
-
-const task2 = Effect.gen(function* () {
-  console.log("task 2")
-  yield* Effect.addFinalizer(() => Console.log("finalizer after task 2"))
-})
-
-const program = Effect.gen(function* () {
-  // The scopes of both tasks are merged into one
-  yield* task1
-  yield* task2
-})
-
-Effect.runPromise(Effect.scoped(program))
-/*
-Output:
-task 1
-task 2
-finalizer after task 2
-finalizer after task 1
-*/
-```
-
-In this case, the scopes of `task1` and `task2` are merged into a single scope, and when the program is run, it outputs the tasks and their finalizers in a specific order.
-
-If you want more control over when each scope is closed, you can manually create and close them:
-
-**Example** (Manually Creating and Closing Scopes)
-
-```ts twoslash
-import { Console, Effect, Exit, Scope } from "effect"
-
-const task1 = Effect.gen(function* () {
-  console.log("task 1")
-  yield* Effect.addFinalizer(() => Console.log("finalizer after task 1"))
-})
-
-const task2 = Effect.gen(function* () {
-  console.log("task 2")
-  yield* Effect.addFinalizer(() => Console.log("finalizer after task 2"))
-})
-
-const program = Effect.gen(function* () {
-  const scope1 = yield* Scope.make()
-  const scope2 = yield* Scope.make()
-
-  // Extend the scope of task1 into scope1
-  yield* task1.pipe(Scope.extend(scope1))
-
-  // Extend the scope of task2 into scope2
-  yield* task2.pipe(Scope.extend(scope2))
-
-  // Manually close scope1 and scope2
-  yield* Scope.close(scope1, Exit.void)
-  yield* Console.log("doing something else")
-  yield* Scope.close(scope2, Exit.void)
-})
-
-Effect.runPromise(program)
-/*
-Output:
-task 1
-task 2
-finalizer after task 1
-doing something else
-finalizer after task 2
-*/
-```
-
-In this example, we create two separate scopes, `scope1` and `scope2`, and extend the scope of each task into its respective scope. When you run the program, it outputs the tasks and their finalizers in a different order.
-
-<Aside type="note" title="Extending a Scope">
-  The `Scope.extend` function allows you to extend the scope of an effect
-  workflow that requires a scope into another scope without closing the
-  scope when the workflow finishes executing. This allows you to extend a
-  scoped value into a larger scope.
-</Aside>
-
-You might wonder what happens when a scope is closed, but a task within that scope hasn't completed yet.
-The key point to note is that the scope closing doesn't force the task to be interrupted.
-
-**Example** (Closing a Scope with Pending Tasks)
-
-```ts twoslash
-import { Console, Effect, Exit, Scope } from "effect"
-
-const task = Effect.gen(function* () {
-  yield* Effect.sleep("1 second")
-  console.log("Executed")
-  yield* Effect.addFinalizer(() => Console.log("Task Finalizer"))
-})
-
-const program = Effect.gen(function* () {
-  const scope = yield* Scope.make()
-
-  // Close the scope immediately
-  yield* Scope.close(scope, Exit.void)
-  console.log("Scope closed")
-
-  // This task will be executed even if the scope is closed
-  yield* task.pipe(Scope.extend(scope))
-})
-
-Effect.runPromise(program)
-/*
-Output:
-Scope closed
-Executed <-- after 1 second
-Task Finalizer
-*/
-```
-
-## Finalization
-
-In many languages, the `try` / `finally` construct provides a way to ensure that, when the try block finishes (normally or with an error), the code in the finally block always runs. Effect offers a similar feature through the `Effect.ensuring` function.
-
-For higher-level approaches with automatic acquisition and release, see the [acquireRelease](#acquirerelease) family of functions.
-
-### ensuring
-
-This function makes sure a finalizer effect always runs once the main effect begins, whether the effect succeeds, fails, or is interrupted.
-
-This can be helpful when you need cleanup steps or final actions in all situations, such as releasing resources or logging messages.
-
-If you need access to the effect's result, consider using [onExit](#onexit).
-
-**Example** (Running a Finalizer in All Outcomes)
-
-```ts twoslash
-import { Console, Effect } from "effect"
-
-const handler = Effect.ensuring(Console.log("Cleanup completed"))
-
-const success = Console.log("Task completed").pipe(
-  Effect.as("some result"),
-  handler
-)
-
-Effect.runFork(success)
-/*
-Output:
-Task completed
-Cleanup completed
-*/
-
-const failure = Console.log("Task failed").pipe(
-  Effect.andThen(Effect.fail("some error")),
-  handler
-)
-
-Effect.runFork(failure)
-/*
-Output:
-Task failed
-Cleanup completed
-*/
-
-const interruption = Console.log("Task interrupted").pipe(
-  Effect.andThen(Effect.interrupt),
-  handler
-)
-
-Effect.runFork(interruption)
-/*
-Output:
-Task interrupted
-Cleanup completed
-*/
-```
-
-### onExit
-
-This function runs a cleanup step once the main effect finishes, regardless of whether it succeeds, fails, or is interrupted.
-
-It passes the [Exit](/docs/data-types/exit/) value to the cleanup function, which reveals how the effect ended:
-
-- If the effect succeeds, the `Exit` holds the success value.
-- If it fails, the `Exit` includes the error or failure cause.
-- If it is interrupted, the `Exit` reflects that interruption.
-
-The cleanup step itself is uninterruptible, which can help manage resources in complex or high-concurrency cases.
-
-**Example** (Running a Cleanup Function in All Outcomes)
-
-```ts twoslash
-import { Console, Effect, Exit } from "effect"
-
-// Define a cleanup function that logs the outcome of the effect
-const handler = Effect.onExit((exit) =>
-  Console.log(`Cleanup completed: ${Exit.getOrElse(exit, String)}`)
-)
-
-const success = Console.log("Task completed").pipe(
-  Effect.as("some result"),
-  handler
-)
-
-Effect.runFork(success)
-/*
-Output:
-Task completed
-Cleanup completed: some result
-*/
-
-const failure = Console.log("Task failed").pipe(
-  Effect.andThen(Effect.fail("some error")),
-  handler
-)
-
-Effect.runFork(failure)
-/*
-Output:
-Task failed
-Cleanup completed: Error: some error
-*/
-
-const interruption = Console.log("Task interrupted").pipe(
-  Effect.andThen(Effect.interrupt),
-  handler
-)
-
-Effect.runFork(interruption)
-/*
-Output:
-Task interrupted
-Cleanup completed: All fibers interrupted without errors.
-*/
-```
-
-### onError
-
-This function lets you attach a cleanup effect that runs whenever the calling effect fails, passing the cause of the failure to the cleanup effect.
-
-You can use it to perform actions such as logging, releasing resources, or applying additional recovery steps.
-
-The cleanup effect will also run if the failure is caused by interruption, and it is uninterruptible, so it always finishes once it starts.
-
-**Example** (Cleanup on Failure)
-
-```ts twoslash
-import { Console, Effect } from "effect"
-
-// This handler logs the failure cause when the effect fails
-const handler = Effect.onError((cause) =>
-  Console.log(`Cleanup completed: ${cause}`)
-)
-
-const success = Console.log("Task completed").pipe(
-  Effect.as("some result"),
-  handler
-)
-
-Effect.runFork(success)
-/*
-Output:
-Task completed
-*/
-
-const failure = Console.log("Task failed").pipe(
-  Effect.andThen(Effect.fail("some error")),
-  handler
-)
-
-Effect.runFork(failure)
-/*
-Output:
-Task failed
-Cleanup completed: Error: some error
-*/
-
-const interruption = Console.log("Task interrupted").pipe(
-  Effect.andThen(Effect.interrupt),
-  handler
-)
-
-Effect.runFork(interruption)
-/*
-Output:
-Task interrupted
-Cleanup completed: All fibers interrupted without errors.
-*/
-```
-
-## Defining Resources
-
-### acquireRelease
-
-The `Effect.acquireRelease(acquire, release)` function allows you to define resources that are acquired and safely released when they are no longer needed. This is useful for managing resources such as file handles, database connections, or network sockets.
-
-To use `Effect.acquireRelease`, you need to define three actions:
-
-1. **Acquiring the Resource**: An effect describing the acquisition of the resource, e.g., opening a file or establishing a database connection.
-2. **Using the Resource**: An effect describing the actual process to produce a result, e.g., reading from the file or querying the database.
-3. **Releasing the Resource**: The clean-up effect that ensures the resource is properly released, e.g., closing the file or the connection.
-
-The acquisition process is **uninterruptible** to ensure that partial resource acquisition doesn't leave your system in an inconsistent state.
-
-The `Effect.acquireRelease` function guarantees that once a resource is successfully acquired, its release step is always executed when the `Scope` is closed.
-
-**Example** (Defining a Simple Resource)
-
-```ts twoslash
-import { Effect } from "effect"
-
-// Define an interface for a resource
-interface MyResource {
-  readonly contents: string
-  readonly close: () => Promise<void>
-}
-
-// Simulate resource acquisition
-const getMyResource = (): Promise<MyResource> =>
-  Promise.resolve({
-    contents: "lorem ipsum",
-    close: () =>
-      new Promise((resolve) => {
-        console.log("Resource released")
-        resolve()
-      })
-  })
-
-// Define how the resource is acquired
-const acquire = Effect.tryPromise({
-  try: () =>
-    getMyResource().then((res) => {
-      console.log("Resource acquired")
-      return res
-    }),
-  catch: () => new Error("getMyResourceError")
-})
-
-// Define how the resource is released
-const release = (res: MyResource) => Effect.promise(() => res.close())
-
-// Create the resource management workflow
-//
-//      ┌─── Effect<MyResource, Error, Scope>
-//      ▼
-const resource = Effect.acquireRelease(acquire, release)
-```
-
-In the code above, the `Effect.acquireRelease` function creates a resource workflow that requires a `Scope`:
-
-```ts showLineNumbers=false "Scope"
-const resource: Effect<MyResource, Error, Scope>
-```
-
-This means that the workflow needs a `Scope` to run, and the resource will automatically be released when the scope is closed.
-
-You can now use the resource by chaining operations using `Effect.andThen` or similar functions.
-
-We can continue working with the resource for as long as we want by using `Effect.andThen` or other Effect operators. For example, here's how we can read the contents:
-
-**Example** (Using the Resource)
-
-```ts twoslash collapse={3-34}
-import { Effect } from "effect"
-
-// Define an interface for a resource
-interface MyResource {
-  readonly contents: string
-  readonly close: () => Promise<void>
-}
-
-// Simulate resource acquisition
-const getMyResource = (): Promise<MyResource> =>
-  Promise.resolve({
-    contents: "lorem ipsum",
-    close: () =>
-      new Promise((resolve) => {
-        console.log("Resource released")
-        resolve()
-      })
-  })
-
-// Define how the resource is acquired
-const acquire = Effect.tryPromise({
-  try: () =>
-    getMyResource().then((res) => {
-      console.log("Resource acquired")
-      return res
-    }),
-  catch: () => new Error("getMyResourceError")
-})
-
-// Define how the resource is released
-const release = (res: MyResource) => Effect.promise(() => res.close())
-
-// Create the resource management workflow
-const resource = Effect.acquireRelease(acquire, release)
-
-//      ┌─── Effect<void, Error, Scope>
-//      ▼
-const program = Effect.gen(function* () {
-  const res = yield* resource
-  console.log(`content is ${res.contents}`)
-})
-```
-
-To ensure proper resource management, the `Scope` should be closed when you're done with the resource. The `Effect.scoped` function handles this for you by creating a `Scope`, running the effect, and then closing the `Scope` when the effect finishes.
-
-**Example** (Providing the `Scope` with `Effect.scoped`)
-
-```ts twoslash collapse={3-34}
-import { Effect } from "effect"
-
-// Define an interface for a resource
-interface MyResource {
-  readonly contents: string
-  readonly close: () => Promise<void>
-}
-
-// Simulate resource acquisition
-const getMyResource = (): Promise<MyResource> =>
-  Promise.resolve({
-    contents: "lorem ipsum",
-    close: () =>
-      new Promise((resolve) => {
-        console.log("Resource released")
-        resolve()
-      })
-  })
-
-// Define how the resource is acquired
-const acquire = Effect.tryPromise({
-  try: () =>
-    getMyResource().then((res) => {
-      console.log("Resource acquired")
-      return res
-    }),
-  catch: () => new Error("getMyResourceError")
-})
-
-// Define how the resource is released
-const release = (res: MyResource) => Effect.promise(() => res.close())
-
-// Create the resource management workflow
-const resource = Effect.acquireRelease(acquire, release)
-
-//      ┌─── Effect<void, Error, never>
-//      ▼
-const program = Effect.scoped(
-  Effect.gen(function* () {
-    const res = yield* resource
-    console.log(`content is ${res.contents}`)
-  })
-)
-
-// We now have a workflow that is ready to run
-Effect.runPromise(program)
-/*
-Resource acquired
-content is lorem ipsum
-Resource released
-*/
-```
-
-### acquireUseRelease
-
-The `Effect.acquireUseRelease` function is a specialized version of the `Effect.acquireRelease` function that simplifies resource management by automatically handling the scoping of resources.
-
-```ts showLineNumbers=false
-Effect.acquireUseRelease(acquire, use, release)
-```
-
-The main difference is that `Effect.acquireUseRelease` eliminates the need to manually call `Effect.scoped` to manage the resource's scope. It has additional knowledge about when you are done using the resource created with the `acquire` step. This is achieved by providing a `use` argument, which represents the function that operates on the acquired resource. As a result, `Effect.acquireUseRelease` can automatically determine when it should execute the release step.
-
-**Example** (Automatically Managing Resource Lifetime)
-
-```ts twoslash collapse={3-31}
-import { Effect, Console } from "effect"
-
-// Define an interface for a resource
-interface MyResource {
-  readonly contents: string
-  readonly close: () => Promise<void>
-}
-
-// Simulate resource acquisition
-const getMyResource = (): Promise<MyResource> =>
-  Promise.resolve({
-    contents: "lorem ipsum",
-    close: () =>
-      new Promise((resolve) => {
-        console.log("Resource released")
-        resolve()
-      })
-  })
-
-// Define how the resource is acquired
-const acquire = Effect.tryPromise({
-  try: () =>
-    getMyResource().then((res) => {
-      console.log("Resource acquired")
-      return res
-    }),
-  catch: () => new Error("getMyResourceError")
-})
-
-// Define how the resource is released
-const release = (res: MyResource) => Effect.promise(() => res.close())
-
-const use = (res: MyResource) => Console.log(`content is ${res.contents}`)
-
-//      ┌─── Effect<void, Error, never>
-//      ▼
-const program = Effect.acquireUseRelease(acquire, use, release)
-
-Effect.runPromise(program)
-/*
-Output:
-Resource acquired
-content is lorem ipsum
-Resource released
-*/
-```
-
-> getting-started/why-effect.mdx\n\n---
-title: Why Effect?
-description: Discover how Effect transforms TypeScript programming by using the type system to track errors, context, and success, offering practical solutions for building reliable, maintainable applications.
-sidebar:
-  order: 1
----
-
-Programming is challenging. When we build libraries and apps, we look to many tools to handle the complexity and make our day-to-day more manageable. Effect presents a new way of thinking about programming in TypeScript.
-
-Effect is an ecosystem of tools that help you build better applications and libraries. As a result, you will also learn more about the TypeScript language and how to use the type system to make your programs more reliable and easier to maintain.
-
-In "typical" TypeScript, without Effect, we write code that assumes that a function is either successful or throws an exception. For example:
-
-```ts twoslash
-const divide = (a: number, b: number): number => {
-  if (b === 0) {
-    throw new Error("Cannot divide by zero")
-  }
-  return a / b
-}
-```
-
-Based on the types, we have no idea that this function can throw an exception. We can only find out by reading the code. This may not seem like much of a problem when you only have one function in your codebase, but when you have hundreds or thousands, it really starts to add up. It's easy to forget that a function can throw an exception, and it's easy to forget to handle that exception.
-
-Often, we will do the "easiest" thing and just wrap the function in a `try/catch` block. This is a good first step to prevent your program from crashing, but it doesn't make it any easier to manage or understand our complex application/library. We can do better.
-
-One of the most important tools we have in TypeScript is the compiler. It is the first line of defense against bugs, domain errors, and general complexity.
-
-## The Effect Pattern
-
-While Effect is a vast ecosystem of many different tools, if it had to be reduced down to just one idea, it would be the following:
-
-Effect's major unique insight is that we can use the type system to track **errors** and **context**, not only **success** values as shown in the divide example above.
-
-Here's the same divide function from above, but with the Effect pattern:
-
-```ts twoslash
-import { Effect } from "effect"
-
-const divide = (
-  a: number,
-  b: number
-): Effect.Effect<number, Error, never> =>
-  b === 0
-    ? Effect.fail(new Error("Cannot divide by zero"))
-    : Effect.succeed(a / b)
-```
-
-With this approach, the function no longer throws exceptions. Instead, errors are handled as values, which can be passed along like success values. The type signature also makes it clear:
-
-- What success value the function returns (`number`).
-- What error can occur (`Error`).
-- What additional context or dependencies are required (`never` indicates none).
-
-```text showLineNumbers=false
-         ┌─── Produces a value of type number
-         │       ┌─── Fails with an Error
-         │       │      ┌─── Requires no dependencies
-         ▼       ▼      ▼
-Effect<number, Error, never>
-```
-
-Additionally, tracking context allows you to provide additional information to your functions without having to pass in everything as an argument. For example, you can swap out implementations of live external services with mocks during your tests without changing any core business logic.
-
-## Don't Re-Invent the Wheel
-
-Application code in TypeScript often solves the same problems over and over again. Interacting with external services, filesystems, databases, etc. are common problems for all application developers. Effect provides a rich ecosystem of libraries that provide standardized solutions to many of these problems. You can use these libraries to build your application, or you can use them to build your own libraries.
-
-Managing challenges like error handling, debugging, tracing, async/promises, retries, streaming, concurrency, caching, resource management, and a lot more are made manageable with Effect. You don't have to re-invent the solutions to these problems, or install tons of dependencies. Effect, under one umbrella, solves many of the problems that you would usually install many different dependencies with different APIs to solve.
-
-## Solving Practical Problems
-
-Effect is heavily inspired by great work done in other languages, like Scala and Haskell. However, it's important to understand that Effect's goal is to be a practical toolkit, and it goes to great lengths to solve real, everyday problems that developers face when building applications and libraries in TypeScript.
-
-## Enjoy Building and Learning
-
-Learning Effect is a lot of fun. Many developers in the Effect ecosystem are using Effect to solve real problems in their day-to-day work, and also experiment with cutting edge ideas for pushing TypeScript to be the most useful language it can be.
-
-You don't have to use all aspects of Effect at once, and can start with the pieces of the ecosystem that make the most sense for the problems you are solving. Effect is a toolkit, and you can pick and choose the pieces that make the most sense for your use case. However, as more and more of your codebase is using Effect, you will probably find yourself wanting to utilize more of the ecosystem!
-
-Effect's concepts may be new to you, and might not completely make sense at first. This is totally normal. Take your time with reading the docs and try to understand the core concepts - this will really pay off later on as you get into the more advanced tooling in the Effect ecosystem. The Effect community is always happy to help you learn and grow. Feel free to hop into our [Discord](https://discord.gg/effect-ts) or discuss on [GitHub](https://github.com/Effect-TS)! We are open to feedback and contributions, and are always looking for ways to improve Effect.
-
-> batching.mdx\n\n---
-title: Batching
-description: Optimize performance by batching requests and reducing redundant API calls, enhancing efficiency in data fetching and processing.
-sidebar:
-  order: 9
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-In typical application development, when interacting with external APIs, databases, or other data sources, we often define functions that perform requests and handle their results or failures accordingly.
-
-### Simple Model Setup
-
-Here's a basic model that outlines the structure of our data and possible errors:
-
-```ts twoslash
-// ------------------------------
-// Model
-// ------------------------------
-
-interface User {
-  readonly _tag: "User"
-  readonly id: number
-  readonly name: string
-  readonly email: string
-}
-
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
-
-interface Todo {
-  readonly _tag: "Todo"
-  readonly id: number
-  readonly message: string
-  readonly ownerId: number
-}
-
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
-
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
-```
-
-<Aside type="tip" title="Use Precise Types and Detailed Errors">
-  In a real world scenario we may want to use a more precise types instead
-  of directly using primitives for identifiers (see [Branded
-  Types](/docs/code-style/branded-types/)). Additionally, you may want to
-  include more detailed information in the errors.
-</Aside>
-
-### Defining API Functions
-
-Let's define functions that interact with an external API, handling common operations such as fetching todos, retrieving user details, and sending emails.
-
-```ts twoslash collapse={7-31}
-import { Effect } from "effect"
-
-// ------------------------------
-// Model
-// ------------------------------
-
-interface User {
-  readonly _tag: "User"
-  readonly id: number
-  readonly name: string
-  readonly email: string
-}
-
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
-
-interface Todo {
-  readonly _tag: "Todo"
-  readonly id: number
-  readonly message: string
-  readonly ownerId: number
-}
-
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
-
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
-
-// ------------------------------
-// API
-// ------------------------------
-
-// Fetches a list of todos from an external API
-const getTodos = Effect.tryPromise({
-  try: () =>
-    fetch("https://api.example.demo/todos").then(
-      (res) => res.json() as Promise<Array<Todo>>
-    ),
-  catch: () => new GetTodosError()
-})
-
-// Retrieves a user by their ID from an external API
-const getUserById = (id: number) =>
-  Effect.tryPromise({
-    try: () =>
-      fetch(`https://api.example.demo/getUserById?id=${id}`).then(
-        (res) => res.json() as Promise<User>
-      ),
-    catch: () => new GetUserError()
-  })
-
-// Sends an email via an external API
-const sendEmail = (address: string, text: string) =>
-  Effect.tryPromise({
-    try: () =>
-      fetch("https://api.example.demo/sendEmail", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ address, text })
-      }).then((res) => res.json() as Promise<void>),
-    catch: () => new SendEmailError()
-  })
-
-// Sends an email to a user by fetching their details first
-const sendEmailToUser = (id: number, message: string) =>
-  getUserById(id).pipe(
-    Effect.andThen((user) => sendEmail(user.email, message))
-  )
-
-// Notifies the owner of a todo by sending them an email
-const notifyOwner = (todo: Todo) =>
-  getUserById(todo.ownerId).pipe(
-    Effect.andThen((user) =>
-      sendEmailToUser(user.id, `hey ${user.name} you got a todo!`)
-    )
-  )
-```
-
-<Aside type="tip" title="Validating API Responses">
-  In a real-world scenario, you might not want to trust your APIs to
-  always return the expected data - for this, you can use
-  [`effect/Schema`](/docs/schema/introduction/) or similar alternatives
-  such as `zod`.
-</Aside>
-
-While this approach is straightforward and readable, it may not be the most efficient. Repeated API calls, especially when many todos share the same owner, can significantly increase network overhead and slow down your application.
-
-### Using the API Functions
-
-While these functions are clear and easy to understand, their use may not be the most efficient. For example, notifying todo owners involves repeated API calls which can be optimized.
-
-```ts twoslash collapse={7-31,37-82}
-import { Effect } from "effect"
-
-// ------------------------------
-// Model
-// ------------------------------
-
-interface User {
-  readonly _tag: "User"
-  readonly id: number
-  readonly name: string
-  readonly email: string
-}
-
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
-
-interface Todo {
-  readonly _tag: "Todo"
-  readonly id: number
-  readonly message: string
-  readonly ownerId: number
-}
-
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
-
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
-
-// ------------------------------
-// API
-// ------------------------------
-
-// Fetches a list of todos from an external API
-const getTodos = Effect.tryPromise({
-  try: () =>
-    fetch("https://api.example.demo/todos").then(
-      (res) => res.json() as Promise<Array<Todo>>
-    ),
-  catch: () => new GetTodosError()
-})
-
-// Retrieves a user by their ID from an external API
-const getUserById = (id: number) =>
-  Effect.tryPromise({
-    try: () =>
-      fetch(`https://api.example.demo/getUserById?id=${id}`).then(
-        (res) => res.json() as Promise<User>
-      ),
-    catch: () => new GetUserError()
-  })
-
-// Sends an email via an external API
-const sendEmail = (address: string, text: string) =>
-  Effect.tryPromise({
-    try: () =>
-      fetch("https://api.example.demo/sendEmail", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ address, text })
-      }).then((res) => res.json() as Promise<void>),
-    catch: () => new SendEmailError()
-  })
-
-// Sends an email to a user by fetching their details first
-const sendEmailToUser = (id: number, message: string) =>
-  getUserById(id).pipe(
-    Effect.andThen((user) => sendEmail(user.email, message))
-  )
-
-// Notifies the owner of a todo by sending them an email
-const notifyOwner = (todo: Todo) =>
-  getUserById(todo.ownerId).pipe(
-    Effect.andThen((user) =>
-      sendEmailToUser(user.id, `hey ${user.name} you got a todo!`)
-    )
-  )
-
-// Orchestrates operations on todos, notifying their owners
-const program = Effect.gen(function* () {
-  const todos = yield* getTodos
-  yield* Effect.forEach(todos, (todo) => notifyOwner(todo), {
-    concurrency: "unbounded"
-  })
-})
-```
-
-This implementation performs an API call for each todo to fetch the owner's details and send an email. If multiple todos have the same owner, this results in redundant API calls.
-
-<Aside type="tip" title="Improving Efficiency with Batch Calls">
-  To optimize, consider implementing batch API calls if your backend
-  supports them. This reduces the number of HTTP requests by grouping
-  multiple operations into a single request, thereby enhancing performance
-  and reducing load.
-</Aside>
-
-## Batching
-
-Let's assume that `getUserById` and `sendEmail` can be batched. This means that we can send multiple requests in a single HTTP call, reducing the number of API requests and improving performance.
-
-**Step-by-Step Guide to Batching**
-
-1. **Declaring Requests:** We'll start by transforming our requests into structured data models. This involves detailing input parameters, expected outputs, and possible errors. Structuring requests this way not only helps in efficiently managing data but also in comparing different requests to understand if they refer to the same input parameters.
-
-2. **Declaring Resolvers:** Resolvers are designed to handle multiple requests simultaneously. By leveraging the ability to compare requests (ensuring they refer to the same input parameters), resolvers can execute several requests in one go, maximizing the utility of batching.
-
-3. **Defining Queries:** Finally, we'll define queries that utilize these batch-resolvers to perform operations. This step ties together the structured requests and their corresponding resolvers into functional components of the application.
-
-<Aside type="caution" title="Ensuring Request Comparability">
-  It's crucial for the requests to be modeled in a way that allows them to
-  be comparable. This means implementing comparability (using methods like
-  [Equals.equals](/docs/trait/equal/)) to identify and batch identical
-  requests effectively.
-</Aside>
-
-### Declaring Requests
-
-We'll design a model using the concept of a `Request` that a data source might support:
-
-```ts showLineNumbers=false
-Request<Value, Error>
-```
-
-A `Request` is a construct representing a request for a value of type `Value`, which might fail with an error of type `Error`.
-
-Let's start by defining a structured model for the types of requests our data sources can handle.
-
-```ts twoslash collapse={7-31}
-import { Request } from "effect"
-
-// ------------------------------
-// Model
-// ------------------------------
-
-interface User {
-  readonly _tag: "User"
-  readonly id: number
-  readonly name: string
-  readonly email: string
-}
-
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
-
-interface Todo {
-  readonly _tag: "Todo"
-  readonly id: number
-  readonly message: string
-  readonly ownerId: number
-}
-
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
-
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
-
-// ------------------------------
-// Requests
-// ------------------------------
-
-// Define a request to get multiple Todo items which might
-// fail with a GetTodosError
-interface GetTodos extends Request.Request<Array<Todo>, GetTodosError> {
-  readonly _tag: "GetTodos"
-}
-
-// Create a tagged constructor for GetTodos requests
-const GetTodos = Request.tagged<GetTodos>("GetTodos")
-
-// Define a request to fetch a User by ID which might
-// fail with a GetUserError
-interface GetUserById extends Request.Request<User, GetUserError> {
-  readonly _tag: "GetUserById"
-  readonly id: number
-}
-
-// Create a tagged constructor for GetUserById requests
-const GetUserById = Request.tagged<GetUserById>("GetUserById")
-
-// Define a request to send an email which might
-// fail with a SendEmailError
-interface SendEmail extends Request.Request<void, SendEmailError> {
-  readonly _tag: "SendEmail"
-  readonly address: string
-  readonly text: string
-}
-
-// Create a tagged constructor for SendEmail requests
-const SendEmail = Request.tagged<SendEmail>("SendEmail")
-```
-
-Each request is defined with a specific data structure that extends from a generic `Request` type, ensuring that each request carries its unique data requirements along with a specific error type.
-
-By using tagged constructors like `Request.tagged`, we can easily instantiate request objects that are recognizable and manageable throughout the application.
-
-### Declaring Resolvers
-
-After defining our requests, the next step is configuring how Effect resolves these requests using `RequestResolver`:
-
-```ts showLineNumbers=false
-RequestResolver<A, R>
-```
-
-A `RequestResolver` requires an environment `R` and is capable of executing requests of type `A`.
-
-In this section, we'll create individual resolvers for each type of request. The granularity of your resolvers can vary, but typically, they are divided based on the batching capabilities of the corresponding API calls.
-
-```ts twoslash collapse={7-31,37-65}
-import { Effect, Request, RequestResolver } from "effect"
-
-// ------------------------------
-// Model
-// ------------------------------
-
-interface User {
-  readonly _tag: "User"
-  readonly id: number
-  readonly name: string
-  readonly email: string
-}
-
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
-
-interface Todo {
-  readonly _tag: "Todo"
-  readonly id: number
-  readonly message: string
-  readonly ownerId: number
-}
-
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
-
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
-
-// ------------------------------
-// Requests
-// ------------------------------
-
-// Define a request to get multiple Todo items which might
-// fail with a GetTodosError
-interface GetTodos extends Request.Request<Array<Todo>, GetTodosError> {
-  readonly _tag: "GetTodos"
-}
-
-// Create a tagged constructor for GetTodos requests
-const GetTodos = Request.tagged<GetTodos>("GetTodos")
-
-// Define a request to fetch a User by ID which might
-// fail with a GetUserError
-interface GetUserById extends Request.Request<User, GetUserError> {
-  readonly _tag: "GetUserById"
-  readonly id: number
-}
-
-// Create a tagged constructor for GetUserById requests
-const GetUserById = Request.tagged<GetUserById>("GetUserById")
-
-// Define a request to send an email which might
-// fail with a SendEmailError
-interface SendEmail extends Request.Request<void, SendEmailError> {
-  readonly _tag: "SendEmail"
-  readonly address: string
-  readonly text: string
-}
-
-// Create a tagged constructor for SendEmail requests
-const SendEmail = Request.tagged<SendEmail>("SendEmail")
-
-// ------------------------------
-// Resolvers
-// ------------------------------
-
-// Assuming GetTodos cannot be batched, we create a standard resolver
-const GetTodosResolver = RequestResolver.fromEffect(
-  (_: GetTodos): Effect.Effect<Todo[], GetTodosError> =>
-    Effect.tryPromise({
-      try: () =>
-        fetch("https://api.example.demo/todos").then(
-          (res) => res.json() as Promise<Array<Todo>>
-        ),
-      catch: () => new GetTodosError()
-    })
-)
-
-// Assuming GetUserById can be batched, we create a batched resolver
-const GetUserByIdResolver = RequestResolver.makeBatched(
-  (requests: ReadonlyArray<GetUserById>) =>
-    Effect.tryPromise({
-      try: () =>
-        fetch("https://api.example.demo/getUserByIdBatch", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            users: requests.map(({ id }) => ({ id }))
-          })
-        }).then((res) => res.json()) as Promise<Array<User>>,
-      catch: () => new GetUserError()
-    }).pipe(
-      Effect.andThen((users) =>
-        Effect.forEach(requests, (request, index) =>
-          Request.completeEffect(request, Effect.succeed(users[index]!))
-        )
-      ),
-      Effect.catchAll((error) =>
-        Effect.forEach(requests, (request) =>
-          Request.completeEffect(request, Effect.fail(error))
-        )
-      )
-    )
-)
-
-// Assuming SendEmail can be batched, we create a batched resolver
-const SendEmailResolver = RequestResolver.makeBatched(
-  (requests: ReadonlyArray<SendEmail>) =>
-    Effect.tryPromise({
-      try: () =>
-        fetch("https://api.example.demo/sendEmailBatch", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            emails: requests.map(({ address, text }) => ({
-              address,
-              text
-            }))
-          })
-        }).then((res) => res.json() as Promise<void>),
-      catch: () => new SendEmailError()
-    }).pipe(
-      Effect.andThen(
-        Effect.forEach(requests, (request) =>
-          Request.completeEffect(request, Effect.void)
-        )
-      ),
-      Effect.catchAll((error) =>
-        Effect.forEach(requests, (request) =>
-          Request.completeEffect(request, Effect.fail(error))
-        )
-      )
-    )
-)
-```
-
-<Aside type="tip" title="Accessing Context in Resolvers">
-  Resolvers can also access the context like any other effect, and there
-  are many different ways to create resolvers. For further details,
-  consider exploring the reference documentation for the
-  [RequestResolver](https://effect-ts.github.io/effect/effect/RequestResolver.ts.html)
-  module.
-</Aside>
-
-In this configuration:
-
-- **GetTodosResolver** handles the fetching of multiple `Todo` items. It's set up as a standard resolver since we assume it cannot be batched.
-- **GetUserByIdResolver** and **SendEmailResolver** are configured as batched resolvers. This setup is based on the assumption that these requests can be processed in batches, enhancing performance and reducing the number of API calls.
-
-### Defining Queries
-
-Now that we've set up our resolvers, we're ready to tie all the pieces together to define our This step will enable us to perform data operations effectively within our application.
-
-```ts twoslash collapse={7-31,37-65,71-142}
-import { Effect, Request, RequestResolver } from "effect"
-
-// ------------------------------
-// Model
-// ------------------------------
-
-interface User {
-  readonly _tag: "User"
-  readonly id: number
-  readonly name: string
-  readonly email: string
-}
-
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
-
-interface Todo {
-  readonly _tag: "Todo"
-  readonly id: number
-  readonly message: string
-  readonly ownerId: number
-}
-
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
-
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
-
-// ------------------------------
-// Requests
-// ------------------------------
-
-// Define a request to get multiple Todo items which might
-// fail with a GetTodosError
-interface GetTodos extends Request.Request<Array<Todo>, GetTodosError> {
-  readonly _tag: "GetTodos"
-}
-
-// Create a tagged constructor for GetTodos requests
-const GetTodos = Request.tagged<GetTodos>("GetTodos")
-
-// Define a request to fetch a User by ID which might
-// fail with a GetUserError
-interface GetUserById extends Request.Request<User, GetUserError> {
-  readonly _tag: "GetUserById"
-  readonly id: number
-}
-
-// Create a tagged constructor for GetUserById requests
-const GetUserById = Request.tagged<GetUserById>("GetUserById")
-
-// Define a request to send an email which might
-// fail with a SendEmailError
-interface SendEmail extends Request.Request<void, SendEmailError> {
-  readonly _tag: "SendEmail"
-  readonly address: string
-  readonly text: string
-}
-
-// Create a tagged constructor for SendEmail requests
-const SendEmail = Request.tagged<SendEmail>("SendEmail")
-
-// ------------------------------
-// Resolvers
-// ------------------------------
-
-// Assuming GetTodos cannot be batched, we create a standard resolver
-const GetTodosResolver = RequestResolver.fromEffect(
-  (_: GetTodos): Effect.Effect<Todo[], GetTodosError> =>
-    Effect.tryPromise({
-      try: () =>
-        fetch("https://api.example.demo/todos").then(
-          (res) => res.json() as Promise<Array<Todo>>
-        ),
-      catch: () => new GetTodosError()
-    })
-)
-
-// Assuming GetUserById can be batched, we create a batched resolver
-const GetUserByIdResolver = RequestResolver.makeBatched(
-  (requests: ReadonlyArray<GetUserById>) =>
-    Effect.tryPromise({
-      try: () =>
-        fetch("https://api.example.demo/getUserByIdBatch", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            users: requests.map(({ id }) => ({ id }))
-          })
-        }).then((res) => res.json()) as Promise<Array<User>>,
-      catch: () => new GetUserError()
-    }).pipe(
-      Effect.andThen((users) =>
-        Effect.forEach(requests, (request, index) =>
-          Request.completeEffect(request, Effect.succeed(users[index]!))
-        )
-      ),
-      Effect.catchAll((error) =>
-        Effect.forEach(requests, (request) =>
-          Request.completeEffect(request, Effect.fail(error))
-        )
-      )
-    )
-)
-
-// Assuming SendEmail can be batched, we create a batched resolver
-const SendEmailResolver = RequestResolver.makeBatched(
-  (requests: ReadonlyArray<SendEmail>) =>
-    Effect.tryPromise({
-      try: () =>
-        fetch("https://api.example.demo/sendEmailBatch", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            emails: requests.map(({ address, text }) => ({
-              address,
-              text
-            }))
-          })
-        }).then((res) => res.json() as Promise<void>),
-      catch: () => new SendEmailError()
-    }).pipe(
-      Effect.andThen(
-        Effect.forEach(requests, (request) =>
-          Request.completeEffect(request, Effect.void)
-        )
-      ),
-      Effect.catchAll((error) =>
-        Effect.forEach(requests, (request) =>
-          Request.completeEffect(request, Effect.fail(error))
-        )
-      )
-    )
-)
-
-// ------------------------------
-// Queries
-// ------------------------------
-
-// Defines a query to fetch all Todo items
-const getTodos: Effect.Effect<
-  Array<Todo>,
-  GetTodosError
-> = Effect.request(GetTodos({}), GetTodosResolver)
-
-// Defines a query to fetch a user by their ID
-const getUserById = (id: number) =>
-  Effect.request(GetUserById({ id }), GetUserByIdResolver)
-
-// Defines a query to send an email to a specific address
-const sendEmail = (address: string, text: string) =>
-  Effect.request(SendEmail({ address, text }), SendEmailResolver)
-
-// Composes getUserById and sendEmail to send an email to a specific user
-const sendEmailToUser = (id: number, message: string) =>
-  getUserById(id).pipe(
-    Effect.andThen((user) => sendEmail(user.email, message))
-  )
-
-// Uses getUserById to fetch the owner of a Todo and then sends them an email notification
-const notifyOwner = (todo: Todo) =>
-  getUserById(todo.ownerId).pipe(
-    Effect.andThen((user) =>
-      sendEmailToUser(user.id, `hey ${user.name} you got a todo!`)
-    )
-  )
-```
-
-By using the `Effect.request` function, we integrate the resolvers with the request model effectively. This approach ensures that each query is optimally resolved using the appropriate resolver.
-
-Although the code structure looks similar to earlier examples, employing resolvers significantly enhances efficiency by optimizing how requests are handled and reducing unnecessary API calls.
-
-```ts {4} showLineNumbers=false
-const program = Effect.gen(function* () {
-  const todos = yield* getTodos
-  yield* Effect.forEach(todos, (todo) => notifyOwner(todo), {
-    batching: true
-  })
-})
-```
-
-In the final setup, this program will execute only **3** queries to the APIs, regardless of the number of todos. This contrasts sharply with the traditional approach, which would potentially execute **1 + 2n** queries, where **n** is the number of todos. This represents a significant improvement in efficiency, especially for applications with a high volume of data interactions.
-
-### Disabling Batching
-
-Batching can be locally disabled using the `Effect.withRequestBatching` utility in the following way:
-
-```ts {6} showLineNumbers=false
-const program = Effect.gen(function* () {
-  const todos = yield* getTodos
-  yield* Effect.forEach(todos, (todo) => notifyOwner(todo), {
-    concurrency: "unbounded"
-  })
-}).pipe(Effect.withRequestBatching(false))
-```
-
-### Resolvers with Context
-
-In complex applications, resolvers often need access to shared services or configurations to handle requests effectively. However, maintaining the ability to batch requests while providing the necessary context can be challenging. Here, we'll explore how to manage context in resolvers to ensure that batching capabilities are not compromised.
-
-When creating request resolvers, it's crucial to manage the context carefully. Providing too much context or providing varying services to resolvers can make them incompatible for batching. To prevent such issues, the context for the resolver used in `Effect.request` is explicitly set to `never`. This forces developers to clearly define how the context is accessed and used within resolvers.
-
-Consider the following example where we set up an HTTP service that the resolvers can use to execute API calls:
-
-```ts twoslash collapse={7-31,37-65}
-import { Effect, Context, RequestResolver, Request } from "effect"
-
-// ------------------------------
-// Model
-// ------------------------------
-
-interface User {
-  readonly _tag: "User"
-  readonly id: number
-  readonly name: string
-  readonly email: string
-}
-
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
-
-interface Todo {
-  readonly _tag: "Todo"
-  readonly id: number
-  readonly message: string
-  readonly ownerId: number
-}
-
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
-
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
-
-// ------------------------------
-// Requests
-// ------------------------------
-
-// Define a request to get multiple Todo items which might
-// fail with a GetTodosError
-interface GetTodos extends Request.Request<Array<Todo>, GetTodosError> {
-  readonly _tag: "GetTodos"
-}
-
-// Create a tagged constructor for GetTodos requests
-const GetTodos = Request.tagged<GetTodos>("GetTodos")
-
-// Define a request to fetch a User by ID which might
-// fail with a GetUserError
-interface GetUserById extends Request.Request<User, GetUserError> {
-  readonly _tag: "GetUserById"
-  readonly id: number
-}
-
-// Create a tagged constructor for GetUserById requests
-const GetUserById = Request.tagged<GetUserById>("GetUserById")
-
-// Define a request to send an email which might
-// fail with a SendEmailError
-interface SendEmail extends Request.Request<void, SendEmailError> {
-  readonly _tag: "SendEmail"
-  readonly address: string
-  readonly text: string
-}
-
-// Create a tagged constructor for SendEmail requests
-const SendEmail = Request.tagged<SendEmail>("SendEmail")
-
-// ------------------------------
-// Resolvers With Context
-// ------------------------------
-
-class HttpService extends Context.Tag("HttpService")<
-  HttpService,
-  { fetch: typeof fetch }
->() {}
-
-const GetTodosResolver =
-  // we create a normal resolver like we did before
-  RequestResolver.fromEffect((_: GetTodos) =>
-    Effect.andThen(HttpService, (http) =>
-      Effect.tryPromise({
-        try: () =>
-          http
-            .fetch("https://api.example.demo/todos")
-            .then((res) => res.json() as Promise<Array<Todo>>),
-        catch: () => new GetTodosError()
-      })
-    )
-  ).pipe(
-    // we list the tags that the resolver can access
-    RequestResolver.contextFromServices(HttpService)
-  )
-```
-
-We can see now that the type of `GetTodosResolver` is no longer a `RequestResolver` but instead it is:
-
-```ts showLineNumbers=false
-const GetTodosResolver: Effect<
-  RequestResolver<GetTodos, never>,
-  never,
-  HttpService
->
-```
-
-which is an effect that access the `HttpService` and returns a composed resolver that has the minimal context ready to use.
-
-Once we have such effect we can directly use it in our query definition:
-
-```ts showLineNumbers=false
-const getTodos: Effect.Effect<Todo[], GetTodosError, HttpService> =
-  Effect.request(GetTodos({}), GetTodosResolver)
-```
-
-We can see that the Effect correctly requires `HttpService` to be provided.
-
-Alternatively you can create `RequestResolver`s as part of layers direcly accessing or closing over context from construction.
-
-**Example**
-
-```ts twoslash collapse={7-31,37-65,71-91}
-import { Effect, Context, RequestResolver, Request, Layer } from "effect"
-
-// ------------------------------
-// Model
-// ------------------------------
-
-interface User {
-  readonly _tag: "User"
-  readonly id: number
-  readonly name: string
-  readonly email: string
-}
-
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
-
-interface Todo {
-  readonly _tag: "Todo"
-  readonly id: number
-  readonly message: string
-  readonly ownerId: number
-}
-
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
-
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
-
-// ------------------------------
-// Requests
-// ------------------------------
-
-// Define a request to get multiple Todo items which might
-// fail with a GetTodosError
-interface GetTodos extends Request.Request<Array<Todo>, GetTodosError> {
-  readonly _tag: "GetTodos"
-}
-
-// Create a tagged constructor for GetTodos requests
-const GetTodos = Request.tagged<GetTodos>("GetTodos")
-
-// Define a request to fetch a User by ID which might
-// fail with a GetUserError
-interface GetUserById extends Request.Request<User, GetUserError> {
-  readonly _tag: "GetUserById"
-  readonly id: number
-}
-
-// Create a tagged constructor for GetUserById requests
-const GetUserById = Request.tagged<GetUserById>("GetUserById")
-
-// Define a request to send an email which might
-// fail with a SendEmailError
-interface SendEmail extends Request.Request<void, SendEmailError> {
-  readonly _tag: "SendEmail"
-  readonly address: string
-  readonly text: string
-}
-
-// Create a tagged constructor for SendEmail requests
-const SendEmail = Request.tagged<SendEmail>("SendEmail")
-
-// ------------------------------
-// Resolvers With Context
-// ------------------------------
-
-class HttpService extends Context.Tag("HttpService")<
-  HttpService,
-  { fetch: typeof fetch }
->() {}
-
-const GetTodosResolver =
-  // we create a normal resolver like we did before
-  RequestResolver.fromEffect((_: GetTodos) =>
-    Effect.andThen(HttpService, (http) =>
-      Effect.tryPromise({
-        try: () =>
-          http
-            .fetch("https://api.example.demo/todos")
-            .then((res) => res.json() as Promise<Array<Todo>>),
-        catch: () => new GetTodosError()
-      })
-    )
-  ).pipe(
-    // we list the tags that the resolver can access
-    RequestResolver.contextFromServices(HttpService)
-  )
-
-// ------------------------------
-// Layers
-// ------------------------------
-
-class TodosService extends Context.Tag("TodosService")<
-  TodosService,
-  {
-    getTodos: Effect.Effect<Array<Todo>, GetTodosError>
-  }
->() {}
-
-const TodosServiceLive = Layer.effect(
-  TodosService,
-  Effect.gen(function* () {
-    const http = yield* HttpService
-    const resolver = RequestResolver.fromEffect((_: GetTodos) =>
-      Effect.tryPromise({
-        try: () =>
-          http
-            .fetch("https://api.example.demo/todos")
-            .then<any, Todo[]>((res) => res.json()),
-        catch: () => new GetTodosError()
-      })
-    )
-    return {
-      getTodos: Effect.request(GetTodos({}), resolver)
-    }
-  })
-)
-
-const getTodos: Effect.Effect<
-  Array<Todo>,
-  GetTodosError,
-  TodosService
-> = Effect.andThen(TodosService, (service) => service.getTodos)
-```
-
-This way is probably the best for most of the cases given that layers are the natural primitive where to wire services together.
-
-## Caching
-
-While we have significantly optimized request batching, there's another area that can enhance our application's efficiency: caching. Without caching, even with optimized batch processing, the same requests could be executed multiple times, leading to unnecessary data fetching.
-
-In the Effect library, caching is handled through built-in utilities that allow requests to be stored temporarily, preventing the need to re-fetch data that hasn't changed. This feature is crucial for reducing the load on both the server and the network, especially in applications that make frequent similar requests.
-
-Here's how you can implement caching for the `getUserById` query:
-
-```ts {3} showLineNumbers=false
-const getUserById = (id: number) =>
-  Effect.request(GetUserById({ id }), GetUserByIdResolver).pipe(
-    Effect.withRequestCaching(true)
-  )
-```
-
-## Final Program
-
-Assuming you've wired everything up correctly:
-
-```ts showLineNumbers=false
-const program = Effect.gen(function* () {
-  const todos = yield* getTodos
-  yield* Effect.forEach(todos, (todo) => notifyOwner(todo), {
-    concurrency: "unbounded"
-  })
-}).pipe(Effect.repeat(Schedule.fixed("10 seconds")))
-```
-
-With this program, the `getTodos` operation retrieves the todos for each user. Then, the `Effect.forEach` function is used to notify the owner of each todo concurrently, without waiting for the notifications to complete.
-
-The `repeat` function is applied to the entire chain of operations, and it ensures that the program repeats every 10 seconds using a fixed schedule. This means that the entire process, including fetching todos and sending notifications, will be executed repeatedly with a 10-second interval.
-
-The program incorporates a caching mechanism, which prevents the same `GetUserById` operation from being executed more than once within a span of 1 minute. This default caching behavior helps optimize the program's execution and reduces unnecessary requests to fetch user data.
-
-Furthermore, the program is designed to send emails in batches, allowing for efficient processing and better utilization of resources.
-
-## Customizing Request Caching
-
-In real-world applications, effective caching strategies can significantly improve performance by reducing redundant data fetching. The Effect library provides flexible caching mechanisms that can be tailored for specific parts of your application or applied globally.
-
-There may be scenarios where different parts of your application have unique caching requirements—some might benefit from a localized cache, while others might need a global cache setup. Let’s explore how you can configure a custom cache to meet these varied needs.
-
-### Creating a Custom Cache
-
-Here's how you can create a custom cache and apply it to part of your application. This example demonstrates setting up a cache that repeats a task every 10 seconds, caching requests with specific parameters like capacity and TTL (time-to-live).
-
-```ts showLineNumbers=false
-const program = Effect.gen(function* () {
-  const todos = yield* getTodos
-  yield* Effect.forEach(todos, (todo) => notifyOwner(todo), {
-    concurrency: "unbounded"
-  })
-}).pipe(
-  Effect.repeat(Schedule.fixed("10 seconds")),
-  Effect.provide(
-    Layer.setRequestCache(
-      Request.makeCache({ capacity: 256, timeToLive: "60 minutes" })
-    )
-  )
-)
-```
-
-### Direct Cache Application
-
-You can also construct a cache using `Request.makeCache` and apply it directly to a specific program using `Effect.withRequestCache`. This method ensures that all requests originating from the specified program are managed through the custom cache, provided that caching is enabled.
-
-> getting-started/the-effect-type.mdx\n\n---
-title: The Effect Type
-description: Understand the Effect type in the Effect ecosystem, which models immutable, lazy workflows with type-safe success, error, and requirement handling for effectful computations.
-sidebar:
-  order: 5
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-The `Effect` type is an **immutable** description of a workflow or operation that is **lazily** executed. This means that when you create an `Effect`, it doesn't run immediately, but instead defines a program that can succeed, fail, or require some additional context to complete.
-
-Here is the general form of an `Effect`:
-
-```text showLineNumbers=false
-         ┌─── Represents the success type
-         │        ┌─── Represents the error type
-         │        │      ┌─── Represents required dependencies
-         ▼        ▼      ▼
-Effect<Success, Error, Requirements>
-```
-
-This type indicates that an effect:
-
-- Succeeds and returns a value of type `Success`
-- Fails with an error of type `Error`
-- May need certain contextual dependencies of type `Requirements` to execute
-
-Conceptually, you can think of `Effect` as an effectful version of the following function type:
-
-```ts showLineNumbers=false
-type Effect<Success, Error, Requirements> = (
-  context: Context<Requirements>
-) => Error | Success
-```
-
-However, effects are not actually functions. They can model synchronous, asynchronous, concurrent, and resourceful computations.
-
-**Immutability**. `Effect` values are immutable, and every function in the Effect library produces a new `Effect` value.
-
-**Modeling Interactions**. These values do not perform any actions themselves, they simply model or describe effectful interactions.
-
-**Execution**. An `Effect` can be executed by the [Effect Runtime System](/docs/runtime/), which interprets it into actual interactions with the external world.
-Ideally, this execution happens at a single entry point in your application, such as the main function where effectful operations are initiated.
-
-## Type Parameters
-
-The `Effect` type has three type parameters with the following meanings:
-
-| Parameter        | Description                                                                                                                                                                                                                                    |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Success**      | Represents the type of value that an effect can succeed with when executed. If this type parameter is `void`, it means the effect produces no useful information, while if it is `never`, it means the effect runs forever (or until failure). |
-| **Error**        | Represents the expected errors that can occur when executing an effect. If this type parameter is `never`, it means the effect cannot fail, because there are no values of type `never`.                                                       |
-| **Requirements** | Represents the contextual data required by the effect to be executed. This data is stored in a collection named `Context`. If this type parameter is `never`, it means the effect has no requirements and the `Context` collection is empty.   |
-
-<Aside type="note" title="Type Parameter Abbreviations">
-  In the Effect ecosystem, you may often encounter the type parameters of
-  `Effect` abbreviated as `A`, `E`, and `R` respectively. This is just
-  shorthand for the success value of type **A**, **E**rror, and
-  **R**equirements.
-</Aside>
-
-## Extracting Inferred Types
-
-By using the utility types `Effect.Success`, `Effect.Error`, and `Effect.Context`, you can extract the corresponding types from an effect.
-
-**Example** (Extracting Success, Error, and Context Types)
-
-```ts twoslash
-import { Effect, Context } from "effect"
-
-class SomeContext extends Context.Tag("SomeContext")<SomeContext, {}>() {}
-
-// Assume we have an effect that succeeds with a number,
-// fails with an Error, and requires SomeContext
-declare const program: Effect.Effect<number, Error, SomeContext>
-
-// Extract the success type, which is number
-type A = Effect.Effect.Success<typeof program>
-
-// Extract the error type, which is Error
-type E = Effect.Effect.Error<typeof program>
-
-// Extract the context type, which is SomeContext
-type R = Effect.Effect.Context<typeof program>
-```
-
-> getting-started/introduction.mdx\n\n---
-title: Introduction
-description: Explore Effect, a TypeScript library for building scalable, maintainable, and type-safe applications with advanced concurrency, error handling, and resource management.
-sidebar:
-  order: 0
----
-
-Welcome to the Effect documentation!
-
-Effect is a powerful TypeScript library designed to help developers
-easily create complex, synchronous, and asynchronous programs.
-
-Some of the main Effect features include:
-
-| Feature             | Description                                                                                                        |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **Concurrency**     | Achieve highly-scalable, ultra low-latency applications through Effect's fiber-based concurrency model.            |
-| **Composability**   | Construct highly maintainable, readable, and flexible software through the use of small, reusable building blocks. |
-| **Resource Safety** | Safely manage acquisition and release of resources, even when your program fails.                                  |
-| **Type Safety**     | Leverage the TypeScript type system to the fullest with Effect's focus on type inference and type safety.          |
-| **Error Handling**  | Handle errors in a structured and reliable manner using Effect's built-in error handling capabilities.             |
-| **Asynchronicity**  | Write code that looks the same, whether it is synchronous or asynchronous.                                         |
-| **Observability**   | With full tracing capabilities, you can easily debug and monitor the execution of your Effect program.             |
-
-## How to Use These Docs
-
-The documentation is structured in a sequential manner, starting from the basics and progressing to more advanced topics. This allows you to follow along step-by-step as you build your Effect application. However, you have the flexibility to read the documentation in any order or jump directly to the pages that are relevant to your specific use case.
-
-To facilitate navigation within a page, you will find a table of contents on the right side of the screen. This allows you to easily jump between different sections of the page.
-
-## Join our Community
-
-If you have questions about anything related to Effect,
-you're always welcome to ask our community on [Discord](https://discord.gg/effect-ts).
-
 > scheduling/introduction.mdx\n\n---
 title: Introduction
 description: Learn the fundamentals of scheduling in Effect, including composable recurrence patterns and handling retries and repetitions.
@@ -35372,6 +38837,218 @@ When using schedules for retrying or repetition, each interval's starting bounda
 ## Composability of Schedules
 
 Schedules are composable, meaning you can combine simple schedules to create more complex recurrence patterns. Operators like `Schedule.union` or `Schedule.intersect` allow you to build sophisticated schedules by combining and modifying existing ones. This flexibility enables you to tailor the scheduling behavior to meet specific requirements.
+
+> additional-resources/effect-vs-fp-ts.mdx\n\n---
+title: Effect vs fp-ts
+description: Comparison of Effect and fp-ts, covering features like typed services, resource management, concurrency, and stream processing.
+sidebar:
+  order: 4
+---
+
+## Key Developments
+
+- **Project Merger**: The fp-ts project is officially merging with the Effect-TS ecosystem. Giulio Canti, the author of fp-ts, is being welcomed into the Effect organization. For more details, see the [announcement here](https://dev.to/effect/a-bright-future-for-effect-455m).
+- **Continuity and Evolution**: Effect can be seen as the successor to fp-ts v2 and is effectively fp-ts v3, marking a significant evolution in the library's capabilities.
+
+## FAQ
+
+### Bundle Size Comparison Between Effect and fp-ts
+
+**Q: I compared the bundle sizes of two simple programs using Effect and fp-ts. Why does Effect have a larger bundle size?**
+
+A: It's natural to observe different bundle sizes because Effect and fp-ts are distinct systems designed for different purposes.
+Effect's bundle size is larger due to its included fiber runtime, which is crucial for its functionality.
+While the initial bundle size may seem large, the overhead amortizes as you use Effect.
+
+**Q: Should I be concerned about the bundle size difference when choosing between Effect and fp-ts?**
+
+A: Not necessarily. Consider the specific requirements and benefits of each library for your project.
+
+The **Micro** module in Effect is designed as a lightweight alternative to the standard `Effect` module, specifically for scenarios where reducing bundle size is crucial.
+This module is self-contained and does not include more complex features like `Layer`, `Ref`, `Queue`, and `Deferred`.
+If any major Effect modules (beyond basic data modules like `Option`, `Either`, `Array`, etc.) are used, the effect runtime will be added to your bundle, negating the benefits of Micro.
+This makes Micro ideal for libraries that aim to implement Effect functionality with minimal impact on bundle size, especially for libraries that plan to expose `Promise`-based APIs.
+It also supports scenarios where a client might use Micro while a server uses the full suite of Effect features, maintaining compatibility and shared logic between different parts of an application.
+
+## Comparison Table
+
+The following table compares the features of the Effect and [fp-ts](https://github.com/gcanti/fp-ts) libraries.
+
+| Feature                   | fp-ts | Effect |
+| ------------------------- | ----- | ------ |
+| Typed Services            | ❌    | ✅     |
+| Built-in Services         | ❌    | ✅     |
+| Typed errors              | ✅    | ✅     |
+| Pipeable APIs             | ✅    | ✅     |
+| Dual APIs                 | ❌    | ✅     |
+| Testability               | ❌    | ✅     |
+| Resource Management       | ❌    | ✅     |
+| Interruptions             | ❌    | ✅     |
+| Defects                   | ❌    | ✅     |
+| Fiber-Based Concurrency   | ❌    | ✅     |
+| Fiber Supervision         | ❌    | ✅     |
+| Retry and Retry Policies  | ❌    | ✅     |
+| Built-in Logging          | ❌    | ✅     |
+| Built-in Scheduling       | ❌    | ✅     |
+| Built-in Caching          | ❌    | ✅     |
+| Built-in Batching         | ❌    | ✅     |
+| Metrics                   | ❌    | ✅     |
+| Tracing                   | ❌    | ✅     |
+| Configuration             | ❌    | ✅     |
+| Immutable Data Structures | ❌    | ✅     |
+| Stream Processing         | ❌    | ✅     |
+
+Here's an explanation of each feature:
+
+### Typed Services
+
+Both fp-ts and Effect libraries provide the ability to track requirements at the type level, allowing you to define and use services with specific types. In fp-ts, you can utilize the `ReaderTaskEither<R, E, A>` type, while in Effect, the `Effect<A, E, R>` type is available. It's important to note that in fp-ts, the `R` type parameter is contravariant, which means that there is no guarantee of avoiding conflicts, and the library offers only basic tools for dependency management.
+
+On the other hand, in Effect, the `R` type parameter is covariant and all APIs have the ability to merge dependencies at the type level when multiple effects are involved. Effect also provides a range of specifically designed tools to simplify the management of dependencies, including `Tag`, `Context`, and `Layer`. These tools enhance the ease and flexibility of handling dependencies in your code, making it easier to compose and manage complex applications.
+
+### Built-in Services
+
+The Effect library has built-in services like `Clock`, `Random` and `Tracer`, while fp-ts does not provide any default services.
+
+### Typed errors
+
+Both libraries support typed errors, enabling you to define and handle errors with specific types. However, in Effect, all APIs have the ability to merge errors at the type-level when multiple effects are involved, and each effect can potentially fail with different types of errors.
+
+This means that when combining multiple effects that can fail, the resulting type of the error will be a union of the individual error types. Effect provides utilities and type-level operations to handle and manage these merged error types effectively.
+
+### Pipeable APIs
+
+Both fp-ts and Effect libraries provide pipeable APIs, allowing you to compose and sequence operations in a functional and readable manner using the `pipe` function. However, Effect goes a step further and offers a `.pipe()` method on each data type, making it more convenient to work with pipelines without the need to explicitly import the `pipe` function every time.
+
+### Dual APIs
+
+Effect library provides dual APIs, allowing you to use the same API in different ways (e.g., "data-last" and "data-first" variants).
+
+### Testability
+
+The functional style of fp-ts generally promotes good testability of the code written using it, but the library itself does not provide dedicated tools specifically designed for the testing phase. On the other hand, Effect takes testability a step further by offering additional tools that are specifically tailored to simplify the testing process.
+
+Effect provides a range of utilities that improve testability. For example, it offers the `TestClock` utility, which allows you to control the passage of time during tests. This is useful for testing time-dependent code. Additionally, Effect provides the `TestRandom` utility, which enables fully deterministic testing of code that involves randomness. This ensures consistent and predictable test results. Another helpful tool is `ConfigProvider.fromMap`, which makes it easy to define mock configurations for your application during testing.
+
+### Resource Management
+
+The Effect library provides built-in capabilities for resource management, while fp-ts has limited features in this area (mainly `bracket`) and they are less sophisticated.
+
+In Effect, resource management refers to the ability to acquire and release resources, such as database connections, file handles, or network sockets, in a safe and controlled manner. The library offers comprehensive and refined mechanisms to handle resource acquisition and release, ensuring proper cleanup and preventing resource leaks.
+
+### Interruptions
+
+The Effect library supports interruptions, which means you can interrupt and cancel ongoing computations if needed. This feature gives you more control over the execution of your code and allows you to handle situations where you want to stop a computation before it completes.
+
+In Effect, interruptions are useful in scenarios where you need to handle user cancellations, timeouts, or other external events that require stopping ongoing computations. You can explicitly request an interruption and the library will safely and efficiently halt the execution of the computation.
+
+On the other hand, fp-ts does not have built-in support for interruptions. Once a computation starts in fp-ts, it will continue until it completes or encounters an error, without the ability to be interrupted midway.
+
+### Defects
+
+The Effect library provides mechanisms for handling defects and managing **unexpected** failures. In Effect, defects refer to unexpected errors or failures that can occur during the execution of a program.
+
+With the Effect library, you have built-in tools and utilities to handle defects in a structured and reliable manner. It offers error handling capabilities that allow you to catch and handle exceptions, recover from failures, and gracefully handle unexpected scenarios.
+
+On the other hand, fp-ts does not have built-in support specifically dedicated to managing defects. While you can handle errors using standard functional programming techniques in fp-ts, the Effect library provides a more comprehensive and streamlined approach to dealing with defects.
+
+### Fiber-Based Concurrency
+
+The Effect library leverages fiber-based concurrency, which enables lightweight and efficient concurrent computations. In simpler terms, fiber-based concurrency allows multiple tasks to run concurrently, making your code more responsive and efficient.
+
+With fiber-based concurrency, the Effect library can handle concurrent operations in a way that is lightweight and doesn't block the execution of other tasks. This means that you can run multiple computations simultaneously, taking advantage of the available resources and maximizing performance.
+
+On the other hand, fp-ts does not have built-in support for fiber-based concurrency. While fp-ts provides a rich set of functional programming features, it doesn't have the same level of support for concurrent computations as the Effect library.
+
+### Fiber Supervision
+
+Effect library provides supervision strategies for managing and monitoring fibers. fp-ts does not have built-in support for fiber supervision.
+
+### Retry and Retry Policies
+
+The Effect library includes built-in support for retrying computations with customizable retry policies. This feature is not available in fp-ts out of the box, and you would need to rely on external libraries to achieve similar functionality. However, it's important to note that the external libraries may not offer the same level of sophistication and fine-tuning as the built-in retry capabilities provided by the Effect library.
+
+Retry functionality allows you to automatically retry a computation or action when it fails, based on a set of predefined rules or policies. This can be particularly useful in scenarios where you are working with unreliable or unpredictable resources, such as network requests or external services.
+
+The Effect library provides a comprehensive set of retry policies that you can customize to fit your specific needs. These policies define the conditions for retrying a computation, such as the number of retries, the delay between retries, and the criteria for determining if a retry should be attempted.
+
+By leveraging the built-in retry functionality in the Effect library, you can handle transient errors or temporary failures in a more robust and resilient manner. This can help improve the overall reliability and stability of your applications, especially in scenarios where you need to interact with external systems or services.
+
+In contrast, fp-ts does not offer built-in support for retrying computations. If you require retry functionality in fp-ts, you would need to rely on external libraries, which may not provide the same level of sophistication and flexibility as the Effect library.
+
+It's worth noting that the built-in retry capabilities of the Effect library are designed to work seamlessly with its other features, such as error handling and resource management. This integration allows for a more cohesive and comprehensive approach to handling failures and retries within your computations.
+
+### Built-in Logging
+
+The Effect library comes with built-in logging capabilities. This means that you can easily incorporate logging into your applications without the need for additional libraries or dependencies. In addition, the default logger provided by Effect can be replaced with a custom logger to suit your specific logging requirements.
+
+Logging is an essential aspect of software development as it allows you to record and track important information during the execution of your code. It helps you monitor the behavior of your application, debug issues, and gather insights for analysis.
+
+With the built-in logging capabilities of the Effect library, you can easily log messages, warnings, errors, or any other relevant information at various points in your code. This can be particularly useful for tracking the flow of execution, identifying potential issues, or capturing important events during the operation of your application.
+
+On the other hand, fp-ts does not provide built-in logging capabilities. If you need logging functionality in fp-ts, you would need to rely on external libraries or implement your own logging solution from scratch. This can introduce additional complexity and dependencies into your codebase.
+
+### Built-in Scheduling
+
+The Effect library provides built-in scheduling capabilities, which allows you to manage the execution of computations over time. This feature is not available in fp-ts.
+
+In many applications, it's common to have tasks or computations that need to be executed at specific intervals or scheduled for future execution. For example, you might want to perform periodic data updates, trigger notifications, or run background processes at specific times. This is where built-in scheduling comes in handy.
+
+On the other hand, fp-ts does not have built-in scheduling capabilities. If you need to schedule tasks or manage timed computations in fp-ts, you would have to rely on external libraries or implement your own scheduling mechanisms, which can add complexity to your codebase.
+
+### Built-in Caching
+
+The Effect library provides built-in caching mechanisms, which enable you to cache the results of computations for improved performance. This feature is not available in fp-ts.
+
+In many applications, computations can be time-consuming or resource-intensive, especially when dealing with complex operations or accessing remote resources. Caching is a technique used to store the results of computations so that they can be retrieved quickly without the need to recompute them every time.
+
+With the built-in caching capabilities of the Effect library, you can easily cache the results of computations and reuse them when needed. This can significantly improve the performance of your application by avoiding redundant computations and reducing the load on external resources.
+
+### Built-in Batching
+
+The Effect library offers built-in batching capabilities, which enable you to combine multiple computations into a single batched computation. This feature is not available in fp-ts.
+
+In many scenarios, you may need to perform multiple computations that share similar inputs or dependencies. Performing these computations individually can result in inefficiencies and increased overhead. Batching is a technique that allows you to group these computations together and execute them as a single batch, improving performance and reducing unnecessary processing.
+
+### Metrics
+
+The Effect library includes built-in support for collecting and reporting metrics related to computations and system behavior. It specifically supports [OpenTelemetry Metrics](https://opentelemetry.io/docs/specs/otel/metrics/). This feature is not available in fp-ts.
+
+Metrics play a crucial role in understanding and monitoring the performance and behavior of your applications. They provide valuable insights into various aspects, such as response times, resource utilization, error rates, and more. By collecting and analyzing metrics, you can identify performance bottlenecks, optimize your code, and make informed decisions to improve your application's overall quality.
+
+### Tracing
+
+The Effect library has built-in tracing capabilities, which enable you to trace and debug the execution of your code and track the path of a request through an application. Additionally, Effect offers a dedicated [OpenTelemetry exporter](https://opentelemetry.io/docs/instrumentation/js/exporters/) for integrating with the OpenTelemetry observability framework. In contrast, fp-ts does not offer a similar tracing tool to enhance visibility into code execution.
+
+### Configuration
+
+The Effect library provides built-in support for managing and accessing configuration values within your computations. This feature is not available in fp-ts.
+
+Configuration values are an essential aspect of software development. They allow you to customize the behavior of your applications without modifying the code. Examples of configuration values include database connection strings, API endpoints, feature flags, and various settings that can vary between environments or deployments.
+
+With the Effect library's built-in support for configuration, you can easily manage and access these values within your computations. It provides convenient utilities and abstractions to load, validate, and access configuration values, ensuring that your application has the necessary settings it requires to function correctly.
+
+By leveraging the built-in configuration support in the Effect library, you can:
+
+- Load configuration values from various sources such as environment variables, configuration files, or remote configuration providers.
+- Validate and ensure that the loaded configuration values adhere to the expected format and structure.
+- Access the configuration values within your computations, allowing you to use them wherever necessary.
+
+### Immutable Data Structures
+
+The Effect library provides built-in support for immutable data structures such as `Chunk`, `HashSet`, and `HashMap`. These data structures ensure that once created, their values cannot be modified, promoting safer and more predictable code. In contrast, fp-ts does not have built-in support for such data structures and only provides modules that add additional APIs to standard data types like `Set` and `Map`. While these modules can be useful, they do not offer the same level of performance optimizations and specialized operations as the built-in immutable data structures provided by the Effect library.
+
+Immutable data structures offer several benefits, including:
+
+- Immutability: Immutable data structures cannot be changed after they are created. This property eliminates the risk of accidental modifications and enables safer concurrent programming.
+
+- Predictability: With immutable data structures, you can rely on the fact that their values won't change unexpectedly. This predictability simplifies reasoning about code behavior and reduces bugs caused by mutable state.
+
+- Sharing and Reusability: Immutable data structures can be safely shared between different parts of your program. Since they cannot be modified, you don't need to create defensive copies, resulting in more efficient memory usage and improved performance.
+
+### Stream Processing
+
+The Effect ecosystem provides built-in support for stream processing, enabling you to work with streams of data. Stream processing is a powerful concept that allows you to efficiently process and transform continuous streams of data in a reactive and asynchronous manner. However, fp-ts does not have this feature built-in and relies on external libraries like RxJS to handle stream processing.
 
 > scheduling/repetition.mdx\n\n---
 title: Repetition
@@ -35590,407 +39267,110 @@ Action called 3 time(s)
   success outcomes.
 </Aside>
 
-> getting-started/using-generators.mdx\n\n---
-title: Using Generators
-description: Learn how to use generators in Effect for writing effectful code, enhancing control flow, handling errors, and simplifying asynchronous operations with a syntax similar to async/await.
+> additional-resources/coming-from-zio.mdx\n\n---
+title: Coming From ZIO
+description: Key differences between Effect and ZIO.
 sidebar:
-  order: 8
+  order: 3
 ---
 
-import {
-  Aside,
-  Tabs,
-  TabItem,
-  Badge
-} from "@astrojs/starlight/components"
+If you are coming to Effect from ZIO, there are a few differences to be aware of.
 
-Effect offers a convenient syntax, similar to `async`/`await`, to write effectful code using [generators](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator).
+## Environment
 
-<Aside type="note" title="Optional Feature">
-  The use of generators is an optional feature in Effect. If you find
-  generators unfamiliar or prefer a different coding style, you can
-  explore the documentation about [Building
-  Pipelines](/docs/getting-started/building-pipelines/) in Effect.
-</Aside>
+In Effect, we represent the environment required to run an effect workflow as a **union** of services:
 
-## Understanding Effect.gen
+**Example** (Defining the Environment with a Union of Services)
 
-The `Effect.gen` utility simplifies the task of writing effectful code by utilizing JavaScript's generator functions. This method helps your code appear and behave more like traditional synchronous code, which enhances both readability and error management.
-
-**Example** (Performing Transactions with Discounts)
-
-Let's explore a practical program that performs a series of data transformations commonly found in application logic:
-
-```ts twoslash
+```ts twoslash "Console | Logger"
 import { Effect } from "effect"
 
-// Function to add a small service charge to a transaction amount
-const addServiceCharge = (amount: number) => amount + 1
-
-// Function to apply a discount safely to a transaction amount
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-// Simulated asynchronous task to fetch a transaction amount from a
-// database
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-// Simulated asynchronous task to fetch a discount rate from a
-// configuration file
-const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
-
-// Assembling the program using a generator function
-const program = Effect.gen(function* () {
-  // Retrieve the transaction amount
-  const transactionAmount = yield* fetchTransactionAmount
-
-  // Retrieve the discount rate
-  const discountRate = yield* fetchDiscountRate
-
-  // Calculate discounted amount
-  const discountedAmount = yield* applyDiscount(
-    transactionAmount,
-    discountRate
-  )
-
-  // Apply service charge
-  const finalAmount = addServiceCharge(discountedAmount)
-
-  // Return the total amount after applying the charge
-  return `Final amount to charge: ${finalAmount}`
-})
-
-// Execute the program and log the result
-Effect.runPromise(program).then(console.log)
-// Output: Final amount to charge: 96
-```
-
-Key steps to follow when using `Effect.gen`:
-
-- Wrap your logic in `Effect.gen`
-- Use `yield*` to handle effects
-- Return the final result
-
-<Aside type="caution" title="Required TypeScript Configuration">
-  The generator API is only available when using the `downlevelIteration`
-  flag or with a `target` of `"es2015"` or higher in your `tsconfig.json`
-  file.
-</Aside>
-
-## Comparing Effect.gen with async/await
-
-If you are familiar with `async`/`await`, you may notice that the flow of writing code is similar.
-
-Let's compare the two approaches:
-
-<Tabs syncKey="promises-vs-generators">
-
-<TabItem label="Using Effect.gen">
-
-```ts twoslash
-import { Effect } from "effect"
-
-const addServiceCharge = (amount: number) => amount + 1
-
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
-
-export const program = Effect.gen(function* () {
-  const transactionAmount = yield* fetchTransactionAmount
-  const discountRate = yield* fetchDiscountRate
-  const discountedAmount = yield* applyDiscount(
-    transactionAmount,
-    discountRate
-  )
-  const finalAmount = addServiceCharge(discountedAmount)
-  return `Final amount to charge: ${finalAmount}`
-})
-```
-
-</TabItem>
-
-<TabItem label="Using Async / Await">
-
-```ts twoslash
-const addServiceCharge = (amount: number) => amount + 1
-
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Promise<number> =>
-  discountRate === 0
-    ? Promise.reject(new Error("Discount rate cannot be zero"))
-    : Promise.resolve(total - (total * discountRate) / 100)
-
-const fetchTransactionAmount = Promise.resolve(100)
-
-const fetchDiscountRate = Promise.resolve(5)
-
-export const program = async function () {
-  const transactionAmount = await fetchTransactionAmount
-  const discountRate = await fetchDiscountRate
-  const discountedAmount = await applyDiscount(
-    transactionAmount,
-    discountRate
-  )
-  const finalAmount = addServiceCharge(discountedAmount)
-  return `Final amount to charge: ${finalAmount}`
+interface IOError {
+  readonly _tag: "IOError"
 }
+
+interface HttpError {
+  readonly _tag: "HttpError"
+}
+
+interface Console {
+  readonly log: (msg: string) => void
+}
+
+interface Logger {
+  readonly log: (msg: string) => void
+}
+
+type Response = Record<string, string>
+
+// `R` is a union of `Console` and `Logger`
+type Http = Effect.Effect<Response, IOError | HttpError, Console | Logger>
 ```
 
-</TabItem>
+This may be confusing to folks coming from ZIO, where the environment is represented as an **intersection** of services:
 
-</Tabs>
+```scala showLineNumbers=false
+type Http = ZIO[Console with Logger, IOError, Response]
+```
 
-It's important to note that although the code appears similar, the two programs are not identical. The purpose of comparing them side by side is just to highlight the resemblance in how they are written.
+## Rationale
 
-## Embracing Control Flow
+The rationale for using a union to represent the environment required by an `Effect` workflow boils down to our desire to remove `Has` as a wrapper for services in the environment (similar to what was achieved in ZIO 2.0).
 
-One significant advantage of using `Effect.gen` in conjunction with generators is its capability to employ standard control flow constructs within the generator function. These constructs include `if`/`else`, `for`, `while`, and other branching and looping mechanisms, enhancing your ability to express complex control flow logic in your code.
+To be able to remove `Has` from Effect, we had to think a bit more structurally given that TypeScript is a structural type system. In TypeScript, if you have a type `A & B` where there is a structural conflict between `A` and `B`, the type `A & B` will reduce to `never`.
 
-**Example** (Using Control Flow)
+**Example** (Intersection Type Conflict)
 
 ```ts twoslash
-import { Effect } from "effect"
+interface A {
+  readonly prop: string
+}
 
-const calculateTax = (
-  amount: number,
-  taxRate: number
-): Effect.Effect<number, Error> =>
-  taxRate > 0
-    ? Effect.succeed((amount * taxRate) / 100)
-    : Effect.fail(new Error("Invalid tax rate"))
+interface B {
+  readonly prop: number
+}
 
-const program = Effect.gen(function* () {
-  let i = 1
-
-  while (true) {
-    if (i === 10) {
-      break // Break the loop when counter reaches 10
-    } else {
-      if (i % 2 === 0) {
-        // Calculate tax for even numbers
-        console.log(yield* calculateTax(100, i))
-      }
-      i++
-      continue
-    }
-  }
-})
-
-Effect.runPromise(program)
+const ab: A & B = {
+  // @ts-expect-error
+  prop: ""
+}
 /*
-Output:
-2
-4
-6
-8
+Type 'string' is not assignable to type 'never'.ts(2322)
 */
 ```
 
-## How to Raise Errors
+In previous versions of Effect, intersections were used for representing an environment with multiple services. The problem with using intersections (i.e. `A & B`) is that there could be multiple services in the environment that have functions and properties named in the same way. To remedy this, we wrapped services in the `Has` type (similar to ZIO 1.0), so you would have `Has<A> & Has<B>` in your environment.
 
-The `Effect.gen` API lets you integrate error handling directly into your workflow by yielding failed effects.
-You can introduce errors with `Effect.fail`, as shown in the example below.
+In ZIO 2.0, the _contravariant_ `R` type parameter of the `ZIO` type (representing the environment) became fully phantom, thus allowing for removal of the `Has` type. This significantly improved the clarity of type signatures as well as removing another "stumbling block" for new users.
 
-**Example** (Introducing an Error into the Flow)
+To facilitate removal of `Has` in Effect, we had to consider how types in the environment compose. By the rule of composition, contravariant parameters composed as an intersection (i.e. with `&`) are equivalent to covariant parameters composed together as a union (i.e. with `|`) for purposes of assignability. Based upon this fact, we decided to diverge from ZIO and make the `R` type parameter _covariant_ given `A | B` does not reduce to `never` if `A` and `B` have conflicts.
 
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Console.log("task1...")
-const task2 = Console.log("task2...")
-
-const program = Effect.gen(function* () {
-  // Perform some tasks
-  yield* task1
-  yield* task2
-  // Introduce an error
-  yield* Effect.fail("Something went wrong!")
-})
-
-Effect.runPromise(program).then(console.log, console.error)
-/*
-Output:
-task1...
-task2...
-(FiberFailure) Error: Something went wrong!
-*/
-```
-
-## The Role of Short-Circuiting
-
-When working with `Effect.gen`, it is important to understand how it handles errors.
-This API will stop execution at the **first error** it encounters and return that error.
-
-How does this affect your code? If you have several operations in sequence, once any one of them fails, the remaining operations will not run, and the error will be returned.
-
-In simpler terms, if something fails at any point, the program will stop right there and deliver the error to you.
-
-**Example** (Halting Execution at the First Error)
+From our example above:
 
 ```ts twoslash
-import { Effect, Console } from "effect"
-
-const task1 = Console.log("task1...")
-const task2 = Console.log("task2...")
-const failure = Effect.fail("Something went wrong!")
-const task4 = Console.log("task4...")
-
-const program = Effect.gen(function* () {
-  yield* task1
-  yield* task2
-  // The program stops here due to the error
-  yield* failure
-  // The following lines never run
-  yield* task4
-  return "some result"
-})
-
-Effect.runPromise(program).then(console.log, console.error)
-/*
-Output:
-task1...
-task2...
-(FiberFailure) Error: Something went wrong!
-*/
-```
-
-Even though execution never reaches code after a failure, TypeScript may still assume that the code below the error is reachable unless you explicitly return after the failure.
-
-For example, consider the following scenario where you want to narrow the type of a variable:
-
-**Example** (Type Narrowing without Explicit Return)
-
-```ts twoslash
-import { Effect } from "effect"
-
-type User = {
-  readonly name: string
+interface A {
+  readonly prop: string
 }
 
-// Imagine this function checks a database or an external service
-declare function getUserById(id: string): Effect.Effect<User | undefined>
+interface B {
+  readonly prop: number
+}
 
-function greetUser(id: string) {
-  return Effect.gen(function* () {
-    const user = yield* getUserById(id)
-
-    if (user === undefined) {
-      // Even though we fail here, TypeScript still thinks
-      // 'user' might be undefined later
-      yield* Effect.fail(`User with id ${id} not found`)
-    }
-
-    // @ts-expect-error user is possibly 'undefined'.ts(18048)
-    return `Hello, ${user.name}!`
-  })
+// ok
+const ab: A | B = {
+  prop: ""
 }
 ```
 
-In this example, TypeScript still considers `user` possibly `undefined` because there is no explicit return after the failure.
+Representing `R` as a covariant type parameter containing the union of services required by an `Effect` workflow allowed us to remove the requirement for `Has`.
 
-To fix this, explicitly return right after calling `Effect.fail`:
+## Type Aliases
 
-**Example** (Type Narrowing with Explicit Return)
+In Effect, there are no predefined type aliases such as `UIO`, `URIO`, `RIO`, `Task`, or `IO` like in ZIO.
 
-```ts twoslash {15}
-import { Effect } from "effect"
+The reason for this is that type aliases are lost as soon as you compose them, which renders them somewhat useless unless you maintain **multiple** signatures for **every** function. In Effect, we have chosen not to go down this path. Instead, we utilize the `never` type to indicate unused types.
 
-type User = {
-  readonly name: string
-}
-
-declare function getUserById(id: string): Effect.Effect<User | undefined>
-
-function greetUser(id: string) {
-  return Effect.gen(function* () {
-    const user = yield* getUserById(id)
-
-    if (user === undefined) {
-      // Explicitly return after failing
-      return yield* Effect.fail(`User with id ${id} not found`)
-    }
-
-    // Now TypeScript knows that 'user' is not undefined
-    return `Hello, ${user.name}!`
-  })
-}
-```
-
-<Aside type="note" title="Further Learning">
-  To learn more about error handling in Effect, refer to the [Error
-  Management](/docs/error-management/two-error-types/) section.
-</Aside>
-
-## Passing `this`
-
-In some cases, you might need to pass a reference to the current object (`this`) into the body of your generator function.
-You can achieve this by utilizing an overload that accepts the reference as the first argument:
-
-**Example** (Passing `this` to Generator)
-
-```ts twoslash
-import { Effect } from "effect"
-
-class MyClass {
-  readonly local = 1
-  compute = Effect.gen(this, function* () {
-    const n = this.local + 1
-
-    yield* Effect.log(`Computed value: ${n}`)
-
-    return n
-  })
-}
-
-Effect.runPromise(new MyClass().compute).then(console.log)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message="Computed value: 2"
-2
-*/
-```
-
-## Adapter <Badge text="Deprecated" variant="caution" />
-
-You may still come across some code snippets that use an adapter, typically indicated by `_` or `$` symbols.
-
-In earlier versions of TypeScript, the generator "adapter" function was necessary to ensure correct type inference within generators. This adapter was used to facilitate the interaction between TypeScript's type system and generator functions.
-
-**Example** (Adapter in Older Code)
-
-```ts twoslash "$"
-import { Effect } from "effect"
-
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-// Older usage with an adapter for proper type inference
-const programWithAdapter = Effect.gen(function* ($) {
-  const transactionAmount = yield* $(fetchTransactionAmount)
-})
-
-// Current usage without an adapter
-const program = Effect.gen(function* () {
-  const transactionAmount = yield* fetchTransactionAmount
-})
-```
-
-With advances in TypeScript (v5.5+), the adapter is no longer necessary for type inference. While it remains in the codebase for backward compatibility, it is anticipated to be removed in the upcoming major release of Effect.
+It's worth mentioning that the perception of type aliases being quicker to understand is often just an illusion. In Effect, the explicit notation `Effect<A>` clearly communicates that only type `A` is being used. On the other hand, when using a type alias like `RIO<R, A>`, questions arise about the type `E`. Is it `unknown`? `never`? Remembering such details becomes challenging.
 
 > scheduling/built-in-schedules.mdx\n\n---
 title: Built-In Schedules
@@ -36423,584 +39803,123 @@ Output:
 */
 ```
 
-> getting-started/building-pipelines.mdx\n\n---
-title: Building Pipelines
-description: Learn to create modular, readable pipelines for composing and sequencing operations in Effect, enabling clear and efficient data transformations.
+> additional-resources/myths.mdx\n\n---
+title: Myths About Effect
+description: Debunking common misconceptions about Effect's performance, complexity, and use cases.
 sidebar:
-  order: 9
+  label: Myths
+  order: 1
 ---
 
-import { Aside } from "@astrojs/starlight/components"
+## Effect heavily relies on generators and generators are slow!
 
-Effect pipelines allow for the composition and sequencing of operations on values, enabling the transformation and manipulation of data in a concise and modular manner.
+Effect's internals are not built on generators, we only use generators to provide an API which closely mimics async-await. Internally async-await uses the same mechanics as generators and they are equally performant. So if you don't have a problem with async-await you won't have a problem with Effect's generators.
 
-## Why Pipelines are Good for Structuring Your Application
+Where generators and iterables are unacceptably slow is in transforming collections of data, for that try to use plain arrays as much as possible.
 
-Pipelines are an excellent way to structure your application and handle data transformations in a concise and modular manner. They offer several benefits:
+## Effect will make your code 500x slower!
 
-1. **Readability**: Pipelines allow you to compose functions in a readable and sequential manner. You can clearly see the flow of data and the operations applied to it, making it easier to understand and maintain the code.
-
-2. **Code Organization**: With pipelines, you can break down complex operations into smaller, manageable functions. Each function performs a specific task, making your code more modular and easier to reason about.
-
-3. **Reusability**: Pipelines promote the reuse of functions. By breaking down operations into smaller functions, you can reuse them in different pipelines or contexts, improving code reuse and reducing duplication.
-
-4. **Type Safety**: By leveraging the type system, pipelines help catch errors at compile-time. Functions in a pipeline have well-defined input and output types, ensuring that the data flows correctly through the pipeline and minimizing runtime errors.
-
-## Functions vs Methods
-
-The use of functions in the Effect ecosystem libraries is important for
-achieving **tree shakeability** and ensuring **extensibility**.
-Functions enable efficient bundling by eliminating unused code, and they
-provide a flexible and modular approach to extending the libraries'
-functionality.
-
-### Tree Shakeability
-
-Tree shakeability refers to the ability of a build system to eliminate unused code during the bundling process. Functions are tree shakeable, while methods are not.
-
-When functions are used in the Effect ecosystem, only the functions that are actually imported and used in your application will be included in the final bundled code. Unused functions are automatically removed, resulting in a smaller bundle size and improved performance.
-
-On the other hand, methods are attached to objects or prototypes, and they cannot be easily tree shaken. Even if you only use a subset of methods, all methods associated with an object or prototype will be included in the bundle, leading to unnecessary code bloat.
-
-### Extensibility
-
-Another important advantage of using functions in the Effect ecosystem is the ease of extensibility. With methods, extending the functionality of an existing API often requires modifying the prototype of the object, which can be complex and error-prone.
-
-In contrast, with functions, extending the functionality is much simpler. You can define your own "extension methods" as plain old functions without the need to modify the prototypes of objects. This promotes cleaner and more modular code, and it also allows for better compatibility with other libraries and modules.
-
-## pipe
-
-The `pipe` function is a utility that allows us to compose functions in a readable and sequential manner. It takes the output of one function and passes it as the input to the next function in the pipeline. This enables us to build complex transformations by chaining multiple functions together.
-
-**Syntax**
-
-```ts showLineNumbers=false
-import { pipe } from "effect"
-
-const result = pipe(input, func1, func2, ..., funcN)
-```
-
-In this syntax, `input` is the initial value, and `func1`, `func2`, ..., `funcN` are the functions to be applied in sequence. The result of each function becomes the input for the next function, and the final result is returned.
-
-Here's an illustration of how `pipe` works:
-
-```text showLineNumbers=false
-┌───────┐    ┌───────┐    ┌───────┐    ┌───────┐    ┌───────┐    ┌────────┐
-│ input │───►│ func1 │───►│ func2 │───►│  ...  │───►│ funcN │───►│ result │
-└───────┘    └───────┘    └───────┘    └───────┘    └───────┘    └────────┘
-```
-
-It's important to note that functions passed to `pipe` must have a **single argument** because they are only called with a single argument.
-
-Let's see an example to better understand how `pipe` works:
-
-**Example** (Chaining Arithmetic Operations)
+Effect does perform 500x slower if you are comparing:
 
 ```ts twoslash
-import { pipe } from "effect"
-
-// Define simple arithmetic operations
-const increment = (x: number) => x + 1
-const double = (x: number) => x * 2
-const subtractTen = (x: number) => x - 10
-
-// Sequentially apply these operations using `pipe`
-const result = pipe(5, increment, double, subtractTen)
-
-console.log(result)
-// Output: 2
+const result = 1 + 1
 ```
 
-In the above example, we start with an input value of `5`. The `increment` function adds `1` to the initial value, resulting in `6`. Then, the `double` function doubles the value, giving us `12`. Finally, the `subtractTen` function subtracts `10` from `12`, resulting in the final output of `2`.
-
-The result is equivalent to `subtractTen(double(increment(5)))`, but using `pipe` makes the code more readable because the operations are sequenced from left to right, rather than nesting them inside out.
-
-## map
-
-Transforms the value inside an effect by applying a function to it.
-
-**Syntax**
-
-```ts showLineNumbers=false
-const mappedEffect = pipe(myEffect, Effect.map(transformation))
-// or
-const mappedEffect = Effect.map(myEffect, transformation)
-// or
-const mappedEffect = myEffect.pipe(Effect.map(transformation))
-```
-
-`Effect.map` takes a function and applies it to the value contained within an
-effect, creating a new effect with the transformed value.
-
-<Aside type="note" title="Effects are Immutable">
-  It's important to note that effects are immutable, meaning that the
-  original effect is not modified. Instead, a new effect is returned with
-  the updated value.
-</Aside>
-
-**Example** (Adding a Service Charge)
-
-Here's a practical example where we apply a service charge to a transaction amount:
-
-```ts twoslash
-import { pipe, Effect } from "effect"
-
-// Function to add a small service charge to a transaction amount
-const addServiceCharge = (amount: number) => amount + 1
-
-// Simulated asynchronous task to fetch a transaction amount from database
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-// Apply service charge to the transaction amount
-const finalAmount = pipe(
-  fetchTransactionAmount,
-  Effect.map(addServiceCharge)
-)
-
-Effect.runPromise(finalAmount).then(console.log) // Output: 101
-```
-
-## as
-
-Replaces the value inside an effect with a constant value.
-
-`Effect.as` allows you to ignore the original value inside an effect and replace it with a new constant value.
-
-<Aside type="note" title="Effects are Immutable">
-  It's important to note that effects are immutable, meaning that the
-  original effect is not modified. Instead, a new effect is returned with
-  the updated value.
-</Aside>
-
-**Example** (Replacing a Value)
-
-```ts twoslash
-import { pipe, Effect } from "effect"
-
-// Replace the value 5 with the constant "new value"
-const program = pipe(Effect.succeed(5), Effect.as("new value"))
-
-Effect.runPromise(program).then(console.log) // Output: "new value"
-```
-
-## flatMap
-
-Chains effects to produce new `Effect` instances, useful for combining operations that depend on previous results.
-
-**Syntax**
-
-```ts showLineNumbers=false
-const flatMappedEffect = pipe(myEffect, Effect.flatMap(transformation))
-// or
-const flatMappedEffect = Effect.flatMap(myEffect, transformation)
-// or
-const flatMappedEffect = myEffect.pipe(Effect.flatMap(transformation))
-```
-
-In the code above, `transformation` is the function that takes a value and returns an `Effect`, and `myEffect` is the initial `Effect` being transformed.
-
-Use `Effect.flatMap` when you need to chain multiple effects, ensuring that each
-step produces a new `Effect` while flattening any nested effects that may
-occur.
-
-It is similar to `flatMap` used with arrays but works
-specifically with `Effect` instances, allowing you to avoid deeply nested
-effect structures.
-
-<Aside type="note" title="Effects are Immutable">
-  It's important to note that effects are immutable, meaning that the
-  original effect is not modified. Instead, a new effect is returned with
-  the updated value.
-</Aside>
-
-**Example** (Applying a Discount)
-
-```ts twoslash
-import { pipe, Effect } from "effect"
-
-// Function to apply a discount safely to a transaction amount
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-// Simulated asynchronous task to fetch a transaction amount from database
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-// Chaining the fetch and discount application using `flatMap`
-const finalAmount = pipe(
-  fetchTransactionAmount,
-  Effect.flatMap((amount) => applyDiscount(amount, 5))
-)
-
-Effect.runPromise(finalAmount).then(console.log)
-// Output: 95
-```
-
-### Ensure All Effects Are Considered
-
-Make sure that all effects within `Effect.flatMap` contribute to the final computation. If you ignore an effect, it can lead to unexpected behavior:
-
-```ts {3} showLineNumbers=false
-Effect.flatMap((amount) => {
-  // This effect will be ignored
-  Effect.sync(() => console.log(`Apply a discount to: ${amount}`))
-  return applyDiscount(amount, 5)
-})
-```
-
-In this case, the `Effect.sync` call is ignored and does not affect the result of `applyDiscount(amount, 5)`. To handle effects correctly, make sure to explicitly chain them using functions like `Effect.map`, `Effect.flatMap`, `Effect.andThen`, or `Effect.tap`.
-
-## andThen
-
-Chains two actions, where the second action can depend on the result of the first.
-
-**Syntax**
-
-```ts showLineNumbers=false
-const transformedEffect = pipe(myEffect, Effect.andThen(anotherEffect))
-// or
-const transformedEffect = Effect.andThen(myEffect, anotherEffect)
-// or
-const transformedEffect = myEffect.pipe(Effect.andThen(anotherEffect))
-```
-
-Use `andThen` when you need to run multiple actions in sequence, with the
-second action depending on the result of the first. This is useful for
-combining effects or handling computations that must happen in order.
-
-The second action can be:
-
-1. A value (similar to `Effect.as`)
-2. A function returning a value (similar to `Effect.map`)
-3. A `Promise`
-4. A function returning a `Promise`
-5. An `Effect`
-6. A function returning an `Effect` (similar to `Effect.flatMap`)
-
-**Example** (Applying a Discount Based on Fetched Amount)
-
-Let's look at an example comparing `Effect.andThen` with `Effect.map` and `Effect.flatMap`:
-
-```ts twoslash
-import { pipe, Effect } from "effect"
-
-// Function to apply a discount safely to a transaction amount
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-// Simulated asynchronous task to fetch a transaction amount from database
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-// Using Effect.map and Effect.flatMap
-const result1 = pipe(
-  fetchTransactionAmount,
-  Effect.map((amount) => amount * 2),
-  Effect.flatMap((amount) => applyDiscount(amount, 5))
-)
-
-Effect.runPromise(result1).then(console.log) // Output: 190
-
-// Using Effect.andThen
-const result2 = pipe(
-  fetchTransactionAmount,
-  Effect.andThen((amount) => amount * 2),
-  Effect.andThen((amount) => applyDiscount(amount, 5))
-)
-
-Effect.runPromise(result2).then(console.log) // Output: 190
-```
-
-### Option and Either with andThen
-
-Both [Option](/docs/data-types/option/#interop-with-effect) and [Either](/docs/data-types/either/#interop-with-effect) are commonly used for handling optional or missing values or simple error cases. These types integrate well with `Effect.andThen`. When used with `Effect.andThen`, the operations are categorized as scenarios 5 and 6 (as discussed earlier) because both `Option` and `Either` are treated as effects in this context.
-
-**Example** (with Option)
-
-```ts twoslash
-import { pipe, Effect, Option } from "effect"
-
-// Simulated asynchronous task fetching a number from a database
-const fetchNumberValue = Effect.tryPromise(() => Promise.resolve(42))
-
-//      ┌─── Effect<number, UnknownException | NoSuchElementException, never>
-//      ▼
-const program = pipe(
-  fetchNumberValue,
-  Effect.andThen((x) => (x > 0 ? Option.some(x) : Option.none()))
-)
-```
-
-You might expect the type of `program` to be `Effect<Option<number>, UnknownException, never>`, but it is actually `Effect<number, UnknownException | NoSuchElementException, never>`.
-
-This is because `Option<A>` is treated as an effect of type `Effect<A, NoSuchElementException>`, and as a result, the possible errors are combined into a union type.
-
-<Aside type="tip" title="Option As Effect">
-A value of type `Option<A>` is interpreted as an effect of type `Effect<A, NoSuchElementException>`.
-</Aside>
-
-**Example** (with Either)
-
-```ts twoslash
-import { pipe, Effect, Either } from "effect"
-
-// Function to parse an integer from a string that can fail
-const parseInteger = (input: string): Either.Either<number, string> =>
-  isNaN(parseInt(input))
-    ? Either.left("Invalid integer")
-    : Either.right(parseInt(input))
-
-// Simulated asynchronous task fetching a string from database
-const fetchStringValue = Effect.tryPromise(() => Promise.resolve("42"))
-
-//      ┌─── Effect<number, string | UnknownException, never>
-//      ▼
-const program = pipe(
-  fetchStringValue,
-  Effect.andThen((str) => parseInteger(str))
-)
-```
-
-Although one might expect the type of `program` to be `Effect<Either<number, string>, UnknownException, never>`, it is actually `Effect<number, string | UnknownException, never>`.
-
-This is because `Either<A, E>` is treated as an effect of type `Effect<A, E>`, meaning the errors are combined into a union type.
-
-<Aside type="tip" title="Either As Effect">
-A value of type `Either<A, E>` is interpreted as an effect of type `Effect<A, E>`.
-</Aside>
-
-## tap
-
-Runs a side effect with the result of an effect without changing the original value.
-
-Use `Effect.tap` when you want to perform a side effect, like logging or tracking,
-without modifying the main value. This is useful when you need to observe or
-record an action but want the original value to be passed to the next step.
-
-`Effect.tap` works similarly to `Effect.flatMap`, but it ignores the result of the function
-passed to it. The value from the previous effect remains available for the
-next part of the chain. Note that if the side effect fails, the entire chain
-will fail too.
-
-**Example** (Logging a step in a pipeline)
-
-```ts twoslash
-import { pipe, Effect, Console } from "effect"
-
-// Function to apply a discount safely to a transaction amount
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-// Simulated asynchronous task to fetch a transaction amount from database
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-const finalAmount = pipe(
-  fetchTransactionAmount,
-  // Log the fetched transaction amount
-  Effect.tap((amount) => Console.log(`Apply a discount to: ${amount}`)),
-  // `amount` is still available!
-  Effect.flatMap((amount) => applyDiscount(amount, 5))
-)
-
-Effect.runPromise(finalAmount).then(console.log)
-/*
-Output:
-Apply a discount to: 100
-95
-*/
-```
-
-In this example, `Effect.tap` is used to log the transaction amount before applying the discount, without modifying the value itself. The original value (`amount`) remains available for the next operation (`applyDiscount`).
-
-Using `Effect.tap` allows us to execute side effects during the computation without altering the result.
-This can be useful for logging, performing additional actions, or observing the intermediate values without interfering with the main computation flow.
-
-## all
-
-Combines multiple effects into one, returning results based on the input structure.
-
-Use `Effect.all` when you need to run multiple effects and combine their results
-into a single output. It supports tuples, iterables, structs, and records,
-making it flexible for different input types.
-
-For instance, if the input is a tuple:
-
-```ts showLineNumbers=false
-//         ┌─── a tuple of effects
-//         ▼
-Effect.all([effect1, effect2, ...])
-```
-
-the effects are executed in order, and the result is a new effect containing the results as a tuple. The results in the tuple match the order of the effects passed to `Effect.all`.
-
-By default, `Effect.all` runs effects sequentially and produces a tuple or object
-with the results. If any effect fails, it stops execution (short-circuiting)
-and propagates the error.
-
-See [Collecting](/docs/getting-started/control-flow/#all) for more information on how to use `Effect.all`.
-
-**Example** (Combining Configuration and Database Checks)
+to
 
 ```ts twoslash
 import { Effect } from "effect"
 
-// Simulated function to read configuration from a file
-const webConfig = Effect.promise(() =>
-  Promise.resolve({ dbConnection: "localhost", port: 8080 })
-)
-
-// Simulated function to test database connectivity
-const checkDatabaseConnectivity = Effect.promise(() =>
-  Promise.resolve("Connected to Database")
-)
-
-// Combine both effects to perform startup checks
-const startupChecks = Effect.all([webConfig, checkDatabaseConnectivity])
-
-Effect.runPromise(startupChecks).then(([config, dbStatus]) => {
-  console.log(
-    `Configuration: ${JSON.stringify(config)}\nDB Status: ${dbStatus}`
-  )
-})
-/*
-Output:
-Configuration: {"dbConnection":"localhost","port":8080}
-DB Status: Connected to Database
-*/
-```
-
-## Build your first pipeline
-
-Let's now combine the `pipe` function, `Effect.all`, and `Effect.andThen` to create a pipeline that performs a sequence of transformations.
-
-**Example** (Building a Transaction Pipeline)
-
-```ts twoslash
-import { Effect, pipe } from "effect"
-
-// Function to add a small service charge to a transaction amount
-const addServiceCharge = (amount: number) => amount + 1
-
-// Function to apply a discount safely to a transaction amount
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-// Simulated asynchronous task to fetch a transaction amount from database
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-// Simulated asynchronous task to fetch a discount rate
-// from a configuration file
-const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
-
-// Assembling the program using a pipeline of effects
-const program = pipe(
-  // Combine both fetch effects to get the transaction amount
-  // and discount rate
-  Effect.all([fetchTransactionAmount, fetchDiscountRate]),
-
-  // Apply the discount to the transaction amount
-  Effect.andThen(([transactionAmount, discountRate]) =>
-    applyDiscount(transactionAmount, discountRate)
-  ),
-
-  // Add the service charge to the discounted amount
-  Effect.andThen(addServiceCharge),
-
-  // Format the final result for display
-  Effect.andThen(
-    (finalAmount) => `Final amount to charge: ${finalAmount}`
-  )
-)
-
-// Execute the program and log the result
-Effect.runPromise(program).then(console.log)
-// Output: "Final amount to charge: 96"
-```
-
-This pipeline demonstrates how you can structure your code by combining different effects into a clear, readable flow.
-
-## The pipe method
-
-Effect provides a `pipe` method that works similarly to the `pipe` method found in [rxjs](https://rxjs.dev/api/index/function/pipe). This method allows you to chain multiple operations together, making your code more concise and readable.
-
-**Syntax**
-
-```ts showLineNumbers=false
-const result = effect.pipe(func1, func2, ..., funcN)
-```
-
-This is equivalent to using the `pipe` **function** like this:
-
-```ts showLineNumbers=false
-const result = pipe(effect, func1, func2, ..., funcN)
-```
-
-The `pipe` method is available on all effects and many other data types, eliminating the need to import the `pipe` function and saving you some keystrokes.
-
-**Example** (Using the `pipe` Method)
-
-Let's rewrite an [earlier example](#build-your-first-pipeline), this time using the `pipe` method.
-
-```ts twoslash collapse={3-15}
-import { Effect } from "effect"
-
-const addServiceCharge = (amount: number) => amount + 1
-
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
-
-const program = Effect.all([
-  fetchTransactionAmount,
-  fetchDiscountRate
-]).pipe(
-  Effect.andThen(([transactionAmount, discountRate]) =>
-    applyDiscount(transactionAmount, discountRate)
-  ),
-  Effect.andThen(addServiceCharge),
-  Effect.andThen(
-    (finalAmount) => `Final amount to charge: ${finalAmount}`
-  )
+const result = Effect.runSync(
+  Effect.zipWith(Effect.succeed(1), Effect.succeed(1), (a, b) => a + b)
 )
 ```
 
-## Cheatsheet
+The reason is one operation is optimized by the JIT compiler to be a direct CPU instruction and the other isn't.
 
-Let's summarize the transformation functions we have seen so far:
+In reality you'd never use Effect in such cases, Effect is an app-level library to tame concurrency, error handling, and much more!
 
-| API       | Input                                     | Output                      |
-| --------- | ----------------------------------------- | --------------------------- |
-| `map`     | `Effect<A, E, R>`, `A => B`               | `Effect<B, E, R>`           |
-| `flatMap` | `Effect<A, E, R>`, `A => Effect<B, E, R>` | `Effect<B, E, R>`           |
-| `andThen` | `Effect<A, E, R>`, \*                     | `Effect<B, E, R>`           |
-| `tap`     | `Effect<A, E, R>`, `A => Effect<B, E, R>` | `Effect<A, E, R>`           |
-| `all`     | `[Effect<A, E, R>, Effect<B, E, R>, ...]` | `Effect<[A, B, ...], E, R>` |
+You'd use Effect to coordinate your thunks of code, and you can build your thunks of code in the best perfoming manner as you see fit while still controlling execution through Effect.
+
+## Effect has a huge performance overhead!
+
+Depends what you mean by performance, many times performance bottlenecks in JS are due to bad management of concurrency.
+
+Thanks to structured concurrency and observability it becomes much easier to spot and optimize those issues.
+
+There are apps in frontend running at 120fps that use Effect intensively, so most likely effect won't be your perf problem.
+
+In regards of memory, it doesn't use much more memory than a normal program would, there are a few more allocations compared to non Effect code but usually this is no longer the case when the non Effect code does the same thing as the Effect code.
+
+The advise would be start using it and monitor your code, optimise out of need not out of thought, optimizing too early is the root of all evils in software design.
+
+## The bundle size is HUGE!
+
+Effect's minimum cost is about 25k of gzipped code, that chunk contains the Effect Runtime and already includes almost all the functions that you'll need in a normal app-code scenario.
+
+From that point on Effect is tree-shaking friendly so you'll only include what you use.
+
+Also when using Effect your own code becomes shorter and terser, so the overall cost is amortized with usage, we have apps where adopting Effect in the majority of the codebase led to reduction of the final bundle.
+
+## Effect is impossible to learn, there are so many functions and modules!
+
+True, the full Effect ecosystem is quite large and some modules contain 1000s of functions, the reality is that you don't need to know them all to start being productive, you can safely start using Effect knowing just 10-20 functions and progressively discover the rest, just like you can start using TypeScript without knowing every single NPM package.
+
+A short list of commonly used functions to begin are:
+
+- [Effect.succeed](/docs/getting-started/creating-effects/#succeed)
+- [Effect.fail](/docs/getting-started/creating-effects/#fail)
+- [Effect.sync](/docs/getting-started/creating-effects/#sync)
+- [Effect.tryPromise](/docs/getting-started/creating-effects/#trypromise)
+- [Effect.gen](/docs/getting-started/using-generators/)
+- [Effect.runPromise](/docs/getting-started/running-effects/#runpromise)
+- [Effect.catchTag](/docs/error-management/expected-errors/#catchtag)
+- [Effect.catchAll](/docs/error-management/expected-errors/#catchall)
+- [Effect.acquireRelease](/docs/resource-management/scope/#acquirerelease)
+- [Effect.acquireUseRelease](/docs/resource-management/scope/#acquireuserelease)
+- [Effect.provide](/docs/requirements-management/layers/#providing-a-layer-to-an-effect)
+- [Effect.provideService](/docs/requirements-management/services/#providing-a-service-implementation)
+- [Effect.andThen](/docs/getting-started/building-pipelines/#andthen)
+- [Effect.map](/docs/getting-started/building-pipelines/#map)
+- [Effect.tap](/docs/getting-started/building-pipelines/#tap)
+
+A short list of commonly used modules:
+
+- [Effect](https://effect-ts.github.io/effect/effect/Effect.ts.html)
+- [Context](/docs/requirements-management/services/#creating-a-service)
+- [Layer](/docs/requirements-management/layers/)
+- [Option](/docs/data-types/option/)
+- [Either](/docs/data-types/either/)
+- [Array](https://effect-ts.github.io/effect/effect/Array.ts.html)
+- [Match](/docs/code-style/pattern-matching/)
+
+## Effect is the same as RxJS and shares its problems
+
+This is a sensitive topic, let's start by saying that RxJS is a great project and that it has helped millions of developers write reliable software and we all should be thankful to the developers who contributed to such an amazing project.
+
+Discussing the scope of the projects, RxJS aims to make working with Observables easy and wants to provide reactive extensions to JS, Effect instead wants to make writing production-grade TypeScript easy. While the intersection is non-empty the projects have fundamentally different objectives and strategies.
+
+Sometimes people refer to RxJS in bad light, and the reason isn't RxJS in itself but rather usage of RxJS in problem domains where RxJS wasn't thought to be used.
+
+Namely the idea that "everything is a stream" is theoretically true but it leads to fundamental limitations on developer experience, the primary issue being that streams are multi-shot (emit potentially multiple elements, or zero) and mutable delimited continuations (JS Generators) are known to be only good to represent single-shot effects (that emit a single value).
+
+In short it means that writing in imperative style (think of async/await) is practically impossible with stream primitives (practically because there would be the option of replaying the generator at every element and at every step, but this tends to be inefficient and the semantics of it are counter-intuitive, it would only work under the assumption that the full body is free of side-effects), forcing the developer to use declarative approaches such as pipe to represent all of their code.
+
+Effect has a Stream module (which is pull-based instead of push-based in order to be memory constant), but the basic Effect type is single-shot and it is optimised to act as a smart & lazy Promise that enables imperative programming, so when using Effect you're not forced to use a declarative style for everything and you can program using a model which is similar to async-await.
+
+The other big difference is that RxJS only cares about the happy-path with explicit types, it doesn't offer a way of typing errors and dependencies, Effect instead consider both errors and dependencies as explicitely typed and offers control-flow around those in a fully type-safe manner.
+
+In short if you need reactive programming around Observables, use RxJS, if you need to write production-grade TypeScript that includes by default native telemetry, error handling, dependency injection, and more use Effect.
+
+## Effect should be a language or Use a different language
+
+Neither solve the issue of writing production grade software in TypeScript.
+
+TypeScript is an amazing language to write full stack code with deep roots in the JS ecosystem and wide compatibility of tools, it is an industrial language adopted by many large scale companies.
+
+The fact that something like Effect is possible within the language and the fact that the language supports things such as generators that allows for imperative programming with custom types such as Effect makes TypeScript a unique language.
+
+In fact even in functional languages such as Scala the interop with effect systems is less optimal than it is in TypeScript, to the point that effect system authors have expressed wish for their language to support as much as TypeScript supports.
 
 > scheduling/cron.mdx\n\n---
 title: Cron
@@ -37255,4157 +40174,6 @@ Output:
   `TestContext`. These are only necessary for simulating time and
   controlling the execution in test environments.
 </Aside>
-
-> scheduling/examples.mdx\n\n---
-title: Examples
-description: Explore practical examples for scheduling, retries, timeouts, and periodic task execution in Effect.
-sidebar:
-  order: 5
----
-
-These examples demonstrate different approaches to handling timeouts, retries, and periodic execution using Effect. Each scenario ensures that the application remains responsive and resilient to failures while adapting dynamically to various conditions.
-
-## Handling Timeouts and Retries for API Calls
-
-When calling third-party APIs, it is often necessary to enforce timeouts and implement retry mechanisms to handle transient failures. In this example, the API call retries up to two times in case of failure and will be interrupted if it takes longer than 4 seconds.
-
-**Example** (Retrying an API Call with a Timeout)
-
-```ts twoslash
-import { Console, Effect } from "effect"
-
-// Function to make the API call
-const getJson = (url: string) =>
-  Effect.tryPromise(() =>
-    fetch(url).then((res) => {
-      if (!res.ok) {
-        console.log("error")
-        throw new Error(res.statusText)
-      }
-      console.log("ok")
-      return res.json() as unknown
-    })
-  )
-
-// Program that retries the API call twice, times out after 4 seconds,
-// and logs errors
-const program = (url: string) =>
-  getJson(url).pipe(
-    Effect.retry({ times: 2 }),
-    Effect.timeout("4 seconds"),
-    Effect.catchAll(Console.error)
-  )
-
-// Test case: successful API response
-Effect.runFork(program("https://dummyjson.com/products/1?delay=1000"))
-/*
-Output:
-ok
-*/
-
-// Test case: API call exceeding timeout limit
-Effect.runFork(program("https://dummyjson.com/products/1?delay=5000"))
-/*
-Output:
-TimeoutException: Operation timed out before the specified duration of '4s' elapsed
-*/
-
-// Test case: API returning an error response
-Effect.runFork(program("https://dummyjson.com/auth/products/1?delay=500"))
-/*
-Output:
-error
-error
-error
-UnknownException: An unknown error occurred
-*/
-```
-
-## Retrying API Calls Based on Specific Errors
-
-Sometimes, retries should only happen for certain error conditions. For example, if an API call fails with a `401 Unauthorized` response, retrying might make sense, while a `404 Not Found` error should not trigger a retry.
-
-**Example** (Retrying Only on Specific Error Codes)
-
-```ts twoslash
-import { Console, Effect } from "effect"
-
-// Custom error class for handling status codes
-class Err extends Error {
-  constructor(message: string, readonly status: number) {
-    super(message)
-  }
-}
-
-// Function to make the API call
-const getJson = (url: string) =>
-  Effect.tryPromise({
-    try: () =>
-      fetch(url).then((res) => {
-        if (!res.ok) {
-          console.log(res.status)
-          throw new Err(res.statusText, res.status)
-        }
-        return res.json() as unknown
-      }),
-    catch: (e) => e as Err
-  })
-
-// Program that retries only when the error status is 401 (Unauthorized)
-const program = (url: string) =>
-  getJson(url).pipe(
-    Effect.retry({ while: (err) => err.status === 401 }),
-    Effect.catchAll(Console.error)
-  )
-
-// Test case: API returns 401 (triggers multiple retries)
-Effect.runFork(
-  program("https://dummyjson.com/auth/products/1?delay=1000")
-)
-/*
-Output:
-401
-401
-401
-401
-...
-*/
-
-// Test case: API returns 404 (no retries)
-Effect.runFork(program("https://dummyjson.com/-"))
-/*
-Output:
-404
-Err [Error]: Not Found
-*/
-```
-
-## Retrying with Dynamic Delays Based on Error Information
-
-Some API errors, such as `429 Too Many Requests`, include a `Retry-After` header that specifies how long to wait before retrying. Instead of using a fixed delay, we can dynamically adjust the retry interval based on this value.
-
-**Example** (Using the `Retry-After` Header for Retry Delays)
-
-This approach ensures that the retry delay adapts dynamically to the server's response, preventing unnecessary retries while respecting the provided `Retry-After` value.
-
-```ts twoslash
-import { Duration, Effect, Schedule } from "effect"
-
-// Custom error class representing a "Too Many Requests" response
-class TooManyRequestsError {
-  readonly _tag = "TooManyRequestsError"
-  constructor(readonly retryAfter: number) {}
-}
-
-let n = 1
-const request = Effect.gen(function* () {
-  // Simulate failing a particular number of times
-  if (n < 3) {
-    const retryAfter = n * 500
-    console.log(`Attempt #${n++}, retry after ${retryAfter} millis...`)
-    // Simulate retrieving the retry-after header
-    return yield* Effect.fail(new TooManyRequestsError(retryAfter))
-  }
-  console.log("Done")
-  return "some result"
-})
-
-// Retry policy that extracts the retry delay from the error
-const policy = Schedule.identity<TooManyRequestsError>().pipe(
-  Schedule.addDelay((error) =>
-    error._tag === "TooManyRequestsError"
-      ? // Wait for the specified retry-after duration
-        Duration.millis(error.retryAfter)
-      : Duration.zero
-  ),
-  // Limit retries to 5 attempts
-  Schedule.intersect(Schedule.recurs(5))
-)
-
-const program = request.pipe(Effect.retry(policy))
-
-Effect.runFork(program)
-/*
-Output:
-Attempt #1, retry after 500 millis...
-Attempt #2, retry after 1000 millis...
-Done
-*/
-```
-
-## Running Periodic Tasks Until Another Task Completes
-
-There are cases where we need to repeatedly perform an action at fixed intervals until another longer-running task finishes. This pattern is common in polling mechanisms or periodic logging.
-
-**Example** (Running a Scheduled Task Until Completion)
-
-```ts twoslash
-import { Effect, Console, Schedule } from "effect"
-
-// Define a long-running effect
-// (e.g., a task that takes 5 seconds to complete)
-const longRunningEffect = Console.log("done").pipe(
-  Effect.delay("5 seconds")
-)
-
-// Define an action to run periodically
-const action = Console.log("action...")
-
-// Define a fixed interval schedule
-const schedule = Schedule.fixed("1.5 seconds")
-
-// Run the action repeatedly until the long-running task completes
-const program = Effect.race(
-  Effect.repeat(action, schedule),
-  longRunningEffect
-)
-
-Effect.runPromise(program)
-/*
-Output:
-action...
-action...
-action...
-action...
-done
-*/
-```
-
-> getting-started/running-effects.mdx\n\n---
-title: Running Effects
-description: Learn how to execute effects in Effect with various functions for synchronous and asynchronous execution, including handling results and managing error outcomes.
-sidebar:
-  order: 7
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-To execute an effect, you can use one of the many `run` functions provided by the `Effect` module.
-
-<Aside type="tip" title="Running Effects at the Program's Edge">
-  The recommended approach is to design your program with the majority of
-  its logic as Effects. It's advisable to use the `run*` functions closer
-  to the "edge" of your program. This approach allows for greater
-  flexibility in executing your program and building sophisticated
-  effects.
-</Aside>
-
-## runSync
-
-Executes an effect synchronously, running it immediately and returning the result.
-
-**Example** (Synchronous Logging)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.sync(() => {
-  console.log("Hello, World!")
-  return 1
-})
-
-const result = Effect.runSync(program)
-// Output: Hello, World!
-
-console.log(result)
-// Output: 1
-```
-
-Use `Effect.runSync` to run an effect that does not fail and does not include any asynchronous operations. If the effect fails or involves asynchronous work, it will throw an error, and execution will stop where the failure or async operation occurs.
-
-**Example** (Incorrect Usage with Failing or Async Effects)
-
-```ts twoslash
-import { Effect } from "effect"
-
-try {
-  // Attempt to run an effect that fails
-  Effect.runSync(Effect.fail("my error"))
-} catch (e) {
-  console.error(e)
-}
-/*
-Output:
-(FiberFailure) Error: my error
-*/
-
-try {
-  // Attempt to run an effect that involves async work
-  Effect.runSync(Effect.promise(() => Promise.resolve(1)))
-} catch (e) {
-  console.error(e)
-}
-/*
-Output:
-(FiberFailure) AsyncFiberException: Fiber #0 cannot be resolved synchronously. This is caused by using runSync on an effect that performs async work
-*/
-```
-
-## runSyncExit
-
-Runs an effect synchronously and returns the result as an [Exit](/docs/data-types/exit/) type, which represents the outcome (success or failure) of the effect.
-
-Use `Effect.runSyncExit` to find out whether an effect succeeded or failed,
-including any defects, without dealing with asynchronous operations.
-
-The `Exit` type represents the result of the effect:
-
-- If the effect succeeds, the result is wrapped in a `Success`.
-- If it fails, the failure information is provided as a `Failure` containing
-  a [Cause](/docs/data-types/cause/) type.
-
-**Example** (Handling Results as Exit)
-
-```ts twoslash
-import { Effect } from "effect"
-
-console.log(Effect.runSyncExit(Effect.succeed(1)))
-/*
-Output:
-{
-  _id: "Exit",
-  _tag: "Success",
-  value: 1
-}
-*/
-
-console.log(Effect.runSyncExit(Effect.fail("my error")))
-/*
-Output:
-{
-  _id: "Exit",
-  _tag: "Failure",
-  cause: {
-    _id: "Cause",
-    _tag: "Fail",
-    failure: "my error"
-  }
-}
-*/
-```
-
-If the effect contains asynchronous operations, `Effect.runSyncExit` will
-return an `Failure` with a `Die` cause, indicating that the effect cannot be
-resolved synchronously.
-
-**Example** (Asynchronous Operation Resulting in Die)
-
-```ts twoslash
-import { Effect } from "effect"
-
-console.log(Effect.runSyncExit(Effect.promise(() => Promise.resolve(1))))
-/*
-Output:
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: {
-    _id: 'Cause',
-    _tag: 'Die',
-    defect: [Fiber #0 cannot be resolved synchronously. This is caused by using runSync on an effect that performs async work] {
-      fiber: [FiberRuntime],
-      _tag: 'AsyncFiberException',
-      name: 'AsyncFiberException'
-    }
-  }
-}
-*/
-```
-
-## runPromise
-
-Executes an effect and returns the result as a `Promise`.
-
-Use `Effect.runPromise` when you need to execute an effect and work with the
-result using `Promise` syntax, typically for compatibility with other
-promise-based code.
-
-**Example** (Running a Successful Effect as a Promise)
-
-```ts twoslash
-import { Effect } from "effect"
-
-Effect.runPromise(Effect.succeed(1)).then(console.log)
-// Output: 1
-```
-
-If the effect succeeds, the promise will resolve with the result. If the
-effect fails, the promise will reject with an error.
-
-**Example** (Handling a Failing Effect as a Rejected Promise)
-
-```ts twoslash
-import { Effect } from "effect"
-
-Effect.runPromise(Effect.fail("my error")).catch(console.error)
-/*
-Output:
-(FiberFailure) Error: my error
-*/
-```
-
-## runPromiseExit
-
-Runs an effect and returns a `Promise` that resolves to an [Exit](/docs/data-types/exit/), which
-represents the outcome (success or failure) of the effect.
-
-Use `Effect.runPromiseExit` when you need to determine if an effect succeeded
-or failed, including any defects, and you want to work with a `Promise`.
-
-The `Exit` type represents the result of the effect:
-
-- If the effect succeeds, the result is wrapped in a `Success`.
-- If it fails, the failure information is provided as a `Failure` containing
-  a [Cause](/docs/data-types/cause/) type.
-
-**Example** (Handling Results as Exit)
-
-```ts twoslash
-import { Effect } from "effect"
-
-Effect.runPromiseExit(Effect.succeed(1)).then(console.log)
-/*
-Output:
-{
-  _id: "Exit",
-  _tag: "Success",
-  value: 1
-}
-*/
-
-Effect.runPromiseExit(Effect.fail("my error")).then(console.log)
-/*
-Output:
-{
-  _id: "Exit",
-  _tag: "Failure",
-  cause: {
-    _id: "Cause",
-    _tag: "Fail",
-    failure: "my error"
-  }
-}
-*/
-```
-
-## runFork
-
-The foundational function for running effects, returning a "fiber" that can be observed or interrupted.
-
-`Effect.runFork` is used to run an effect in the background by creating a fiber. It is the base function
-for all other run functions. It starts a fiber that can be observed or interrupted.
-
-<Aside type="tip" title="The Default for Effect Execution">
-  Unless you specifically need a `Promise` or synchronous operation,
-  `Effect.runFork` is a good default choice.
-</Aside>
-
-**Example** (Running an Effect in the Background)
-
-```ts twoslash
-import { Effect, Console, Schedule, Fiber } from "effect"
-
-//      ┌─── Effect<number, never, never>
-//      ▼
-const program = Effect.repeat(
-  Console.log("running..."),
-  Schedule.spaced("200 millis")
-)
-
-//      ┌─── RuntimeFiber<number, never>
-//      ▼
-const fiber = Effect.runFork(program)
-
-setTimeout(() => {
-  Effect.runFork(Fiber.interrupt(fiber))
-}, 500)
-```
-
-In this example, the `program` continuously logs "running..." with each repetition spaced 200 milliseconds apart. You can learn more about repetitions and scheduling in our [Introduction to Scheduling](/docs/scheduling/introduction/) guide.
-
-To stop the execution of the program, we use `Fiber.interrupt` on the fiber returned by `Effect.runFork`. This allows you to control the execution flow and terminate it when necessary.
-
-For a deeper understanding of how fibers work and how to handle interruptions, check out our guides on [Fibers](/docs/concurrency/fibers/) and [Interruptions](/docs/concurrency/basic-concurrency/#interruptions).
-
-## Synchronous vs. Asynchronous Effects
-
-In the Effect library, there is no built-in way to determine in advance whether an effect will execute synchronously or asynchronously. While this idea was considered in earlier versions of Effect, it was ultimately not implemented for a few important reasons:
-
-1. **Complexity:** Introducing this feature to track sync/async behavior in the type system would make Effect more complex to use and limit its composability.
-
-2. **Safety Concerns:** We experimented with different approaches to track asynchronous Effects, but they all resulted in a worse developer experience without significantly improving safety. Even with fully synchronous types, we needed to support a `fromCallback` combinator to work with APIs using Continuation-Passing Style (CPS). However, at the type level, it's impossible to guarantee that such a function is always called immediately and not deferred.
-
-### Best Practices for Running Effects
-
-In most cases, effects are run at the outermost parts of your application. Typically, an application built around Effect will involve a single call to the main effect. Here’s how you should approach effect execution:
-
-- Use `runPromise` or `runFork`: For most cases, asynchronous execution should be the default. These methods provide the best way to handle Effect-based workflows.
-
-- Use `runSync` only when necessary: Synchronous execution should be considered an edge case, used only in scenarios where asynchronous execution is not feasible. For example, when you are sure the effect is purely synchronous and need immediate results.
-
-## Cheatsheet
-
-The table provides a summary of the available `run*` functions, along with their input and output types, allowing you to choose the appropriate function based on your needs.
-
-| API              | Given          | Result                |
-| ---------------- | -------------- | --------------------- |
-| `runSync`        | `Effect<A, E>` | `A`                   |
-| `runSyncExit`    | `Effect<A, E>` | `Exit<A, E>`          |
-| `runPromise`     | `Effect<A, E>` | `Promise<A>`          |
-| `runPromiseExit` | `Effect<A, E>` | `Promise<Exit<A, E>>` |
-| `runFork`        | `Effect<A, E>` | `RuntimeFiber<A, E>`  |
-
-You can find the complete list of `run*` functions [here](https://effect-ts.github.io/effect/effect/Effect.ts.html#running-effects).
-
-> scheduling/schedule-combinators.mdx\n\n---
-title: Schedule Combinators
-description: Learn how to combine and customize schedules in Effect to create complex recurrence patterns, including union, intersection, sequencing, and more.
-sidebar:
-  order: 3
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-Schedules define stateful, possibly effectful, recurring schedules of events, and compose in a variety of ways. Combinators allow us to take schedules and combine them together to get other schedules.
-
-To demonstrate the functionality of different schedules, we will use the following helper function
-that logs each repetition along with the corresponding delay in milliseconds, formatted as:
-
-```text showLineNumbers=false
-#<repetition>: <delay in ms>
-```
-
-**Helper** (Logging Execution Delays)
-
-```ts twoslash
-import { Array, Chunk, Duration, Effect, Schedule } from "effect"
-
-const log = (
-  schedule: Schedule.Schedule<unknown>,
-  delay: Duration.DurationInput = 0
-): void => {
-  const maxRecurs = 10 // Limit the number of executions
-  const delays = Chunk.toArray(
-    Effect.runSync(
-      Schedule.run(
-        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
-        Date.now(),
-        Array.range(0, maxRecurs)
-      )
-    )
-  )
-  delays.forEach((duration, i) => {
-    console.log(
-      i === maxRecurs
-        ? "..." // Indicate truncation if there are more executions
-        : i === delays.length - 1
-        ? "(end)" // Mark the last execution
-        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
-    )
-  })
-}
-```
-
-## Composition
-
-Schedules can be composed in different ways:
-
-| Mode             | Description                                                                                        |
-| ---------------- | -------------------------------------------------------------------------------------------------- |
-| **Union**        | Combines two schedules and recurs if either schedule wants to continue, using the shorter delay.   |
-| **Intersection** | Combines two schedules and recurs only if both schedules want to continue, using the longer delay. |
-| **Sequencing**   | Combines two schedules by running the first one fully, then switching to the second.               |
-
-### Union
-
-Combines two schedules and recurs if either schedule wants to continue, using the shorter delay.
-
-**Example** (Combining Exponential and Spaced Intervals)
-
-```ts twoslash collapse={3-26}
-import { Array, Chunk, Duration, Effect, Schedule } from "effect"
-
-const log = (
-  schedule: Schedule.Schedule<unknown>,
-  delay: Duration.DurationInput = 0
-): void => {
-  const maxRecurs = 10
-  const delays = Chunk.toArray(
-    Effect.runSync(
-      Schedule.run(
-        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
-        Date.now(),
-        Array.range(0, maxRecurs)
-      )
-    )
-  )
-  delays.forEach((duration, i) => {
-    console.log(
-      i === maxRecurs
-        ? "..."
-        : i === delays.length - 1
-        ? "(end)"
-        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
-    )
-  })
-}
-
-const schedule = Schedule.union(
-  Schedule.exponential("100 millis"),
-  Schedule.spaced("1 second")
-)
-
-log(schedule)
-/*
-Output:
-#1: 100ms  < exponential
-#2: 200ms
-#3: 400ms
-#4: 800ms
-#5: 1000ms < spaced
-#6: 1000ms
-#7: 1000ms
-#8: 1000ms
-#9: 1000ms
-#10: 1000ms
-...
-*/
-```
-
-The `Schedule.union` operator selects the shortest delay at each step, so when combining an exponential schedule with a spaced interval, the initial recurrences will follow the exponential backoff, then settle into the spaced interval once the delays exceed that value.
-
-### Intersection
-
-Combines two schedules and recurs only if both schedules want to continue, using the longer delay.
-
-**Example** (Limiting Exponential Backoff with a Fixed Number of Retries)
-
-```ts twoslash collapse={3-26}
-import { Array, Chunk, Duration, Effect, Schedule } from "effect"
-
-const log = (
-  schedule: Schedule.Schedule<unknown>,
-  delay: Duration.DurationInput = 0
-): void => {
-  const maxRecurs = 10
-  const delays = Chunk.toArray(
-    Effect.runSync(
-      Schedule.run(
-        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
-        Date.now(),
-        Array.range(0, maxRecurs)
-      )
-    )
-  )
-  delays.forEach((duration, i) => {
-    console.log(
-      i === maxRecurs
-        ? "..."
-        : i === delays.length - 1
-        ? "(end)"
-        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
-    )
-  })
-}
-
-const schedule = Schedule.intersect(
-  Schedule.exponential("10 millis"),
-  Schedule.recurs(5)
-)
-
-log(schedule)
-/*
-Output:
-#1: 10ms  < exponential
-#2: 20ms
-#3: 40ms
-#4: 80ms
-#5: 160ms
-(end)     < recurs
-*/
-```
-
-The `Schedule.intersect` operator enforces both schedules' constraints. In this example, the schedule follows an exponential backoff but stops after 5 recurrences due to the `Schedule.recurs(5)` limit.
-
-### Sequencing
-
-Combines two schedules by running the first one fully, then switching to the second.
-
-**Example** (Switching from Fixed Retries to Periodic Execution)
-
-```ts twoslash collapse={3-26}
-import { Array, Chunk, Duration, Effect, Schedule } from "effect"
-
-const log = (
-  schedule: Schedule.Schedule<unknown>,
-  delay: Duration.DurationInput = 0
-): void => {
-  const maxRecurs = 10
-  const delays = Chunk.toArray(
-    Effect.runSync(
-      Schedule.run(
-        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
-        Date.now(),
-        Array.range(0, maxRecurs)
-      )
-    )
-  )
-  delays.forEach((duration, i) => {
-    console.log(
-      i === maxRecurs
-        ? "..."
-        : i === delays.length - 1
-        ? "(end)"
-        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
-    )
-  })
-}
-
-const schedule = Schedule.andThen(
-  Schedule.recurs(5),
-  Schedule.spaced("1 second")
-)
-
-log(schedule)
-/*
-Output:
-#1: 0ms    < recurs
-#2: 0ms
-#3: 0ms
-#4: 0ms
-#5: 0ms
-#6: 1000ms < spaced
-#7: 1000ms
-#8: 1000ms
-#9: 1000ms
-#10: 1000ms
-...
-*/
-```
-
-The first schedule runs until completion, after which the second schedule takes over. In this example, the effect initially executes 5 times with no delay, then continues every 1 second.
-
-## Adding Randomness to Retry Delays
-
-The `Schedule.jittered` combinator modifies a schedule by applying a random delay within a specified range.
-
-When a resource is out of service due to overload or contention, retrying and backing off doesn't help us. If all failed API calls are backed off to the same point of time, they cause another overload or contention. Jitter adds some amount of randomness to the delay of the schedule. This helps us to avoid ending up accidentally synchronizing and taking the service down by accident.
-
-[Research](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/) suggests that `Schedule.jittered(0.0, 1.0)` is an effective way to introduce randomness in retries.
-
-**Example** (Jittered Exponential Backoff)
-
-```ts twoslash collapse={3-26}
-import { Array, Chunk, Duration, Effect, Schedule } from "effect"
-
-const log = (
-  schedule: Schedule.Schedule<unknown>,
-  delay: Duration.DurationInput = 0
-): void => {
-  const maxRecurs = 10
-  const delays = Chunk.toArray(
-    Effect.runSync(
-      Schedule.run(
-        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
-        Date.now(),
-        Array.range(0, maxRecurs)
-      )
-    )
-  )
-  delays.forEach((duration, i) => {
-    console.log(
-      i === maxRecurs
-        ? "..."
-        : i === delays.length - 1
-        ? "(end)"
-        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
-    )
-  })
-}
-
-const schedule = Schedule.jittered(Schedule.exponential("10 millis"))
-
-log(schedule)
-/*
-Output:
-#1: 10.448486ms
-#2: 21.134521ms
-#3: 47.245117ms
-#4: 88.263184ms
-#5: 163.651367ms
-#6: 335.818848ms
-#7: 719.126709ms
-#8: 1266.18457ms
-#9: 2931.252441ms
-#10: 6121.593018ms
-...
-*/
-```
-
-The `Schedule.jittered` combinator introduces randomness to delays within a range. For example, applying jitter to an exponential backoff ensures that each retry occurs at a slightly different time, reducing the risk of overwhelming the system.
-
-## Controlling Repetitions with Filters
-
-You can use `Schedule.whileInput` or `Schedule.whileOutput` to limit how long a schedule continues based on conditions applied to its input or output.
-
-**Example** (Stopping Based on Output)
-
-```ts twoslash collapse={3-26}
-import { Array, Chunk, Duration, Effect, Schedule } from "effect"
-
-const log = (
-  schedule: Schedule.Schedule<unknown>,
-  delay: Duration.DurationInput = 0
-): void => {
-  const maxRecurs = 10
-  const delays = Chunk.toArray(
-    Effect.runSync(
-      Schedule.run(
-        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
-        Date.now(),
-        Array.range(0, maxRecurs)
-      )
-    )
-  )
-  delays.forEach((duration, i) => {
-    console.log(
-      i === maxRecurs
-        ? "..."
-        : i === delays.length - 1
-        ? "(end)"
-        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
-    )
-  })
-}
-
-const schedule = Schedule.whileOutput(Schedule.recurs(5), (n) => n <= 2)
-
-log(schedule)
-/*
-Output:
-#1: 0ms < recurs
-#2: 0ms
-#3: 0ms
-(end)   < whileOutput
-*/
-```
-
-`Schedule.whileOutput` filters repetitions based on the output of the schedule. In this example, the schedule stops once the output exceeds `2`, even though `Schedule.recurs(5)` allows up to 5 repetitions.
-
-## Adjusting Delays Based on Output
-
-The `Schedule.modifyDelay` combinator allows you to dynamically change the delay of a schedule based on the number of repetitions or other output conditions.
-
-**Example** (Reducing Delay After a Certain Number of Repetitions)
-
-```ts twoslash collapse={3-26}
-import { Array, Chunk, Duration, Effect, Schedule } from "effect"
-
-const log = (
-  schedule: Schedule.Schedule<unknown>,
-  delay: Duration.DurationInput = 0
-): void => {
-  const maxRecurs = 10
-  const delays = Chunk.toArray(
-    Effect.runSync(
-      Schedule.run(
-        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
-        Date.now(),
-        Array.range(0, maxRecurs)
-      )
-    )
-  )
-  delays.forEach((duration, i) => {
-    console.log(
-      i === maxRecurs
-        ? "..."
-        : i === delays.length - 1
-        ? "(end)"
-        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
-    )
-  })
-}
-
-const schedule = Schedule.modifyDelay(
-  Schedule.spaced("1 second"),
-  (out, duration) => (out > 2 ? "100 millis" : duration)
-)
-
-log(schedule)
-/*
-Output:
-#1: 1000ms
-#2: 1000ms
-#3: 1000ms
-#4: 100ms  < modifyDelay
-#5: 100ms
-#6: 100ms
-#7: 100ms
-#8: 100ms
-#9: 100ms
-#10: 100ms
-...
-*/
-```
-
-The delay modification applies dynamically during execution. In this example, the first three repetitions follow the original `1-second` spacing. After that, the delay drops to `100 milliseconds`, making subsequent repetitions occur more frequently.
-
-## Tapping
-
-`Schedule.tapInput` and `Schedule.tapOutput` allow you to perform additional effectful operations on a schedule's input or output without modifying its behavior.
-
-**Example** (Logging Schedule Outputs)
-
-```ts twoslash collapse={3-26}
-import { Array, Chunk, Duration, Effect, Schedule, Console } from "effect"
-
-const log = (
-  schedule: Schedule.Schedule<unknown>,
-  delay: Duration.DurationInput = 0
-): void => {
-  const maxRecurs = 10
-  const delays = Chunk.toArray(
-    Effect.runSync(
-      Schedule.run(
-        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
-        Date.now(),
-        Array.range(0, maxRecurs)
-      )
-    )
-  )
-  delays.forEach((duration, i) => {
-    console.log(
-      i === maxRecurs
-        ? "..."
-        : i === delays.length - 1
-        ? "(end)"
-        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
-    )
-  })
-}
-
-const schedule = Schedule.tapOutput(Schedule.recurs(2), (n) =>
-  Console.log(`Schedule Output: ${n}`)
-)
-
-log(schedule)
-/*
-Output:
-Schedule Output: 0
-Schedule Output: 1
-Schedule Output: 2
-#1: 0ms
-#2: 0ms
-(end)
-*/
-```
-
-`Schedule.tapOutput` runs an effect before each recurrence, using the schedule's current output as input. This can be useful for logging, debugging, or triggering side effects.
-
-> getting-started/control-flow.mdx\n\n---
-title: Control Flow Operators
-description: Learn to control execution flow in Effect programs using advanced constructs for conditional branching, iteration, and combining effects seamlessly.
-sidebar:
-  order: 10
----
-
-Even though JavaScript provides built-in control flow structures, Effect offers additional control flow functions that are useful in Effect applications. In this section, we will introduce different ways to control the flow of execution.
-
-## if Expression
-
-When working with Effect values, we can use standard JavaScript if-then-else statements:
-
-**Example** (Returning None for Invalid Weight)
-
-Here we are using the [Option](/docs/data-types/option/) data type to represent the absence of a valid value.
-
-```ts twoslash
-import { Effect, Option } from "effect"
-
-// Function to validate weight and return an Option
-const validateWeightOption = (
-  weight: number
-): Effect.Effect<Option.Option<number>> => {
-  if (weight >= 0) {
-    // Return Some if the weight is valid
-    return Effect.succeed(Option.some(weight))
-  } else {
-    // Return None if the weight is invalid
-    return Effect.succeed(Option.none())
-  }
-}
-```
-
-**Example** (Returning Error for Invalid Weight)
-
-You can also handle invalid inputs by using the error channel, which allows you to return an error when the input is invalid:
-
-```ts twoslash
-import { Effect } from "effect"
-
-// Function to validate weight or fail with an error
-const validateWeightOrFail = (
-  weight: number
-): Effect.Effect<number, string> => {
-  if (weight >= 0) {
-    // Return the weight if valid
-    return Effect.succeed(weight)
-  } else {
-    // Fail with an error if invalid
-    return Effect.fail(`negative input: ${weight}`)
-  }
-}
-```
-
-## Conditional Operators
-
-### if
-
-Executes one of two effects based on a condition evaluated by an effectful predicate.
-
-Use `Effect.if` to run one of two effects depending on whether the predicate effect
-evaluates to `true` or `false`. If the predicate is `true`, the `onTrue` effect
-is executed. If it is `false`, the `onFalse` effect is executed instead.
-
-**Example** (Simulating a Coin Flip)
-
-In this example, we simulate a virtual coin flip using `Random.nextBoolean` to generate a random boolean value. If the value is `true`, the `onTrue` effect logs "Head". If the value is `false`, the `onFalse` effect logs "Tail".
-
-```ts twoslash
-import { Effect, Random, Console } from "effect"
-
-const flipTheCoin = Effect.if(Random.nextBoolean, {
-  onTrue: () => Console.log("Head"), // Runs if the predicate is true
-  onFalse: () => Console.log("Tail") // Runs if the predicate is false
-})
-
-Effect.runFork(flipTheCoin)
-```
-
-### when
-
-Conditionally executes an effect based on a boolean condition.
-
-`Effect.when` allows you to conditionally execute an effect, similar to using
-an `if (condition)` expression, but with the added benefit of handling
-effects. If the condition is `true`, the effect is executed; otherwise, it
-does nothing.
-
-The result of the effect is wrapped in an `Option<A>` to indicate whether the
-effect was executed. If the condition is `true`, the result of the effect is
-wrapped in a `Some`. If the condition is `false`, the result is `None`,
-representing that the effect was skipped.
-
-**Example** (Conditional Effect Execution)
-
-```ts twoslash
-import { Effect, Option } from "effect"
-
-const validateWeightOption = (
-  weight: number
-): Effect.Effect<Option.Option<number>> =>
-  // Conditionally execute the effect if the weight is non-negative
-  Effect.succeed(weight).pipe(Effect.when(() => weight >= 0))
-
-// Run with a valid weight
-Effect.runPromise(validateWeightOption(100)).then(console.log)
-/*
-Output:
-{
-  _id: "Option",
-  _tag: "Some",
-  value: 100
-}
-*/
-
-// Run with an invalid weight
-Effect.runPromise(validateWeightOption(-5)).then(console.log)
-/*
-Output:
-{
-  _id: "Option",
-  _tag: "None"
-}
-*/
-```
-
-In this example, the [Option](/docs/data-types/option/) data type is used to represent the presence or absence of a valid value. If the condition evaluates to `true` (in this case, if the weight is non-negative), the effect is executed and wrapped in a `Some`. Otherwise, the result is `None`.
-
-### whenEffect
-
-Executes an effect conditionally, based on the result of another effect.
-
-Use `Effect.whenEffect` when the condition to determine whether to execute the effect
-depends on the outcome of another effect that produces a boolean value.
-If the condition effect evaluates to `true`, the specified effect is executed.
-If it evaluates to `false`, no effect is executed.
-
-The result of the effect is wrapped in an `Option<A>` to indicate whether the
-effect was executed. If the condition is `true`, the result of the effect is
-wrapped in a `Some`. If the condition is `false`, the result is `None`,
-representing that the effect was skipped.
-
-**Example** (Using an Effect as a Condition)
-
-The following function creates a random integer, but only if a randomly generated boolean is `true`.
-
-```ts twoslash
-import { Effect, Random } from "effect"
-
-const randomIntOption = Random.nextInt.pipe(
-  Effect.whenEffect(Random.nextBoolean)
-)
-
-console.log(Effect.runSync(randomIntOption))
-/*
-Example Output:
-{ _id: 'Option', _tag: 'Some', value: 8609104974198840 }
-*/
-```
-
-### unless / unlessEffect
-
-The `Effect.unless` and `Effect.unlessEffect` functions are similar to the `when*` functions, but they are equivalent to the `if (!condition) expression` construct.
-
-## Zipping
-
-### zip
-
-Combines two effects into a single effect, producing a tuple with the results of both effects.
-
-The `Effect.zip` function executes the first effect (left) and then the second effect (right).
-Once both effects succeed, their results are combined into a tuple.
-
-**Example** (Combining Two Effects Sequentially)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const task1 = Effect.succeed(1).pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Effect.log("task1 done"))
-)
-
-const task2 = Effect.succeed("hello").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Effect.log("task2 done"))
-)
-
-// Combine the two effects together
-//
-//      ┌─── Effect<[number, string], never, never>
-//      ▼
-const program = Effect.zip(task1, task2)
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message="task1 done"
-timestamp=... level=INFO fiber=#0 message="task2 done"
-[ 1, 'hello' ]
-*/
-```
-
-By default, the effects are run sequentially. To run them concurrently, use the `{ concurrent: true }` option.
-
-**Example** (Combining Two Effects Concurrently)
-
-```ts collapse={3-11} "{ concurrent: true }" "task2 done"
-import { Effect } from "effect"
-
-const task1 = Effect.succeed(1).pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Effect.log("task1 done"))
-)
-
-const task2 = Effect.succeed("hello").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Effect.log("task2 done"))
-)
-
-// Run both effects concurrently using the concurrent option
-const program = Effect.zip(task1, task2, { concurrent: true })
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-timestamp=... level=INFO fiber=#3 message="task2 done"
-timestamp=... level=INFO fiber=#2 message="task1 done"
-[ 1, 'hello' ]
-*/
-```
-
-In this concurrent version, both effects run in parallel. `task2` completes first, but both tasks can be logged and processed as soon as they're done.
-
-### zipWith
-
-Combines two effects sequentially and applies a function to their results to produce a single value.
-
-The `Effect.zipWith` function is similar to [Effect.zip](#zip), but instead of returning a tuple of results,
-it applies a provided function to the results of the two effects, combining them into a single value.
-
-By default, the effects are run sequentially. To run them concurrently, use the `{ concurrent: true }` option.
-
-**Example** (Combining Effects with a Custom Function)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const task1 = Effect.succeed(1).pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Effect.log("task1 done"))
-)
-const task2 = Effect.succeed("hello").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Effect.log("task2 done"))
-)
-
-//      ┌─── Effect<number, never, never>
-//      ▼
-const task3 = Effect.zipWith(
-  task1,
-  task2,
-  // Combines results into a single value
-  (number, string) => number + string.length
-)
-
-Effect.runPromise(task3).then(console.log)
-/*
-Output:
-timestamp=... level=INFO fiber=#3 message="task1 done"
-timestamp=... level=INFO fiber=#2 message="task2 done"
-6
-*/
-```
-
-## Looping
-
-### loop
-
-The `Effect.loop` function allows you to repeatedly update a state using a `step` function until a condition defined by the `while` function becomes `false`. It collects the intermediate states in an array and returns them as the final result.
-
-**Syntax**
-
-```ts showLineNumbers=false
-Effect.loop(initial, {
-  while: (state) => boolean,
-  step: (state) => state,
-  body: (state) => Effect
-})
-```
-
-This function is similar to a `while` loop in JavaScript, with the addition of effectful computations:
-
-```ts showLineNumbers=false
-let state = initial
-const result = []
-
-while (options.while(state)) {
-  result.push(options.body(state)) // Perform the effectful operation
-  state = options.step(state) // Update the state
-}
-
-return result
-```
-
-**Example** (Looping with Collected Results)
-
-```ts twoslash
-import { Effect } from "effect"
-
-// A loop that runs 5 times, collecting each iteration's result
-const result = Effect.loop(
-  // Initial state
-  1,
-  {
-    // Condition to continue looping
-    while: (state) => state <= 5,
-    // State update function
-    step: (state) => state + 1,
-    // Effect to be performed on each iteration
-    body: (state) => Effect.succeed(state)
-  }
-)
-
-Effect.runPromise(result).then(console.log)
-// Output: [1, 2, 3, 4, 5]
-```
-
-In this example, the loop starts with the state `1` and continues until the state exceeds `5`. Each state is incremented by `1` and is collected into an array, which becomes the final result.
-
-#### Discarding Intermediate Results
-
-The `discard` option, when set to `true`, will discard the results of each effectful operation, returning `void` instead of an array.
-
-**Example** (Loop with Discarded Results)
-
-```ts twoslash "discard: true"
-import { Effect, Console } from "effect"
-
-const result = Effect.loop(
-  // Initial state
-  1,
-  {
-    // Condition to continue looping
-    while: (state) => state <= 5,
-    // State update function
-    step: (state) => state + 1,
-    // Effect to be performed on each iteration
-    body: (state) => Console.log(`Currently at state ${state}`),
-    // Discard intermediate results
-    discard: true
-  }
-)
-
-Effect.runPromise(result).then(console.log)
-/*
-Output:
-Currently at state 1
-Currently at state 2
-Currently at state 3
-Currently at state 4
-Currently at state 5
-undefined
-*/
-```
-
-In this example, the loop performs a side effect of logging the current index on each iteration, but it discards all intermediate results. The final result is `undefined`.
-
-### iterate
-
-The `Effect.iterate` function lets you repeatedly update a state through an effectful operation. It runs the `body` effect to update the state in each iteration and continues as long as the `while` condition evaluates to `true`.
-
-**Syntax**
-
-```ts showLineNumbers=false
-Effect.iterate(initial, {
-  while: (result) => boolean,
-  body: (result) => Effect
-})
-```
-
-This function is similar to a `while` loop in JavaScript, with the addition of effectful computations:
-
-```ts showLineNumbers=false
-let result = initial
-
-while (options.while(result)) {
-  result = options.body(result)
-}
-
-return result
-```
-
-**Example** (Effectful Iteration)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const result = Effect.iterate(
-  // Initial result
-  1,
-  {
-    // Condition to continue iterating
-    while: (result) => result <= 5,
-    // Operation to change the result
-    body: (result) => Effect.succeed(result + 1)
-  }
-)
-
-Effect.runPromise(result).then(console.log)
-// Output: 6
-```
-
-### forEach
-
-Executes an effectful operation for each element in an `Iterable`.
-
-The `Effect.forEach` function applies a provided operation to each element in the
-iterable, producing a new effect that returns an array of results.
-If any effect fails, the iteration stops immediately (short-circuiting), and
-the error is propagated.
-
-The `concurrency` option controls how many operations are performed
-concurrently. By default, the operations are performed sequentially.
-
-**Example** (Applying Effects to Iterable Elements)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const result = Effect.forEach([1, 2, 3, 4, 5], (n, index) =>
-  Console.log(`Currently at index ${index}`).pipe(Effect.as(n * 2))
-)
-
-Effect.runPromise(result).then(console.log)
-/*
-Output:
-Currently at index 0
-Currently at index 1
-Currently at index 2
-Currently at index 3
-Currently at index 4
-[ 2, 4, 6, 8, 10 ]
-*/
-```
-
-In this example, we iterate over the array `[1, 2, 3, 4, 5]`, applying an effect that logs the current index. The `Effect.as(n * 2)` operation transforms each value, resulting in an array `[2, 4, 6, 8, 10]`. The final output is the result of collecting all the transformed values.
-
-#### Discarding Results
-
-The `discard` option, when set to `true`, will discard the results of each effectful operation, returning `void` instead of an array.
-
-**Example** (Using `discard` to Ignore Results)
-
-```ts twoslash "{ discard: true }"
-import { Effect, Console } from "effect"
-
-// Apply effects but discard the results
-const result = Effect.forEach(
-  [1, 2, 3, 4, 5],
-  (n, index) =>
-    Console.log(`Currently at index ${index}`).pipe(Effect.as(n * 2)),
-  { discard: true }
-)
-
-Effect.runPromise(result).then(console.log)
-/*
-Output:
-Currently at index 0
-Currently at index 1
-Currently at index 2
-Currently at index 3
-Currently at index 4
-undefined
-*/
-```
-
-In this case, the effects still run for each element, but the results are discarded, so the final output is `undefined`.
-
-## Collecting
-
-### all
-
-Combines multiple effects into one, returning results based on the input structure.
-
-Use `Effect.all` when you need to run multiple effects and combine their results into a single output. It supports tuples, iterables, structs, and records, making it flexible for different input types.
-
-If any effect fails, it stops execution (short-circuiting) and propagates the error. To change this behavior, you can use the [`mode`](#the-mode-option) option, which allows all effects to run and collect results as [Either](/docs/data-types/either/) or [Option](/docs/data-types/option/).
-
-You can control the execution order (e.g., sequential vs. concurrent) using the [Concurrency Options](/docs/concurrency/basic-concurrency/#concurrency-options).
-
-For instance, if the input is a tuple:
-
-```ts showLineNumbers=false
-//         ┌─── a tuple of effects
-//         ▼
-Effect.all([effect1, effect2, ...])
-```
-
-the effects are executed sequentially, and the result is a new effect containing the results as a tuple. The results in the tuple match the order of the effects passed to `Effect.all`.
-
-Let's explore examples for different types of structures: tuples, iterables, objects, and records.
-
-**Example** (Combining Effects in Tuples)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const tupleOfEffects = [
-  Effect.succeed(42).pipe(Effect.tap(Console.log)),
-  Effect.succeed("Hello").pipe(Effect.tap(Console.log))
-] as const
-
-//      ┌─── Effect<[number, string], never, never>
-//      ▼
-const resultsAsTuple = Effect.all(tupleOfEffects)
-
-Effect.runPromise(resultsAsTuple).then(console.log)
-/*
-Output:
-42
-Hello
-[ 42, 'Hello' ]
-*/
-```
-
-**Example** (Combining Effects in Iterables)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const iterableOfEffects: Iterable<Effect.Effect<number>> = [1, 2, 3].map(
-  (n) => Effect.succeed(n).pipe(Effect.tap(Console.log))
-)
-
-//      ┌─── Effect<number[], never, never>
-//      ▼
-const resultsAsArray = Effect.all(iterableOfEffects)
-
-Effect.runPromise(resultsAsArray).then(console.log)
-/*
-Output:
-1
-2
-3
-[ 1, 2, 3 ]
-*/
-```
-
-**Example** (Combining Effects in Structs)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const structOfEffects = {
-  a: Effect.succeed(42).pipe(Effect.tap(Console.log)),
-  b: Effect.succeed("Hello").pipe(Effect.tap(Console.log))
-}
-
-//      ┌─── Effect<{ a: number; b: string; }, never, never>
-//      ▼
-const resultsAsStruct = Effect.all(structOfEffects)
-
-Effect.runPromise(resultsAsStruct).then(console.log)
-/*
-Output:
-42
-Hello
-{ a: 42, b: 'Hello' }
-*/
-```
-
-**Example** (Combining Effects in Records)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const recordOfEffects: Record<string, Effect.Effect<number>> = {
-  key1: Effect.succeed(1).pipe(Effect.tap(Console.log)),
-  key2: Effect.succeed(2).pipe(Effect.tap(Console.log))
-}
-
-//      ┌─── Effect<{ [x: string]: number; }, never, never>
-//      ▼
-const resultsAsRecord = Effect.all(recordOfEffects)
-
-Effect.runPromise(resultsAsRecord).then(console.log)
-/*
-Output:
-1
-2
-{ key1: 1, key2: 2 }
-*/
-```
-
-#### Short-Circuiting Behavior
-
-The `Effect.all` function stops execution on the first error it encounters, this is called "short-circuiting".
-If any effect in the collection fails, the remaining effects will not run, and the error will be propagated.
-
-**Example** (Bail Out on First Failure)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const program = Effect.all([
-  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
-  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
-  // Won't execute due to earlier failure
-  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
-])
-
-Effect.runPromiseExit(program).then(console.log)
-/*
-Output:
-Task1
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: { _id: 'Cause', _tag: 'Fail', failure: 'Task2: Oh no!' }
-}
-*/
-```
-
-You can override this behavior by using the `mode` option.
-
-#### The `mode` option
-
-The `{ mode: "either" }` option changes the behavior of `Effect.all` to ensure all effects run, even if some fail. Instead of stopping on the first failure, this mode collects both successes and failures, returning an array of `Either` instances where each result is either a `Right` (success) or a `Left` (failure).
-
-**Example** (Collecting Results with `mode: "either"`)
-
-```ts twoslash /{ mode: "either" }/
-import { Effect, Console } from "effect"
-
-const effects = [
-  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
-  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
-  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
-]
-
-const program = Effect.all(effects, { mode: "either" })
-
-Effect.runPromiseExit(program).then(console.log)
-/*
-Output:
-Task1
-Task3
-{
-  _id: 'Exit',
-  _tag: 'Success',
-  value: [
-    { _id: 'Either', _tag: 'Right', right: 'Task1' },
-    { _id: 'Either', _tag: 'Left', left: 'Task2: Oh no!' },
-    { _id: 'Either', _tag: 'Right', right: 'Task3' }
-  ]
-}
-*/
-```
-
-Similarly, the `{ mode: "validate" }` option uses `Option` to indicate success or failure. Each effect returns `None` for success and `Some` with the error for failure.
-
-**Example** (Collecting Results with `mode: "validate"`)
-
-```ts twoslash /{ mode: "validate" }/
-import { Effect, Console } from "effect"
-
-const effects = [
-  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
-  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
-  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
-]
-
-const program = Effect.all(effects, { mode: "validate" })
-
-Effect.runPromiseExit(program).then((result) => console.log("%o", result))
-/*
-Output:
-Task1
-Task3
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: {
-    _id: 'Cause',
-    _tag: 'Fail',
-    failure: [
-      { _id: 'Option', _tag: 'None' },
-      { _id: 'Option', _tag: 'Some', value: 'Task2: Oh no!' },
-      { _id: 'Option', _tag: 'None' }
-    ]
-  }
-}
-*/
-```
-
-> getting-started/installation.mdx\n\n---
-title: Installation
-description: Set up a new Effect project across different platforms like Node.js, Deno, Bun, and Vite + React with step-by-step installation guides.
-sidebar:
-  order: 2
----
-
-import { Steps, Tabs, TabItem } from "@astrojs/starlight/components"
-
-Requirements:
-
-- TypeScript 5.4 or newer.
-- Node.js, Deno, and Bun are supported.
-
-## Automatic Installation
-
-To quickly set up a new Effect application, we recommend using `create-effect-app`, which will handle all configurations for you. To create a new project, run:
-
-<Tabs syncKey="package-manager">
-
-<TabItem label="npm" icon="seti:npm">
-
-```sh showLineNumbers=false
-npx create-effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="pnpm" icon="pnpm">
-
-```sh showLineNumbers=false
-pnpm create effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="Yarn" icon="seti:yarn">
-
-```sh showLineNumbers=false
-yarn create effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="Bun" icon="bun">
-
-```sh showLineNumbers=false
-bunx create-effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="Deno" icon="deno">
-
-```sh showLineNumbers=false
-deno init --npm effect-app@latest
-```
-
-</TabItem>
-
-</Tabs>
-
-Once you complete the prompts, `create-effect-app` will create a folder with your project name and install all required dependencies.
-
-For more details on the CLI, see the [Create Effect App](/docs/getting-started/create-effect-app/) documentation.
-
-## Manual Installation
-
-### Node.js
-
-Follow these steps to create a new Effect project for [Node.js](https://nodejs.org/):
-
-<Steps>
-
-1. Create a project directory and navigate into it:
-
-   ```sh showLineNumbers=false
-   mkdir hello-effect
-   cd hello-effect
-   ```
-
-2. Initialize a TypeScript project:
-
-   <Tabs syncKey="package-manager">
-
-   <TabItem label="npm" icon="seti:npm">
-
-   ```sh showLineNumbers=false
-   npm init -y
-   npm install --save-dev typescript
-   ```
-
-   </TabItem>
-
-   <TabItem label="pnpm" icon="pnpm">
-
-   ```sh showLineNumbers=false
-   pnpm init -y
-   pnpm add --save-dev typescript
-   ```
-
-   </TabItem>
-
-   <TabItem label="Yarn" icon="seti:yarn">
-
-   ```sh showLineNumbers=false
-   yarn init -y
-   yarn add --dev typescript
-   ```
-
-   </TabItem>
-
-   </Tabs>
-
-   This creates a `package.json` file with an initial setup for your TypeScript project.
-
-3. Initialize TypeScript:
-
-   <Tabs syncKey="package-manager">
-
-   <TabItem label="npm" icon="seti:npm">
-
-   ```sh showLineNumbers=false
-   npm tsc --init
-   ```
-
-   </TabItem>
-
-   <TabItem label="pnpm" icon="pnpm">
-
-   ```sh showLineNumbers=false
-   pnpm tsc --init
-   ```
-
-   </TabItem>
-
-   <TabItem label="Yarn" icon="seti:yarn">
-
-   ```sh showLineNumbers=false
-   yarn tsc --init
-   ```
-
-   </TabItem>
-
-   </Tabs>
-
-   When running this command, it will generate a `tsconfig.json` file that contains configuration options for TypeScript. One of the most important options to consider is the `strict` flag.
-
-   Make sure to open the `tsconfig.json` file and verify that the value of the `strict` option is set to `true`.
-
-   ```json showLineNumbers=false
-   {
-     "compilerOptions": {
-       "strict": true
-     }
-   }
-   ```
-
-4. Install the necessary package as dependency:
-
-   <Tabs syncKey="package-manager">
-
-   <TabItem label="npm" icon="seti:npm">
-
-   ```sh showLineNumbers=false
-   npm install effect
-   ```
-
-   </TabItem>
-
-   <TabItem label="pnpm" icon="pnpm">
-
-   ```sh showLineNumbers=false
-   pnpm add effect
-   ```
-
-   </TabItem>
-
-   <TabItem label="Yarn" icon="seti:yarn">
-
-   ```sh showLineNumbers=false
-   yarn add effect
-   ```
-
-   </TabItem>
-
-   </Tabs>
-
-   This package will provide the foundational functionality for your Effect project.
-
-</Steps>
-
-Let's write and run a simple program to ensure that everything is set up correctly.
-
-In your terminal, execute the following commands:
-
-```sh showLineNumbers=false
-mkdir src
-touch src/index.ts
-```
-
-Open the `index.ts` file and add the following code:
-
-```ts title="src/index.ts"
-import { Effect, Console } from "effect"
-
-const program = Console.log("Hello, World!")
-
-Effect.runSync(program)
-```
-
-Run the `index.ts` file. Here we are using [tsx](https://github.com/privatenumber/tsx) to run the `index.ts` file in the terminal:
-
-```sh showLineNumbers=false
-npx tsx src/index.ts
-```
-
-You should see the message `"Hello, World!"` printed. This confirms that the program is working correctly.
-
-### Deno
-
-Follow these steps to create a new Effect project for [Deno](https://deno.com/):
-
-<Steps>
-
-1. Create a project directory and navigate into it:
-
-   ```sh showLineNumbers=false
-   mkdir hello-effect
-   cd hello-effect
-   ```
-
-2. Initialize Deno:
-
-   ```sh showLineNumbers=false
-   deno init
-   ```
-
-3. Install the necessary package as dependency:
-
-   ```sh showLineNumbers=false
-   deno add npm:effect
-   ```
-
-   This package will provide the foundational functionality for your Effect project.
-
-</Steps>
-
-Let's write and run a simple program to ensure that everything is set up correctly.
-
-Open the `main.ts` file and replace the content with the following code:
-
-```ts title="main.ts"
-import { Effect, Console } from "effect"
-
-const program = Console.log("Hello, World!")
-
-Effect.runSync(program)
-```
-
-Run the `main.ts` file:
-
-```sh showLineNumbers=false
-deno run main.ts
-```
-
-You should see the message `"Hello, World!"` printed. This confirms that the program is working correctly.
-
-### Bun
-
-Follow these steps to create a new Effect project for [Bun](https://bun.sh/):
-
-<Steps>
-
-1. Create a project directory and navigate into it:
-
-   ```sh showLineNumbers=false
-   mkdir hello-effect
-   cd hello-effect
-   ```
-
-2. Initialize Bun:
-
-   ```sh showLineNumbers=false
-   bun init
-   ```
-
-   When running this command, it will generate a `tsconfig.json` file that contains configuration options for TypeScript. One of the most important options to consider is the `strict` flag.
-
-   Make sure to open the `tsconfig.json` file and verify that the value of the `strict` option is set to `true`.
-
-   ```json showLineNumbers=false
-   {
-     "compilerOptions": {
-       "strict": true
-     }
-   }
-   ```
-
-3. Install the necessary package as dependency:
-
-   ```sh showLineNumbers=false
-   bun add effect
-   ```
-
-   This package will provide the foundational functionality for your Effect project.
-
-</Steps>
-
-Let's write and run a simple program to ensure that everything is set up correctly.
-
-Open the `index.ts` file and replace the content with the following code:
-
-```ts title="index.ts"
-import { Effect, Console } from "effect"
-
-const program = Console.log("Hello, World!")
-
-Effect.runSync(program)
-```
-
-Run the `index.ts` file:
-
-```sh showLineNumbers=false
-bun index.ts
-```
-
-You should see the message `"Hello, World!"` printed. This confirms that the program is working correctly.
-
-### Vite + React
-
-Follow these steps to create a new Effect project for [Vite](https://vitejs.dev/guide/) + [React](https://react.dev/):
-
-<Steps>
-
-1. Scaffold your Vite project, open your terminal and run the following command:
-
-   <Tabs syncKey="package-manager">
-
-   <TabItem label="npm" icon="seti:npm">
-
-   ```sh showLineNumbers=false
-   # npm 6.x
-   npm create vite@latest hello-effect --template react-ts
-   # npm 7+, extra double-dash is needed
-   npm create vite@latest hello-effect -- --template react-ts
-   ```
-
-   </TabItem>
-
-   <TabItem label="pnpm" icon="pnpm">
-
-   ```sh showLineNumbers=false
-   pnpm create vite@latest hello-effect -- --template react-ts
-   ```
-
-   </TabItem>
-
-   <TabItem label="Yarn" icon="seti:yarn">
-
-   ```sh showLineNumbers=false
-   yarn create vite@latest hello-effect -- --template react-ts
-   ```
-
-   </TabItem>
-
-   <TabItem label="Bun" icon="bun">
-
-   ```sh showLineNumbers=false
-   bun create vite@latest hello-effect -- --template react-ts
-   ```
-
-   </TabItem>
-
-   <TabItem label="Deno" icon="deno">
-
-   ```sh showLineNumbers=false
-   deno init --npm vite@latest hello-effect -- --template react-ts
-   ```
-
-   </TabItem>
-
-   </Tabs>
-
-   This command will create a new Vite project with React and TypeScript template.
-
-2. Navigate into the newly created project directory and install the required packages:
-
-   <Tabs syncKey="package-manager">
-
-   <TabItem label="npm" icon="seti:npm">
-
-   ```sh showLineNumbers=false
-   cd hello-effect
-   npm install
-   ```
-
-   </TabItem>
-
-   <TabItem label="pnpm" icon="pnpm">
-
-   ```sh showLineNumbers=false
-   cd hello-effect
-   pnpm install
-   ```
-
-   </TabItem>
-
-   <TabItem label="Yarn" icon="seti:yarn">
-
-   ```sh showLineNumbers=false
-   cd hello-effect
-   yarn install
-   ```
-
-   </TabItem>
-
-   <TabItem label="Bun" icon="bun">
-
-   ```sh showLineNumbers=false
-   cd hello-effect
-   bun install
-   ```
-
-   </TabItem>
-
-   <TabItem label="Deno" icon="deno">
-
-   ```sh showLineNumbers=false
-   cd hello-effect
-   deno install
-   ```
-
-   </TabItem>
-
-   </Tabs>
-
-   Once the packages are installed, open the `tsconfig.json` file and ensure that the value of the `strict` option is set to true.
-
-   ```json showLineNumbers=false
-   {
-     "compilerOptions": {
-       "strict": true
-     }
-   }
-   ```
-
-3. Install the necessary package as dependency:
-
-   <Tabs syncKey="package-manager">
-
-   <TabItem label="npm" icon="seti:npm">
-
-   ```sh showLineNumbers=false
-   npm install effect
-   ```
-
-   </TabItem>
-
-   <TabItem label="pnpm" icon="pnpm">
-
-   ```sh showLineNumbers=false
-   pnpm add effect
-   ```
-
-   </TabItem>
-
-   <TabItem label="Yarn" icon="seti:yarn">
-
-   ```sh showLineNumbers=false
-   yarn add effect
-   ```
-
-   </TabItem>
-
-   <TabItem label="Bun" icon="bun">
-
-   ```sh showLineNumbers=false
-   bun add effect
-   ```
-
-   </TabItem>
-
-   <TabItem label="Deno" icon="deno">
-
-   ```sh showLineNumbers=false
-   deno add effect
-   ```
-
-   </TabItem>
-
-   </Tabs>
-
-   This package will provide the foundational functionality for your Effect project.
-
-</Steps>
-
-Now, let's write and run a simple program to ensure that everything is set up correctly.
-
-Open the `src/App.tsx` file and replace its content with the following code:
-
-```diff lang="tsx" title="src/App.tsx"
-+import { useState, useMemo, useCallback } from "react"
-import reactLogo from "./assets/react.svg"
-import viteLogo from "/vite.svg"
-import "./App.css"
-+import { Effect } from "effect"
-
-function App() {
-  const [count, setCount] = useState(0)
-
-+  const task = useMemo(
-+    () => Effect.sync(() => setCount((current) => current + 1)),
-+    [setCount]
-+  )
-+
-+  const increment = useCallback(() => Effect.runSync(task), [task])
-
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-+        <button onClick={increment}>count is {count}</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
-
-export default App
-```
-
-After making these changes, start the development server by running the following command:
-
-<Tabs syncKey="package-manager">
-
-<TabItem label="npm" icon="seti:npm">
-
-```sh showLineNumbers=false
-npm run dev
-```
-
-</TabItem>
-
-<TabItem label="pnpm" icon="pnpm">
-
-```sh showLineNumbers=false
-pnpm run dev
-```
-
-</TabItem>
-
-<TabItem label="Yarn" icon="seti:yarn">
-
-```sh showLineNumbers=false
-yarn run dev
-```
-
-</TabItem>
-
-<TabItem label="Bun" icon="bun">
-
-```sh showLineNumbers=false
-bun run dev
-```
-
-</TabItem>
-
-<TabItem label="Deno" icon="deno">
-
-```sh showLineNumbers=false
-deno run dev
-```
-
-</TabItem>
-
-</Tabs>
-
-Then, press **o** to open the application in your browser.
-
-When you click the button, you should see the counter increment. This confirms that the program is working correctly.
-
-> getting-started/creating-effects.mdx\n\n---
-title: Creating Effects
-description: Learn to create and manage effects for structured handling of success, failure, and side effects in synchronous and asynchronous workflows.
-sidebar:
-  order: 6
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-Effect provides different ways to create effects, which are units of computation that encapsulate side effects.
-In this guide, we will cover some of the common methods that you can use to create effects.
-
-## Why Not Throw Errors?
-
-In traditional programming, when an error occurs, it is often handled by throwing an exception:
-
-```ts twoslash
-// Type signature doesn't show possible exceptions
-const divide = (a: number, b: number): number => {
-  if (b === 0) {
-    throw new Error("Cannot divide by zero")
-  }
-  return a / b
-}
-```
-
-However, throwing errors can be problematic. The type signatures of functions do not indicate that they can throw exceptions, making it difficult to reason about potential errors.
-
-To address this issue, Effect introduces dedicated constructors for creating effects that represent both success and failure: `Effect.succeed` and `Effect.fail`. These constructors allow you to explicitly handle success and failure cases while **leveraging the type system to track errors**.
-
-### succeed
-
-Creates an `Effect` that always succeeds with a given value.
-
-Use this function when you need an effect that completes successfully with a specific value
-without any errors or external dependencies.
-
-**Example** (Creating a Successful Effect)
-
-```ts twoslash
-import { Effect } from "effect"
-
-//      ┌─── Effect<number, never, never>
-//      ▼
-const success = Effect.succeed(42)
-```
-
-The type of `success` is `Effect<number, never, never>`, which means:
-
-- It produces a value of type `number`.
-- It does not generate any errors (`never` indicates no errors).
-- It requires no additional data or dependencies (`never` indicates no requirements).
-
-```text showLineNumbers=false
-         ┌─── Produces a value of type number
-         │       ┌─── Does not generate any errors
-         │       │      ┌─── Requires no dependencies
-         ▼       ▼      ▼
-Effect<number, never, never>
-```
-
-### fail
-
-Creates an `Effect` that represents an error that can be recovered from.
-
-Use this function to explicitly signal an error in an `Effect`. The error
-will keep propagating unless it is handled. You can handle the error with
-functions like [Effect.catchAll](/docs/error-management/expected-errors/#catchall) or
-[Effect.catchTag](/docs/error-management/expected-errors/#catchtag).
-
-**Example** (Creating a Failed Effect)
-
-```ts twoslash
-import { Effect } from "effect"
-
-//      ┌─── Effect<never, Error, never>
-//      ▼
-const failure = Effect.fail(
-  new Error("Operation failed due to network error")
-)
-```
-
-The type of `failure` is `Effect<never, Error, never>`, which means:
-
-- It never produces a value (`never` indicates that no successful result will be produced).
-- It fails with an error, specifically an `Error`.
-- It requires no additional data or dependencies (`never` indicates no requirements).
-
-```text showLineNumbers=false
-         ┌─── Never produces a value
-         │      ┌─── Fails with an Error
-         │      │      ┌─── Requires no dependencies
-         ▼      ▼      ▼
-Effect<never, Error, never>
-```
-
-Although you can use `Error` objects with `Effect.fail`, you can also pass strings, numbers, or more complex objects depending on your error management strategy.
-
-Using "tagged" errors (objects with a `_tag` field) can help identify error types and works well with standard Effect functions, like [Effect.catchTag](/docs/error-management/expected-errors/#catchtag).
-
-**Example** (Using Tagged Errors)
-
-```ts twoslash
-import { Effect } from "effect"
-
-class HttpError {
-  readonly _tag = "HttpError"
-}
-
-//      ┌─── Effect<never, HttpError, never>
-//      ▼
-const program = Effect.fail(new HttpError())
-```
-
-## Error Tracking
-
-With `Effect.succeed` and `Effect.fail`, you can explicitly handle success and failure cases and the type system will ensure that errors are tracked and accounted for.
-
-**Example** (Rewriting a Division Function)
-
-Here's how you can rewrite the [`divide`](#why-not-throw-errors) function using Effect, making error handling explicit.
-
-```ts twoslash
-import { Effect } from "effect"
-
-const divide = (a: number, b: number): Effect.Effect<number, Error> =>
-  b === 0
-    ? Effect.fail(new Error("Cannot divide by zero"))
-    : Effect.succeed(a / b)
-```
-
-In this example, the `divide` function indicates in its return type `Effect<number, Error>` that the operation can either succeed with a `number` or fail with an `Error`.
-
-```text showLineNumbers=false
-         ┌─── Produces a value of type number
-         │       ┌─── Fails with an Error
-         ▼       ▼
-Effect<number, Error>
-```
-
-This clear type signature helps ensure that errors are handled properly and that anyone calling the function is aware of the possible outcomes.
-
-**Example** (Simulating a User Retrieval Operation)
-
-Let's imagine another scenario where we use `Effect.succeed` and `Effect.fail` to model a simple user retrieval operation where the user data is hardcoded, which could be useful in testing scenarios or when mocking data:
-
-```ts twoslash
-import { Effect } from "effect"
-
-// Define a User type
-interface User {
-  readonly id: number
-  readonly name: string
-}
-
-// A mocked function to simulate fetching a user from a database
-const getUser = (userId: number): Effect.Effect<User, Error> => {
-  // Normally, you would access a database or API here, but we'll mock it
-  const userDatabase: Record<number, User> = {
-    1: { id: 1, name: "John Doe" },
-    2: { id: 2, name: "Jane Smith" }
-  }
-
-  // Check if the user exists in our "database" and return appropriately
-  const user = userDatabase[userId]
-  if (user) {
-    return Effect.succeed(user)
-  } else {
-    return Effect.fail(new Error("User not found"))
-  }
-}
-
-// When executed, this will successfully return the user with id 1
-const exampleUserEffect = getUser(1)
-```
-
-In this example, `exampleUserEffect`, which has the type `Effect<User, Error>`, will either produce a `User` object or an `Error`, depending on whether the user exists in the mocked database.
-
-For a deeper dive into managing errors in your applications, refer to the [Error Management Guide](/docs/error-management/expected-errors/).
-
-## Modeling Synchronous Effects
-
-In JavaScript, you can delay the execution of synchronous computations using "thunks".
-
-<Aside type="note" title="Thunks">
-  A "thunk" is a function that takes no arguments and may return some
-  value.
-</Aside>
-
-Thunks are useful for delaying the computation of a value until it is needed.
-
-To model synchronous side effects, Effect provides the `Effect.sync` and `Effect.try` constructors, which accept a thunk.
-
-### sync
-
-Creates an `Effect` that represents a synchronous side-effectful computation.
-
-Use `Effect.sync` when you are sure the operation will not fail.
-
-The provided function (`thunk`) must not throw errors; if it does, the error will be treated as a ["defect"](/docs/error-management/unexpected-errors/).
-
-This defect is not a standard error but indicates a flaw in the logic that was expected to be error-free.
-You can think of it similar to an unexpected crash in the program, which can be further managed or logged using tools like [Effect.catchAllDefect](/docs/error-management/unexpected-errors/#catchalldefect).
-This feature ensures that even unexpected failures in your application are not lost and can be handled appropriately.
-
-**Example** (Logging a Message)
-
-In the example below, `Effect.sync` is used to defer the side-effect of writing to the console.
-
-```ts twoslash
-import { Effect } from "effect"
-
-const log = (message: string) =>
-  Effect.sync(() => {
-    console.log(message) // side effect
-  })
-
-//      ┌─── Effect<void, never, never>
-//      ▼
-const program = log("Hello, World!")
-```
-
-The side effect (logging to the console) encapsulated within `program` won't occur until the effect is explicitly run (see the [Running Effects](/docs/getting-started/running-effects/) section for more details). This allows you to define side effects at one point in your code and control when they are activated, improving manageability and predictability of side effects in larger applications.
-
-### try
-
-Creates an `Effect` that represents a synchronous computation that might fail.
-
-In situations where you need to perform synchronous operations that might fail, such as parsing JSON, you can use the `Effect.try` constructor.
-This constructor is designed to handle operations that could throw exceptions by capturing those exceptions and transforming them into manageable errors.
-
-**Example** (Safe JSON Parsing)
-
-Suppose you have a function that attempts to parse a JSON string. This operation can fail and throw an error if the input string is not properly formatted as JSON:
-
-```ts twoslash
-import { Effect } from "effect"
-
-const parse = (input: string) =>
-  // This might throw an error if input is not valid JSON
-  Effect.try(() => JSON.parse(input))
-
-//      ┌─── Effect<any, UnknownException, never>
-//      ▼
-const program = parse("")
-```
-
-In this example:
-
-- `parse` is a function that creates an effect encapsulating the JSON parsing operation.
-- If `JSON.parse(input)` throws an error due to invalid input, `Effect.try` catches this error and the effect represented by `program` will fail with an `UnknownException`. This ensures that errors are not silently ignored but are instead handled within the structured flow of effects.
-
-#### Customizing Error Handling
-
-You might want to transform the caught exception into a more specific error or perform additional operations when catching an error. `Effect.try` supports an overload that allows you to specify how caught exceptions should be transformed:
-
-**Example** (Custom Error Handling)
-
-```ts twoslash {8}
-import { Effect } from "effect"
-
-const parse = (input: string) =>
-  Effect.try({
-    // JSON.parse may throw for bad input
-    try: () => JSON.parse(input),
-    // remap the error
-    catch: (unknown) => new Error(`something went wrong ${unknown}`)
-  })
-
-//      ┌─── Effect<any, Error, never>
-//      ▼
-const program = parse("")
-```
-
-You can think of this as a similar pattern to the traditional try-catch block in JavaScript:
-
-```ts showLineNumbers=false
-try {
-  return JSON.parse(input)
-} catch (unknown) {
-  throw new Error(`something went wrong ${unknown}`)
-}
-```
-
-## Modeling Asynchronous Effects
-
-In traditional programming, we often use `Promise`s to handle asynchronous computations. However, dealing with errors in promises can be problematic. By default, `Promise<Value>` only provides the type `Value` for the resolved value, which means errors are not reflected in the type system. This limits the expressiveness and makes it challenging to handle and track errors effectively.
-
-To overcome these limitations, Effect introduces dedicated constructors for creating effects that represent both success and failure in an asynchronous context: `Effect.promise` and `Effect.tryPromise`. These constructors allow you to explicitly handle success and failure cases while **leveraging the type system to track errors**.
-
-### promise
-
-Creates an `Effect` that represents an asynchronous computation guaranteed to succeed.
-
-Use `Effect.promise` when you are sure the operation will not reject.
-
-The provided function (`thunk`) returns a `Promise` that should never reject; if it does, the error will be treated as a ["defect"](/docs/error-management/unexpected-errors/).
-
-This defect is not a standard error but indicates a flaw in the logic that was expected to be error-free.
-You can think of it similar to an unexpected crash in the program, which can be further managed or logged using tools like [Effect.catchAllDefect](/docs/error-management/unexpected-errors/#catchalldefect).
-This feature ensures that even unexpected failures in your application are not lost and can be handled appropriately.
-
-**Example** (Delayed Message)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const delay = (message: string) =>
-  Effect.promise<string>(
-    () =>
-      new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(message)
-        }, 2000)
-      })
-  )
-
-//      ┌─── Effect<string, never, never>
-//      ▼
-const program = delay("Async operation completed successfully!")
-```
-
-The `program` value has the type `Effect<string, never, never>` and can be interpreted as an effect that:
-
-- succeeds with a value of type `string`
-- does not produce any expected error (`never`)
-- does not require any context (`never`)
-
-### tryPromise
-
-Creates an `Effect` that represents an asynchronous computation that might fail.
-
-Unlike `Effect.promise`, this constructor is suitable when the underlying `Promise` might reject.
-It provides a way to catch errors and handle them appropriately.
-By default if an error occurs, it will be caught and propagated to the error channel as as an `UnknownException`.
-
-**Example** (Fetching a TODO Item)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const getTodo = (id: number) =>
-  // Will catch any errors and propagate them as UnknownException
-  Effect.tryPromise(() =>
-    fetch(`https://jsonplaceholder.typicode.com/todos/${id}`)
-  )
-
-//      ┌─── Effect<Response, UnknownException, never>
-//      ▼
-const program = getTodo(1)
-```
-
-The `program` value has the type `Effect<Response, UnknownException, never>` and can be interpreted as an effect that:
-
-- succeeds with a value of type `Response`
-- might produce an error (`UnknownException`)
-- does not require any context (`never`)
-
-#### Customizing Error Handling
-
-If you want more control over what gets propagated to the error channel, you can use an overload of `Effect.tryPromise` that takes a remapping function:
-
-**Example** (Custom Error Handling)
-
-```ts twoslash {7}
-import { Effect } from "effect"
-
-const getTodo = (id: number) =>
-  Effect.tryPromise({
-    try: () => fetch(`https://jsonplaceholder.typicode.com/todos/${id}`),
-    // remap the error
-    catch: (unknown) => new Error(`something went wrong ${unknown}`)
-  })
-
-//      ┌─── Effect<Response, Error, never>
-//      ▼
-const program = getTodo(1)
-```
-
-## From a Callback
-
-Creates an `Effect` from a callback-based asynchronous function.
-
-Sometimes you have to work with APIs that don't support `async/await` or `Promise` and instead use the callback style.
-To handle callback-based APIs, Effect provides the `Effect.async` constructor.
-
-**Example** (Wrapping a Callback API)
-
-Let's wrap the `readFile` function from Node.js's `fs` module into an Effect-based API (make sure `@types/node` is installed):
-
-```ts twoslash
-import { Effect } from "effect"
-import * as NodeFS from "node:fs"
-
-const readFile = (filename: string) =>
-  Effect.async<Buffer, Error>((resume) => {
-    NodeFS.readFile(filename, (error, data) => {
-      if (error) {
-        // Resume with a failed Effect if an error occurs
-        resume(Effect.fail(error))
-      } else {
-        // Resume with a succeeded Effect if successful
-        resume(Effect.succeed(data))
-      }
-    })
-  })
-
-//      ┌─── Effect<Buffer, Error, never>
-//      ▼
-const program = readFile("example.txt")
-```
-
-In the above example, we manually annotate the types when calling `Effect.async`:
-
-```ts showLineNumbers=false "<Buffer, Error>"
-Effect.async<Buffer, Error>((resume) => {
-  // ...
-})
-```
-
-because TypeScript cannot infer the type parameters for a callback
-based on the return value inside the callback body. Annotating the types ensures that the values provided to `resume` match the expected types.
-
-The `resume` function inside `Effect.async` should be called exactly once. Calling it more than once will result in the extra calls being ignored.
-
-**Example** (Ignoring Subsequent `resume` Calls)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.async<number>((resume) => {
-  resume(Effect.succeed(1))
-  resume(Effect.succeed(2)) // This line will be ignored
-})
-
-// Run the program
-Effect.runPromise(program).then(console.log) // Output: 1
-```
-
-### Advanced Usage
-
-For more advanced use cases, `resume` can optionally return an `Effect` that will be executed if the fiber running this effect is interrupted. This can be useful in scenarios where you need to handle resource cleanup if the operation is interrupted.
-
-**Example** (Handling Interruption with Cleanup)
-
-In this example:
-
-- The `writeFileWithCleanup` function writes data to a file.
-- If the fiber running this effect is interrupted, the cleanup effect (which deletes the file) is executed.
-- This ensures that resources like open file handles are cleaned up properly when the operation is canceled.
-
-```ts twoslash
-import { Effect, Fiber } from "effect"
-import * as NodeFS from "node:fs"
-
-// Simulates a long-running operation to write to a file
-const writeFileWithCleanup = (filename: string, data: string) =>
-  Effect.async<void, Error>((resume) => {
-    const writeStream = NodeFS.createWriteStream(filename)
-
-    // Start writing data to the file
-    writeStream.write(data)
-
-    // When the stream is finished, resume with success
-    writeStream.on("finish", () => resume(Effect.void))
-
-    // In case of an error during writing, resume with failure
-    writeStream.on("error", (err) => resume(Effect.fail(err)))
-
-    // Handle interruption by returning a cleanup effect
-    return Effect.sync(() => {
-      console.log(`Cleaning up ${filename}`)
-      NodeFS.unlinkSync(filename)
-    })
-  })
-
-const program = Effect.gen(function* () {
-  const fiber = yield* Effect.fork(
-    writeFileWithCleanup("example.txt", "Some long data...")
-  )
-  // Simulate interrupting the fiber after 1 second
-  yield* Effect.sleep("1 second")
-  yield* Fiber.interrupt(fiber) // This will trigger the cleanup
-})
-
-// Run the program
-Effect.runPromise(program)
-/*
-Output:
-Cleaning up example.txt
-*/
-```
-
-If the operation you're wrapping supports interruption, the `resume` function can receive an `AbortSignal` to handle interruption requests directly.
-
-**Example** (Handling Interruption with `AbortSignal`)
-
-```ts twoslash
-import { Effect, Fiber } from "effect"
-
-// A task that supports interruption using AbortSignal
-const interruptibleTask = Effect.async<void, Error>((resume, signal) => {
-  // Handle interruption
-  signal.addEventListener("abort", () => {
-    console.log("Abort signal received")
-    clearTimeout(timeoutId)
-  })
-
-  // Simulate a long-running task
-  const timeoutId = setTimeout(() => {
-    console.log("Operation completed")
-    resume(Effect.void)
-  }, 2000)
-})
-
-const program = Effect.gen(function* () {
-  const fiber = yield* Effect.fork(interruptibleTask)
-  // Simulate interrupting the fiber after 1 second
-  yield* Effect.sleep("1 second")
-  yield* Fiber.interrupt(fiber)
-})
-
-// Run the program
-Effect.runPromise(program)
-/*
-Output:
-Abort signal received
-*/
-```
-
-## Suspended Effects
-
-`Effect.suspend` is used to delay the creation of an effect.
-It allows you to defer the evaluation of an effect until it is actually needed.
-The `Effect.suspend` function takes a thunk that represents the effect, and it wraps it in a suspended effect.
-
-**Syntax**
-
-```ts showLineNumbers=false
-const suspendedEffect = Effect.suspend(() => effect)
-```
-
-Let's explore some common scenarios where `Effect.suspend` proves useful.
-
-### Lazy Evaluation
-
-When you want to defer the evaluation of an effect until it is required. This can be useful for optimizing the execution of effects, especially when they are not always needed or when their computation is expensive.
-
-Also, when effects with side effects or scoped captures are created, use `Effect.suspend` to re-execute on each invocation.
-
-**Example** (Lazy Evaluation with Side Effects)
-
-```ts twoslash
-import { Effect } from "effect"
-
-let i = 0
-
-const bad = Effect.succeed(i++)
-
-const good = Effect.suspend(() => Effect.succeed(i++))
-
-console.log(Effect.runSync(bad)) // Output: 0
-console.log(Effect.runSync(bad)) // Output: 0
-
-console.log(Effect.runSync(good)) // Output: 1
-console.log(Effect.runSync(good)) // Output: 2
-```
-
-<Aside type="note" title="Running Effects">
-  This example utilizes `Effect.runSync` to execute effects and display
-  their results (refer to [Running
-  Effects](/docs/getting-started/running-effects/#runsync) for more
-  details).
-</Aside>
-
-In this example, `bad` is the result of calling `Effect.succeed(i++)` a single time, which increments the scoped variable but [returns its original value](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Increment#postfix_increment). `Effect.runSync(bad)` does not result in any new computation, because `Effect.succeed(i++)` has already been called. On the other hand, each time `Effect.runSync(good)` is called, the thunk passed to `Effect.suspend()` will be executed, outputting the scoped variable's most recent value.
-
-### Handling Circular Dependencies
-
-`Effect.suspend` is helpful in managing circular dependencies between effects, where one effect depends on another, and vice versa.
-For example it's fairly common for `Effect.suspend` to be used in recursive functions to escape an eager call.
-
-**Example** (Recursive Fibonacci)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const blowsUp = (n: number): Effect.Effect<number> =>
-  n < 2
-    ? Effect.succeed(1)
-    : Effect.zipWith(blowsUp(n - 1), blowsUp(n - 2), (a, b) => a + b)
-
-// console.log(Effect.runSync(blowsUp(32)))
-// crash: JavaScript heap out of memory
-
-const allGood = (n: number): Effect.Effect<number> =>
-  n < 2
-    ? Effect.succeed(1)
-    : Effect.zipWith(
-        Effect.suspend(() => allGood(n - 1)),
-        Effect.suspend(() => allGood(n - 2)),
-        (a, b) => a + b
-      )
-
-console.log(Effect.runSync(allGood(32))) // Output: 3524578
-```
-
-<Aside type="note" title="Running Effects">
-  This example utilizes `Effect.zipWith` to combine the results of two
-  effects (refer to the documentation on
-  [zipping](/docs/getting-started/control-flow/#zipwith) for more
-  details).
-</Aside>
-
-The `blowsUp` function creates a recursive Fibonacci sequence without deferring execution. Each call to `blowsUp` triggers further immediate recursive calls, rapidly increasing the JavaScript call stack size.
-
-Conversely, `allGood` avoids stack overflow by using `Effect.suspend` to defer the recursive calls. This mechanism doesn't immediately execute the recursive effects but schedules them to be run later, thus keeping the call stack shallow and preventing a crash.
-
-### Unifying Return Type
-
-In situations where TypeScript struggles to unify the returned effect type, `Effect.suspend` can be employed to resolve this issue.
-
-**Example** (Using `Effect.suspend` to Help TypeScript Infer Types)
-
-```ts twoslash
-import { Effect } from "effect"
-
-/*
-  Without suspend, TypeScript may struggle with type inference.
-
-  Inferred type:
-    (a: number, b: number) =>
-      Effect<never, Error, never> | Effect<number, never, never>
-*/
-const withoutSuspend = (a: number, b: number) =>
-  b === 0
-    ? Effect.fail(new Error("Cannot divide by zero"))
-    : Effect.succeed(a / b)
-
-/*
-  Using suspend to unify return types.
-
-  Inferred type:
-    (a: number, b: number) => Effect<number, Error, never>
-*/
-const withSuspend = (a: number, b: number) =>
-  Effect.suspend(() =>
-    b === 0
-      ? Effect.fail(new Error("Cannot divide by zero"))
-      : Effect.succeed(a / b)
-  )
-```
-
-## Cheatsheet
-
-The table provides a summary of the available constructors, along with their input and output types, allowing you to choose the appropriate function based on your needs.
-
-| API                     | Given                              | Result                        |
-| ----------------------- | ---------------------------------- | ----------------------------- |
-| `succeed`               | `A`                                | `Effect<A>`                   |
-| `fail`                  | `E`                                | `Effect<never, E>`            |
-| `sync`                  | `() => A`                          | `Effect<A>`                   |
-| `try`                   | `() => A`                          | `Effect<A, UnknownException>` |
-| `try` (overload)        | `() => A`, `unknown => E`          | `Effect<A, E>`                |
-| `promise`               | `() => Promise<A>`                 | `Effect<A>`                   |
-| `tryPromise`            | `() => Promise<A>`                 | `Effect<A, UnknownException>` |
-| `tryPromise` (overload) | `() => Promise<A>`, `unknown => E` | `Effect<A, E>`                |
-| `async`                 | `(Effect<A, E> => void) => void`   | `Effect<A, E>`                |
-| `suspend`               | `() => Effect<A, E, R>`            | `Effect<A, E, R>`             |
-
-For the complete list of constructors, visit the [Effect Constructors Documentation](https://effect-ts.github.io/effect/effect/Effect.ts.html#constructors).
-
-> getting-started/create-effect-app.mdx\n\n---
-title: Create Effect App
-description: Quickly set up a new Effect application with a customizable template or example, streamlining your development start.
-sidebar:
-  order: 3
----
-
-import { Tabs, TabItem } from "@astrojs/starlight/components"
-
-The `create-effect-app` CLI allow you to create a new Effect application using a default template or an [example](https://github.com/Effect-TS/examples) from a public Github repository.
-It is the easiest way to get started with Effect.
-
-## CLI
-
-To begin, run the `create-effect-app` command in your terminal using your preferred package manager:
-
-<Tabs syncKey="package-manager">
-
-<TabItem label="npm" icon="seti:npm">
-
-```sh showLineNumbers=false
-npx create-effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="pnpm" icon="pnpm">
-
-```sh showLineNumbers=false
-pnpm create effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="Yarn" icon="seti:yarn">
-
-```sh showLineNumbers=false
-yarn create effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="Bun" icon="bun">
-
-```sh showLineNumbers=false
-bunx create-effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="Deno" icon="deno">
-
-```sh showLineNumbers=false
-deno init --npm effect-app@latest
-```
-
-</TabItem>
-
-</Tabs>
-
-This command starts an interactive setup that guides you through the steps required to bootstrap your project:
-
-![create-effect-app](../_assets/create-effect-app.gif "Animated GIF demonstrating the interactive experience when create-effect-app is run in interactive mode")
-
-After making your selections, `create-effect-app` will generate your new Effect project and configure it based on your choices.
-
-**Example**
-
-For instance, to create a new Effect project in a directory named `"my-effect-app"` using the basic template with ESLint integration, you can run:
-
-```sh showLineNumbers=false
-npx create-effect-app --template basic --eslint my-effect-app
-```
-
-## Non-Interactive Usage
-
-If you prefer, `create-effect-app` can also be used in a non-interactive mode:
-
-```sh showLineNumbers=false
-create-effect-app
-  (-t, --template basic | cli | monorepo)
-  [--changesets]
-  [--flake]
-  [--eslint]
-  [--workflows]
-  [<project-name>]
-create-effect-app
-  (-e, --example http-server)
-  [<project-name>]
-```
-
-Below is a breakdown of the available options to customize an Effect project template:
-
-| Option         | Description                                                                        |
-| -------------- | ---------------------------------------------------------------------------------- |
-| `--changesets` | Initializes your project with the Changesets package for managing version control. |
-| `--flake`      | Initializes your project with a Nix flake for managing system dependencies.        |
-| `--eslint`     | Includes ESLint for code formatting and linting.                                   |
-| `--workflows`  | Sets up Effect's recommended GitHub Action workflows for automation.               |
-
-> getting-started/importing-effect.mdx\n\n---
-title: Importing Effect
-description: Get started with Effect by installing the package and importing essential modules and functions for building type-safe, modular applications.
-sidebar:
-  order: 4
----
-
-import { Aside, Tabs, TabItem } from "@astrojs/starlight/components"
-
-If you're just getting started, you might feel overwhelmed by the variety of modules and functions that Effect offers.
-
-However, rest assured that you don't need to worry about all of them right away.
-
-This page will provide a simple introduction on how to import modules and functions, and explain that installing the `effect` package is generally all you need to begin.
-
-## Installing Effect
-
-If you haven't already installed the `effect` package, you can do so by running the following command in your terminal:
-
-<Tabs syncKey="package-manager">
-
-<TabItem label="npm" icon="seti:npm">
-
-```sh showLineNumbers=false
-npm install effect
-```
-
-</TabItem>
-
-<TabItem label="pnpm" icon="pnpm">
-
-```sh showLineNumbers=false
-pnpm add effect
-```
-
-</TabItem>
-
-<TabItem label="Yarn" icon="seti:yarn">
-
-```sh showLineNumbers=false
-yarn add effect
-```
-
-</TabItem>
-
-<TabItem label="Bun" icon="bun">
-
-```sh showLineNumbers=false
-bun add effect
-```
-
-</TabItem>
-
-<TabItem label="Deno" icon="deno">
-
-```sh showLineNumbers=false
-deno add npm:effect
-```
-
-</TabItem>
-
-</Tabs>
-
-By installing this package, you get access to the core functionality of Effect.
-
-For detailed installation instructions for platforms like Deno or Bun, refer to the [Installation](/docs/getting-started/installation/) guide, which provides step-by-step guidance.
-
-You can also start a new Effect app using [`create-effect-app`](/docs/getting-started/create-effect-app/), which automatically sets up everything for you.
-
-## Importing Modules and Functions
-
-Once you have installed the `effect` package, you can start using its modules and functions in your projects.
-Importing modules and functions is straightforward and follows the standard JavaScript/TypeScript import syntax.
-
-To import a module or a function from the `effect` package, simply use the `import` statement at the top of your file. Here's how you can import the `Effect` module:
-
-```ts showLineNumbers=false
-import { Effect } from "effect"
-```
-
-Now, you have access to the Effect module, which is the heart of the Effect library. It provides various functions to create, compose, and manipulate effectful computations.
-
-## Namespace imports
-
-In addition to importing the `Effect` module with a named import, as shown previously:
-
-```ts showLineNumbers=false
-import { Effect } from "effect"
-```
-
-You can also import it using a namespace import like this:
-
-```ts showLineNumbers=false
-import * as Effect from "effect/Effect"
-```
-
-Both forms of import allow you to access the functionalities provided by the `Effect` module.
-
-However an important consideration is **tree shaking**, which refers to a process that eliminates unused code during the bundling of your application.
-Named imports may generate tree shaking issues when a bundler doesn't support deep scope analysis.
-
-Here are some bundlers that support deep scope analysis and thus don't have issues with named imports:
-
-- Rollup
-- Webpack 5+
-
-## Functions vs Methods
-
-In the Effect ecosystem, libraries often expose functions rather than methods. This design choice is important for two key reasons: tree shakeability and extendibility.
-
-### Tree Shakeability
-
-Tree shakeability refers to the ability of a build system to eliminate unused code during the bundling process. Functions are tree shakeable, while methods are not.
-
-When functions are used in the Effect ecosystem, only the functions that are actually imported and used in your application will be included in the final bundled code. Unused functions are automatically removed, resulting in a smaller bundle size and improved performance.
-
-On the other hand, methods are attached to objects or prototypes, and they cannot be easily tree shaken. Even if you only use a subset of methods, all methods associated with an object or prototype will be included in the bundle, leading to unnecessary code bloat.
-
-### Extendibility
-
-Another important advantage of using functions in the Effect ecosystem is the ease of extendibility. With methods, extending the functionality of an existing API often requires modifying the prototype of the object, which can be complex and error-prone.
-
-In contrast, with functions, extending the functionality is much simpler. You can define your own "extension methods" as plain old functions without the need to modify the prototypes of objects. This promotes cleaner and more modular code, and it also allows for better compatibility with other libraries and modules.
-
-## Commonly Used Functions
-
-As you start your adventure with Effect, you don't need to dive into every function in the `effect` package right away. Instead, focus on some commonly used functions that will provide a solid foundation for your journey into the world of Effect.
-
-In the upcoming guides, we will explore some of these essential functions, specifically those for creating and running `Effect`s and building pipelines.
-
-But before we dive into those, let's start from the very heart of Effect: understanding the `Effect` type. This will lay the groundwork for your understanding of how Effect brings composability, type safety, and error handling into your applications.
-
-So, let's take the first step and explore the fundamental concepts of the [The Effect Type](/docs/getting-started/the-effect-type/).
-
-> state-management/ref.mdx\n\n---
-title: Ref
-description: Learn how to manage state in concurrent applications using Effect's Ref data type. Master mutable references for safe, controlled state updates across fibers.
-sidebar:
-  order: 0
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-When we write programs, it is common to need to keep track of some form of state during the execution of the program. State refers to any data that can change as the program runs. For example, in a counter application, the count value changes as the user increments or decrements it. Similarly, in a banking application, the account balance changes as deposits and withdrawals are made. State management is crucial to building interactive and dynamic applications.
-
-In traditional imperative programming, one common way to store state is using variables. However, this approach can introduce bugs, especially when the state is shared between multiple components or functions. As the program becomes more complex, managing shared state can become challenging.
-
-To overcome these issues, Effect introduces a powerful data type called `Ref`, which represents a mutable reference. With `Ref`, we can share state between different parts of our program without relying on mutable variables directly. Instead, `Ref` provides a controlled way to handle mutable state and safely update it in a concurrent environment.
-
-Effect's `Ref` data type enables communication between different fibers in your program. This capability is crucial in concurrent programming, where multiple tasks may need to access and update shared state simultaneously.
-
-In this guide, we will explore how to use the `Ref` data type to manage state in your programs effectively. We will cover simple examples like counting, as well as more complex scenarios where state is shared between different parts of the program. Additionally, we will show how to use `Ref` in a concurrent environment, allowing multiple tasks to interact with shared state safely.
-
-Let's dive in and see how we can leverage `Ref` for effective state management in your Effect programs.
-
-## Using Ref
-
-Here is a simple example using `Ref` to create a counter:
-
-**Example** (Basic Counter with `Ref`)
-
-```ts twoslash
-import { Effect, Ref } from "effect"
-
-class Counter {
-  inc: Effect.Effect<void>
-  dec: Effect.Effect<void>
-  get: Effect.Effect<number>
-
-  constructor(private value: Ref.Ref<number>) {
-    this.inc = Ref.update(this.value, (n) => n + 1)
-    this.dec = Ref.update(this.value, (n) => n - 1)
-    this.get = Ref.get(this.value)
-  }
-}
-
-const make = Effect.andThen(Ref.make(0), (value) => new Counter(value))
-```
-
-**Example** (Using the Counter)
-
-```ts twoslash collapse={3-15}
-import { Effect, Ref } from "effect"
-
-class Counter {
-  inc: Effect.Effect<void>
-  dec: Effect.Effect<void>
-  get: Effect.Effect<number>
-
-  constructor(private value: Ref.Ref<number>) {
-    this.inc = Ref.update(this.value, (n) => n + 1)
-    this.dec = Ref.update(this.value, (n) => n - 1)
-    this.get = Ref.get(this.value)
-  }
-}
-
-const make = Effect.andThen(Ref.make(0), (value) => new Counter(value))
-
-const program = Effect.gen(function* () {
-  const counter = yield* make
-  yield* counter.inc
-  yield* counter.inc
-  yield* counter.dec
-  yield* counter.inc
-  const value = yield* counter.get
-  console.log(`This counter has a value of ${value}.`)
-})
-
-Effect.runPromise(program)
-/*
-Output:
-This counter has a value of 2.
-*/
-```
-
-<Aside type="note" title="Ref Operations Are Effectful">
-  All the operations on the `Ref` data type are effectful. So when we are
-  reading from or writing to a `Ref`, we are performing an effectful
-  operation.
-</Aside>
-
-## Using Ref in a Concurrent Environment
-
-We can also use `Ref` in concurrent scenarios, where multiple tasks might be updating shared state at the same time.
-
-**Example** (Concurrent Updates to Shared Counter)
-
-For this example, let's update the counter concurrently:
-
-```ts twoslash collapse={3-15}
-import { Effect, Ref } from "effect"
-
-class Counter {
-  inc: Effect.Effect<void>
-  dec: Effect.Effect<void>
-  get: Effect.Effect<number>
-
-  constructor(private value: Ref.Ref<number>) {
-    this.inc = Ref.update(this.value, (n) => n + 1)
-    this.dec = Ref.update(this.value, (n) => n - 1)
-    this.get = Ref.get(this.value)
-  }
-}
-
-const make = Effect.andThen(Ref.make(0), (value) => new Counter(value))
-
-const program = Effect.gen(function* () {
-  const counter = yield* make
-
-  // Helper to log the counter's value before running an effect
-  const logCounter = <R, E, A>(
-    label: string,
-    effect: Effect.Effect<A, E, R>
-  ) =>
-    Effect.gen(function* () {
-      const value = yield* counter.get
-      yield* Effect.log(`${label} get: ${value}`)
-      return yield* effect
-    })
-
-  yield* logCounter("task 1", counter.inc).pipe(
-    Effect.zip(logCounter("task 2", counter.inc), { concurrent: true }),
-    Effect.zip(logCounter("task 3", counter.dec), { concurrent: true }),
-    Effect.zip(logCounter("task 4", counter.inc), { concurrent: true })
-  )
-  const value = yield* counter.get
-  yield* Effect.log(`This counter has a value of ${value}.`)
-})
-
-Effect.runPromise(program)
-/*
-Output:
-timestamp=... fiber=#3 message="task 4 get: 0"
-timestamp=... fiber=#6 message="task 3 get: 1"
-timestamp=... fiber=#8 message="task 1 get: 0"
-timestamp=... fiber=#9 message="task 2 get: 1"
-timestamp=... fiber=#0 message="This counter has a value of 2."
-*/
-```
-
-## Using Ref as a Service
-
-You can pass a `Ref` as a [service](/docs/requirements-management/services/) to share state across different parts of your program.
-
-**Example** (Using `Ref` as a Service)
-
-```ts twoslash
-import { Effect, Context, Ref } from "effect"
-
-// Create a Tag for our state
-class MyState extends Context.Tag("MyState")<
-  MyState,
-  Ref.Ref<number>
->() {}
-
-// Subprogram 1: Increment the state value twice
-const subprogram1 = Effect.gen(function* () {
-  const state = yield* MyState
-  yield* Ref.update(state, (n) => n + 1)
-  yield* Ref.update(state, (n) => n + 1)
-})
-
-// Subprogram 2: Decrement the state value and then increment it
-const subprogram2 = Effect.gen(function* () {
-  const state = yield* MyState
-  yield* Ref.update(state, (n) => n - 1)
-  yield* Ref.update(state, (n) => n + 1)
-})
-
-// Subprogram 3: Read and log the current value of the state
-const subprogram3 = Effect.gen(function* () {
-  const state = yield* MyState
-  const value = yield* Ref.get(state)
-  console.log(`MyState has a value of ${value}.`)
-})
-
-// Compose subprograms 1, 2, and 3 to create the main program
-const program = Effect.gen(function* () {
-  yield* subprogram1
-  yield* subprogram2
-  yield* subprogram3
-})
-
-// Create a Ref instance with an initial value of 0
-const initialState = Ref.make(0)
-
-// Provide the Ref as a service
-const runnable = program.pipe(
-  Effect.provideServiceEffect(MyState, initialState)
-)
-
-// Run the program and observe the output
-Effect.runPromise(runnable)
-/*
-Output:
-MyState has a value of 2.
-*/
-```
-
-Note that we use `Effect.provideServiceEffect` instead of `Effect.provideService` to provide an actual implementation of the `MyState` service because all the operations on the `Ref` data type are effectful, including the creation `Ref.make(0)`.
-
-## Sharing State Between Fibers
-
-You can use `Ref` to manage shared state between multiple fibers in a concurrent environment.
-
-**Example** (Managing Shared State Across Fibers)
-
-Let's look at an example where we continuously read names from user input until the user enters `"q"` to exit.
-
-First, let's introduce a `readLine` utility to read user input (ensure you have `@types/node` installed):
-
-```ts twoslash
-import { Effect } from "effect"
-import * as NodeReadLine from "node:readline"
-
-// Utility to read user input
-const readLine = (message: string): Effect.Effect<string> =>
-  Effect.promise(
-    () =>
-      new Promise((resolve) => {
-        const rl = NodeReadLine.createInterface({
-          input: process.stdin,
-          output: process.stdout
-        })
-        rl.question(message, (answer) => {
-          rl.close()
-          resolve(answer)
-        })
-      })
-  )
-```
-
-Next, we implement the main program to collect names:
-
-```ts twoslash collapse={5-18}
-import { Effect, Chunk, Ref } from "effect"
-import * as NodeReadLine from "node:readline"
-
-// Utility to read user input
-const readLine = (message: string): Effect.Effect<string> =>
-  Effect.promise(
-    () =>
-      new Promise((resolve) => {
-        const rl = NodeReadLine.createInterface({
-          input: process.stdin,
-          output: process.stdout
-        })
-        rl.question(message, (answer) => {
-          rl.close()
-          resolve(answer)
-        })
-      })
-  )
-
-const getNames = Effect.gen(function* () {
-  const ref = yield* Ref.make(Chunk.empty<string>())
-  while (true) {
-    const name = yield* readLine("Please enter a name or `q` to exit: ")
-    if (name === "q") {
-      break
-    }
-    yield* Ref.update(ref, (state) => Chunk.append(state, name))
-  }
-  return yield* Ref.get(ref)
-})
-
-Effect.runPromise(getNames).then(console.log)
-/*
-Output:
-Please enter a name or `q` to exit: Alice
-Please enter a name or `q` to exit: Bob
-Please enter a name or `q` to exit: q
-{
-  _id: "Chunk",
-  values: [ "Alice", "Bob" ]
-}
-*/
-```
-
-Now that we have learned how to use the `Ref` data type, we can use it to manage the state concurrently.
-
-For example, assume while we are reading from the console, we have another fiber that is trying to update the state from a different source.
-
-Here, one fiber reads names from user input, while another fiber concurrently adds preset names at regular intervals:
-
-```ts twoslash collapse={5-18}
-import { Effect, Chunk, Ref, Fiber } from "effect"
-import * as NodeReadLine from "node:readline"
-
-// Utility to read user input
-const readLine = (message: string): Effect.Effect<string> =>
-  Effect.promise(
-    () =>
-      new Promise((resolve) => {
-        const rl = NodeReadLine.createInterface({
-          input: process.stdin,
-          output: process.stdout
-        })
-        rl.question(message, (answer) => {
-          rl.close()
-          resolve(answer)
-        })
-      })
-  )
-
-const getNames = Effect.gen(function* () {
-  const ref = yield* Ref.make(Chunk.empty<string>())
-
-  // Fiber 1: Reading names from user input
-  const fiber1 = yield* Effect.fork(
-    Effect.gen(function* () {
-      while (true) {
-        const name = yield* readLine(
-          "Please enter a name or `q` to exit: "
-        )
-        if (name === "q") {
-          break
-        }
-        yield* Ref.update(ref, (state) => Chunk.append(state, name))
-      }
-    })
-  )
-
-  // Fiber 2: Updating the state with predefined names
-  const fiber2 = yield* Effect.fork(
-    Effect.gen(function* () {
-      for (const name of ["John", "Jane", "Joe", "Tom"]) {
-        yield* Ref.update(ref, (state) => Chunk.append(state, name))
-        yield* Effect.sleep("1 second")
-      }
-    })
-  )
-  yield* Fiber.join(fiber1)
-  yield* Fiber.join(fiber2)
-  return yield* Ref.get(ref)
-})
-
-Effect.runPromise(getNames).then(console.log)
-/*
-Output:
-Please enter a name or `q` to exit: Alice
-Please enter a name or `q` to exit: Bob
-Please enter a name or `q` to exit: q
-{
-  _id: "Chunk",
-  // Note: the following result may vary
-  // depending on the speed of user input
-  values: [ 'John', 'Jane', 'Joe', 'Tom', 'Alice', 'Bob' ]
-}
-*/
-```
-
-> state-management/subscriptionref.mdx\n\n---
-title: SubscriptionRef
-description: Learn how to manage shared state with SubscriptionRef in Effect, enabling multiple observers to subscribe to and react to state changes efficiently in concurrent environments.
-sidebar:
-  order: 2
----
-
-A `SubscriptionRef<A>` is a specialized form of a [SynchronizedRef](/docs/state-management/synchronizedref/). It allows us to subscribe and receive updates on the current value and any changes made to that value.
-
-```ts showLineNumbers=false
-interface SubscriptionRef<A> extends SynchronizedRef<A> {
-  /**
-   * A stream containing the current value of the `Ref` as well as all changes
-   * to that value.
-   */
-  readonly changes: Stream<A>
-}
-```
-
-You can perform all standard operations on a `SubscriptionRef`, such as `get`, `set`, or `modify` to interact with the current value.
-
-The key feature of `SubscriptionRef` is its `changes` stream. This stream allows you to observe the current value at the moment of subscription and receive all subsequent changes. Every time the stream is run, it emits the current value and tracks future updates.
-
-To create a `SubscriptionRef`, you can use the `SubscriptionRef.make` constructor, specifying the initial value:
-
-**Example** (Creating a `SubscriptionRef`)
-
-```ts twoslash
-import { SubscriptionRef } from "effect"
-
-const ref = SubscriptionRef.make(0)
-```
-
-`SubscriptionRef` is particularly useful for modeling shared state when multiple observers need to react to changes. For example, in functional reactive programming, the `SubscriptionRef` could represent a portion of the application state, and various observers (like UI components) would update in response to state changes.
-
-**Example** (Server-Client Model with `SubscriptionRef`)
-
-In the following example, a "server" continually updates a shared value, while multiple "clients" observe the changes:
-
-```ts twoslash
-import { Ref, Effect } from "effect"
-
-// Server function that increments a shared value forever
-const server = (ref: Ref.Ref<number>) =>
-  Ref.update(ref, (n) => n + 1).pipe(Effect.forever)
-```
-
-The `server` function operates on a regular `Ref` and continuously updates the value. It doesn't need to know about `SubscriptionRef` directly.
-
-Next, let's define a `client` that subscribes to changes and collects a specified number of values:
-
-```ts twoslash
-import { Ref, Effect, Stream, Random } from "effect"
-
-// Server function that increments a shared value forever
-const server = (ref: Ref.Ref<number>) =>
-  Ref.update(ref, (n) => n + 1).pipe(Effect.forever)
-
-// Client function that observes the stream of changes
-const client = (changes: Stream.Stream<number>) =>
-  Effect.gen(function* () {
-    const n = yield* Random.nextIntBetween(1, 10)
-    const chunk = yield* Stream.runCollect(Stream.take(changes, n))
-    return chunk
-  })
-```
-
-Similarly, the `client` function only works with a `Stream` of values and doesn't concern itself with the source of these values.
-
-To tie everything together, we start the server, launch multiple client instances in parallel, and then shut down the server when we're finished. We also create the `SubscriptionRef` in this process.
-
-```ts twoslash
-import {
-  Ref,
-  Effect,
-  Stream,
-  Random,
-  SubscriptionRef,
-  Fiber
-} from "effect"
-
-// Server function that increments a shared value forever
-const server = (ref: Ref.Ref<number>) =>
-  Ref.update(ref, (n) => n + 1).pipe(Effect.forever)
-
-// Client function that observes the stream of changes
-const client = (changes: Stream.Stream<number>) =>
-  Effect.gen(function* () {
-    const n = yield* Random.nextIntBetween(1, 10)
-    const chunk = yield* Stream.runCollect(Stream.take(changes, n))
-    return chunk
-  })
-
-const program = Effect.gen(function* () {
-  // Create a SubscriptionRef with an initial value of 0
-  const ref = yield* SubscriptionRef.make(0)
-
-  // Fork the server to run concurrently
-  const serverFiber = yield* Effect.fork(server(ref))
-
-  // Create 5 clients that subscribe to the changes stream
-  const clients = new Array(5).fill(null).map(() => client(ref.changes))
-
-  // Run all clients in concurrently and collect their results
-  const chunks = yield* Effect.all(clients, { concurrency: "unbounded" })
-
-  // Interrupt the server when clients are done
-  yield* Fiber.interrupt(serverFiber)
-
-  // Output the results collected by each client
-  for (const chunk of chunks) {
-    console.log(chunk)
-  }
-})
-
-Effect.runPromise(program)
-/*
-Example Output:
-{ _id: 'Chunk', values: [ 4, 5, 6, 7, 8, 9 ] }
-{ _id: 'Chunk', values: [ 4 ] }
-{ _id: 'Chunk', values: [ 4, 5, 6, 7, 8, 9 ] }
-{ _id: 'Chunk', values: [ 4, 5 ] }
-{ _id: 'Chunk', values: [ 4, 5, 6, 7, 8, 9 ] }
-*/
-```
-
-This setup ensures that each client observes the current value when it starts and receives all subsequent changes to the value.
-
-Since the changes are represented as streams, you can easily build more complex programs using familiar stream operators. You can transform, filter, or merge these streams with other streams to achieve more sophisticated behavior.
-
-> state-management/synchronizedref.mdx\n\n---
-title: SynchronizedRef
-description: Master concurrent state management with SynchronizedRef in Effect, a mutable reference that supports atomic, effectful updates to shared state in concurrent environments.
-sidebar:
-  order: 1
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-`SynchronizedRef<A>` serves as a mutable reference to a value of type `A`.
-With it, we can store **immutable** data and perform updates **atomically** and effectfully.
-
-<Aside type="tip" title="Learn Ref First">
-  Most of the operations for `SynchronizedRef` are similar to those of
-  `Ref`. If you're not already familiar with `Ref`, it's recommended to
-  read about [the Ref concept](/docs/state-management/ref/) first.
-</Aside>
-
-The distinctive function in `SynchronizedRef` is `updateEffect`.
-This function takes an effectful operation and executes it to modify the shared state.
-This is the key feature setting `SynchronizedRef` apart from `Ref`.
-
-In real-world applications, `SynchronizedRef` is useful when you need to execute effects, such as querying a database, and then update shared state based on the result. It ensures that updates happen sequentially, preserving consistency in concurrent environments.
-
-**Example** (Concurrent Updates with `SynchronizedRef`)
-
-In this example, we simulate fetching user ages concurrently and updating a shared state that stores the ages:
-
-```ts twoslash
-import { Effect, SynchronizedRef } from "effect"
-
-// Simulated API to get user age
-const getUserAge = (userId: number) =>
-  Effect.succeed(userId * 10).pipe(Effect.delay(10 - userId))
-
-const meanAge = Effect.gen(function* () {
-  // Initialize a SynchronizedRef to hold an array of ages
-  const ref = yield* SynchronizedRef.make<number[]>([])
-
-  // Helper function to log state before each effect
-  const log = <R, E, A>(label: string, effect: Effect.Effect<A, E, R>) =>
-    Effect.gen(function* () {
-      const value = yield* SynchronizedRef.get(ref)
-      yield* Effect.log(label, value)
-      return yield* effect
-    })
-
-  const task = (id: number) =>
-    log(
-      `task ${id}`,
-      SynchronizedRef.updateEffect(ref, (sumOfAges) =>
-        Effect.gen(function* () {
-          const age = yield* getUserAge(id)
-          return sumOfAges.concat(age)
-        })
-      )
-    )
-
-  // Run tasks concurrently with a limit of 2 concurrent tasks
-  yield* Effect.all([task(1), task(2), task(3), task(4)], {
-    concurrency: 2
-  })
-
-  // Retrieve the updated value
-  const value = yield* SynchronizedRef.get(ref)
-  return value
-})
-
-Effect.runPromise(meanAge).then(console.log)
-/*
-Output:
-timestamp=... level=INFO fiber=#2 message="task 1" message=[]
-timestamp=... level=INFO fiber=#3 message="task 2" message=[]
-timestamp=... level=INFO fiber=#2 message="task 3" message="[
-  10
-]"
-timestamp=... level=INFO fiber=#3 message="task 4" message="[
-  10,
-  20
-]"
-[ 10, 20, 30, 40 ]
-*/
-```
-
-> additional-resources/effect-vs-fp-ts.mdx\n\n---
-title: Effect vs fp-ts
-description: Comparison of Effect and fp-ts, covering features like typed services, resource management, concurrency, and stream processing.
-sidebar:
-  order: 4
----
-
-## Key Developments
-
-- **Project Merger**: The fp-ts project is officially merging with the Effect-TS ecosystem. Giulio Canti, the author of fp-ts, is being welcomed into the Effect organization. For more details, see the [announcement here](https://dev.to/effect/a-bright-future-for-effect-455m).
-- **Continuity and Evolution**: Effect can be seen as the successor to fp-ts v2 and is effectively fp-ts v3, marking a significant evolution in the library's capabilities.
-
-## FAQ
-
-### Bundle Size Comparison Between Effect and fp-ts
-
-**Q: I compared the bundle sizes of two simple programs using Effect and fp-ts. Why does Effect have a larger bundle size?**
-
-A: It's natural to observe different bundle sizes because Effect and fp-ts are distinct systems designed for different purposes.
-Effect's bundle size is larger due to its included fiber runtime, which is crucial for its functionality.
-While the initial bundle size may seem large, the overhead amortizes as you use Effect.
-
-**Q: Should I be concerned about the bundle size difference when choosing between Effect and fp-ts?**
-
-A: Not necessarily. Consider the specific requirements and benefits of each library for your project.
-
-The **Micro** module in Effect is designed as a lightweight alternative to the standard `Effect` module, specifically for scenarios where reducing bundle size is crucial.
-This module is self-contained and does not include more complex features like `Layer`, `Ref`, `Queue`, and `Deferred`.
-If any major Effect modules (beyond basic data modules like `Option`, `Either`, `Array`, etc.) are used, the effect runtime will be added to your bundle, negating the benefits of Micro.
-This makes Micro ideal for libraries that aim to implement Effect functionality with minimal impact on bundle size, especially for libraries that plan to expose `Promise`-based APIs.
-It also supports scenarios where a client might use Micro while a server uses the full suite of Effect features, maintaining compatibility and shared logic between different parts of an application.
-
-## Comparison Table
-
-The following table compares the features of the Effect and [fp-ts](https://github.com/gcanti/fp-ts) libraries.
-
-| Feature                   | fp-ts | Effect |
-| ------------------------- | ----- | ------ |
-| Typed Services            | ❌    | ✅     |
-| Built-in Services         | ❌    | ✅     |
-| Typed errors              | ✅    | ✅     |
-| Pipeable APIs             | ✅    | ✅     |
-| Dual APIs                 | ❌    | ✅     |
-| Testability               | ❌    | ✅     |
-| Resource Management       | ❌    | ✅     |
-| Interruptions             | ❌    | ✅     |
-| Defects                   | ❌    | ✅     |
-| Fiber-Based Concurrency   | ❌    | ✅     |
-| Fiber Supervision         | ❌    | ✅     |
-| Retry and Retry Policies  | ❌    | ✅     |
-| Built-in Logging          | ❌    | ✅     |
-| Built-in Scheduling       | ❌    | ✅     |
-| Built-in Caching          | ❌    | ✅     |
-| Built-in Batching         | ❌    | ✅     |
-| Metrics                   | ❌    | ✅     |
-| Tracing                   | ❌    | ✅     |
-| Configuration             | ❌    | ✅     |
-| Immutable Data Structures | ❌    | ✅     |
-| Stream Processing         | ❌    | ✅     |
-
-Here's an explanation of each feature:
-
-### Typed Services
-
-Both fp-ts and Effect libraries provide the ability to track requirements at the type level, allowing you to define and use services with specific types. In fp-ts, you can utilize the `ReaderTaskEither<R, E, A>` type, while in Effect, the `Effect<A, E, R>` type is available. It's important to note that in fp-ts, the `R` type parameter is contravariant, which means that there is no guarantee of avoiding conflicts, and the library offers only basic tools for dependency management.
-
-On the other hand, in Effect, the `R` type parameter is covariant and all APIs have the ability to merge dependencies at the type level when multiple effects are involved. Effect also provides a range of specifically designed tools to simplify the management of dependencies, including `Tag`, `Context`, and `Layer`. These tools enhance the ease and flexibility of handling dependencies in your code, making it easier to compose and manage complex applications.
-
-### Built-in Services
-
-The Effect library has built-in services like `Clock`, `Random` and `Tracer`, while fp-ts does not provide any default services.
-
-### Typed errors
-
-Both libraries support typed errors, enabling you to define and handle errors with specific types. However, in Effect, all APIs have the ability to merge errors at the type-level when multiple effects are involved, and each effect can potentially fail with different types of errors.
-
-This means that when combining multiple effects that can fail, the resulting type of the error will be a union of the individual error types. Effect provides utilities and type-level operations to handle and manage these merged error types effectively.
-
-### Pipeable APIs
-
-Both fp-ts and Effect libraries provide pipeable APIs, allowing you to compose and sequence operations in a functional and readable manner using the `pipe` function. However, Effect goes a step further and offers a `.pipe()` method on each data type, making it more convenient to work with pipelines without the need to explicitly import the `pipe` function every time.
-
-### Dual APIs
-
-Effect library provides dual APIs, allowing you to use the same API in different ways (e.g., "data-last" and "data-first" variants).
-
-### Testability
-
-The functional style of fp-ts generally promotes good testability of the code written using it, but the library itself does not provide dedicated tools specifically designed for the testing phase. On the other hand, Effect takes testability a step further by offering additional tools that are specifically tailored to simplify the testing process.
-
-Effect provides a range of utilities that improve testability. For example, it offers the `TestClock` utility, which allows you to control the passage of time during tests. This is useful for testing time-dependent code. Additionally, Effect provides the `TestRandom` utility, which enables fully deterministic testing of code that involves randomness. This ensures consistent and predictable test results. Another helpful tool is `ConfigProvider.fromMap`, which makes it easy to define mock configurations for your application during testing.
-
-### Resource Management
-
-The Effect library provides built-in capabilities for resource management, while fp-ts has limited features in this area (mainly `bracket`) and they are less sophisticated.
-
-In Effect, resource management refers to the ability to acquire and release resources, such as database connections, file handles, or network sockets, in a safe and controlled manner. The library offers comprehensive and refined mechanisms to handle resource acquisition and release, ensuring proper cleanup and preventing resource leaks.
-
-### Interruptions
-
-The Effect library supports interruptions, which means you can interrupt and cancel ongoing computations if needed. This feature gives you more control over the execution of your code and allows you to handle situations where you want to stop a computation before it completes.
-
-In Effect, interruptions are useful in scenarios where you need to handle user cancellations, timeouts, or other external events that require stopping ongoing computations. You can explicitly request an interruption and the library will safely and efficiently halt the execution of the computation.
-
-On the other hand, fp-ts does not have built-in support for interruptions. Once a computation starts in fp-ts, it will continue until it completes or encounters an error, without the ability to be interrupted midway.
-
-### Defects
-
-The Effect library provides mechanisms for handling defects and managing **unexpected** failures. In Effect, defects refer to unexpected errors or failures that can occur during the execution of a program.
-
-With the Effect library, you have built-in tools and utilities to handle defects in a structured and reliable manner. It offers error handling capabilities that allow you to catch and handle exceptions, recover from failures, and gracefully handle unexpected scenarios.
-
-On the other hand, fp-ts does not have built-in support specifically dedicated to managing defects. While you can handle errors using standard functional programming techniques in fp-ts, the Effect library provides a more comprehensive and streamlined approach to dealing with defects.
-
-### Fiber-Based Concurrency
-
-The Effect library leverages fiber-based concurrency, which enables lightweight and efficient concurrent computations. In simpler terms, fiber-based concurrency allows multiple tasks to run concurrently, making your code more responsive and efficient.
-
-With fiber-based concurrency, the Effect library can handle concurrent operations in a way that is lightweight and doesn't block the execution of other tasks. This means that you can run multiple computations simultaneously, taking advantage of the available resources and maximizing performance.
-
-On the other hand, fp-ts does not have built-in support for fiber-based concurrency. While fp-ts provides a rich set of functional programming features, it doesn't have the same level of support for concurrent computations as the Effect library.
-
-### Fiber Supervision
-
-Effect library provides supervision strategies for managing and monitoring fibers. fp-ts does not have built-in support for fiber supervision.
-
-### Retry and Retry Policies
-
-The Effect library includes built-in support for retrying computations with customizable retry policies. This feature is not available in fp-ts out of the box, and you would need to rely on external libraries to achieve similar functionality. However, it's important to note that the external libraries may not offer the same level of sophistication and fine-tuning as the built-in retry capabilities provided by the Effect library.
-
-Retry functionality allows you to automatically retry a computation or action when it fails, based on a set of predefined rules or policies. This can be particularly useful in scenarios where you are working with unreliable or unpredictable resources, such as network requests or external services.
-
-The Effect library provides a comprehensive set of retry policies that you can customize to fit your specific needs. These policies define the conditions for retrying a computation, such as the number of retries, the delay between retries, and the criteria for determining if a retry should be attempted.
-
-By leveraging the built-in retry functionality in the Effect library, you can handle transient errors or temporary failures in a more robust and resilient manner. This can help improve the overall reliability and stability of your applications, especially in scenarios where you need to interact with external systems or services.
-
-In contrast, fp-ts does not offer built-in support for retrying computations. If you require retry functionality in fp-ts, you would need to rely on external libraries, which may not provide the same level of sophistication and flexibility as the Effect library.
-
-It's worth noting that the built-in retry capabilities of the Effect library are designed to work seamlessly with its other features, such as error handling and resource management. This integration allows for a more cohesive and comprehensive approach to handling failures and retries within your computations.
-
-### Built-in Logging
-
-The Effect library comes with built-in logging capabilities. This means that you can easily incorporate logging into your applications without the need for additional libraries or dependencies. In addition, the default logger provided by Effect can be replaced with a custom logger to suit your specific logging requirements.
-
-Logging is an essential aspect of software development as it allows you to record and track important information during the execution of your code. It helps you monitor the behavior of your application, debug issues, and gather insights for analysis.
-
-With the built-in logging capabilities of the Effect library, you can easily log messages, warnings, errors, or any other relevant information at various points in your code. This can be particularly useful for tracking the flow of execution, identifying potential issues, or capturing important events during the operation of your application.
-
-On the other hand, fp-ts does not provide built-in logging capabilities. If you need logging functionality in fp-ts, you would need to rely on external libraries or implement your own logging solution from scratch. This can introduce additional complexity and dependencies into your codebase.
-
-### Built-in Scheduling
-
-The Effect library provides built-in scheduling capabilities, which allows you to manage the execution of computations over time. This feature is not available in fp-ts.
-
-In many applications, it's common to have tasks or computations that need to be executed at specific intervals or scheduled for future execution. For example, you might want to perform periodic data updates, trigger notifications, or run background processes at specific times. This is where built-in scheduling comes in handy.
-
-On the other hand, fp-ts does not have built-in scheduling capabilities. If you need to schedule tasks or manage timed computations in fp-ts, you would have to rely on external libraries or implement your own scheduling mechanisms, which can add complexity to your codebase.
-
-### Built-in Caching
-
-The Effect library provides built-in caching mechanisms, which enable you to cache the results of computations for improved performance. This feature is not available in fp-ts.
-
-In many applications, computations can be time-consuming or resource-intensive, especially when dealing with complex operations or accessing remote resources. Caching is a technique used to store the results of computations so that they can be retrieved quickly without the need to recompute them every time.
-
-With the built-in caching capabilities of the Effect library, you can easily cache the results of computations and reuse them when needed. This can significantly improve the performance of your application by avoiding redundant computations and reducing the load on external resources.
-
-### Built-in Batching
-
-The Effect library offers built-in batching capabilities, which enable you to combine multiple computations into a single batched computation. This feature is not available in fp-ts.
-
-In many scenarios, you may need to perform multiple computations that share similar inputs or dependencies. Performing these computations individually can result in inefficiencies and increased overhead. Batching is a technique that allows you to group these computations together and execute them as a single batch, improving performance and reducing unnecessary processing.
-
-### Metrics
-
-The Effect library includes built-in support for collecting and reporting metrics related to computations and system behavior. It specifically supports [OpenTelemetry Metrics](https://opentelemetry.io/docs/specs/otel/metrics/). This feature is not available in fp-ts.
-
-Metrics play a crucial role in understanding and monitoring the performance and behavior of your applications. They provide valuable insights into various aspects, such as response times, resource utilization, error rates, and more. By collecting and analyzing metrics, you can identify performance bottlenecks, optimize your code, and make informed decisions to improve your application's overall quality.
-
-### Tracing
-
-The Effect library has built-in tracing capabilities, which enable you to trace and debug the execution of your code and track the path of a request through an application. Additionally, Effect offers a dedicated [OpenTelemetry exporter](https://opentelemetry.io/docs/instrumentation/js/exporters/) for integrating with the OpenTelemetry observability framework. In contrast, fp-ts does not offer a similar tracing tool to enhance visibility into code execution.
-
-### Configuration
-
-The Effect library provides built-in support for managing and accessing configuration values within your computations. This feature is not available in fp-ts.
-
-Configuration values are an essential aspect of software development. They allow you to customize the behavior of your applications without modifying the code. Examples of configuration values include database connection strings, API endpoints, feature flags, and various settings that can vary between environments or deployments.
-
-With the Effect library's built-in support for configuration, you can easily manage and access these values within your computations. It provides convenient utilities and abstractions to load, validate, and access configuration values, ensuring that your application has the necessary settings it requires to function correctly.
-
-By leveraging the built-in configuration support in the Effect library, you can:
-
-- Load configuration values from various sources such as environment variables, configuration files, or remote configuration providers.
-- Validate and ensure that the loaded configuration values adhere to the expected format and structure.
-- Access the configuration values within your computations, allowing you to use them wherever necessary.
-
-### Immutable Data Structures
-
-The Effect library provides built-in support for immutable data structures such as `Chunk`, `HashSet`, and `HashMap`. These data structures ensure that once created, their values cannot be modified, promoting safer and more predictable code. In contrast, fp-ts does not have built-in support for such data structures and only provides modules that add additional APIs to standard data types like `Set` and `Map`. While these modules can be useful, they do not offer the same level of performance optimizations and specialized operations as the built-in immutable data structures provided by the Effect library.
-
-Immutable data structures offer several benefits, including:
-
-- Immutability: Immutable data structures cannot be changed after they are created. This property eliminates the risk of accidental modifications and enables safer concurrent programming.
-
-- Predictability: With immutable data structures, you can rely on the fact that their values won't change unexpectedly. This predictability simplifies reasoning about code behavior and reduces bugs caused by mutable state.
-
-- Sharing and Reusability: Immutable data structures can be safely shared between different parts of your program. Since they cannot be modified, you don't need to create defensive copies, resulting in more efficient memory usage and improved performance.
-
-### Stream Processing
-
-The Effect ecosystem provides built-in support for stream processing, enabling you to work with streams of data. Stream processing is a powerful concept that allows you to efficiently process and transform continuous streams of data in a reactive and asynchronous manner. However, fp-ts does not have this feature built-in and relies on external libraries like RxJS to handle stream processing.
-
-> additional-resources/coming-from-zio.mdx\n\n---
-title: Coming From ZIO
-description: Key differences between Effect and ZIO.
-sidebar:
-  order: 3
----
-
-If you are coming to Effect from ZIO, there are a few differences to be aware of.
-
-## Environment
-
-In Effect, we represent the environment required to run an effect workflow as a **union** of services:
-
-**Example** (Defining the Environment with a Union of Services)
-
-```ts twoslash "Console | Logger"
-import { Effect } from "effect"
-
-interface IOError {
-  readonly _tag: "IOError"
-}
-
-interface HttpError {
-  readonly _tag: "HttpError"
-}
-
-interface Console {
-  readonly log: (msg: string) => void
-}
-
-interface Logger {
-  readonly log: (msg: string) => void
-}
-
-type Response = Record<string, string>
-
-// `R` is a union of `Console` and `Logger`
-type Http = Effect.Effect<Response, IOError | HttpError, Console | Logger>
-```
-
-This may be confusing to folks coming from ZIO, where the environment is represented as an **intersection** of services:
-
-```scala showLineNumbers=false
-type Http = ZIO[Console with Logger, IOError, Response]
-```
-
-## Rationale
-
-The rationale for using a union to represent the environment required by an `Effect` workflow boils down to our desire to remove `Has` as a wrapper for services in the environment (similar to what was achieved in ZIO 2.0).
-
-To be able to remove `Has` from Effect, we had to think a bit more structurally given that TypeScript is a structural type system. In TypeScript, if you have a type `A & B` where there is a structural conflict between `A` and `B`, the type `A & B` will reduce to `never`.
-
-**Example** (Intersection Type Conflict)
-
-```ts twoslash
-interface A {
-  readonly prop: string
-}
-
-interface B {
-  readonly prop: number
-}
-
-const ab: A & B = {
-  // @ts-expect-error
-  prop: ""
-}
-/*
-Type 'string' is not assignable to type 'never'.ts(2322)
-*/
-```
-
-In previous versions of Effect, intersections were used for representing an environment with multiple services. The problem with using intersections (i.e. `A & B`) is that there could be multiple services in the environment that have functions and properties named in the same way. To remedy this, we wrapped services in the `Has` type (similar to ZIO 1.0), so you would have `Has<A> & Has<B>` in your environment.
-
-In ZIO 2.0, the _contravariant_ `R` type parameter of the `ZIO` type (representing the environment) became fully phantom, thus allowing for removal of the `Has` type. This significantly improved the clarity of type signatures as well as removing another "stumbling block" for new users.
-
-To facilitate removal of `Has` in Effect, we had to consider how types in the environment compose. By the rule of composition, contravariant parameters composed as an intersection (i.e. with `&`) are equivalent to covariant parameters composed together as a union (i.e. with `|`) for purposes of assignability. Based upon this fact, we decided to diverge from ZIO and make the `R` type parameter _covariant_ given `A | B` does not reduce to `never` if `A` and `B` have conflicts.
-
-From our example above:
-
-```ts twoslash
-interface A {
-  readonly prop: string
-}
-
-interface B {
-  readonly prop: number
-}
-
-// ok
-const ab: A | B = {
-  prop: ""
-}
-```
-
-Representing `R` as a covariant type parameter containing the union of services required by an `Effect` workflow allowed us to remove the requirement for `Has`.
-
-## Type Aliases
-
-In Effect, there are no predefined type aliases such as `UIO`, `URIO`, `RIO`, `Task`, or `IO` like in ZIO.
-
-The reason for this is that type aliases are lost as soon as you compose them, which renders them somewhat useless unless you maintain **multiple** signatures for **every** function. In Effect, we have chosen not to go down this path. Instead, we utilize the `never` type to indicate unused types.
-
-It's worth mentioning that the perception of type aliases being quicker to understand is often just an illusion. In Effect, the explicit notation `Effect<A>` clearly communicates that only type `A` is being used. On the other hand, when using a type alias like `RIO<R, A>`, questions arise about the type `E`. Is it `unknown`? `never`? Remembering such details becomes challenging.
-
-> additional-resources/myths.mdx\n\n---
-title: Myths About Effect
-description: Debunking common misconceptions about Effect's performance, complexity, and use cases.
-sidebar:
-  label: Myths
-  order: 1
----
-
-## Effect heavily relies on generators and generators are slow!
-
-Effect's internals are not built on generators, we only use generators to provide an API which closely mimics async-await. Internally async-await uses the same mechanics as generators and they are equally performant. So if you don't have a problem with async-await you won't have a problem with Effect's generators.
-
-Where generators and iterables are unacceptably slow is in transforming collections of data, for that try to use plain arrays as much as possible.
-
-## Effect will make your code 500x slower!
-
-Effect does perform 500x slower if you are comparing:
-
-```ts twoslash
-const result = 1 + 1
-```
-
-to
-
-```ts twoslash
-import { Effect } from "effect"
-
-const result = Effect.runSync(
-  Effect.zipWith(Effect.succeed(1), Effect.succeed(1), (a, b) => a + b)
-)
-```
-
-The reason is one operation is optimized by the JIT compiler to be a direct CPU instruction and the other isn't.
-
-In reality you'd never use Effect in such cases, Effect is an app-level library to tame concurrency, error handling, and much more!
-
-You'd use Effect to coordinate your thunks of code, and you can build your thunks of code in the best perfoming manner as you see fit while still controlling execution through Effect.
-
-## Effect has a huge performance overhead!
-
-Depends what you mean by performance, many times performance bottlenecks in JS are due to bad management of concurrency.
-
-Thanks to structured concurrency and observability it becomes much easier to spot and optimize those issues.
-
-There are apps in frontend running at 120fps that use Effect intensively, so most likely effect won't be your perf problem.
-
-In regards of memory, it doesn't use much more memory than a normal program would, there are a few more allocations compared to non Effect code but usually this is no longer the case when the non Effect code does the same thing as the Effect code.
-
-The advise would be start using it and monitor your code, optimise out of need not out of thought, optimizing too early is the root of all evils in software design.
-
-## The bundle size is HUGE!
-
-Effect's minimum cost is about 25k of gzipped code, that chunk contains the Effect Runtime and already includes almost all the functions that you'll need in a normal app-code scenario.
-
-From that point on Effect is tree-shaking friendly so you'll only include what you use.
-
-Also when using Effect your own code becomes shorter and terser, so the overall cost is amortized with usage, we have apps where adopting Effect in the majority of the codebase led to reduction of the final bundle.
-
-## Effect is impossible to learn, there are so many functions and modules!
-
-True, the full Effect ecosystem is quite large and some modules contain 1000s of functions, the reality is that you don't need to know them all to start being productive, you can safely start using Effect knowing just 10-20 functions and progressively discover the rest, just like you can start using TypeScript without knowing every single NPM package.
-
-A short list of commonly used functions to begin are:
-
-- [Effect.succeed](/docs/getting-started/creating-effects/#succeed)
-- [Effect.fail](/docs/getting-started/creating-effects/#fail)
-- [Effect.sync](/docs/getting-started/creating-effects/#sync)
-- [Effect.tryPromise](/docs/getting-started/creating-effects/#trypromise)
-- [Effect.gen](/docs/getting-started/using-generators/)
-- [Effect.runPromise](/docs/getting-started/running-effects/#runpromise)
-- [Effect.catchTag](/docs/error-management/expected-errors/#catchtag)
-- [Effect.catchAll](/docs/error-management/expected-errors/#catchall)
-- [Effect.acquireRelease](/docs/resource-management/scope/#acquirerelease)
-- [Effect.acquireUseRelease](/docs/resource-management/scope/#acquireuserelease)
-- [Effect.provide](/docs/requirements-management/layers/#providing-a-layer-to-an-effect)
-- [Effect.provideService](/docs/requirements-management/services/#providing-a-service-implementation)
-- [Effect.andThen](/docs/getting-started/building-pipelines/#andthen)
-- [Effect.map](/docs/getting-started/building-pipelines/#map)
-- [Effect.tap](/docs/getting-started/building-pipelines/#tap)
-
-A short list of commonly used modules:
-
-- [Effect](https://effect-ts.github.io/effect/effect/Effect.ts.html)
-- [Context](/docs/requirements-management/services/#creating-a-service)
-- [Layer](/docs/requirements-management/layers/)
-- [Option](/docs/data-types/option/)
-- [Either](/docs/data-types/either/)
-- [Array](https://effect-ts.github.io/effect/effect/Array.ts.html)
-- [Match](/docs/code-style/pattern-matching/)
-
-## Effect is the same as RxJS and shares its problems
-
-This is a sensitive topic, let's start by saying that RxJS is a great project and that it has helped millions of developers write reliable software and we all should be thankful to the developers who contributed to such an amazing project.
-
-Discussing the scope of the projects, RxJS aims to make working with Observables easy and wants to provide reactive extensions to JS, Effect instead wants to make writing production-grade TypeScript easy. While the intersection is non-empty the projects have fundamentally different objectives and strategies.
-
-Sometimes people refer to RxJS in bad light, and the reason isn't RxJS in itself but rather usage of RxJS in problem domains where RxJS wasn't thought to be used.
-
-Namely the idea that "everything is a stream" is theoretically true but it leads to fundamental limitations on developer experience, the primary issue being that streams are multi-shot (emit potentially multiple elements, or zero) and mutable delimited continuations (JS Generators) are known to be only good to represent single-shot effects (that emit a single value).
-
-In short it means that writing in imperative style (think of async/await) is practically impossible with stream primitives (practically because there would be the option of replaying the generator at every element and at every step, but this tends to be inefficient and the semantics of it are counter-intuitive, it would only work under the assumption that the full body is free of side-effects), forcing the developer to use declarative approaches such as pipe to represent all of their code.
-
-Effect has a Stream module (which is pull-based instead of push-based in order to be memory constant), but the basic Effect type is single-shot and it is optimised to act as a smart & lazy Promise that enables imperative programming, so when using Effect you're not forced to use a declarative style for everything and you can program using a model which is similar to async-await.
-
-The other big difference is that RxJS only cares about the happy-path with explicit types, it doesn't offer a way of typing errors and dependencies, Effect instead consider both errors and dependencies as explicitely typed and offers control-flow around those in a fully type-safe manner.
-
-In short if you need reactive programming around Observables, use RxJS, if you need to write production-grade TypeScript that includes by default native telemetry, error handling, dependency injection, and more use Effect.
-
-## Effect should be a language or Use a different language
-
-Neither solve the issue of writing production grade software in TypeScript.
-
-TypeScript is an amazing language to write full stack code with deep roots in the JS ecosystem and wide compatibility of tools, it is an industrial language adopted by many large scale companies.
-
-The fact that something like Effect is possible within the language and the fact that the language supports things such as generators that allows for imperative programming with custom types such as Effect makes TypeScript a unique language.
-
-In fact even in functional languages such as Scala the interop with effect systems is less optimal than it is in TypeScript, to the point that effect system authors have expressed wish for their language to support as much as TypeScript supports.
 
 > additional-resources/api-reference.mdx\n\n---
 title: API Reference
@@ -42158,1054 +40926,665 @@ long running task done
 */
 ```
 
-> testing/testclock.mdx\n\n---
-title: TestClock
-description: Control time during testing with Effect's TestClock, simulating time passage, delays, and recurring effects without waiting for real time.
+> scheduling/examples.mdx\n\n---
+title: Examples
+description: Explore practical examples for scheduling, retries, timeouts, and periodic task execution in Effect.
 sidebar:
-  order: 0
+  order: 5
 ---
 
-import { Aside } from "@astrojs/starlight/components"
+These examples demonstrate different approaches to handling timeouts, retries, and periodic execution using Effect. Each scenario ensures that the application remains responsive and resilient to failures while adapting dynamically to various conditions.
 
-In most cases, we want our unit tests to run as quickly as possible. Waiting for real time to pass can slow down our tests significantly. Effect provides a handy tool called `TestClock` that allows us to **control time during testing**. This means we can efficiently and predictably test code that involves time without having to wait for the actual time to pass.
+## Handling Timeouts and Retries for API Calls
 
-## How TestClock Works
+When calling third-party APIs, it is often necessary to enforce timeouts and implement retry mechanisms to handle transient failures. In this example, the API call retries up to two times in case of failure and will be interrupted if it takes longer than 4 seconds.
 
-Imagine `TestClock` as a wall clock that only moves forward when we adjust it manually using the `TestClock.adjust` and `TestClock.setTime` functions. The clock time does not progress on its own.
-
-When we adjust the clock time, any effects scheduled to run at or before that time will execute. This allows us to simulate time passage in tests without waiting for real time.
-
-**Example** (Simulating a Timeout with TestClock)
+**Example** (Retrying an API Call with a Timeout)
 
 ```ts twoslash
-import { Effect, TestClock, Fiber, Option, TestContext } from "effect"
-import * as assert from "node:assert"
-
-const test = Effect.gen(function* () {
-  // Create a fiber that sleeps for 5 minutes and then times out
-  // after 1 minute
-  const fiber = yield* Effect.sleep("5 minutes").pipe(
-    Effect.timeoutTo({
-      duration: "1 minute",
-      onSuccess: Option.some,
-      onTimeout: () => Option.none<void>()
-    }),
-    Effect.fork
-  )
-
-  // Adjust the TestClock by 1 minute to simulate the passage of time
-  yield* TestClock.adjust("1 minute")
-
-  // Get the result of the fiber
-  const result = yield* Fiber.join(fiber)
-
-  // Check if the result is None, indicating a timeout
-  assert.ok(Option.isNone(result))
-}).pipe(Effect.provide(TestContext.TestContext))
-
-Effect.runPromise(test)
-```
-
-A key point is forking the fiber where `Effect.sleep` is invoked. Calls to `Effect.sleep` and related methods wait until the clock time matches or exceeds the scheduled time for their execution. By forking the fiber, we retain control over the clock time adjustments.
-
-<Aside type="tip" title="Best Practices">
-  A recommended pattern when using the `TestClock` is to fork the effect
-  being tested, adjust the clock time as needed, and then verify that the
-  expected outcomes have occurred.
-</Aside>
-
-## Testing Recurring Effects
-
-Here's an example demonstrating how to test an effect that runs at fixed intervals using the `TestClock`:
-
-**Example** (Testing an Effect with Fixed Intervals)
-
-In this example, we test an effect that runs at regular intervals. An unbounded queue is used to manage the effects, and we verify the following:
-
-1. No effect occurs before the specified recurrence period.
-2. An effect occurs after the recurrence period.
-3. The effect executes exactly once.
-
-```ts twoslash
-import { Effect, Queue, TestClock, Option, TestContext } from "effect"
-import * as assert from "node:assert"
-
-const test = Effect.gen(function* () {
-  const q = yield* Queue.unbounded()
-
-  yield* Queue.offer(q, undefined).pipe(
-    // Delay the effect for 60 minutes and repeat it forever
-    Effect.delay("60 minutes"),
-    Effect.forever,
-    Effect.fork
-  )
-
-  // Check if no effect is performed before the recurrence period
-  const a = yield* Queue.poll(q).pipe(Effect.andThen(Option.isNone))
-
-  // Adjust the TestClock by 60 minutes to simulate the passage of time
-  yield* TestClock.adjust("60 minutes")
-
-  // Check if an effect is performed after the recurrence period
-  const b = yield* Queue.take(q).pipe(Effect.as(true))
-
-  // Check if the effect is performed exactly once
-  const c = yield* Queue.poll(q).pipe(Effect.andThen(Option.isNone))
-
-  // Adjust the TestClock by another 60 minutes
-  yield* TestClock.adjust("60 minutes")
-
-  // Check if another effect is performed
-  const d = yield* Queue.take(q).pipe(Effect.as(true))
-  const e = yield* Queue.poll(q).pipe(Effect.andThen(Option.isNone))
-
-  // Ensure that all conditions are met
-  assert.ok(a && b && c && d && e)
-}).pipe(Effect.provide(TestContext.TestContext))
-
-Effect.runPromise(test)
-```
-
-It's important to note that after each recurrence, the next occurrence is scheduled to happen at the appropriate time. Adjusting the clock by 60 minutes places exactly one value in the queue; adjusting by another 60 minutes adds another value.
-
-## Testing Clock
-
-This example demonstrates how to test the behavior of the `Clock` using the `TestClock`:
-
-**Example** (Simulating Time Passage with TestClock)
-
-```ts twoslash
-import { Effect, Clock, TestClock, TestContext } from "effect"
-import * as assert from "node:assert"
-
-const test = Effect.gen(function* () {
-  // Get the current time using the Clock
-  const startTime = yield* Clock.currentTimeMillis
-
-  // Adjust the TestClock by 1 minute to simulate the passage of time
-  yield* TestClock.adjust("1 minute")
-
-  // Get the current time again
-  const endTime = yield* Clock.currentTimeMillis
-
-  // Check if the time difference is at least
-  // 60,000 milliseconds (1 minute)
-  assert.ok(endTime - startTime >= 60_000)
-}).pipe(Effect.provide(TestContext.TestContext))
-
-Effect.runPromise(test)
-```
-
-## Testing Deferred
-
-The `TestClock` also impacts asynchronous code scheduled to run after a specific time.
-
-**Example** (Simulating Delayed Execution with Deferred and TestClock)
-
-```ts twoslash
-import { Effect, Deferred, TestClock, TestContext } from "effect"
-import * as assert from "node:assert"
-
-const test = Effect.gen(function* () {
-  // Create a deferred value
-  const deferred = yield* Deferred.make<number, void>()
-
-  // Run two effects concurrently: sleep for 10 seconds and succeed
-  // the deferred with a value of 1
-  yield* Effect.all(
-    [Effect.sleep("10 seconds"), Deferred.succeed(deferred, 1)],
-    { concurrency: "unbounded" }
-  ).pipe(Effect.fork)
-
-  // Adjust the TestClock by 10 seconds
-  yield* TestClock.adjust("10 seconds")
-
-  // Await the value from the deferred
-  const readRef = yield* Deferred.await(deferred)
-
-  // Verify the deferred value is correctly set
-  assert.ok(readRef === 1)
-}).pipe(Effect.provide(TestContext.TestContext))
-
-Effect.runPromise(test)
-```
-
-> behaviour/order.mdx\n\n---
-title: Order
-description: Compare, sort, and manage value ordering with customizable tools for TypeScript.
-sidebar:
-  order: 2
----
-
-The Order module provides a way to compare values and determine their order.
-It defines an interface `Order<A>` which represents a single function for comparing two values of type `A`.
-The function returns `-1`, `0`, or `1`, indicating whether the first value is less than, equal to, or greater than the second value.
-
-Here's the basic structure of an `Order`:
-
-```ts showLineNumbers=false
-interface Order<A> {
-  (first: A, second: A): -1 | 0 | 1
-}
-```
-
-## Using the Built-in Orders
-
-The Order module comes with several built-in comparators for common data types:
-
-| Order    | Description                        |
-| -------- | ---------------------------------- |
-| `string` | Used for comparing strings.        |
-| `number` | Used for comparing numbers.        |
-| `bigint` | Used for comparing big integers.   |
-| `Date`   | Used for comparing `Date` objects. |
-
-**Example** (Using Built-in Comparators)
-
-```ts twoslash
-import { Order } from "effect"
-
-console.log(Order.string("apple", "banana"))
-// Output: -1, as "apple" < "banana"
-
-console.log(Order.number(1, 1))
-// Output: 0, as 1 = 1
-
-console.log(Order.bigint(2n, 1n))
-// Output: 1, as 2n > 1n
-```
-
-## Sorting Arrays
-
-You can sort arrays using these comparators. The `Array` module offers a `sort` function that sorts arrays without altering the original one.
-
-**Example** (Sorting Arrays with `Order`)
-
-```ts twoslash
-import { Order, Array } from "effect"
-
-const strings = ["b", "a", "d", "c"]
-
-const result = Array.sort(strings, Order.string)
-
-console.log(strings) // Original array remains unchanged
-// Output: [ 'b', 'a', 'd', 'c' ]
-
-console.log(result) // Sorted array
-// Output: [ 'a', 'b', 'c', 'd' ]
-```
-
-You can also use an `Order` as a comparator with JavaScript's native `Array.sort` method, but keep in mind that this will modify the original array.
-
-**Example** (Using `Order` with Native `Array.prototype.sort`)
-
-```ts twoslash
-import { Order } from "effect"
-
-const strings = ["b", "a", "d", "c"]
-
-strings.sort(Order.string) // Modifies the original array
-
-console.log(strings)
-// Output: [ 'a', 'b', 'c', 'd' ]
-```
-
-## Deriving Orders
-
-For more complex data structures, you may need custom sorting rules. The Order module lets you derive new `Order` instances from existing ones with the `Order.mapInput` function.
-
-**Example** (Creating a Custom Order for Objects)
-
-Imagine you have a list of `Person` objects, and you want to sort them by their names in ascending order.
-To achieve this, you can create a custom `Order`.
-
-```ts twoslash
-import { Order } from "effect"
-
-// Define the Person interface
-interface Person {
-  readonly name: string
-  readonly age: number
-}
-
-// Create a custom order to sort Person objects by name in ascending order
-//
-//      ┌─── Order<Person>
-//      ▼
-const byName = Order.mapInput(
-  Order.string,
-  (person: Person) => person.name
-)
-```
-
-The `Order.mapInput` function takes two arguments:
-
-1. The existing `Order` you want to use as a base (`Order.string` in this case, for comparing strings).
-2. A function that extracts the value you want to use for sorting from your data structure (`(person: Person) => person.name` in this case).
-
-Once you have defined your custom `Order`, you can apply it to sort an array of `Person` objects:
-
-**Example** (Sorting Objects Using a Custom Order)
-
-```ts twoslash collapse={3-13}
-import { Order, Array } from "effect"
-
-// Define the Person interface
-interface Person {
-  readonly name: string
-  readonly age: number
-}
-
-// Create a custom order to sort Person objects by name in ascending order
-const byName = Order.mapInput(
-  Order.string,
-  (person: Person) => person.name
-)
-
-const persons: ReadonlyArray<Person> = [
-  { name: "Charlie", age: 22 },
-  { name: "Alice", age: 25 },
-  { name: "Bob", age: 30 }
-]
-
-// Sort persons array using the custom order
-const sortedPersons = Array.sort(persons, byName)
-
-console.log(sortedPersons)
-/*
-Output:
-[
-  { name: 'Alice', age: 25 },
-  { name: 'Bob', age: 30 },
-  { name: 'Charlie', age: 22 }
-]
-*/
-```
-
-## Combining Orders
-
-The Order module lets you combine multiple `Order` instances to create complex sorting rules. This is useful when sorting by multiple properties.
-
-**Example** (Sorting by Multiple Criteria)
-
-Imagine you have a list of people, each represented by an object with a `name` and an `age`. You want to sort this list first by name and then, for individuals with the same name, by age.
-
-```ts twoslash
-import { Order, Array } from "effect"
-
-// Define the Person interface
-interface Person {
-  readonly name: string
-  readonly age: number
-}
-
-// Create an Order to sort people by their names in ascending order
-const byName = Order.mapInput(
-  Order.string,
-  (person: Person) => person.name
-)
-
-// Create an Order to sort people by their ages in ascending order
-const byAge = Order.mapInput(Order.number, (person: Person) => person.age)
-
-// Combine orders to sort by name, then by age
-const byNameAge = Order.combine(byName, byAge)
-
-const result = Array.sort(
-  [
-    { name: "Bob", age: 20 },
-    { name: "Alice", age: 18 },
-    { name: "Bob", age: 18 }
-  ],
-  byNameAge
-)
-
-console.log(result)
-/*
-Output:
-[
-  { name: 'Alice', age: 18 }, // Sorted by name
-  { name: 'Bob', age: 18 },   // Sorted by age within the same name
-  { name: 'Bob', age: 20 }
-]
-*/
-```
-
-## Additional Useful Functions
-
-The Order module provides additional functions for common comparison operations, making it easier to work with ordered values.
-
-### Reversing Order
-
-`Order.reverse` inverts the order of comparison. If you have an `Order` for ascending values, reversing it makes it descending.
-
-**Example** (Reversing an Order)
-
-```ts twoslash
-import { Order } from "effect"
-
-const ascendingOrder = Order.number
-
-const descendingOrder = Order.reverse(ascendingOrder)
-
-console.log(ascendingOrder(1, 3))
-// Output: -1 (1 < 3 in ascending order)
-console.log(descendingOrder(1, 3))
-// Output: 1 (1 > 3 in descending order)
-```
-
-### Comparing Values
-
-These functions allow you to perform simple comparisons between values:
-
-| API                    | Description                                              |
-| ---------------------- | -------------------------------------------------------- |
-| `lessThan`             | Checks if one value is strictly less than another.       |
-| `greaterThan`          | Checks if one value is strictly greater than another.    |
-| `lessThanOrEqualTo`    | Checks if one value is less than or equal to another.    |
-| `greaterThanOrEqualTo` | Checks if one value is greater than or equal to another. |
-
-**Example** (Using Comparison Functions)
-
-```ts twoslash
-import { Order } from "effect"
-
-console.log(Order.lessThan(Order.number)(1, 2))
-// Output: true (1 < 2)
-
-console.log(Order.greaterThan(Order.number)(5, 3))
-// Output: true (5 > 3)
-
-console.log(Order.lessThanOrEqualTo(Order.number)(2, 2))
-// Output: true (2 <= 2)
-
-console.log(Order.greaterThanOrEqualTo(Order.number)(4, 4))
-// Output: true (4 >= 4)
-```
-
-### Finding Minimum and Maximum
-
-The `Order.min` and `Order.max` functions return the minimum or maximum value between two values, considering the order.
-
-**Example** (Finding Minimum and Maximum Numbers)
-
-```ts twoslash
-import { Order } from "effect"
-
-console.log(Order.min(Order.number)(3, 1))
-// Output: 1 (1 is the minimum)
-
-console.log(Order.max(Order.number)(5, 8))
-// Output: 8 (8 is the maximum)
-```
-
-### Clamping Values
-
-`Order.clamp` restricts a value within a given range. If the value is outside the range, it is adjusted to the nearest bound.
-
-**Example** (Clamping Numbers to a Range)
-
-```ts twoslash
-import { Order } from "effect"
-
-// Define a function to clamp numbers between 20 and 30
-const clampNumbers = Order.clamp(Order.number)({
-  minimum: 20,
-  maximum: 30
-})
-
-// Value 26 is within the range [20, 30], so it remains unchanged
-console.log(clampNumbers(26))
-// Output: 26
-
-// Value 10 is below the minimum bound, so it is clamped to 20
-console.log(clampNumbers(10))
-// Output: 20
-
-// Value 40 is above the maximum bound, so it is clamped to 30
-console.log(clampNumbers(40))
-// Output: 30
-```
-
-### Checking Value Range
-
-`Order.between` checks if a value falls within a specified inclusive range.
-
-**Example** (Checking if Numbers Fall Within a Range)
-
-```ts twoslash
-import { Order } from "effect"
-
-// Create a function to check if numbers are between 20 and 30
-const betweenNumbers = Order.between(Order.number)({
-  minimum: 20,
-  maximum: 30
-})
-
-// Value 26 falls within the range [20, 30], so it returns true
-console.log(betweenNumbers(26))
-// Output: true
-
-// Value 10 is below the minimum bound, so it returns false
-console.log(betweenNumbers(10))
-// Output: false
-
-// Value 40 is above the maximum bound, so it returns false
-console.log(betweenNumbers(40))
-// Output: false
-```
-
-> behaviour/equivalence.mdx\n\n---
-title: Equivalence
-description: Define and customize equivalence relations for TypeScript values.
-sidebar:
-  order: 0
----
-
-The Equivalence module provides a way to define equivalence relations between values in TypeScript. An equivalence relation is a binary relation that is reflexive, symmetric, and transitive, establishing a formal notion of when two values should be considered equivalent.
-
-## What is Equivalence?
-
-An `Equivalence<A>` represents a function that compares two values of type `A` and determines if they are equivalent. This is more flexible and customizable than simple equality checks using `===`.
-
-Here's the structure of an `Equivalence`:
-
-```ts showLineNumbers=false
-interface Equivalence<A> {
-  (self: A, that: A): boolean
-}
-```
-
-## Using Built-in Equivalences
-
-The module provides several built-in equivalence relations for common data types:
-
-| Equivalence | Description                                 |
-| ----------- | ------------------------------------------- |
-| `string`    | Uses strict equality (`===`) for strings    |
-| `number`    | Uses strict equality (`===`) for numbers    |
-| `boolean`   | Uses strict equality (`===`) for booleans   |
-| `symbol`    | Uses strict equality (`===`) for symbols    |
-| `bigint`    | Uses strict equality (`===`) for bigints    |
-| `Date`      | Compares `Date` objects by their timestamps |
-
-**Example** (Using Built-in Equivalences)
-
-```ts twoslash
-import { Equivalence } from "effect"
-
-console.log(Equivalence.string("apple", "apple"))
-// Output: true
-
-console.log(Equivalence.string("apple", "orange"))
-// Output: false
-
-console.log(Equivalence.Date(new Date(2023, 1, 1), new Date(2023, 1, 1)))
-// Output: true
-
-console.log(Equivalence.Date(new Date(2023, 1, 1), new Date(2023, 10, 1)))
-// Output: false
-```
-
-## Deriving Equivalences
-
-For more complex data structures, you may need custom equivalences. The Equivalence module lets you derive new `Equivalence` instances from existing ones with the `Equivalence.mapInput` function.
-
-**Example** (Creating a Custom Equivalence for Objects)
-
-```ts twoslash
-import { Equivalence } from "effect"
-
-interface User {
-  readonly id: number
-  readonly name: string
-}
-
-// Create an equivalence that compares User objects based only on the id
-const equivalence = Equivalence.mapInput(
-  Equivalence.number, // Base equivalence for comparing numbers
-  (user: User) => user.id // Function to extract the id from a User
-)
-
-// Compare two User objects: they are equivalent if their ids are the same
-console.log(equivalence({ id: 1, name: "Alice" }, { id: 1, name: "Al" }))
-// Output: true
-```
-
-The `Equivalence.mapInput` function takes two arguments:
-
-1. The existing `Equivalence` you want to use as a base (`Equivalence.number` in this case, for comparing numbers).
-2. A function that extracts the value used for the equivalence check from your data structure (`(user: User) => user.id` in this case).
-
-> code-style/pattern-matching.mdx\n\n---
-title: Pattern Matching
-description: Simplify complex branching with pattern matching using the Match module.
-sidebar:
-  order: 4
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-Pattern matching is a method that allows developers to handle intricate conditions within a single, concise expression. It simplifies code, making it more concise and easier to understand. Additionally, it includes a process called exhaustiveness checking, which helps to ensure that no possible case has been overlooked.
-
-Originating from functional programming languages, pattern matching stands as a powerful technique for code branching. It often offers a more potent and less verbose solution compared to imperative alternatives such as if/else or switch statements, particularly when dealing with complex conditions.
-
-Although not yet a native feature in JavaScript, there's an ongoing [tc39 proposal](https://github.com/tc39/proposal-pattern-matching) in its early stages to introduce pattern matching to JavaScript. However, this proposal is at stage 1 and might take several years to be implemented. Nonetheless, developers can implement pattern matching in their codebase. The `effect/Match` module provides a reliable, type-safe pattern matching implementation that is available for immediate use.
-
-**Example** (Handling Different Data Types with Pattern Matching)
-
-```ts twoslash
-import { Match } from "effect"
-
-// Simulated dynamic input that can be a string or a number
-const input: string | number = "some input"
-
-//      ┌─── string
-//      ▼
-const result = Match.value(input).pipe(
-  // Match if the value is a number
-  Match.when(Match.number, (n) => `number: ${n}`),
-  // Match if the value is a string
-  Match.when(Match.string, (s) => `string: ${s}`),
-  // Ensure all possible cases are covered
-  Match.exhaustive
-)
-
-console.log(result)
-// Output: "string: some input"
-```
-
-## How Pattern Matching Works
-
-Pattern matching follows a structured process:
-
-1. **Creating a matcher**.
-   Define a `Matcher` that operates on either a specific [type](#matching-by-type) or [value](#matching-by-value).
-
-2. **Defining patterns**.
-   Use combinators such as `Match.when`, `Match.not`, and `Match.tag` to specify matching conditions.
-
-3. **Completing the match**.
-   Apply a finalizer such as `Match.exhaustive`, `Match.orElse`, or `Match.option` to determine how unmatched cases should be handled.
-
-## Creating a matcher
-
-You can create a `Matcher` using either:
-
-- `Match.type<T>()`: Matches against a specific type.
-- `Match.value(value)`: Matches against a specific value.
-
-### Matching by Type
-
-The `Match.type` constructor defines a `Matcher` that operates on a specific type. Once created, you can use patterns like `Match.when` to define conditions for handling different cases.
-
-**Example** (Matching Numbers and Strings)
-
-```ts twoslash
-import { Match } from "effect"
-
-// Create a matcher for values that are either strings or numbers
-//
-//      ┌─── (u: string | number) => string
-//      ▼
-const match = Match.type<string | number>().pipe(
-  // Match when the value is a number
-  Match.when(Match.number, (n) => `number: ${n}`),
-  // Match when the value is a string
-  Match.when(Match.string, (s) => `string: ${s}`),
-  // Ensure all possible cases are handled
-  Match.exhaustive
-)
-
-console.log(match(0))
-// Output: "number: 0"
-
-console.log(match("hello"))
-// Output: "string: hello"
-```
-
-### Matching by Value
-
-Instead of creating a matcher for a type, you can define one directly from a specific value using `Match.value`.
-
-**Example** (Matching an Object by Property)
-
-```ts twoslash
-import { Match } from "effect"
-
-const input = { name: "John", age: 30 }
-
-// Create a matcher for the specific object
-const result = Match.value(input).pipe(
-  // Match when the 'name' property is "John"
-  Match.when(
-    { name: "John" },
-    (user) => `${user.name} is ${user.age} years old`
-  ),
-  // Provide a fallback if no match is found
-  Match.orElse(() => "Oh, not John")
-)
-
-console.log(result)
-// Output: "John is 30 years old"
-```
-
-### Enforcing a Return Type
-
-You can use `Match.withReturnType<T>()` to ensure that all branches return a specific type.
-
-**Example** (Validating Return Type Consistency)
-
-This example enforces that every matching branch returns a `string`.
-
-```ts twoslash
-import { Match } from "effect"
-
-const match = Match.type<{ a: number } | { b: string }>().pipe(
-  // Ensure all branches return a string
-  Match.withReturnType<string>(),
-  // ❌ Type error: 'number' is not assignable to type 'string'
-  // @ts-expect-error
-  Match.when({ a: Match.number }, (_) => _.a),
-  // ✅ Correct: returns a string
-  Match.when({ b: Match.string }, (_) => _.b),
-  Match.exhaustive
-)
-```
-
-<Aside type="note" title="Must Be First in the Pipeline">
-  The `Match.withReturnType<T>()` call must be the first instruction in the pipeline.
-  If placed later, TypeScript will not properly enforce return type consistency.
-</Aside>
-
-## Defining patterns
-
-### when
-
-The `Match.when` function allows you to define conditions for matching values. It supports both direct value comparisons and predicate functions.
-
-**Example** (Matching with Values and Predicates)
-
-```ts twoslash
-import { Match } from "effect"
-
-// Create a matcher for objects with an "age" property
-const match = Match.type<{ age: number }>().pipe(
-  // Match when age is greater than 18
-  Match.when({ age: (age) => age > 18 }, (user) => `Age: ${user.age}`),
-  // Match when age is exactly 18
-  Match.when({ age: 18 }, () => "You can vote"),
-  // Fallback case for all other ages
-  Match.orElse((user) => `${user.age} is too young`)
-)
-
-console.log(match({ age: 20 }))
-// Output: "Age: 20"
-
-console.log(match({ age: 18 }))
-// Output: "You can vote"
-
-console.log(match({ age: 4 }))
-// Output: "4 is too young"
-```
-
-### not
-
-The `Match.not` function allows you to exclude specific values while matching all others.
-
-**Example** (Ignoring a Specific Value)
-
-```ts twoslash
-import { Match } from "effect"
-
-// Create a matcher for string or number values
-const match = Match.type<string | number>().pipe(
-  // Match any value except "hi", returning "ok"
-  Match.not("hi", () => "ok"),
-  // Fallback case for when the value is "hi"
-  Match.orElse(() => "fallback")
-)
-
-console.log(match("hello"))
-// Output: "ok"
-
-console.log(match("hi"))
-// Output: "fallback"
-```
-
-### tag
-
-The `Match.tag` function allows pattern matching based on the `_tag` field in a [Discriminated Union](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes-func.html#discriminated-unions). You can specify multiple tags to match within a single pattern.
-
-**Example** (Matching a Discriminated Union by Tag)
-
-```ts twoslash
-import { Match } from "effect"
-
-type Event =
-  | { readonly _tag: "fetch" }
-  | { readonly _tag: "success"; readonly data: string }
-  | { readonly _tag: "error"; readonly error: Error }
-  | { readonly _tag: "cancel" }
-
-// Create a Matcher for Either<number, string>
-const match = Match.type<Event>().pipe(
-  // Match either "fetch" or "success"
-  Match.tag("fetch", "success", () => `Ok!`),
-  // Match "error" and extract the error message
-  Match.tag("error", (event) => `Error: ${event.error.message}`),
-  // Match "cancel"
-  Match.tag("cancel", () => "Cancelled"),
-  Match.exhaustive
-)
-
-console.log(match({ _tag: "success", data: "Hello" }))
-// Output: "Ok!"
-
-console.log(match({ _tag: "error", error: new Error("Oops!") }))
-// Output: "Error: Oops!"
-```
-
-<Aside type="caution" title="Tag Field Naming Convention">
-  The `Match.tag` function relies on the convention within the Effect
-  ecosystem of naming the tag field as `"_tag"`. Ensure that your
-  discriminated unions follow this naming convention for proper
-  functionality.
-</Aside>
-
-### Built-in Predicates
-
-The `Match` module provides built-in predicates for common types, such as `Match.number`, `Match.string`, and `Match.boolean`. These predicates simplify the process of matching against primitive types.
-
-**Example** (Using Built-in Predicates for Property Keys)
-
-```ts twoslash
-import { Match } from "effect"
-
-const matchPropertyKey = Match.type<PropertyKey>().pipe(
-  // Match when the value is a number
-  Match.when(Match.number, (n) => `Key is a number: ${n}`),
-  // Match when the value is a string
-  Match.when(Match.string, (s) => `Key is a string: ${s}`),
-  // Match when the value is a symbol
-  Match.when(Match.symbol, (s) => `Key is a symbol: ${String(s)}`),
-  // Ensure all possible cases are handled
-  Match.exhaustive
-)
-
-console.log(matchPropertyKey(42))
-// Output: "Key is a number: 42"
-
-console.log(matchPropertyKey("username"))
-// Output: "Key is a string: username"
-
-console.log(matchPropertyKey(Symbol("id")))
-// Output: "Key is a symbol: Symbol(id)"
-```
-
-| Predicate                 | Description                                                                   |
-| ------------------------- | ----------------------------------------------------------------------------- |
-| `Match.string`            | Matches values of type `string`.                                              |
-| `Match.nonEmptyString`    | Matches non-empty strings.                                                    |
-| `Match.number`            | Matches values of type `number`.                                              |
-| `Match.boolean`           | Matches values of type `boolean`.                                             |
-| `Match.bigint`            | Matches values of type `bigint`.                                              |
-| `Match.symbol`            | Matches values of type `symbol`.                                              |
-| `Match.date`              | Matches values that are instances of `Date`.                                  |
-| `Match.record`            | Matches objects where keys are `string` or `symbol` and values are `unknown`. |
-| `Match.null`              | Matches the value `null`.                                                     |
-| `Match.undefined`         | Matches the value `undefined`.                                                |
-| `Match.defined`           | Matches any defined (non-null and non-undefined) value.                       |
-| `Match.any`               | Matches any value without restrictions.                                       |
-| `Match.is(...values)`     | Matches a specific set of literal values (e.g., `Match.is("a", 42, true)`).   |
-| `Match.instanceOf(Class)` | Matches instances of a given class.                                           |
-
-## Completing the match
-
-### exhaustive
-
-The `Match.exhaustive` method finalizes the pattern matching process by ensuring that all possible cases are accounted for. If any case is missing, TypeScript will produce a type error. This is particularly useful when working with unions, as it helps prevent unintended gaps in pattern matching.
-
-**Example** (Ensuring All Cases Are Covered)
-
-```ts twoslash
-import { Match } from "effect"
-
-// Create a matcher for string or number values
-const match = Match.type<string | number>().pipe(
-  // Match when the value is a number
-  Match.when(Match.number, (n) => `number: ${n}`),
-  // Mark the match as exhaustive, ensuring all cases are handled
-  // TypeScript will throw an error if any case is missing
-  // @ts-expect-error Type 'string' is not assignable to type 'never'
-  Match.exhaustive
-)
-```
-
-### orElse
-
-The `Match.orElse` method defines a fallback value to return when no other patterns match. This ensures that the matcher always produces a valid result.
-
-**Example** (Providing a Default Value When No Patterns Match)
-
-```ts twoslash
-import { Match } from "effect"
-
-// Create a matcher for string or number values
-const match = Match.type<string | number>().pipe(
-  // Match when the value is "a"
-  Match.when("a", () => "ok"),
-  // Fallback when no patterns match
-  Match.orElse(() => "fallback")
-)
-
-console.log(match("a"))
-// Output: "ok"
-
-console.log(match("b"))
-// Output: "fallback"
-```
-
-### option
-
-`Match.option` wraps the match result in an [Option](/docs/data-types/option/). If a match is found, it returns `Some(value)`, otherwise, it returns `None`.
-
-**Example** (Extracting a User Role with Option)
-
-```ts twoslash
-import { Match } from "effect"
-
-type User = { readonly role: "admin" | "editor" | "viewer" }
-
-// Create a matcher to extract user roles
-const getRole = Match.type<User>().pipe(
-  Match.when({ role: "admin" }, () => "Has full access"),
-  Match.when({ role: "editor" }, () => "Can edit content"),
-  Match.option // Wrap the result in an Option
-)
-
-console.log(getRole({ role: "admin" }))
-// Output: { _id: 'Option', _tag: 'Some', value: 'Has full access' }
-
-console.log(getRole({ role: "viewer" }))
-// Output: { _id: 'Option', _tag: 'None' }
-```
-
-### either
-
-The `Match.either` method wraps the result in an [Either](/docs/data-types/either/), providing a structured way to distinguish between matched and unmatched cases. If a match is found, it returns `Right(value)`, otherwise, it returns `Left(no match)`.
-
-**Example** (Extracting a User Role with Either)
-
-```ts twoslash
-import { Match } from "effect"
-
-type User = { readonly role: "admin" | "editor" | "viewer" }
-
-// Create a matcher to extract user roles
-const getRole = Match.type<User>().pipe(
-  Match.when({ role: "admin" }, () => "Has full access"),
-  Match.when({ role: "editor" }, () => "Can edit content"),
-  Match.either // Wrap the result in an Either
-)
-
-console.log(getRole({ role: "admin" }))
-// Output: { _id: 'Either', _tag: 'Right', right: 'Has full access' }
-
-console.log(getRole({ role: "viewer" }))
-// Output: { _id: 'Either', _tag: 'Left', left: { role: 'viewer' } }
-```
-
-> code-style/guidelines.mdx\n\n---
-title: Guidelines
-description: Best practices for running Effect applications and ensuring safe, explicit coding styles.
-sidebar:
-  order: 1
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-## Using runMain
-
-In Effect, `runMain` is the primary entry point for executing an Effect application on Node.js.
-
-**Example** (Running an Effect Application with Graceful Teardown)
-
-```ts
-import { Effect, Console, Schedule, pipe } from "effect"
-import { NodeRuntime } from "@effect/platform-node"
-
-const program = pipe(
-  Effect.addFinalizer(() => Console.log("Application is about to exit!")),
-  Effect.andThen(Console.log("Application started!")),
-  Effect.andThen(
-    Effect.repeat(Console.log("still alive..."), {
-      schedule: Schedule.spaced("1 second")
+import { Console, Effect } from "effect"
+
+// Function to make the API call
+const getJson = (url: string) =>
+  Effect.tryPromise(() =>
+    fetch(url).then((res) => {
+      if (!res.ok) {
+        console.log("error")
+        throw new Error(res.statusText)
+      }
+      console.log("ok")
+      return res.json() as unknown
     })
-  ),
-  Effect.scoped
-)
+  )
 
-// No graceful teardown on CTRL+C
-// Effect.runPromise(program)
+// Program that retries the API call twice, times out after 4 seconds,
+// and logs errors
+const program = (url: string) =>
+  getJson(url).pipe(
+    Effect.retry({ times: 2 }),
+    Effect.timeout("4 seconds"),
+    Effect.catchAll(Console.error)
+  )
 
-// Use NodeRuntime.runMain for graceful teardown on CTRL+C
-NodeRuntime.runMain(program)
+// Test case: successful API response
+Effect.runFork(program("https://dummyjson.com/products/1?delay=1000"))
 /*
 Output:
-Application started!
-still alive...
-still alive...
-still alive...
-still alive...
-^C <-- CTRL+C
-Application is about to exit!
+ok
+*/
+
+// Test case: API call exceeding timeout limit
+Effect.runFork(program("https://dummyjson.com/products/1?delay=5000"))
+/*
+Output:
+TimeoutException: Operation timed out before the specified duration of '4s' elapsed
+*/
+
+// Test case: API returning an error response
+Effect.runFork(program("https://dummyjson.com/auth/products/1?delay=500"))
+/*
+Output:
+error
+error
+error
+UnknownException: An unknown error occurred
 */
 ```
 
-The `runMain` function handles finding and interrupting all fibers. Internally, it observes the fiber and listens for `sigint` signals, ensuring a graceful shutdown of the application when interrupted (e.g., using CTRL+C).
+## Retrying API Calls Based on Specific Errors
 
-<Aside type="tip" title="Graceful Teardown">
-  Ensure the teardown logic is placed in the main effect. If the fiber
-  running the application or server is interrupted, `runMain` ensures that
-  all resources are properly released.
-</Aside>
+Sometimes, retries should only happen for certain error conditions. For example, if an API call fails with a `401 Unauthorized` response, retrying might make sense, while a `404 Not Found` error should not trigger a retry.
 
-### Versions for Different Platforms
+**Example** (Retrying Only on Specific Error Codes)
 
-Effect provides versions of `runMain` tailored for different platforms:
+```ts twoslash
+import { Console, Effect } from "effect"
 
-| Platform | Runtime Version          | Import Path                |
-| -------- | ------------------------ | -------------------------- |
-| Node.js  | `NodeRuntime.runMain`    | `@effect/platform-node`    |
-| Bun      | `BunRuntime.runMain`     | `@effect/platform-bun`     |
-| Browser  | `BrowserRuntime.runMain` | `@effect/platform-browser` |
+// Custom error class for handling status codes
+class Err extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message)
+  }
+}
 
-## Avoid Tacit Usage
+// Function to make the API call
+const getJson = (url: string) =>
+  Effect.tryPromise({
+    try: () =>
+      fetch(url).then((res) => {
+        if (!res.ok) {
+          console.log(res.status)
+          throw new Err(res.statusText, res.status)
+        }
+        return res.json() as unknown
+      }),
+    catch: (e) => e as Err
+  })
 
-Avoid using tacit (point-free) function calls, such as `Effect.map(fn)`, or using `flow` from the `effect/Function` module.
+// Program that retries only when the error status is 401 (Unauthorized)
+const program = (url: string) =>
+  getJson(url).pipe(
+    Effect.retry({ while: (err) => err.status === 401 }),
+    Effect.catchAll(Console.error)
+  )
 
-In Effect, it's generally safer to write functions explicitly:
+// Test case: API returns 401 (triggers multiple retries)
+Effect.runFork(
+  program("https://dummyjson.com/auth/products/1?delay=1000")
+)
+/*
+Output:
+401
+401
+401
+401
+...
+*/
 
-```ts showLineNumbers=false
-Effect.map((x) => fn(x))
+// Test case: API returns 404 (no retries)
+Effect.runFork(program("https://dummyjson.com/-"))
+/*
+Output:
+404
+Err [Error]: Not Found
+*/
 ```
 
-rather than in a point-free style:
+## Retrying with Dynamic Delays Based on Error Information
 
-```ts showLineNumbers=false
-Effect.map(fn)
+Some API errors, such as `429 Too Many Requests`, include a `Retry-After` header that specifies how long to wait before retrying. Instead of using a fixed delay, we can dynamically adjust the retry interval based on this value.
+
+**Example** (Using the `Retry-After` Header for Retry Delays)
+
+This approach ensures that the retry delay adapts dynamically to the server's response, preventing unnecessary retries while respecting the provided `Retry-After` value.
+
+```ts twoslash
+import { Duration, Effect, Schedule } from "effect"
+
+// Custom error class representing a "Too Many Requests" response
+class TooManyRequestsError {
+  readonly _tag = "TooManyRequestsError"
+  constructor(readonly retryAfter: number) {}
+}
+
+let n = 1
+const request = Effect.gen(function* () {
+  // Simulate failing a particular number of times
+  if (n < 3) {
+    const retryAfter = n * 500
+    console.log(`Attempt #${n++}, retry after ${retryAfter} millis...`)
+    // Simulate retrieving the retry-after header
+    return yield* Effect.fail(new TooManyRequestsError(retryAfter))
+  }
+  console.log("Done")
+  return "some result"
+})
+
+// Retry policy that extracts the retry delay from the error
+const policy = Schedule.identity<TooManyRequestsError>().pipe(
+  Schedule.addDelay((error) =>
+    error._tag === "TooManyRequestsError"
+      ? // Wait for the specified retry-after duration
+        Duration.millis(error.retryAfter)
+      : Duration.zero
+  ),
+  // Limit retries to 5 attempts
+  Schedule.intersect(Schedule.recurs(5))
+)
+
+const program = request.pipe(Effect.retry(policy))
+
+Effect.runFork(program)
+/*
+Output:
+Attempt #1, retry after 500 millis...
+Attempt #2, retry after 1000 millis...
+Done
+*/
 ```
 
-While tacit functions may be appealing for their brevity, they can introduce a number of problems:
+## Running Periodic Tasks Until Another Task Completes
 
-- Using tacit functions, particularly when dealing with optional parameters, can be unsafe. For example, if a function has overloads, writing it in a tacit style may erase all generics, resulting in bugs. Check out this X thread for more details: [link to thread](https://twitter.com/MichaelArnaldi/status/1670715270845935616).
+There are cases where we need to repeatedly perform an action at fixed intervals until another longer-running task finishes. This pattern is common in polling mechanisms or periodic logging.
 
-- Tacit usage can also compromise TypeScript's ability to infer types, potentially causing unexpected errors. This isn't just a matter of style but a way to avoid subtle mistakes that can arise from type inference issues.
+**Example** (Running a Scheduled Task Until Completion)
 
-- Additionally, stack traces might not be as clear when tacit usage is employed.
+```ts twoslash
+import { Effect, Console, Schedule } from "effect"
 
-Avoiding tacit usage is a simple precaution that makes your code more reliable.
+// Define a long-running effect
+// (e.g., a task that takes 5 seconds to complete)
+const longRunningEffect = Console.log("done").pipe(
+  Effect.delay("5 seconds")
+)
+
+// Define an action to run periodically
+const action = Console.log("action...")
+
+// Define a fixed interval schedule
+const schedule = Schedule.fixed("1.5 seconds")
+
+// Run the action repeatedly until the long-running task completes
+const program = Effect.race(
+  Effect.repeat(action, schedule),
+  longRunningEffect
+)
+
+Effect.runPromise(program)
+/*
+Output:
+action...
+action...
+action...
+action...
+done
+*/
+```
+
+> scheduling/schedule-combinators.mdx\n\n---
+title: Schedule Combinators
+description: Learn how to combine and customize schedules in Effect to create complex recurrence patterns, including union, intersection, sequencing, and more.
+sidebar:
+  order: 3
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+Schedules define stateful, possibly effectful, recurring schedules of events, and compose in a variety of ways. Combinators allow us to take schedules and combine them together to get other schedules.
+
+To demonstrate the functionality of different schedules, we will use the following helper function
+that logs each repetition along with the corresponding delay in milliseconds, formatted as:
+
+```text showLineNumbers=false
+#<repetition>: <delay in ms>
+```
+
+**Helper** (Logging Execution Delays)
+
+```ts twoslash
+import { Array, Chunk, Duration, Effect, Schedule } from "effect"
+
+const log = (
+  schedule: Schedule.Schedule<unknown>,
+  delay: Duration.DurationInput = 0
+): void => {
+  const maxRecurs = 10 // Limit the number of executions
+  const delays = Chunk.toArray(
+    Effect.runSync(
+      Schedule.run(
+        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
+        Date.now(),
+        Array.range(0, maxRecurs)
+      )
+    )
+  )
+  delays.forEach((duration, i) => {
+    console.log(
+      i === maxRecurs
+        ? "..." // Indicate truncation if there are more executions
+        : i === delays.length - 1
+        ? "(end)" // Mark the last execution
+        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
+    )
+  })
+}
+```
+
+## Composition
+
+Schedules can be composed in different ways:
+
+| Mode             | Description                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------- |
+| **Union**        | Combines two schedules and recurs if either schedule wants to continue, using the shorter delay.   |
+| **Intersection** | Combines two schedules and recurs only if both schedules want to continue, using the longer delay. |
+| **Sequencing**   | Combines two schedules by running the first one fully, then switching to the second.               |
+
+### Union
+
+Combines two schedules and recurs if either schedule wants to continue, using the shorter delay.
+
+**Example** (Combining Exponential and Spaced Intervals)
+
+```ts twoslash collapse={3-26}
+import { Array, Chunk, Duration, Effect, Schedule } from "effect"
+
+const log = (
+  schedule: Schedule.Schedule<unknown>,
+  delay: Duration.DurationInput = 0
+): void => {
+  const maxRecurs = 10
+  const delays = Chunk.toArray(
+    Effect.runSync(
+      Schedule.run(
+        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
+        Date.now(),
+        Array.range(0, maxRecurs)
+      )
+    )
+  )
+  delays.forEach((duration, i) => {
+    console.log(
+      i === maxRecurs
+        ? "..."
+        : i === delays.length - 1
+        ? "(end)"
+        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
+    )
+  })
+}
+
+const schedule = Schedule.union(
+  Schedule.exponential("100 millis"),
+  Schedule.spaced("1 second")
+)
+
+log(schedule)
+/*
+Output:
+#1: 100ms  < exponential
+#2: 200ms
+#3: 400ms
+#4: 800ms
+#5: 1000ms < spaced
+#6: 1000ms
+#7: 1000ms
+#8: 1000ms
+#9: 1000ms
+#10: 1000ms
+...
+*/
+```
+
+The `Schedule.union` operator selects the shortest delay at each step, so when combining an exponential schedule with a spaced interval, the initial recurrences will follow the exponential backoff, then settle into the spaced interval once the delays exceed that value.
+
+### Intersection
+
+Combines two schedules and recurs only if both schedules want to continue, using the longer delay.
+
+**Example** (Limiting Exponential Backoff with a Fixed Number of Retries)
+
+```ts twoslash collapse={3-26}
+import { Array, Chunk, Duration, Effect, Schedule } from "effect"
+
+const log = (
+  schedule: Schedule.Schedule<unknown>,
+  delay: Duration.DurationInput = 0
+): void => {
+  const maxRecurs = 10
+  const delays = Chunk.toArray(
+    Effect.runSync(
+      Schedule.run(
+        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
+        Date.now(),
+        Array.range(0, maxRecurs)
+      )
+    )
+  )
+  delays.forEach((duration, i) => {
+    console.log(
+      i === maxRecurs
+        ? "..."
+        : i === delays.length - 1
+        ? "(end)"
+        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
+    )
+  })
+}
+
+const schedule = Schedule.intersect(
+  Schedule.exponential("10 millis"),
+  Schedule.recurs(5)
+)
+
+log(schedule)
+/*
+Output:
+#1: 10ms  < exponential
+#2: 20ms
+#3: 40ms
+#4: 80ms
+#5: 160ms
+(end)     < recurs
+*/
+```
+
+The `Schedule.intersect` operator enforces both schedules' constraints. In this example, the schedule follows an exponential backoff but stops after 5 recurrences due to the `Schedule.recurs(5)` limit.
+
+### Sequencing
+
+Combines two schedules by running the first one fully, then switching to the second.
+
+**Example** (Switching from Fixed Retries to Periodic Execution)
+
+```ts twoslash collapse={3-26}
+import { Array, Chunk, Duration, Effect, Schedule } from "effect"
+
+const log = (
+  schedule: Schedule.Schedule<unknown>,
+  delay: Duration.DurationInput = 0
+): void => {
+  const maxRecurs = 10
+  const delays = Chunk.toArray(
+    Effect.runSync(
+      Schedule.run(
+        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
+        Date.now(),
+        Array.range(0, maxRecurs)
+      )
+    )
+  )
+  delays.forEach((duration, i) => {
+    console.log(
+      i === maxRecurs
+        ? "..."
+        : i === delays.length - 1
+        ? "(end)"
+        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
+    )
+  })
+}
+
+const schedule = Schedule.andThen(
+  Schedule.recurs(5),
+  Schedule.spaced("1 second")
+)
+
+log(schedule)
+/*
+Output:
+#1: 0ms    < recurs
+#2: 0ms
+#3: 0ms
+#4: 0ms
+#5: 0ms
+#6: 1000ms < spaced
+#7: 1000ms
+#8: 1000ms
+#9: 1000ms
+#10: 1000ms
+...
+*/
+```
+
+The first schedule runs until completion, after which the second schedule takes over. In this example, the effect initially executes 5 times with no delay, then continues every 1 second.
+
+## Adding Randomness to Retry Delays
+
+The `Schedule.jittered` combinator modifies a schedule by applying a random delay within a specified range.
+
+When a resource is out of service due to overload or contention, retrying and backing off doesn't help us. If all failed API calls are backed off to the same point of time, they cause another overload or contention. Jitter adds some amount of randomness to the delay of the schedule. This helps us to avoid ending up accidentally synchronizing and taking the service down by accident.
+
+[Research](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/) suggests that `Schedule.jittered(0.0, 1.0)` is an effective way to introduce randomness in retries.
+
+**Example** (Jittered Exponential Backoff)
+
+```ts twoslash collapse={3-26}
+import { Array, Chunk, Duration, Effect, Schedule } from "effect"
+
+const log = (
+  schedule: Schedule.Schedule<unknown>,
+  delay: Duration.DurationInput = 0
+): void => {
+  const maxRecurs = 10
+  const delays = Chunk.toArray(
+    Effect.runSync(
+      Schedule.run(
+        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
+        Date.now(),
+        Array.range(0, maxRecurs)
+      )
+    )
+  )
+  delays.forEach((duration, i) => {
+    console.log(
+      i === maxRecurs
+        ? "..."
+        : i === delays.length - 1
+        ? "(end)"
+        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
+    )
+  })
+}
+
+const schedule = Schedule.jittered(Schedule.exponential("10 millis"))
+
+log(schedule)
+/*
+Output:
+#1: 10.448486ms
+#2: 21.134521ms
+#3: 47.245117ms
+#4: 88.263184ms
+#5: 163.651367ms
+#6: 335.818848ms
+#7: 719.126709ms
+#8: 1266.18457ms
+#9: 2931.252441ms
+#10: 6121.593018ms
+...
+*/
+```
+
+The `Schedule.jittered` combinator introduces randomness to delays within a range. For example, applying jitter to an exponential backoff ensures that each retry occurs at a slightly different time, reducing the risk of overwhelming the system.
+
+## Controlling Repetitions with Filters
+
+You can use `Schedule.whileInput` or `Schedule.whileOutput` to limit how long a schedule continues based on conditions applied to its input or output.
+
+**Example** (Stopping Based on Output)
+
+```ts twoslash collapse={3-26}
+import { Array, Chunk, Duration, Effect, Schedule } from "effect"
+
+const log = (
+  schedule: Schedule.Schedule<unknown>,
+  delay: Duration.DurationInput = 0
+): void => {
+  const maxRecurs = 10
+  const delays = Chunk.toArray(
+    Effect.runSync(
+      Schedule.run(
+        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
+        Date.now(),
+        Array.range(0, maxRecurs)
+      )
+    )
+  )
+  delays.forEach((duration, i) => {
+    console.log(
+      i === maxRecurs
+        ? "..."
+        : i === delays.length - 1
+        ? "(end)"
+        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
+    )
+  })
+}
+
+const schedule = Schedule.whileOutput(Schedule.recurs(5), (n) => n <= 2)
+
+log(schedule)
+/*
+Output:
+#1: 0ms < recurs
+#2: 0ms
+#3: 0ms
+(end)   < whileOutput
+*/
+```
+
+`Schedule.whileOutput` filters repetitions based on the output of the schedule. In this example, the schedule stops once the output exceeds `2`, even though `Schedule.recurs(5)` allows up to 5 repetitions.
+
+## Adjusting Delays Based on Output
+
+The `Schedule.modifyDelay` combinator allows you to dynamically change the delay of a schedule based on the number of repetitions or other output conditions.
+
+**Example** (Reducing Delay After a Certain Number of Repetitions)
+
+```ts twoslash collapse={3-26}
+import { Array, Chunk, Duration, Effect, Schedule } from "effect"
+
+const log = (
+  schedule: Schedule.Schedule<unknown>,
+  delay: Duration.DurationInput = 0
+): void => {
+  const maxRecurs = 10
+  const delays = Chunk.toArray(
+    Effect.runSync(
+      Schedule.run(
+        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
+        Date.now(),
+        Array.range(0, maxRecurs)
+      )
+    )
+  )
+  delays.forEach((duration, i) => {
+    console.log(
+      i === maxRecurs
+        ? "..."
+        : i === delays.length - 1
+        ? "(end)"
+        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
+    )
+  })
+}
+
+const schedule = Schedule.modifyDelay(
+  Schedule.spaced("1 second"),
+  (out, duration) => (out > 2 ? "100 millis" : duration)
+)
+
+log(schedule)
+/*
+Output:
+#1: 1000ms
+#2: 1000ms
+#3: 1000ms
+#4: 100ms  < modifyDelay
+#5: 100ms
+#6: 100ms
+#7: 100ms
+#8: 100ms
+#9: 100ms
+#10: 100ms
+...
+*/
+```
+
+The delay modification applies dynamically during execution. In this example, the first three repetitions follow the original `1-second` spacing. After that, the delay drops to `100 milliseconds`, making subsequent repetitions occur more frequently.
+
+## Tapping
+
+`Schedule.tapInput` and `Schedule.tapOutput` allow you to perform additional effectful operations on a schedule's input or output without modifying its behavior.
+
+**Example** (Logging Schedule Outputs)
+
+```ts twoslash collapse={3-26}
+import { Array, Chunk, Duration, Effect, Schedule, Console } from "effect"
+
+const log = (
+  schedule: Schedule.Schedule<unknown>,
+  delay: Duration.DurationInput = 0
+): void => {
+  const maxRecurs = 10
+  const delays = Chunk.toArray(
+    Effect.runSync(
+      Schedule.run(
+        Schedule.delays(Schedule.addDelay(schedule, () => delay)),
+        Date.now(),
+        Array.range(0, maxRecurs)
+      )
+    )
+  )
+  delays.forEach((duration, i) => {
+    console.log(
+      i === maxRecurs
+        ? "..."
+        : i === delays.length - 1
+        ? "(end)"
+        : `#${i + 1}: ${Duration.toMillis(duration)}ms`
+    )
+  })
+}
+
+const schedule = Schedule.tapOutput(Schedule.recurs(2), (n) =>
+  Console.log(`Schedule Output: ${n}`)
+)
+
+log(schedule)
+/*
+Output:
+Schedule Output: 0
+Schedule Output: 1
+Schedule Output: 2
+#1: 0ms
+#2: 0ms
+(end)
+*/
+```
+
+`Schedule.tapOutput` runs an effect before each recurrence, using the schedule's current output as input. This can be useful for logging, debugging, or triggering side effects.
 
 > code-style/branded-types.mdx\n\n---
 title: Branded Types
@@ -43882,6 +42261,1048 @@ some task
 Within the generator, we use `yield*` to invoke effects and bind their results to variables. This eliminates the nesting and provides a more readable and sequential code structure.
 
 The generator style in Effect uses a more linear and sequential flow of execution, resembling traditional imperative programming languages. This makes the code easier to read and understand, especially for developers who are more familiar with imperative programming paradigms.
+
+> code-style/pattern-matching.mdx\n\n---
+title: Pattern Matching
+description: Simplify complex branching with pattern matching using the Match module.
+sidebar:
+  order: 4
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+Pattern matching is a method that allows developers to handle intricate conditions within a single, concise expression. It simplifies code, making it more concise and easier to understand. Additionally, it includes a process called exhaustiveness checking, which helps to ensure that no possible case has been overlooked.
+
+Originating from functional programming languages, pattern matching stands as a powerful technique for code branching. It often offers a more potent and less verbose solution compared to imperative alternatives such as if/else or switch statements, particularly when dealing with complex conditions.
+
+Although not yet a native feature in JavaScript, there's an ongoing [tc39 proposal](https://github.com/tc39/proposal-pattern-matching) in its early stages to introduce pattern matching to JavaScript. However, this proposal is at stage 1 and might take several years to be implemented. Nonetheless, developers can implement pattern matching in their codebase. The `effect/Match` module provides a reliable, type-safe pattern matching implementation that is available for immediate use.
+
+**Example** (Handling Different Data Types with Pattern Matching)
+
+```ts twoslash
+import { Match } from "effect"
+
+// Simulated dynamic input that can be a string or a number
+const input: string | number = "some input"
+
+//      ┌─── string
+//      ▼
+const result = Match.value(input).pipe(
+  // Match if the value is a number
+  Match.when(Match.number, (n) => `number: ${n}`),
+  // Match if the value is a string
+  Match.when(Match.string, (s) => `string: ${s}`),
+  // Ensure all possible cases are covered
+  Match.exhaustive
+)
+
+console.log(result)
+// Output: "string: some input"
+```
+
+## How Pattern Matching Works
+
+Pattern matching follows a structured process:
+
+1. **Creating a matcher**.
+   Define a `Matcher` that operates on either a specific [type](#matching-by-type) or [value](#matching-by-value).
+
+2. **Defining patterns**.
+   Use combinators such as `Match.when`, `Match.not`, and `Match.tag` to specify matching conditions.
+
+3. **Completing the match**.
+   Apply a finalizer such as `Match.exhaustive`, `Match.orElse`, or `Match.option` to determine how unmatched cases should be handled.
+
+## Creating a matcher
+
+You can create a `Matcher` using either:
+
+- `Match.type<T>()`: Matches against a specific type.
+- `Match.value(value)`: Matches against a specific value.
+
+### Matching by Type
+
+The `Match.type` constructor defines a `Matcher` that operates on a specific type. Once created, you can use patterns like `Match.when` to define conditions for handling different cases.
+
+**Example** (Matching Numbers and Strings)
+
+```ts twoslash
+import { Match } from "effect"
+
+// Create a matcher for values that are either strings or numbers
+//
+//      ┌─── (u: string | number) => string
+//      ▼
+const match = Match.type<string | number>().pipe(
+  // Match when the value is a number
+  Match.when(Match.number, (n) => `number: ${n}`),
+  // Match when the value is a string
+  Match.when(Match.string, (s) => `string: ${s}`),
+  // Ensure all possible cases are handled
+  Match.exhaustive
+)
+
+console.log(match(0))
+// Output: "number: 0"
+
+console.log(match("hello"))
+// Output: "string: hello"
+```
+
+### Matching by Value
+
+Instead of creating a matcher for a type, you can define one directly from a specific value using `Match.value`.
+
+**Example** (Matching an Object by Property)
+
+```ts twoslash
+import { Match } from "effect"
+
+const input = { name: "John", age: 30 }
+
+// Create a matcher for the specific object
+const result = Match.value(input).pipe(
+  // Match when the 'name' property is "John"
+  Match.when(
+    { name: "John" },
+    (user) => `${user.name} is ${user.age} years old`
+  ),
+  // Provide a fallback if no match is found
+  Match.orElse(() => "Oh, not John")
+)
+
+console.log(result)
+// Output: "John is 30 years old"
+```
+
+### Enforcing a Return Type
+
+You can use `Match.withReturnType<T>()` to ensure that all branches return a specific type.
+
+**Example** (Validating Return Type Consistency)
+
+This example enforces that every matching branch returns a `string`.
+
+```ts twoslash
+import { Match } from "effect"
+
+const match = Match.type<{ a: number } | { b: string }>().pipe(
+  // Ensure all branches return a string
+  Match.withReturnType<string>(),
+  // ❌ Type error: 'number' is not assignable to type 'string'
+  // @ts-expect-error
+  Match.when({ a: Match.number }, (_) => _.a),
+  // ✅ Correct: returns a string
+  Match.when({ b: Match.string }, (_) => _.b),
+  Match.exhaustive
+)
+```
+
+<Aside type="note" title="Must Be First in the Pipeline">
+  The `Match.withReturnType<T>()` call must be the first instruction in the pipeline.
+  If placed later, TypeScript will not properly enforce return type consistency.
+</Aside>
+
+## Defining patterns
+
+### when
+
+The `Match.when` function allows you to define conditions for matching values. It supports both direct value comparisons and predicate functions.
+
+**Example** (Matching with Values and Predicates)
+
+```ts twoslash
+import { Match } from "effect"
+
+// Create a matcher for objects with an "age" property
+const match = Match.type<{ age: number }>().pipe(
+  // Match when age is greater than 18
+  Match.when({ age: (age) => age > 18 }, (user) => `Age: ${user.age}`),
+  // Match when age is exactly 18
+  Match.when({ age: 18 }, () => "You can vote"),
+  // Fallback case for all other ages
+  Match.orElse((user) => `${user.age} is too young`)
+)
+
+console.log(match({ age: 20 }))
+// Output: "Age: 20"
+
+console.log(match({ age: 18 }))
+// Output: "You can vote"
+
+console.log(match({ age: 4 }))
+// Output: "4 is too young"
+```
+
+### not
+
+The `Match.not` function allows you to exclude specific values while matching all others.
+
+**Example** (Ignoring a Specific Value)
+
+```ts twoslash
+import { Match } from "effect"
+
+// Create a matcher for string or number values
+const match = Match.type<string | number>().pipe(
+  // Match any value except "hi", returning "ok"
+  Match.not("hi", () => "ok"),
+  // Fallback case for when the value is "hi"
+  Match.orElse(() => "fallback")
+)
+
+console.log(match("hello"))
+// Output: "ok"
+
+console.log(match("hi"))
+// Output: "fallback"
+```
+
+### tag
+
+The `Match.tag` function allows pattern matching based on the `_tag` field in a [Discriminated Union](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes-func.html#discriminated-unions). You can specify multiple tags to match within a single pattern.
+
+**Example** (Matching a Discriminated Union by Tag)
+
+```ts twoslash
+import { Match } from "effect"
+
+type Event =
+  | { readonly _tag: "fetch" }
+  | { readonly _tag: "success"; readonly data: string }
+  | { readonly _tag: "error"; readonly error: Error }
+  | { readonly _tag: "cancel" }
+
+// Create a Matcher for Either<number, string>
+const match = Match.type<Event>().pipe(
+  // Match either "fetch" or "success"
+  Match.tag("fetch", "success", () => `Ok!`),
+  // Match "error" and extract the error message
+  Match.tag("error", (event) => `Error: ${event.error.message}`),
+  // Match "cancel"
+  Match.tag("cancel", () => "Cancelled"),
+  Match.exhaustive
+)
+
+console.log(match({ _tag: "success", data: "Hello" }))
+// Output: "Ok!"
+
+console.log(match({ _tag: "error", error: new Error("Oops!") }))
+// Output: "Error: Oops!"
+```
+
+<Aside type="caution" title="Tag Field Naming Convention">
+  The `Match.tag` function relies on the convention within the Effect
+  ecosystem of naming the tag field as `"_tag"`. Ensure that your
+  discriminated unions follow this naming convention for proper
+  functionality.
+</Aside>
+
+### Built-in Predicates
+
+The `Match` module provides built-in predicates for common types, such as `Match.number`, `Match.string`, and `Match.boolean`. These predicates simplify the process of matching against primitive types.
+
+**Example** (Using Built-in Predicates for Property Keys)
+
+```ts twoslash
+import { Match } from "effect"
+
+const matchPropertyKey = Match.type<PropertyKey>().pipe(
+  // Match when the value is a number
+  Match.when(Match.number, (n) => `Key is a number: ${n}`),
+  // Match when the value is a string
+  Match.when(Match.string, (s) => `Key is a string: ${s}`),
+  // Match when the value is a symbol
+  Match.when(Match.symbol, (s) => `Key is a symbol: ${String(s)}`),
+  // Ensure all possible cases are handled
+  Match.exhaustive
+)
+
+console.log(matchPropertyKey(42))
+// Output: "Key is a number: 42"
+
+console.log(matchPropertyKey("username"))
+// Output: "Key is a string: username"
+
+console.log(matchPropertyKey(Symbol("id")))
+// Output: "Key is a symbol: Symbol(id)"
+```
+
+| Predicate                 | Description                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| `Match.string`            | Matches values of type `string`.                                              |
+| `Match.nonEmptyString`    | Matches non-empty strings.                                                    |
+| `Match.number`            | Matches values of type `number`.                                              |
+| `Match.boolean`           | Matches values of type `boolean`.                                             |
+| `Match.bigint`            | Matches values of type `bigint`.                                              |
+| `Match.symbol`            | Matches values of type `symbol`.                                              |
+| `Match.date`              | Matches values that are instances of `Date`.                                  |
+| `Match.record`            | Matches objects where keys are `string` or `symbol` and values are `unknown`. |
+| `Match.null`              | Matches the value `null`.                                                     |
+| `Match.undefined`         | Matches the value `undefined`.                                                |
+| `Match.defined`           | Matches any defined (non-null and non-undefined) value.                       |
+| `Match.any`               | Matches any value without restrictions.                                       |
+| `Match.is(...values)`     | Matches a specific set of literal values (e.g., `Match.is("a", 42, true)`).   |
+| `Match.instanceOf(Class)` | Matches instances of a given class.                                           |
+
+## Completing the match
+
+### exhaustive
+
+The `Match.exhaustive` method finalizes the pattern matching process by ensuring that all possible cases are accounted for. If any case is missing, TypeScript will produce a type error. This is particularly useful when working with unions, as it helps prevent unintended gaps in pattern matching.
+
+**Example** (Ensuring All Cases Are Covered)
+
+```ts twoslash
+import { Match } from "effect"
+
+// Create a matcher for string or number values
+const match = Match.type<string | number>().pipe(
+  // Match when the value is a number
+  Match.when(Match.number, (n) => `number: ${n}`),
+  // Mark the match as exhaustive, ensuring all cases are handled
+  // TypeScript will throw an error if any case is missing
+  // @ts-expect-error Type 'string' is not assignable to type 'never'
+  Match.exhaustive
+)
+```
+
+### orElse
+
+The `Match.orElse` method defines a fallback value to return when no other patterns match. This ensures that the matcher always produces a valid result.
+
+**Example** (Providing a Default Value When No Patterns Match)
+
+```ts twoslash
+import { Match } from "effect"
+
+// Create a matcher for string or number values
+const match = Match.type<string | number>().pipe(
+  // Match when the value is "a"
+  Match.when("a", () => "ok"),
+  // Fallback when no patterns match
+  Match.orElse(() => "fallback")
+)
+
+console.log(match("a"))
+// Output: "ok"
+
+console.log(match("b"))
+// Output: "fallback"
+```
+
+### option
+
+`Match.option` wraps the match result in an [Option](/docs/data-types/option/). If a match is found, it returns `Some(value)`, otherwise, it returns `None`.
+
+**Example** (Extracting a User Role with Option)
+
+```ts twoslash
+import { Match } from "effect"
+
+type User = { readonly role: "admin" | "editor" | "viewer" }
+
+// Create a matcher to extract user roles
+const getRole = Match.type<User>().pipe(
+  Match.when({ role: "admin" }, () => "Has full access"),
+  Match.when({ role: "editor" }, () => "Can edit content"),
+  Match.option // Wrap the result in an Option
+)
+
+console.log(getRole({ role: "admin" }))
+// Output: { _id: 'Option', _tag: 'Some', value: 'Has full access' }
+
+console.log(getRole({ role: "viewer" }))
+// Output: { _id: 'Option', _tag: 'None' }
+```
+
+### either
+
+The `Match.either` method wraps the result in an [Either](/docs/data-types/either/), providing a structured way to distinguish between matched and unmatched cases. If a match is found, it returns `Right(value)`, otherwise, it returns `Left(no match)`.
+
+**Example** (Extracting a User Role with Either)
+
+```ts twoslash
+import { Match } from "effect"
+
+type User = { readonly role: "admin" | "editor" | "viewer" }
+
+// Create a matcher to extract user roles
+const getRole = Match.type<User>().pipe(
+  Match.when({ role: "admin" }, () => "Has full access"),
+  Match.when({ role: "editor" }, () => "Can edit content"),
+  Match.either // Wrap the result in an Either
+)
+
+console.log(getRole({ role: "admin" }))
+// Output: { _id: 'Either', _tag: 'Right', right: 'Has full access' }
+
+console.log(getRole({ role: "viewer" }))
+// Output: { _id: 'Either', _tag: 'Left', left: { role: 'viewer' } }
+```
+
+> code-style/guidelines.mdx\n\n---
+title: Guidelines
+description: Best practices for running Effect applications and ensuring safe, explicit coding styles.
+sidebar:
+  order: 1
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+## Using runMain
+
+In Effect, `runMain` is the primary entry point for executing an Effect application on Node.js.
+
+**Example** (Running an Effect Application with Graceful Teardown)
+
+```ts
+import { Effect, Console, Schedule, pipe } from "effect"
+import { NodeRuntime } from "@effect/platform-node"
+
+const program = pipe(
+  Effect.addFinalizer(() => Console.log("Application is about to exit!")),
+  Effect.andThen(Console.log("Application started!")),
+  Effect.andThen(
+    Effect.repeat(Console.log("still alive..."), {
+      schedule: Schedule.spaced("1 second")
+    })
+  ),
+  Effect.scoped
+)
+
+// No graceful teardown on CTRL+C
+// Effect.runPromise(program)
+
+// Use NodeRuntime.runMain for graceful teardown on CTRL+C
+NodeRuntime.runMain(program)
+/*
+Output:
+Application started!
+still alive...
+still alive...
+still alive...
+still alive...
+^C <-- CTRL+C
+Application is about to exit!
+*/
+```
+
+The `runMain` function handles finding and interrupting all fibers. Internally, it observes the fiber and listens for `sigint` signals, ensuring a graceful shutdown of the application when interrupted (e.g., using CTRL+C).
+
+<Aside type="tip" title="Graceful Teardown">
+  Ensure the teardown logic is placed in the main effect. If the fiber
+  running the application or server is interrupted, `runMain` ensures that
+  all resources are properly released.
+</Aside>
+
+### Versions for Different Platforms
+
+Effect provides versions of `runMain` tailored for different platforms:
+
+| Platform | Runtime Version          | Import Path                |
+| -------- | ------------------------ | -------------------------- |
+| Node.js  | `NodeRuntime.runMain`    | `@effect/platform-node`    |
+| Bun      | `BunRuntime.runMain`     | `@effect/platform-bun`     |
+| Browser  | `BrowserRuntime.runMain` | `@effect/platform-browser` |
+
+## Avoid Tacit Usage
+
+Avoid using tacit (point-free) function calls, such as `Effect.map(fn)`, or using `flow` from the `effect/Function` module.
+
+In Effect, it's generally safer to write functions explicitly:
+
+```ts showLineNumbers=false
+Effect.map((x) => fn(x))
+```
+
+rather than in a point-free style:
+
+```ts showLineNumbers=false
+Effect.map(fn)
+```
+
+While tacit functions may be appealing for their brevity, they can introduce a number of problems:
+
+- Using tacit functions, particularly when dealing with optional parameters, can be unsafe. For example, if a function has overloads, writing it in a tacit style may erase all generics, resulting in bugs. Check out this X thread for more details: [link to thread](https://twitter.com/MichaelArnaldi/status/1670715270845935616).
+
+- Tacit usage can also compromise TypeScript's ability to infer types, potentially causing unexpected errors. This isn't just a matter of style but a way to avoid subtle mistakes that can arise from type inference issues.
+
+- Additionally, stack traces might not be as clear when tacit usage is employed.
+
+Avoiding tacit usage is a simple precaution that makes your code more reliable.
+
+> state-management/ref.mdx\n\n---
+title: Ref
+description: Learn how to manage state in concurrent applications using Effect's Ref data type. Master mutable references for safe, controlled state updates across fibers.
+sidebar:
+  order: 0
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+When we write programs, it is common to need to keep track of some form of state during the execution of the program. State refers to any data that can change as the program runs. For example, in a counter application, the count value changes as the user increments or decrements it. Similarly, in a banking application, the account balance changes as deposits and withdrawals are made. State management is crucial to building interactive and dynamic applications.
+
+In traditional imperative programming, one common way to store state is using variables. However, this approach can introduce bugs, especially when the state is shared between multiple components or functions. As the program becomes more complex, managing shared state can become challenging.
+
+To overcome these issues, Effect introduces a powerful data type called `Ref`, which represents a mutable reference. With `Ref`, we can share state between different parts of our program without relying on mutable variables directly. Instead, `Ref` provides a controlled way to handle mutable state and safely update it in a concurrent environment.
+
+Effect's `Ref` data type enables communication between different fibers in your program. This capability is crucial in concurrent programming, where multiple tasks may need to access and update shared state simultaneously.
+
+In this guide, we will explore how to use the `Ref` data type to manage state in your programs effectively. We will cover simple examples like counting, as well as more complex scenarios where state is shared between different parts of the program. Additionally, we will show how to use `Ref` in a concurrent environment, allowing multiple tasks to interact with shared state safely.
+
+Let's dive in and see how we can leverage `Ref` for effective state management in your Effect programs.
+
+## Using Ref
+
+Here is a simple example using `Ref` to create a counter:
+
+**Example** (Basic Counter with `Ref`)
+
+```ts twoslash
+import { Effect, Ref } from "effect"
+
+class Counter {
+  inc: Effect.Effect<void>
+  dec: Effect.Effect<void>
+  get: Effect.Effect<number>
+
+  constructor(private value: Ref.Ref<number>) {
+    this.inc = Ref.update(this.value, (n) => n + 1)
+    this.dec = Ref.update(this.value, (n) => n - 1)
+    this.get = Ref.get(this.value)
+  }
+}
+
+const make = Effect.andThen(Ref.make(0), (value) => new Counter(value))
+```
+
+**Example** (Using the Counter)
+
+```ts twoslash collapse={3-15}
+import { Effect, Ref } from "effect"
+
+class Counter {
+  inc: Effect.Effect<void>
+  dec: Effect.Effect<void>
+  get: Effect.Effect<number>
+
+  constructor(private value: Ref.Ref<number>) {
+    this.inc = Ref.update(this.value, (n) => n + 1)
+    this.dec = Ref.update(this.value, (n) => n - 1)
+    this.get = Ref.get(this.value)
+  }
+}
+
+const make = Effect.andThen(Ref.make(0), (value) => new Counter(value))
+
+const program = Effect.gen(function* () {
+  const counter = yield* make
+  yield* counter.inc
+  yield* counter.inc
+  yield* counter.dec
+  yield* counter.inc
+  const value = yield* counter.get
+  console.log(`This counter has a value of ${value}.`)
+})
+
+Effect.runPromise(program)
+/*
+Output:
+This counter has a value of 2.
+*/
+```
+
+<Aside type="note" title="Ref Operations Are Effectful">
+  All the operations on the `Ref` data type are effectful. So when we are
+  reading from or writing to a `Ref`, we are performing an effectful
+  operation.
+</Aside>
+
+## Using Ref in a Concurrent Environment
+
+We can also use `Ref` in concurrent scenarios, where multiple tasks might be updating shared state at the same time.
+
+**Example** (Concurrent Updates to Shared Counter)
+
+For this example, let's update the counter concurrently:
+
+```ts twoslash collapse={3-15}
+import { Effect, Ref } from "effect"
+
+class Counter {
+  inc: Effect.Effect<void>
+  dec: Effect.Effect<void>
+  get: Effect.Effect<number>
+
+  constructor(private value: Ref.Ref<number>) {
+    this.inc = Ref.update(this.value, (n) => n + 1)
+    this.dec = Ref.update(this.value, (n) => n - 1)
+    this.get = Ref.get(this.value)
+  }
+}
+
+const make = Effect.andThen(Ref.make(0), (value) => new Counter(value))
+
+const program = Effect.gen(function* () {
+  const counter = yield* make
+
+  // Helper to log the counter's value before running an effect
+  const logCounter = <R, E, A>(
+    label: string,
+    effect: Effect.Effect<A, E, R>
+  ) =>
+    Effect.gen(function* () {
+      const value = yield* counter.get
+      yield* Effect.log(`${label} get: ${value}`)
+      return yield* effect
+    })
+
+  yield* logCounter("task 1", counter.inc).pipe(
+    Effect.zip(logCounter("task 2", counter.inc), { concurrent: true }),
+    Effect.zip(logCounter("task 3", counter.dec), { concurrent: true }),
+    Effect.zip(logCounter("task 4", counter.inc), { concurrent: true })
+  )
+  const value = yield* counter.get
+  yield* Effect.log(`This counter has a value of ${value}.`)
+})
+
+Effect.runPromise(program)
+/*
+Output:
+timestamp=... fiber=#3 message="task 4 get: 0"
+timestamp=... fiber=#6 message="task 3 get: 1"
+timestamp=... fiber=#8 message="task 1 get: 0"
+timestamp=... fiber=#9 message="task 2 get: 1"
+timestamp=... fiber=#0 message="This counter has a value of 2."
+*/
+```
+
+## Using Ref as a Service
+
+You can pass a `Ref` as a [service](/docs/requirements-management/services/) to share state across different parts of your program.
+
+**Example** (Using `Ref` as a Service)
+
+```ts twoslash
+import { Effect, Context, Ref } from "effect"
+
+// Create a Tag for our state
+class MyState extends Context.Tag("MyState")<
+  MyState,
+  Ref.Ref<number>
+>() {}
+
+// Subprogram 1: Increment the state value twice
+const subprogram1 = Effect.gen(function* () {
+  const state = yield* MyState
+  yield* Ref.update(state, (n) => n + 1)
+  yield* Ref.update(state, (n) => n + 1)
+})
+
+// Subprogram 2: Decrement the state value and then increment it
+const subprogram2 = Effect.gen(function* () {
+  const state = yield* MyState
+  yield* Ref.update(state, (n) => n - 1)
+  yield* Ref.update(state, (n) => n + 1)
+})
+
+// Subprogram 3: Read and log the current value of the state
+const subprogram3 = Effect.gen(function* () {
+  const state = yield* MyState
+  const value = yield* Ref.get(state)
+  console.log(`MyState has a value of ${value}.`)
+})
+
+// Compose subprograms 1, 2, and 3 to create the main program
+const program = Effect.gen(function* () {
+  yield* subprogram1
+  yield* subprogram2
+  yield* subprogram3
+})
+
+// Create a Ref instance with an initial value of 0
+const initialState = Ref.make(0)
+
+// Provide the Ref as a service
+const runnable = program.pipe(
+  Effect.provideServiceEffect(MyState, initialState)
+)
+
+// Run the program and observe the output
+Effect.runPromise(runnable)
+/*
+Output:
+MyState has a value of 2.
+*/
+```
+
+Note that we use `Effect.provideServiceEffect` instead of `Effect.provideService` to provide an actual implementation of the `MyState` service because all the operations on the `Ref` data type are effectful, including the creation `Ref.make(0)`.
+
+## Sharing State Between Fibers
+
+You can use `Ref` to manage shared state between multiple fibers in a concurrent environment.
+
+**Example** (Managing Shared State Across Fibers)
+
+Let's look at an example where we continuously read names from user input until the user enters `"q"` to exit.
+
+First, let's introduce a `readLine` utility to read user input (ensure you have `@types/node` installed):
+
+```ts twoslash
+import { Effect } from "effect"
+import * as NodeReadLine from "node:readline"
+
+// Utility to read user input
+const readLine = (message: string): Effect.Effect<string> =>
+  Effect.promise(
+    () =>
+      new Promise((resolve) => {
+        const rl = NodeReadLine.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        })
+        rl.question(message, (answer) => {
+          rl.close()
+          resolve(answer)
+        })
+      })
+  )
+```
+
+Next, we implement the main program to collect names:
+
+```ts twoslash collapse={5-18}
+import { Effect, Chunk, Ref } from "effect"
+import * as NodeReadLine from "node:readline"
+
+// Utility to read user input
+const readLine = (message: string): Effect.Effect<string> =>
+  Effect.promise(
+    () =>
+      new Promise((resolve) => {
+        const rl = NodeReadLine.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        })
+        rl.question(message, (answer) => {
+          rl.close()
+          resolve(answer)
+        })
+      })
+  )
+
+const getNames = Effect.gen(function* () {
+  const ref = yield* Ref.make(Chunk.empty<string>())
+  while (true) {
+    const name = yield* readLine("Please enter a name or `q` to exit: ")
+    if (name === "q") {
+      break
+    }
+    yield* Ref.update(ref, (state) => Chunk.append(state, name))
+  }
+  return yield* Ref.get(ref)
+})
+
+Effect.runPromise(getNames).then(console.log)
+/*
+Output:
+Please enter a name or `q` to exit: Alice
+Please enter a name or `q` to exit: Bob
+Please enter a name or `q` to exit: q
+{
+  _id: "Chunk",
+  values: [ "Alice", "Bob" ]
+}
+*/
+```
+
+Now that we have learned how to use the `Ref` data type, we can use it to manage the state concurrently.
+
+For example, assume while we are reading from the console, we have another fiber that is trying to update the state from a different source.
+
+Here, one fiber reads names from user input, while another fiber concurrently adds preset names at regular intervals:
+
+```ts twoslash collapse={5-18}
+import { Effect, Chunk, Ref, Fiber } from "effect"
+import * as NodeReadLine from "node:readline"
+
+// Utility to read user input
+const readLine = (message: string): Effect.Effect<string> =>
+  Effect.promise(
+    () =>
+      new Promise((resolve) => {
+        const rl = NodeReadLine.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        })
+        rl.question(message, (answer) => {
+          rl.close()
+          resolve(answer)
+        })
+      })
+  )
+
+const getNames = Effect.gen(function* () {
+  const ref = yield* Ref.make(Chunk.empty<string>())
+
+  // Fiber 1: Reading names from user input
+  const fiber1 = yield* Effect.fork(
+    Effect.gen(function* () {
+      while (true) {
+        const name = yield* readLine(
+          "Please enter a name or `q` to exit: "
+        )
+        if (name === "q") {
+          break
+        }
+        yield* Ref.update(ref, (state) => Chunk.append(state, name))
+      }
+    })
+  )
+
+  // Fiber 2: Updating the state with predefined names
+  const fiber2 = yield* Effect.fork(
+    Effect.gen(function* () {
+      for (const name of ["John", "Jane", "Joe", "Tom"]) {
+        yield* Ref.update(ref, (state) => Chunk.append(state, name))
+        yield* Effect.sleep("1 second")
+      }
+    })
+  )
+  yield* Fiber.join(fiber1)
+  yield* Fiber.join(fiber2)
+  return yield* Ref.get(ref)
+})
+
+Effect.runPromise(getNames).then(console.log)
+/*
+Output:
+Please enter a name or `q` to exit: Alice
+Please enter a name or `q` to exit: Bob
+Please enter a name or `q` to exit: q
+{
+  _id: "Chunk",
+  // Note: the following result may vary
+  // depending on the speed of user input
+  values: [ 'John', 'Jane', 'Joe', 'Tom', 'Alice', 'Bob' ]
+}
+*/
+```
+
+> state-management/subscriptionref.mdx\n\n---
+title: SubscriptionRef
+description: Learn how to manage shared state with SubscriptionRef in Effect, enabling multiple observers to subscribe to and react to state changes efficiently in concurrent environments.
+sidebar:
+  order: 2
+---
+
+A `SubscriptionRef<A>` is a specialized form of a [SynchronizedRef](/docs/state-management/synchronizedref/). It allows us to subscribe and receive updates on the current value and any changes made to that value.
+
+```ts showLineNumbers=false
+interface SubscriptionRef<A> extends SynchronizedRef<A> {
+  /**
+   * A stream containing the current value of the `Ref` as well as all changes
+   * to that value.
+   */
+  readonly changes: Stream<A>
+}
+```
+
+You can perform all standard operations on a `SubscriptionRef`, such as `get`, `set`, or `modify` to interact with the current value.
+
+The key feature of `SubscriptionRef` is its `changes` stream. This stream allows you to observe the current value at the moment of subscription and receive all subsequent changes. Every time the stream is run, it emits the current value and tracks future updates.
+
+To create a `SubscriptionRef`, you can use the `SubscriptionRef.make` constructor, specifying the initial value:
+
+**Example** (Creating a `SubscriptionRef`)
+
+```ts twoslash
+import { SubscriptionRef } from "effect"
+
+const ref = SubscriptionRef.make(0)
+```
+
+`SubscriptionRef` is particularly useful for modeling shared state when multiple observers need to react to changes. For example, in functional reactive programming, the `SubscriptionRef` could represent a portion of the application state, and various observers (like UI components) would update in response to state changes.
+
+**Example** (Server-Client Model with `SubscriptionRef`)
+
+In the following example, a "server" continually updates a shared value, while multiple "clients" observe the changes:
+
+```ts twoslash
+import { Ref, Effect } from "effect"
+
+// Server function that increments a shared value forever
+const server = (ref: Ref.Ref<number>) =>
+  Ref.update(ref, (n) => n + 1).pipe(Effect.forever)
+```
+
+The `server` function operates on a regular `Ref` and continuously updates the value. It doesn't need to know about `SubscriptionRef` directly.
+
+Next, let's define a `client` that subscribes to changes and collects a specified number of values:
+
+```ts twoslash
+import { Ref, Effect, Stream, Random } from "effect"
+
+// Server function that increments a shared value forever
+const server = (ref: Ref.Ref<number>) =>
+  Ref.update(ref, (n) => n + 1).pipe(Effect.forever)
+
+// Client function that observes the stream of changes
+const client = (changes: Stream.Stream<number>) =>
+  Effect.gen(function* () {
+    const n = yield* Random.nextIntBetween(1, 10)
+    const chunk = yield* Stream.runCollect(Stream.take(changes, n))
+    return chunk
+  })
+```
+
+Similarly, the `client` function only works with a `Stream` of values and doesn't concern itself with the source of these values.
+
+To tie everything together, we start the server, launch multiple client instances in parallel, and then shut down the server when we're finished. We also create the `SubscriptionRef` in this process.
+
+```ts twoslash
+import {
+  Ref,
+  Effect,
+  Stream,
+  Random,
+  SubscriptionRef,
+  Fiber
+} from "effect"
+
+// Server function that increments a shared value forever
+const server = (ref: Ref.Ref<number>) =>
+  Ref.update(ref, (n) => n + 1).pipe(Effect.forever)
+
+// Client function that observes the stream of changes
+const client = (changes: Stream.Stream<number>) =>
+  Effect.gen(function* () {
+    const n = yield* Random.nextIntBetween(1, 10)
+    const chunk = yield* Stream.runCollect(Stream.take(changes, n))
+    return chunk
+  })
+
+const program = Effect.gen(function* () {
+  // Create a SubscriptionRef with an initial value of 0
+  const ref = yield* SubscriptionRef.make(0)
+
+  // Fork the server to run concurrently
+  const serverFiber = yield* Effect.fork(server(ref))
+
+  // Create 5 clients that subscribe to the changes stream
+  const clients = new Array(5).fill(null).map(() => client(ref.changes))
+
+  // Run all clients in concurrently and collect their results
+  const chunks = yield* Effect.all(clients, { concurrency: "unbounded" })
+
+  // Interrupt the server when clients are done
+  yield* Fiber.interrupt(serverFiber)
+
+  // Output the results collected by each client
+  for (const chunk of chunks) {
+    console.log(chunk)
+  }
+})
+
+Effect.runPromise(program)
+/*
+Example Output:
+{ _id: 'Chunk', values: [ 4, 5, 6, 7, 8, 9 ] }
+{ _id: 'Chunk', values: [ 4 ] }
+{ _id: 'Chunk', values: [ 4, 5, 6, 7, 8, 9 ] }
+{ _id: 'Chunk', values: [ 4, 5 ] }
+{ _id: 'Chunk', values: [ 4, 5, 6, 7, 8, 9 ] }
+*/
+```
+
+This setup ensures that each client observes the current value when it starts and receives all subsequent changes to the value.
+
+Since the changes are represented as streams, you can easily build more complex programs using familiar stream operators. You can transform, filter, or merge these streams with other streams to achieve more sophisticated behavior.
+
+> state-management/synchronizedref.mdx\n\n---
+title: SynchronizedRef
+description: Master concurrent state management with SynchronizedRef in Effect, a mutable reference that supports atomic, effectful updates to shared state in concurrent environments.
+sidebar:
+  order: 1
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+`SynchronizedRef<A>` serves as a mutable reference to a value of type `A`.
+With it, we can store **immutable** data and perform updates **atomically** and effectfully.
+
+<Aside type="tip" title="Learn Ref First">
+  Most of the operations for `SynchronizedRef` are similar to those of
+  `Ref`. If you're not already familiar with `Ref`, it's recommended to
+  read about [the Ref concept](/docs/state-management/ref/) first.
+</Aside>
+
+The distinctive function in `SynchronizedRef` is `updateEffect`.
+This function takes an effectful operation and executes it to modify the shared state.
+This is the key feature setting `SynchronizedRef` apart from `Ref`.
+
+In real-world applications, `SynchronizedRef` is useful when you need to execute effects, such as querying a database, and then update shared state based on the result. It ensures that updates happen sequentially, preserving consistency in concurrent environments.
+
+**Example** (Concurrent Updates with `SynchronizedRef`)
+
+In this example, we simulate fetching user ages concurrently and updating a shared state that stores the ages:
+
+```ts twoslash
+import { Effect, SynchronizedRef } from "effect"
+
+// Simulated API to get user age
+const getUserAge = (userId: number) =>
+  Effect.succeed(userId * 10).pipe(Effect.delay(10 - userId))
+
+const meanAge = Effect.gen(function* () {
+  // Initialize a SynchronizedRef to hold an array of ages
+  const ref = yield* SynchronizedRef.make<number[]>([])
+
+  // Helper function to log state before each effect
+  const log = <R, E, A>(label: string, effect: Effect.Effect<A, E, R>) =>
+    Effect.gen(function* () {
+      const value = yield* SynchronizedRef.get(ref)
+      yield* Effect.log(label, value)
+      return yield* effect
+    })
+
+  const task = (id: number) =>
+    log(
+      `task ${id}`,
+      SynchronizedRef.updateEffect(ref, (sumOfAges) =>
+        Effect.gen(function* () {
+          const age = yield* getUserAge(id)
+          return sumOfAges.concat(age)
+        })
+      )
+    )
+
+  // Run tasks concurrently with a limit of 2 concurrent tasks
+  yield* Effect.all([task(1), task(2), task(3), task(4)], {
+    concurrency: 2
+  })
+
+  // Retrieve the updated value
+  const value = yield* SynchronizedRef.get(ref)
+  return value
+})
+
+Effect.runPromise(meanAge).then(console.log)
+/*
+Output:
+timestamp=... level=INFO fiber=#2 message="task 1" message=[]
+timestamp=... level=INFO fiber=#3 message="task 2" message=[]
+timestamp=... level=INFO fiber=#2 message="task 3" message="[
+  10
+]"
+timestamp=... level=INFO fiber=#3 message="task 4" message="[
+  10,
+  20
+]"
+[ 10, 20, 30, 40 ]
+*/
+```
 
 > micro/new-users.mdx\n\n---
 title: Getting Started with Micro
@@ -46347,4 +45768,583 @@ random number: 0.8241872233134417
 | `Effect.forkDaemon` | `Micro.forkDaemon` | `MicroFiber` instead of `RuntimeFiber` |
 | `Effect.forkIn`     | `Micro.forkIn`     | `MicroFiber` instead of `RuntimeFiber` |
 | `Effect.forkScoped` | `Micro.forkScoped` | `MicroFiber` instead of `RuntimeFiber` |
+
+> testing/testclock.mdx\n\n---
+title: TestClock
+description: Control time during testing with Effect's TestClock, simulating time passage, delays, and recurring effects without waiting for real time.
+sidebar:
+  order: 0
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+In most cases, we want our unit tests to run as quickly as possible. Waiting for real time to pass can slow down our tests significantly. Effect provides a handy tool called `TestClock` that allows us to **control time during testing**. This means we can efficiently and predictably test code that involves time without having to wait for the actual time to pass.
+
+## How TestClock Works
+
+Imagine `TestClock` as a wall clock that only moves forward when we adjust it manually using the `TestClock.adjust` and `TestClock.setTime` functions. The clock time does not progress on its own.
+
+When we adjust the clock time, any effects scheduled to run at or before that time will execute. This allows us to simulate time passage in tests without waiting for real time.
+
+**Example** (Simulating a Timeout with TestClock)
+
+```ts twoslash
+import { Effect, TestClock, Fiber, Option, TestContext } from "effect"
+import * as assert from "node:assert"
+
+const test = Effect.gen(function* () {
+  // Create a fiber that sleeps for 5 minutes and then times out
+  // after 1 minute
+  const fiber = yield* Effect.sleep("5 minutes").pipe(
+    Effect.timeoutTo({
+      duration: "1 minute",
+      onSuccess: Option.some,
+      onTimeout: () => Option.none<void>()
+    }),
+    Effect.fork
+  )
+
+  // Adjust the TestClock by 1 minute to simulate the passage of time
+  yield* TestClock.adjust("1 minute")
+
+  // Get the result of the fiber
+  const result = yield* Fiber.join(fiber)
+
+  // Check if the result is None, indicating a timeout
+  assert.ok(Option.isNone(result))
+}).pipe(Effect.provide(TestContext.TestContext))
+
+Effect.runPromise(test)
+```
+
+A key point is forking the fiber where `Effect.sleep` is invoked. Calls to `Effect.sleep` and related methods wait until the clock time matches or exceeds the scheduled time for their execution. By forking the fiber, we retain control over the clock time adjustments.
+
+<Aside type="tip" title="Best Practices">
+  A recommended pattern when using the `TestClock` is to fork the effect
+  being tested, adjust the clock time as needed, and then verify that the
+  expected outcomes have occurred.
+</Aside>
+
+## Testing Recurring Effects
+
+Here's an example demonstrating how to test an effect that runs at fixed intervals using the `TestClock`:
+
+**Example** (Testing an Effect with Fixed Intervals)
+
+In this example, we test an effect that runs at regular intervals. An unbounded queue is used to manage the effects, and we verify the following:
+
+1. No effect occurs before the specified recurrence period.
+2. An effect occurs after the recurrence period.
+3. The effect executes exactly once.
+
+```ts twoslash
+import { Effect, Queue, TestClock, Option, TestContext } from "effect"
+import * as assert from "node:assert"
+
+const test = Effect.gen(function* () {
+  const q = yield* Queue.unbounded()
+
+  yield* Queue.offer(q, undefined).pipe(
+    // Delay the effect for 60 minutes and repeat it forever
+    Effect.delay("60 minutes"),
+    Effect.forever,
+    Effect.fork
+  )
+
+  // Check if no effect is performed before the recurrence period
+  const a = yield* Queue.poll(q).pipe(Effect.andThen(Option.isNone))
+
+  // Adjust the TestClock by 60 minutes to simulate the passage of time
+  yield* TestClock.adjust("60 minutes")
+
+  // Check if an effect is performed after the recurrence period
+  const b = yield* Queue.take(q).pipe(Effect.as(true))
+
+  // Check if the effect is performed exactly once
+  const c = yield* Queue.poll(q).pipe(Effect.andThen(Option.isNone))
+
+  // Adjust the TestClock by another 60 minutes
+  yield* TestClock.adjust("60 minutes")
+
+  // Check if another effect is performed
+  const d = yield* Queue.take(q).pipe(Effect.as(true))
+  const e = yield* Queue.poll(q).pipe(Effect.andThen(Option.isNone))
+
+  // Ensure that all conditions are met
+  assert.ok(a && b && c && d && e)
+}).pipe(Effect.provide(TestContext.TestContext))
+
+Effect.runPromise(test)
+```
+
+It's important to note that after each recurrence, the next occurrence is scheduled to happen at the appropriate time. Adjusting the clock by 60 minutes places exactly one value in the queue; adjusting by another 60 minutes adds another value.
+
+## Testing Clock
+
+This example demonstrates how to test the behavior of the `Clock` using the `TestClock`:
+
+**Example** (Simulating Time Passage with TestClock)
+
+```ts twoslash
+import { Effect, Clock, TestClock, TestContext } from "effect"
+import * as assert from "node:assert"
+
+const test = Effect.gen(function* () {
+  // Get the current time using the Clock
+  const startTime = yield* Clock.currentTimeMillis
+
+  // Adjust the TestClock by 1 minute to simulate the passage of time
+  yield* TestClock.adjust("1 minute")
+
+  // Get the current time again
+  const endTime = yield* Clock.currentTimeMillis
+
+  // Check if the time difference is at least
+  // 60,000 milliseconds (1 minute)
+  assert.ok(endTime - startTime >= 60_000)
+}).pipe(Effect.provide(TestContext.TestContext))
+
+Effect.runPromise(test)
+```
+
+## Testing Deferred
+
+The `TestClock` also impacts asynchronous code scheduled to run after a specific time.
+
+**Example** (Simulating Delayed Execution with Deferred and TestClock)
+
+```ts twoslash
+import { Effect, Deferred, TestClock, TestContext } from "effect"
+import * as assert from "node:assert"
+
+const test = Effect.gen(function* () {
+  // Create a deferred value
+  const deferred = yield* Deferred.make<number, void>()
+
+  // Run two effects concurrently: sleep for 10 seconds and succeed
+  // the deferred with a value of 1
+  yield* Effect.all(
+    [Effect.sleep("10 seconds"), Deferred.succeed(deferred, 1)],
+    { concurrency: "unbounded" }
+  ).pipe(Effect.fork)
+
+  // Adjust the TestClock by 10 seconds
+  yield* TestClock.adjust("10 seconds")
+
+  // Await the value from the deferred
+  const readRef = yield* Deferred.await(deferred)
+
+  // Verify the deferred value is correctly set
+  assert.ok(readRef === 1)
+}).pipe(Effect.provide(TestContext.TestContext))
+
+Effect.runPromise(test)
+```
+
+> behaviour/order.mdx\n\n---
+title: Order
+description: Compare, sort, and manage value ordering with customizable tools for TypeScript.
+sidebar:
+  order: 2
+---
+
+The Order module provides a way to compare values and determine their order.
+It defines an interface `Order<A>` which represents a single function for comparing two values of type `A`.
+The function returns `-1`, `0`, or `1`, indicating whether the first value is less than, equal to, or greater than the second value.
+
+Here's the basic structure of an `Order`:
+
+```ts showLineNumbers=false
+interface Order<A> {
+  (first: A, second: A): -1 | 0 | 1
+}
+```
+
+## Using the Built-in Orders
+
+The Order module comes with several built-in comparators for common data types:
+
+| Order    | Description                        |
+| -------- | ---------------------------------- |
+| `string` | Used for comparing strings.        |
+| `number` | Used for comparing numbers.        |
+| `bigint` | Used for comparing big integers.   |
+| `Date`   | Used for comparing `Date` objects. |
+
+**Example** (Using Built-in Comparators)
+
+```ts twoslash
+import { Order } from "effect"
+
+console.log(Order.string("apple", "banana"))
+// Output: -1, as "apple" < "banana"
+
+console.log(Order.number(1, 1))
+// Output: 0, as 1 = 1
+
+console.log(Order.bigint(2n, 1n))
+// Output: 1, as 2n > 1n
+```
+
+## Sorting Arrays
+
+You can sort arrays using these comparators. The `Array` module offers a `sort` function that sorts arrays without altering the original one.
+
+**Example** (Sorting Arrays with `Order`)
+
+```ts twoslash
+import { Order, Array } from "effect"
+
+const strings = ["b", "a", "d", "c"]
+
+const result = Array.sort(strings, Order.string)
+
+console.log(strings) // Original array remains unchanged
+// Output: [ 'b', 'a', 'd', 'c' ]
+
+console.log(result) // Sorted array
+// Output: [ 'a', 'b', 'c', 'd' ]
+```
+
+You can also use an `Order` as a comparator with JavaScript's native `Array.sort` method, but keep in mind that this will modify the original array.
+
+**Example** (Using `Order` with Native `Array.prototype.sort`)
+
+```ts twoslash
+import { Order } from "effect"
+
+const strings = ["b", "a", "d", "c"]
+
+strings.sort(Order.string) // Modifies the original array
+
+console.log(strings)
+// Output: [ 'a', 'b', 'c', 'd' ]
+```
+
+## Deriving Orders
+
+For more complex data structures, you may need custom sorting rules. The Order module lets you derive new `Order` instances from existing ones with the `Order.mapInput` function.
+
+**Example** (Creating a Custom Order for Objects)
+
+Imagine you have a list of `Person` objects, and you want to sort them by their names in ascending order.
+To achieve this, you can create a custom `Order`.
+
+```ts twoslash
+import { Order } from "effect"
+
+// Define the Person interface
+interface Person {
+  readonly name: string
+  readonly age: number
+}
+
+// Create a custom order to sort Person objects by name in ascending order
+//
+//      ┌─── Order<Person>
+//      ▼
+const byName = Order.mapInput(
+  Order.string,
+  (person: Person) => person.name
+)
+```
+
+The `Order.mapInput` function takes two arguments:
+
+1. The existing `Order` you want to use as a base (`Order.string` in this case, for comparing strings).
+2. A function that extracts the value you want to use for sorting from your data structure (`(person: Person) => person.name` in this case).
+
+Once you have defined your custom `Order`, you can apply it to sort an array of `Person` objects:
+
+**Example** (Sorting Objects Using a Custom Order)
+
+```ts twoslash collapse={3-13}
+import { Order, Array } from "effect"
+
+// Define the Person interface
+interface Person {
+  readonly name: string
+  readonly age: number
+}
+
+// Create a custom order to sort Person objects by name in ascending order
+const byName = Order.mapInput(
+  Order.string,
+  (person: Person) => person.name
+)
+
+const persons: ReadonlyArray<Person> = [
+  { name: "Charlie", age: 22 },
+  { name: "Alice", age: 25 },
+  { name: "Bob", age: 30 }
+]
+
+// Sort persons array using the custom order
+const sortedPersons = Array.sort(persons, byName)
+
+console.log(sortedPersons)
+/*
+Output:
+[
+  { name: 'Alice', age: 25 },
+  { name: 'Bob', age: 30 },
+  { name: 'Charlie', age: 22 }
+]
+*/
+```
+
+## Combining Orders
+
+The Order module lets you combine multiple `Order` instances to create complex sorting rules. This is useful when sorting by multiple properties.
+
+**Example** (Sorting by Multiple Criteria)
+
+Imagine you have a list of people, each represented by an object with a `name` and an `age`. You want to sort this list first by name and then, for individuals with the same name, by age.
+
+```ts twoslash
+import { Order, Array } from "effect"
+
+// Define the Person interface
+interface Person {
+  readonly name: string
+  readonly age: number
+}
+
+// Create an Order to sort people by their names in ascending order
+const byName = Order.mapInput(
+  Order.string,
+  (person: Person) => person.name
+)
+
+// Create an Order to sort people by their ages in ascending order
+const byAge = Order.mapInput(Order.number, (person: Person) => person.age)
+
+// Combine orders to sort by name, then by age
+const byNameAge = Order.combine(byName, byAge)
+
+const result = Array.sort(
+  [
+    { name: "Bob", age: 20 },
+    { name: "Alice", age: 18 },
+    { name: "Bob", age: 18 }
+  ],
+  byNameAge
+)
+
+console.log(result)
+/*
+Output:
+[
+  { name: 'Alice', age: 18 }, // Sorted by name
+  { name: 'Bob', age: 18 },   // Sorted by age within the same name
+  { name: 'Bob', age: 20 }
+]
+*/
+```
+
+## Additional Useful Functions
+
+The Order module provides additional functions for common comparison operations, making it easier to work with ordered values.
+
+### Reversing Order
+
+`Order.reverse` inverts the order of comparison. If you have an `Order` for ascending values, reversing it makes it descending.
+
+**Example** (Reversing an Order)
+
+```ts twoslash
+import { Order } from "effect"
+
+const ascendingOrder = Order.number
+
+const descendingOrder = Order.reverse(ascendingOrder)
+
+console.log(ascendingOrder(1, 3))
+// Output: -1 (1 < 3 in ascending order)
+console.log(descendingOrder(1, 3))
+// Output: 1 (1 > 3 in descending order)
+```
+
+### Comparing Values
+
+These functions allow you to perform simple comparisons between values:
+
+| API                    | Description                                              |
+| ---------------------- | -------------------------------------------------------- |
+| `lessThan`             | Checks if one value is strictly less than another.       |
+| `greaterThan`          | Checks if one value is strictly greater than another.    |
+| `lessThanOrEqualTo`    | Checks if one value is less than or equal to another.    |
+| `greaterThanOrEqualTo` | Checks if one value is greater than or equal to another. |
+
+**Example** (Using Comparison Functions)
+
+```ts twoslash
+import { Order } from "effect"
+
+console.log(Order.lessThan(Order.number)(1, 2))
+// Output: true (1 < 2)
+
+console.log(Order.greaterThan(Order.number)(5, 3))
+// Output: true (5 > 3)
+
+console.log(Order.lessThanOrEqualTo(Order.number)(2, 2))
+// Output: true (2 <= 2)
+
+console.log(Order.greaterThanOrEqualTo(Order.number)(4, 4))
+// Output: true (4 >= 4)
+```
+
+### Finding Minimum and Maximum
+
+The `Order.min` and `Order.max` functions return the minimum or maximum value between two values, considering the order.
+
+**Example** (Finding Minimum and Maximum Numbers)
+
+```ts twoslash
+import { Order } from "effect"
+
+console.log(Order.min(Order.number)(3, 1))
+// Output: 1 (1 is the minimum)
+
+console.log(Order.max(Order.number)(5, 8))
+// Output: 8 (8 is the maximum)
+```
+
+### Clamping Values
+
+`Order.clamp` restricts a value within a given range. If the value is outside the range, it is adjusted to the nearest bound.
+
+**Example** (Clamping Numbers to a Range)
+
+```ts twoslash
+import { Order } from "effect"
+
+// Define a function to clamp numbers between 20 and 30
+const clampNumbers = Order.clamp(Order.number)({
+  minimum: 20,
+  maximum: 30
+})
+
+// Value 26 is within the range [20, 30], so it remains unchanged
+console.log(clampNumbers(26))
+// Output: 26
+
+// Value 10 is below the minimum bound, so it is clamped to 20
+console.log(clampNumbers(10))
+// Output: 20
+
+// Value 40 is above the maximum bound, so it is clamped to 30
+console.log(clampNumbers(40))
+// Output: 30
+```
+
+### Checking Value Range
+
+`Order.between` checks if a value falls within a specified inclusive range.
+
+**Example** (Checking if Numbers Fall Within a Range)
+
+```ts twoslash
+import { Order } from "effect"
+
+// Create a function to check if numbers are between 20 and 30
+const betweenNumbers = Order.between(Order.number)({
+  minimum: 20,
+  maximum: 30
+})
+
+// Value 26 falls within the range [20, 30], so it returns true
+console.log(betweenNumbers(26))
+// Output: true
+
+// Value 10 is below the minimum bound, so it returns false
+console.log(betweenNumbers(10))
+// Output: false
+
+// Value 40 is above the maximum bound, so it returns false
+console.log(betweenNumbers(40))
+// Output: false
+```
+
+> behaviour/equivalence.mdx\n\n---
+title: Equivalence
+description: Define and customize equivalence relations for TypeScript values.
+sidebar:
+  order: 0
+---
+
+The Equivalence module provides a way to define equivalence relations between values in TypeScript. An equivalence relation is a binary relation that is reflexive, symmetric, and transitive, establishing a formal notion of when two values should be considered equivalent.
+
+## What is Equivalence?
+
+An `Equivalence<A>` represents a function that compares two values of type `A` and determines if they are equivalent. This is more flexible and customizable than simple equality checks using `===`.
+
+Here's the structure of an `Equivalence`:
+
+```ts showLineNumbers=false
+interface Equivalence<A> {
+  (self: A, that: A): boolean
+}
+```
+
+## Using Built-in Equivalences
+
+The module provides several built-in equivalence relations for common data types:
+
+| Equivalence | Description                                 |
+| ----------- | ------------------------------------------- |
+| `string`    | Uses strict equality (`===`) for strings    |
+| `number`    | Uses strict equality (`===`) for numbers    |
+| `boolean`   | Uses strict equality (`===`) for booleans   |
+| `symbol`    | Uses strict equality (`===`) for symbols    |
+| `bigint`    | Uses strict equality (`===`) for bigints    |
+| `Date`      | Compares `Date` objects by their timestamps |
+
+**Example** (Using Built-in Equivalences)
+
+```ts twoslash
+import { Equivalence } from "effect"
+
+console.log(Equivalence.string("apple", "apple"))
+// Output: true
+
+console.log(Equivalence.string("apple", "orange"))
+// Output: false
+
+console.log(Equivalence.Date(new Date(2023, 1, 1), new Date(2023, 1, 1)))
+// Output: true
+
+console.log(Equivalence.Date(new Date(2023, 1, 1), new Date(2023, 10, 1)))
+// Output: false
+```
+
+## Deriving Equivalences
+
+For more complex data structures, you may need custom equivalences. The Equivalence module lets you derive new `Equivalence` instances from existing ones with the `Equivalence.mapInput` function.
+
+**Example** (Creating a Custom Equivalence for Objects)
+
+```ts twoslash
+import { Equivalence } from "effect"
+
+interface User {
+  readonly id: number
+  readonly name: string
+}
+
+// Create an equivalence that compares User objects based only on the id
+const equivalence = Equivalence.mapInput(
+  Equivalence.number, // Base equivalence for comparing numbers
+  (user: User) => user.id // Function to extract the id from a User
+)
+
+// Compare two User objects: they are equivalent if their ids are the same
+console.log(equivalence({ id: 1, name: "Alice" }, { id: 1, name: "Al" }))
+// Output: true
+```
+
+The `Equivalence.mapInput` function takes two arguments:
+
+1. The existing `Equivalence` you want to use as a base (`Equivalence.number` in this case, for comparing numbers).
+2. A function that extracts the value used for the equivalence check from your data structure (`(user: User) => user.id` in this case).
 
