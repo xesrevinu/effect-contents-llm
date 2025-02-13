@@ -83,13 +83,13 @@ You can customize the processing behavior by modifying the config files in the `
 
 - Total Files: 3
 - Total Size: 15.1 MB
-- Total Tokens: 4,042,373
+- Total Tokens: 4,045,292
 
 ### File Types
 
 | Extension | Count | Size | Tokens | Origin URL | GitHub |
 |-----------|-------|------|--------|------------|--------|
-| .md | 2 | 3.91 MB | 1,019,001 | [https://effect.website/docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.md) |
+| .md | 2 | 3.92 MB | 1,021,920 | [https://effect.website/docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.md) |
 | .json | 1 | 11.2 MB | 3,023,372 | [https://effect.website/docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.json) |
 
 ### Website Documentation
@@ -113,20 +113,20 @@ You can customize the processing behavior by modifying the config files in the `
 ### API Documentation
 
 - Files: 1
-- Size: 2.43 MB
-- Tokens: 672,921
+- Size: 2.44 MB
+- Tokens: 675,840
 
 #### File Types
 
 | Extension | Count | Size | Tokens | GitHub |
 |-----------|-------|------|--------|--------|
-| .md | 1 | 2.43 MB | 672,921 | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) |
+| .md | 1 | 2.44 MB | 675,840 | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) |
 
 #### Files
 
 | File | Size | Tokens | Origin URL | GitHub | Raw |
 |------|------|--------|------------|--------|-----|
-| [api.md](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) | 2.43 MB | 672,921 | [Docs](https://effect.website) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents/main/output/api.md) |
+| [api.md](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) | 2.44 MB | 675,840 | [Docs](https://effect.website) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents/main/output/api.md) |
 
 ### Module Documentation
 
