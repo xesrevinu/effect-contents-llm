@@ -4,6 +4,9 @@ import { glob } from 'glob';
 import prettyBytes from 'pretty-bytes';
 import { encode } from 'gpt-tokenizer';
 
+const GITHUB_REPO = "https://github.com/xesrevinu/effect-contents";
+const GITHUB_RAW = "https://raw.githubusercontent.com/xesrevinu/effect-contents/main";
+
 interface DocConfig {
   title: string;
   originUrl: string;
@@ -109,16 +112,18 @@ class FileStats {
   public content: string;
   public extension: string;
   public originUrl: string;
+  public githubUrl: string;
+  public rawUrl: string;
 
   constructor(filePath: string, content: string, originUrl: string) {
     this.path = filePath;
     this.extension = path.extname(filePath).toLowerCase();
-    
     this.content = processContent(filePath, content, this.extension);
-    
     this.size = Buffer.byteLength(this.content);
     this.tokens = encode(this.content).length;
     this.originUrl = originUrl;
+    this.githubUrl = `${GITHUB_REPO}/blob/main/output/${filePath}`;
+    this.rawUrl = `${GITHUB_RAW}/output/${filePath}`;
 
     console.log(`File stats for ${filePath}:`, {
       size: prettyBytes(this.size),
@@ -128,7 +133,7 @@ class FileStats {
   }
 
   toMarkdown(): string {
-    return `| ${this.path} | ${prettyBytes(this.size)} | ${this.tokens.toLocaleString()} | [${this.originUrl}](${this.originUrl})`;
+    return `| [${this.path}](${this.githubUrl}) | ${prettyBytes(this.size)} | ${this.tokens.toLocaleString()} | [${this.originUrl}](${this.originUrl}) | [Raw](${this.rawUrl}) |`;
   }
 }
 
@@ -216,13 +221,15 @@ function generateReport(results: ProcessResult[]): string {
   report += `- Total Tokens: ${grandTotal.tokens.toLocaleString()}\n\n`;
 
   report += `### File Types\n\n`;
-  report += `| Extension | Count | Size | Tokens | Origin URL |\n`;
-  report += `|-----------|-------|------|--------|-----------|\n`;
+  report += `| Extension | Count | Size | Tokens | Origin URL | GitHub |\n`;
+  report += `|-----------|-------|------|--------|------------|--------||\n`;
   for (const [ext, stats] of allFileTypes.entries()) {
     const docConfig = DOC_TYPES.find(doc => 
       doc.pattern.some(p => p.endsWith(ext))
     ) || DOC_TYPES[0];
-    report += `| ${stats.extension || '(none)'} | ${stats.count} | ${prettyBytes(stats.size)} | ${stats.tokens.toLocaleString()} | [${docConfig.originUrl}](${docConfig.originUrl}) |\n`;
+    const githubPattern = docConfig.pattern[0].replace('output/', '').replace('.*', ext);
+    const githubUrl = `${GITHUB_REPO}/blob/main/output/${githubPattern}`;
+    report += `| ${stats.extension || '(none)'} | ${stats.count} | ${prettyBytes(stats.size)} | ${stats.tokens.toLocaleString()} | [${docConfig.originUrl}](${docConfig.originUrl}) | [View](${githubUrl}) |\n`;
   }
   report += '\n';
 
@@ -237,17 +244,21 @@ function generateReport(results: ProcessResult[]): string {
 
     if (result.stats.length > 0) {
       report += `#### File Types\n\n`;
-      report += `| Extension | Count | Size | Tokens |\n`;
-      report += `|-----------|-------|------|--------|\n`;
+      report += `| Extension | Count | Size | Tokens | GitHub |\n`;
+      report += `|-----------|-------|------|---------|--------||\n`;
       for (const stats of result.fileTypes.values()) {
-        report += `| ${stats.extension || '(none)'} | ${stats.count} | ${prettyBytes(stats.size)} | ${stats.tokens.toLocaleString()} |\n`;
+        const githubPattern = docConfig.pattern[0].replace('output/', '').replace('.*', stats.extension);
+        const githubUrl = `${GITHUB_REPO}/blob/main/output/${githubPattern}`;
+        report += `| ${stats.extension || '(none)'} | ${stats.count} | ${prettyBytes(stats.size)} | ${stats.tokens.toLocaleString()} | [View](${githubUrl}) |\n`;
       }
       report += '\n';
 
       report += `#### Files\n\n`;
-      report += `| File | Size | Tokens | Origin URL |\n`;
-      report += `|------|------|--------|----------|\n`;
-      report += result.stats.map(s => s.toMarkdown()).join('\n');
+      report += `| File | Size | Tokens | Origin URL | GitHub |\n`;
+      report += `|------|------|--------|------------|--------||\n`;
+      report += result.stats.map(s => 
+        `| ${s.path} | ${prettyBytes(s.size)} | ${s.tokens.toLocaleString()} | [${s.originUrl}](${s.originUrl}) | [View](${s.githubUrl}) |`
+      ).join('\n');
       report += '\n\n';
     }
   }
