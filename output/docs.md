@@ -24629,318 +24629,6 @@ const test = Effect.gen(function* () {
 Effect.runPromise(test)
 ```
 
-> runtime.mdx\n\n---
-title: Introduction to Runtime
-description: Learn how Effect's runtime system executes concurrent programs, manages resources, and handles configuration with flexibility and efficiency.
-sidebar:
-  label: Runtime
-  order: 6
----
-
-The `Runtime<R>` data type represents a runtime system that can **execute effects**. To run an effect, `Effect<A, E, R>`, we need a `Runtime<R>` that contains the required resources, denoted by the `R` type parameter.
-
-A `Runtime<R>` consists of three main components:
-
-- A value of type `Context<R>`
-- A value of type `FiberRefs`
-- A value of type `RuntimeFlags`
-
-## What is a Runtime System?
-
-When we write an Effect program, we construct an `Effect` using constructors and combinators.
-Essentially, we are creating a blueprint of a program.
-An `Effect` is merely a data structure that describes the execution of a concurrent program.
-It represents a tree-like structure that combines various primitives to define what the effect should do.
-
-However, this data structure itself does not perform any actions, it is solely a description of a concurrent program.
-
-To execute this program, the Effect runtime system comes into play. The `Runtime.run*` functions (e.g., `Runtime.runPromise`, `Runtime.runFork`) are responsible for taking this blueprint and executing it.
-
-When the runtime system runs an effect, it creates a root fiber, initializing it with:
-
-- The initial [context](/docs/requirements-management/services/#how-it-works)
-- The initial `FiberRefs`
-- The initial effect
-
-It then starts a loop, executing the instructions described by the `Effect` step by step.
-
-You can think of the runtime as a system that takes an [`Effect<A, E, R>`](/docs/getting-started/the-effect-type/) and its associated context `Context<R>` and produces an [`Exit<A, E>`](/docs/data-types/exit/) result.
-
-```text showLineNumbers=false
-┌────────────────────────────────┐
-│  Context<R> + Effect<A, E, R>  │
-└────────────────────────────────┘
-               │
-               ▼
-┌────────────────────────────────┐
-│      Effect Runtime System     │
-└────────────────────────────────┘
-               │
-               ▼
-┌────────────────────────────────┐
-│          Exit<A, E>            │
-└────────────────────────────────┘
-```
-
-Runtime Systems have a lot of responsibilities:
-
-| Responsibility                | Description                                                                                                        |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **Executing the program**     | The runtime must execute every step of the effect in a loop until the program completes.                           |
-| **Handling errors**           | It handles both expected and unexpected errors that occur during execution.                                        |
-| **Managing concurrency**      | The runtime spawns new fibers when `Effect.fork` is called to handle concurrent operations.                        |
-| **Cooperative yielding**      | It ensures fibers don't monopolize resources, yielding control when necessary.                                     |
-| **Ensuring resource cleanup** | The runtime guarantees finalizers run properly to clean up resources when needed.                                  |
-| **Handling async callbacks**  | The runtime deals with asynchronous operations transparently, allowing you to write async and sync code uniformly. |
-
-## The Default Runtime
-
-When we use [functions that run effects](/docs/getting-started/running-effects/) like `Effect.runPromise` or `Effect.runFork`, we are actually using the **default runtime** without explicitly mentioning it. These functions are designed as convenient shortcuts for executing our effects using the default runtime.
-
-Each of the `Effect.run*` functions internally calls the corresponding `Runtime.run*` function, passing in the default runtime. For example, `Effect.runPromise` is just an alias for `Runtime.runPromise(defaultRuntime)`.
-
-Both of the following executions are functionally equivalent:
-
-**Example** (Running an Effect Using the Default Runtime)
-
-```ts twoslash
-import { Effect, Runtime } from "effect"
-
-const program = Effect.log("Application started!")
-
-Effect.runPromise(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message="Application started!"
-*/
-
-Runtime.runPromise(Runtime.defaultRuntime)(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message="Application started!"
-*/
-```
-
-In both cases, the program runs using the default runtime, producing the same output.
-
-The default runtime includes:
-
-- An empty [context](/docs/requirements-management/services/#how-it-works)
-- A set of `FiberRefs` that include the [default services](/docs/requirements-management/default-services/)
-- A default configuration for `RuntimeFlags` that enables `Interruption` and `CooperativeYielding`
-
-In most scenarios, using the default runtime is sufficient for effect execution.
-However, there are cases where it's helpful to create a custom runtime, particularly when you need to reuse specific configurations or contexts.
-
-For example, in a React app or when executing operations on a server in response to API requests, you might create a `Runtime<R>` by initializing a [layer](/docs/requirements-management/layers/) `Layer<R, Err, RIn>`. This allows you to maintain a consistent context across different execution boundaries.
-
-## Locally Scoped Runtime Configuration
-
-In Effect, runtime configurations are typically **inherited** from their parent workflows.
-This means that when we access a runtime configuration or obtain a runtime inside a workflow, we are essentially using the configuration of the parent workflow.
-
-However, there are cases where we want to temporarily **override the runtime configuration for a specific part** of our code.
-This concept is known as locally scoped runtime configuration.
-Once the execution of that code region is completed, the runtime configuration **reverts** to its original settings.
-
-To achieve this, we make use of the `Effect.provide` function, which allow us to provide a new runtime configuration to a specific section of our code.
-
-**Example** (Overriding the Logger Configuration)
-
-In this example, we create a simple logger using `Logger.replace`, which replaces the default logger with a custom one that logs messages without timestamps or levels. We then use `Effect.provide` to apply this custom logger to the program.
-
-```ts twoslash
-import { Logger, Effect } from "effect"
-
-const addSimpleLogger = Logger.replace(
-  Logger.defaultLogger,
-  // Custom logger implementation
-  Logger.make(({ message }) => console.log(message))
-)
-
-const program = Effect.gen(function* () {
-  yield* Effect.log("Application started!")
-  yield* Effect.log("Application is about to exit!")
-})
-
-// Running with the default logger
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message="Application started!"
-timestamp=... level=INFO fiber=#0 message="Application is about to exit!"
-*/
-
-// Overriding the default logger with a custom one
-Effect.runFork(program.pipe(Effect.provide(addSimpleLogger)))
-/*
-Output:
-[ 'Application started!' ]
-[ 'Application is about to exit!' ]
-*/
-```
-
-To ensure that the runtime configuration is only applied to a specific part of an Effect application, we should provide the configuration layer exclusively to that particular section.
-
-**Example** (Providing a configuration layer to a nested workflow)
-
-In this example, we demonstrate how to apply a custom logger configuration only to a specific section of the program. The default logger is used for most of the program, but when we apply the `Effect.provide(addSimpleLogger)` call, it overrides the logger within that specific nested block. After that, the configuration reverts to its original state.
-
-```ts twoslash
-import { Logger, Effect } from "effect"
-
-const addSimpleLogger = Logger.replace(
-  Logger.defaultLogger,
-  // Custom logger implementation
-  Logger.make(({ message }) => console.log(message))
-)
-
-const removeDefaultLogger = Logger.remove(Logger.defaultLogger)
-
-const program = Effect.gen(function* () {
-  // Logs with default logger
-  yield* Effect.log("Application started!")
-
-  yield* Effect.gen(function* () {
-    // This log is suppressed
-    yield* Effect.log("I'm not going to be logged!")
-
-    // Custom logger applied here
-    yield* Effect.log("I will be logged by the simple logger.").pipe(
-      Effect.provide(addSimpleLogger)
-    )
-
-    // This log is suppressed
-    yield* Effect.log(
-      "Reset back to the previous configuration, so I won't be logged."
-    )
-  }).pipe(
-    // Remove the default logger temporarily
-    Effect.provide(removeDefaultLogger)
-  )
-
-  // Logs with default logger again
-  yield* Effect.log("Application is about to exit!")
-})
-
-Effect.runSync(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message="Application started!"
-[ 'I will be logged by the simple logger.' ]
-timestamp=... level=INFO fiber=#0 message="Application is about to exit!"
-*/
-```
-
-## ManagedRuntime
-
-When developing an Effect application and using `Effect.run*` functions to execute it, the application is automatically run using the default runtime behind the scenes. While it’s possible to adjust specific parts of the application by providing locally scoped configuration layers using `Effect.provide`, there are scenarios where you might want to **customize the runtime configuration for the entire application** from the top level.
-
-In these cases, you can create a top-level runtime by converting a configuration layer into a runtime using the `ManagedRuntime.make` constructor.
-
-**Example** (Creating and Using a Custom Managed Runtime)
-
-In this example, we first create a custom configuration layer called `appLayer`, which replaces the default logger with a simple one that logs messages to the console. Next, we use `ManagedRuntime.make` to turn this configuration layer into a runtime.
-
-```ts twoslash
-import { Effect, ManagedRuntime, Logger } from "effect"
-
-// Define a configuration layer that replaces the default logger
-const appLayer = Logger.replace(
-  Logger.defaultLogger,
-  // Custom logger implementation
-  Logger.make(({ message }) => console.log(message))
-)
-
-// Create a custom runtime from the configuration layer
-const runtime = ManagedRuntime.make(appLayer)
-
-const program = Effect.log("Application started!")
-
-// Execute the program using the custom runtime
-runtime.runSync(program)
-
-// Clean up resources associated with the custom runtime
-Effect.runFork(runtime.disposeEffect)
-/*
-Output:
-[ 'Application started!' ]
-*/
-```
-
-### Effect.Tag
-
-When working with runtimes that you pass around, `Effect.Tag` can help simplify the access to services. It lets you define a new tag and embed the service shape directly into the static properties of the tag class.
-
-**Example** (Defining a Tag for Notifications)
-
-```ts twoslash
-import { Effect } from "effect"
-
-class Notifications extends Effect.Tag("Notifications")<
-  Notifications,
-  { readonly notify: (message: string) => Effect.Effect<void> }
->() {}
-```
-
-In this setup, the fields of the service (in this case, the `notify` method) are turned into static properties of the `Notifications` class, making it easier to access them.
-
-This allows you to interact with the service directly:
-
-**Example** (Using the Notifications Tag)
-
-```ts twoslash
-import { Effect } from "effect"
-
-class Notifications extends Effect.Tag("Notifications")<
-  Notifications,
-  { readonly notify: (message: string) => Effect.Effect<void> }
->() {}
-
-// Create an effect that depends on the Notifications service
-const action = Notifications.notify("Hello, world!")
-//    ^? const action: Effect<void, never, Notifications>
-```
-
-In this example, the `action` effect depends on the `Notifications` service. This approach allows you to reference services without manually passing them around. Later, you can create a `Layer` that provides the `Notifications` service and build a `ManagedRuntime` with that layer to ensure the service is available where needed.
-
-### Integrations
-
-The `ManagedRuntime` simplifies the integration of services and layers with other frameworks or tools, particularly in environments where Effect is not the primary framework and access to the main entry point is restricted.
-
-For example, in environments like React or other frameworks where you have limited control over the main application entry point, `ManagedRuntime` helps manage the lifecycle of services.
-
-Here's how to manage a service's lifecycle within an external framework:
-
-**Example** (Using `ManagedRuntime` in an External Framework)
-
-```ts twoslash
-import { Effect, ManagedRuntime, Layer, Console } from "effect"
-
-// Define the Notifications service using Effect.Tag
-class Notifications extends Effect.Tag("Notifications")<
-  Notifications,
-  { readonly notify: (message: string) => Effect.Effect<void> }
->() {
-  // Provide a live implementation of the Notifications service
-  static Live = Layer.succeed(this, {
-    notify: (message) => Console.log(message)
-  })
-}
-
-// Example entry point for an external framework
-async function main() {
-  // Create a custom runtime using the Notifications layer
-  const runtime = ManagedRuntime.make(Notifications.Live)
-
-  // Run the effect
-  await runtime.runPromise(Notifications.notify("Hello, world!"))
-
-  // Dispose of the runtime, cleaning up resources
-  await runtime.dispose()
-}
-```
-
 > error-management/retrying.mdx\n\n---
 title: Retrying
 description: Enhance resilience with Effect's retrying strategies, enabling robust handling of transient failures with customizable retry policies and fallback mechanisms.
@@ -28091,713 +27779,1502 @@ Start processing...
 */
 ```
 
-> observability/tracing.mdx\n\n---
-title: Tracing in Effect
-description: Explore tracing in distributed systems to track request lifecycles across services using spans and traces for debugging and performance optimization.
+> additional-resources/effect-vs-fp-ts.mdx\n\n---
+title: Effect vs fp-ts
+description: Comparison of Effect and fp-ts, covering features like typed services, resource management, concurrency, and stream processing.
 sidebar:
-  label: Tracing
+  order: 4
+---
+
+## Key Developments
+
+- **Project Merger**: The fp-ts project is officially merging with the Effect-TS ecosystem. Giulio Canti, the author of fp-ts, is being welcomed into the Effect organization. For more details, see the [announcement here](https://dev.to/effect/a-bright-future-for-effect-455m).
+- **Continuity and Evolution**: Effect can be seen as the successor to fp-ts v2 and is effectively fp-ts v3, marking a significant evolution in the library's capabilities.
+
+## FAQ
+
+### Bundle Size Comparison Between Effect and fp-ts
+
+**Q: I compared the bundle sizes of two simple programs using Effect and fp-ts. Why does Effect have a larger bundle size?**
+
+A: It's natural to observe different bundle sizes because Effect and fp-ts are distinct systems designed for different purposes.
+Effect's bundle size is larger due to its included fiber runtime, which is crucial for its functionality.
+While the initial bundle size may seem large, the overhead amortizes as you use Effect.
+
+**Q: Should I be concerned about the bundle size difference when choosing between Effect and fp-ts?**
+
+A: Not necessarily. Consider the specific requirements and benefits of each library for your project.
+
+The **Micro** module in Effect is designed as a lightweight alternative to the standard `Effect` module, specifically for scenarios where reducing bundle size is crucial.
+This module is self-contained and does not include more complex features like `Layer`, `Ref`, `Queue`, and `Deferred`.
+If any major Effect modules (beyond basic data modules like `Option`, `Either`, `Array`, etc.) are used, the effect runtime will be added to your bundle, negating the benefits of Micro.
+This makes Micro ideal for libraries that aim to implement Effect functionality with minimal impact on bundle size, especially for libraries that plan to expose `Promise`-based APIs.
+It also supports scenarios where a client might use Micro while a server uses the full suite of Effect features, maintaining compatibility and shared logic between different parts of an application.
+
+## Comparison Table
+
+The following table compares the features of the Effect and [fp-ts](https://github.com/gcanti/fp-ts) libraries.
+
+| Feature                   | fp-ts | Effect |
+| ------------------------- | ----- | ------ |
+| Typed Services            | ❌    | ✅     |
+| Built-in Services         | ❌    | ✅     |
+| Typed errors              | ✅    | ✅     |
+| Pipeable APIs             | ✅    | ✅     |
+| Dual APIs                 | ❌    | ✅     |
+| Testability               | ❌    | ✅     |
+| Resource Management       | ❌    | ✅     |
+| Interruptions             | ❌    | ✅     |
+| Defects                   | ❌    | ✅     |
+| Fiber-Based Concurrency   | ❌    | ✅     |
+| Fiber Supervision         | ❌    | ✅     |
+| Retry and Retry Policies  | ❌    | ✅     |
+| Built-in Logging          | ❌    | ✅     |
+| Built-in Scheduling       | ❌    | ✅     |
+| Built-in Caching          | ❌    | ✅     |
+| Built-in Batching         | ❌    | ✅     |
+| Metrics                   | ❌    | ✅     |
+| Tracing                   | ❌    | ✅     |
+| Configuration             | ❌    | ✅     |
+| Immutable Data Structures | ❌    | ✅     |
+| Stream Processing         | ❌    | ✅     |
+
+Here's an explanation of each feature:
+
+### Typed Services
+
+Both fp-ts and Effect libraries provide the ability to track requirements at the type level, allowing you to define and use services with specific types. In fp-ts, you can utilize the `ReaderTaskEither<R, E, A>` type, while in Effect, the `Effect<A, E, R>` type is available. It's important to note that in fp-ts, the `R` type parameter is contravariant, which means that there is no guarantee of avoiding conflicts, and the library offers only basic tools for dependency management.
+
+On the other hand, in Effect, the `R` type parameter is covariant and all APIs have the ability to merge dependencies at the type level when multiple effects are involved. Effect also provides a range of specifically designed tools to simplify the management of dependencies, including `Tag`, `Context`, and `Layer`. These tools enhance the ease and flexibility of handling dependencies in your code, making it easier to compose and manage complex applications.
+
+### Built-in Services
+
+The Effect library has built-in services like `Clock`, `Random` and `Tracer`, while fp-ts does not provide any default services.
+
+### Typed errors
+
+Both libraries support typed errors, enabling you to define and handle errors with specific types. However, in Effect, all APIs have the ability to merge errors at the type-level when multiple effects are involved, and each effect can potentially fail with different types of errors.
+
+This means that when combining multiple effects that can fail, the resulting type of the error will be a union of the individual error types. Effect provides utilities and type-level operations to handle and manage these merged error types effectively.
+
+### Pipeable APIs
+
+Both fp-ts and Effect libraries provide pipeable APIs, allowing you to compose and sequence operations in a functional and readable manner using the `pipe` function. However, Effect goes a step further and offers a `.pipe()` method on each data type, making it more convenient to work with pipelines without the need to explicitly import the `pipe` function every time.
+
+### Dual APIs
+
+Effect library provides dual APIs, allowing you to use the same API in different ways (e.g., "data-last" and "data-first" variants).
+
+### Testability
+
+The functional style of fp-ts generally promotes good testability of the code written using it, but the library itself does not provide dedicated tools specifically designed for the testing phase. On the other hand, Effect takes testability a step further by offering additional tools that are specifically tailored to simplify the testing process.
+
+Effect provides a range of utilities that improve testability. For example, it offers the `TestClock` utility, which allows you to control the passage of time during tests. This is useful for testing time-dependent code. Additionally, Effect provides the `TestRandom` utility, which enables fully deterministic testing of code that involves randomness. This ensures consistent and predictable test results. Another helpful tool is `ConfigProvider.fromMap`, which makes it easy to define mock configurations for your application during testing.
+
+### Resource Management
+
+The Effect library provides built-in capabilities for resource management, while fp-ts has limited features in this area (mainly `bracket`) and they are less sophisticated.
+
+In Effect, resource management refers to the ability to acquire and release resources, such as database connections, file handles, or network sockets, in a safe and controlled manner. The library offers comprehensive and refined mechanisms to handle resource acquisition and release, ensuring proper cleanup and preventing resource leaks.
+
+### Interruptions
+
+The Effect library supports interruptions, which means you can interrupt and cancel ongoing computations if needed. This feature gives you more control over the execution of your code and allows you to handle situations where you want to stop a computation before it completes.
+
+In Effect, interruptions are useful in scenarios where you need to handle user cancellations, timeouts, or other external events that require stopping ongoing computations. You can explicitly request an interruption and the library will safely and efficiently halt the execution of the computation.
+
+On the other hand, fp-ts does not have built-in support for interruptions. Once a computation starts in fp-ts, it will continue until it completes or encounters an error, without the ability to be interrupted midway.
+
+### Defects
+
+The Effect library provides mechanisms for handling defects and managing **unexpected** failures. In Effect, defects refer to unexpected errors or failures that can occur during the execution of a program.
+
+With the Effect library, you have built-in tools and utilities to handle defects in a structured and reliable manner. It offers error handling capabilities that allow you to catch and handle exceptions, recover from failures, and gracefully handle unexpected scenarios.
+
+On the other hand, fp-ts does not have built-in support specifically dedicated to managing defects. While you can handle errors using standard functional programming techniques in fp-ts, the Effect library provides a more comprehensive and streamlined approach to dealing with defects.
+
+### Fiber-Based Concurrency
+
+The Effect library leverages fiber-based concurrency, which enables lightweight and efficient concurrent computations. In simpler terms, fiber-based concurrency allows multiple tasks to run concurrently, making your code more responsive and efficient.
+
+With fiber-based concurrency, the Effect library can handle concurrent operations in a way that is lightweight and doesn't block the execution of other tasks. This means that you can run multiple computations simultaneously, taking advantage of the available resources and maximizing performance.
+
+On the other hand, fp-ts does not have built-in support for fiber-based concurrency. While fp-ts provides a rich set of functional programming features, it doesn't have the same level of support for concurrent computations as the Effect library.
+
+### Fiber Supervision
+
+Effect library provides supervision strategies for managing and monitoring fibers. fp-ts does not have built-in support for fiber supervision.
+
+### Retry and Retry Policies
+
+The Effect library includes built-in support for retrying computations with customizable retry policies. This feature is not available in fp-ts out of the box, and you would need to rely on external libraries to achieve similar functionality. However, it's important to note that the external libraries may not offer the same level of sophistication and fine-tuning as the built-in retry capabilities provided by the Effect library.
+
+Retry functionality allows you to automatically retry a computation or action when it fails, based on a set of predefined rules or policies. This can be particularly useful in scenarios where you are working with unreliable or unpredictable resources, such as network requests or external services.
+
+The Effect library provides a comprehensive set of retry policies that you can customize to fit your specific needs. These policies define the conditions for retrying a computation, such as the number of retries, the delay between retries, and the criteria for determining if a retry should be attempted.
+
+By leveraging the built-in retry functionality in the Effect library, you can handle transient errors or temporary failures in a more robust and resilient manner. This can help improve the overall reliability and stability of your applications, especially in scenarios where you need to interact with external systems or services.
+
+In contrast, fp-ts does not offer built-in support for retrying computations. If you require retry functionality in fp-ts, you would need to rely on external libraries, which may not provide the same level of sophistication and flexibility as the Effect library.
+
+It's worth noting that the built-in retry capabilities of the Effect library are designed to work seamlessly with its other features, such as error handling and resource management. This integration allows for a more cohesive and comprehensive approach to handling failures and retries within your computations.
+
+### Built-in Logging
+
+The Effect library comes with built-in logging capabilities. This means that you can easily incorporate logging into your applications without the need for additional libraries or dependencies. In addition, the default logger provided by Effect can be replaced with a custom logger to suit your specific logging requirements.
+
+Logging is an essential aspect of software development as it allows you to record and track important information during the execution of your code. It helps you monitor the behavior of your application, debug issues, and gather insights for analysis.
+
+With the built-in logging capabilities of the Effect library, you can easily log messages, warnings, errors, or any other relevant information at various points in your code. This can be particularly useful for tracking the flow of execution, identifying potential issues, or capturing important events during the operation of your application.
+
+On the other hand, fp-ts does not provide built-in logging capabilities. If you need logging functionality in fp-ts, you would need to rely on external libraries or implement your own logging solution from scratch. This can introduce additional complexity and dependencies into your codebase.
+
+### Built-in Scheduling
+
+The Effect library provides built-in scheduling capabilities, which allows you to manage the execution of computations over time. This feature is not available in fp-ts.
+
+In many applications, it's common to have tasks or computations that need to be executed at specific intervals or scheduled for future execution. For example, you might want to perform periodic data updates, trigger notifications, or run background processes at specific times. This is where built-in scheduling comes in handy.
+
+On the other hand, fp-ts does not have built-in scheduling capabilities. If you need to schedule tasks or manage timed computations in fp-ts, you would have to rely on external libraries or implement your own scheduling mechanisms, which can add complexity to your codebase.
+
+### Built-in Caching
+
+The Effect library provides built-in caching mechanisms, which enable you to cache the results of computations for improved performance. This feature is not available in fp-ts.
+
+In many applications, computations can be time-consuming or resource-intensive, especially when dealing with complex operations or accessing remote resources. Caching is a technique used to store the results of computations so that they can be retrieved quickly without the need to recompute them every time.
+
+With the built-in caching capabilities of the Effect library, you can easily cache the results of computations and reuse them when needed. This can significantly improve the performance of your application by avoiding redundant computations and reducing the load on external resources.
+
+### Built-in Batching
+
+The Effect library offers built-in batching capabilities, which enable you to combine multiple computations into a single batched computation. This feature is not available in fp-ts.
+
+In many scenarios, you may need to perform multiple computations that share similar inputs or dependencies. Performing these computations individually can result in inefficiencies and increased overhead. Batching is a technique that allows you to group these computations together and execute them as a single batch, improving performance and reducing unnecessary processing.
+
+### Metrics
+
+The Effect library includes built-in support for collecting and reporting metrics related to computations and system behavior. It specifically supports [OpenTelemetry Metrics](https://opentelemetry.io/docs/specs/otel/metrics/). This feature is not available in fp-ts.
+
+Metrics play a crucial role in understanding and monitoring the performance and behavior of your applications. They provide valuable insights into various aspects, such as response times, resource utilization, error rates, and more. By collecting and analyzing metrics, you can identify performance bottlenecks, optimize your code, and make informed decisions to improve your application's overall quality.
+
+### Tracing
+
+The Effect library has built-in tracing capabilities, which enable you to trace and debug the execution of your code and track the path of a request through an application. Additionally, Effect offers a dedicated [OpenTelemetry exporter](https://opentelemetry.io/docs/instrumentation/js/exporters/) for integrating with the OpenTelemetry observability framework. In contrast, fp-ts does not offer a similar tracing tool to enhance visibility into code execution.
+
+### Configuration
+
+The Effect library provides built-in support for managing and accessing configuration values within your computations. This feature is not available in fp-ts.
+
+Configuration values are an essential aspect of software development. They allow you to customize the behavior of your applications without modifying the code. Examples of configuration values include database connection strings, API endpoints, feature flags, and various settings that can vary between environments or deployments.
+
+With the Effect library's built-in support for configuration, you can easily manage and access these values within your computations. It provides convenient utilities and abstractions to load, validate, and access configuration values, ensuring that your application has the necessary settings it requires to function correctly.
+
+By leveraging the built-in configuration support in the Effect library, you can:
+
+- Load configuration values from various sources such as environment variables, configuration files, or remote configuration providers.
+- Validate and ensure that the loaded configuration values adhere to the expected format and structure.
+- Access the configuration values within your computations, allowing you to use them wherever necessary.
+
+### Immutable Data Structures
+
+The Effect library provides built-in support for immutable data structures such as `Chunk`, `HashSet`, and `HashMap`. These data structures ensure that once created, their values cannot be modified, promoting safer and more predictable code. In contrast, fp-ts does not have built-in support for such data structures and only provides modules that add additional APIs to standard data types like `Set` and `Map`. While these modules can be useful, they do not offer the same level of performance optimizations and specialized operations as the built-in immutable data structures provided by the Effect library.
+
+Immutable data structures offer several benefits, including:
+
+- Immutability: Immutable data structures cannot be changed after they are created. This property eliminates the risk of accidental modifications and enables safer concurrent programming.
+
+- Predictability: With immutable data structures, you can rely on the fact that their values won't change unexpectedly. This predictability simplifies reasoning about code behavior and reduces bugs caused by mutable state.
+
+- Sharing and Reusability: Immutable data structures can be safely shared between different parts of your program. Since they cannot be modified, you don't need to create defensive copies, resulting in more efficient memory usage and improved performance.
+
+### Stream Processing
+
+The Effect ecosystem provides built-in support for stream processing, enabling you to work with streams of data. Stream processing is a powerful concept that allows you to efficiently process and transform continuous streams of data in a reactive and asynchronous manner. However, fp-ts does not have this feature built-in and relies on external libraries like RxJS to handle stream processing.
+
+> additional-resources/effect-vs-promise.mdx\n\n---
+title: Effect vs Promise
+description: Comparison of Effect and Promise, covering features like type safety, concurrency, and error handling.
+sidebar:
+  order: 5
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components"
+
+In this guide, we will explore the differences between `Promise` and `Effect`, two approaches to handling asynchronous operations in TypeScript. We'll discuss their type safety, creation, chaining, and concurrency, providing examples to help you understand their usage.
+
+## Comparing Effects and Promises: Key Distinctions
+
+- **Evaluation Strategy:** Promises are eagerly evaluated, whereas effects are lazily evaluated.
+- **Execution Mode:** Promises are one-shot, executing once, while effects are multi-shot, repeatable.
+- **Interruption Handling and Automatic Propagation:** Promises lack built-in interruption handling, posing challenges in managing interruptions, and don't automatically propagate interruptions, requiring manual abort controller management. In contrast, effects come with interruption handling capabilities and automatically compose interruption, simplifying management locally on smaller computations without the need for high-level orchestration.
+- **Structured Concurrency:** Effects offer structured concurrency built-in, which is challenging to achieve with Promises.
+- **Error Reporting (Type Safety):** Promises don't inherently provide detailed error reporting at the type level, whereas effects do, offering type-safe insight into error cases.
+- **Runtime Behavior:** The Effect runtime aims to remain synchronous as long as possible, transitioning into asynchronous mode only when necessary due to computation requirements or main thread starvation.
+
+## Type safety
+
+Let's start by comparing the types of `Promise` and `Effect`. The type parameter `A` represents the resolved value of the operation:
+
+<Tabs syncKey="effect-vs-promise">
+
+<TabItem label="Promise">
+
+```ts showLineNumbers=false
+Promise<A>
+```
+
+</TabItem>
+
+<TabItem label="Effect">
+
+```ts showLineNumbers=false
+Effect<A, Error, Context>
+```
+
+</TabItem>
+
+</Tabs>
+
+Here's what sets `Effect` apart:
+
+- It allows you to track the types of errors statically through the type parameter `Error`. For more information about error management in `Effect`, see [Expected Errors](/docs/error-management/expected-errors/).
+- It allows you to track the types of required dependencies statically through the type parameter `Context`. For more information about context management in `Effect`, see [Managing Services](/docs/requirements-management/services/).
+
+## Creating
+
+### Success
+
+Let's compare creating a successful operation using `Promise` and `Effect`:
+
+<Tabs syncKey="effect-vs-promise">
+
+<TabItem label="Promise">
+
+```ts twoslash
+const success = Promise.resolve(2)
+```
+
+</TabItem>
+
+<TabItem label="Effect">
+
+```ts twoslash
+import { Effect } from "effect"
+
+const success = Effect.succeed(2)
+```
+
+</TabItem>
+
+</Tabs>
+
+### Failure
+
+Now, let's see how to handle failures with `Promise` and `Effect`:
+
+<Tabs syncKey="effect-vs-promise">
+
+<TabItem label="Promise">
+
+```ts twoslash
+const failure = Promise.reject("Uh oh!")
+```
+
+</TabItem>
+
+<TabItem label="Effect">
+
+```ts twoslash
+import { Effect } from "effect"
+
+const failure = Effect.fail("Uh oh!")
+```
+
+</TabItem>
+
+</Tabs>
+
+### Constructor
+
+Creating operations with custom logic:
+
+<Tabs syncKey="effect-vs-promise">
+
+<TabItem label="Promise">
+
+```ts twoslash
+const task = new Promise<number>((resolve, reject) => {
+  setTimeout(() => {
+    Math.random() > 0.5 ? resolve(2) : reject("Uh oh!")
+  }, 300)
+})
+```
+
+</TabItem>
+
+<TabItem label="Effect">
+
+```ts twoslash
+import { Effect } from "effect"
+
+const task = Effect.gen(function* () {
+  yield* Effect.sleep("300 millis")
+  return Math.random() > 0.5 ? 2 : yield* Effect.fail("Uh oh!")
+})
+```
+
+</TabItem>
+
+</Tabs>
+
+## Thenable
+
+Mapping the result of an operation:
+
+### map
+
+<Tabs syncKey="effect-vs-promise">
+
+<TabItem label="Promise">
+
+```ts twoslash
+const mapped = Promise.resolve("Hello").then((s) => s.length)
+```
+
+</TabItem>
+
+<TabItem label="Effect">
+
+```ts twoslash
+import { Effect } from "effect"
+
+const mapped = Effect.succeed("Hello").pipe(
+  Effect.map((s) => s.length)
+  // or Effect.andThen((s) => s.length)
+)
+```
+
+</TabItem>
+
+</Tabs>
+
+### flatMap
+
+Chaining multiple operations:
+
+<Tabs syncKey="effect-vs-promise">
+
+<TabItem label="Promise">
+
+```ts twoslash
+const flatMapped = Promise.resolve("Hello").then((s) =>
+  Promise.resolve(s.length)
+)
+```
+
+</TabItem>
+
+<TabItem label="Effect">
+
+```ts twoslash
+import { Effect } from "effect"
+
+const flatMapped = Effect.succeed("Hello").pipe(
+  Effect.flatMap((s) => Effect.succeed(s.length))
+  // or Effect.andThen((s) => Effect.succeed(s.length))
+)
+```
+
+</TabItem>
+
+</Tabs>
+
+## Comparing Effect.gen with async/await
+
+If you are familiar with `async`/`await`, you may notice that the flow of writing code is similar.
+
+Let's compare the two approaches:
+
+<Tabs syncKey="effect-vs-promise">
+
+<TabItem label="Promise">
+
+```ts twoslash
+const increment = (x: number) => x + 1
+
+const divide = (a: number, b: number): Promise<number> =>
+  b === 0
+    ? Promise.reject(new Error("Cannot divide by zero"))
+    : Promise.resolve(a / b)
+
+const task1 = Promise.resolve(10)
+
+const task2 = Promise.resolve(2)
+
+const program = async function () {
+  const a = await task1
+  const b = await task2
+  const n1 = await divide(a, b)
+  const n2 = increment(n1)
+  return `Result is: ${n2}`
+}
+
+program().then(console.log) // Output: "Result is: 6"
+```
+
+</TabItem>
+
+<TabItem label="Effect">
+
+```ts twoslash
+import { Effect } from "effect"
+
+const increment = (x: number) => x + 1
+
+const divide = (a: number, b: number): Effect.Effect<number, Error> =>
+  b === 0
+    ? Effect.fail(new Error("Cannot divide by zero"))
+    : Effect.succeed(a / b)
+
+const task1 = Effect.promise(() => Promise.resolve(10))
+
+const task2 = Effect.promise(() => Promise.resolve(2))
+
+const program = Effect.gen(function* () {
+  const a = yield* task1
+  const b = yield* task2
+  const n1 = yield* divide(a, b)
+  const n2 = increment(n1)
+  return `Result is: ${n2}`
+})
+
+Effect.runPromise(program).then(console.log)
+// Output: "Result is: 6"
+```
+
+</TabItem>
+
+</Tabs>
+
+It's important to note that although the code appears similar, the two programs are not identical. The purpose of comparing them side by side is just to highlight the resemblance in how they are written.
+
+## Concurrency
+
+### Promise.all()
+
+<Tabs syncKey="effect-vs-promise">
+
+<TabItem label="Promise">
+
+```ts twoslash
+const task1 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task1...")
+  setTimeout(() => {
+    console.log("task1 done")
+    resolve(1)
+  }, 100)
+})
+
+const task2 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task2...")
+  setTimeout(() => {
+    console.log("task2 done")
+    reject("Uh oh!")
+  }, 200)
+})
+
+const task3 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task3...")
+  setTimeout(() => {
+    console.log("task3 done")
+    resolve(3)
+  }, 300)
+})
+
+const program = Promise.all([task1, task2, task3])
+
+program.then(console.log, console.error)
+/*
+Output:
+Executing task1...
+Executing task2...
+Executing task3...
+task1 done
+task2 done
+Uh oh!
+task3 done
+*/
+```
+
+</TabItem>
+
+<TabItem label="Effect">
+
+```ts twoslash
+import { Effect } from "effect"
+
+const task1 = Effect.gen(function* () {
+  console.log("Executing task1...")
+  yield* Effect.sleep("100 millis")
+  console.log("task1 done")
+  return 1
+})
+
+const task2 = Effect.gen(function* () {
+  console.log("Executing task2...")
+  yield* Effect.sleep("200 millis")
+  console.log("task2 done")
+  return yield* Effect.fail("Uh oh!")
+})
+
+const task3 = Effect.gen(function* () {
+  console.log("Executing task3...")
+  yield* Effect.sleep("300 millis")
+  console.log("task3 done")
+  return 3
+})
+
+const program = Effect.all([task1, task2, task3], {
+  concurrency: "unbounded"
+})
+
+Effect.runPromise(program).then(console.log, console.error)
+/*
+Output:
+Executing task1...
+Executing task2...
+Executing task3...
+task1 done
+task2 done
+(FiberFailure) Error: Uh oh!
+*/
+```
+
+</TabItem>
+
+</Tabs>
+
+### Promise.allSettled()
+
+<Tabs syncKey="effect-vs-promise">
+
+<TabItem label="Promise">
+
+```ts
+const task1 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task1...")
+  setTimeout(() => {
+    console.log("task1 done")
+    resolve(1)
+  }, 100)
+})
+
+const task2 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task2...")
+  setTimeout(() => {
+    console.log("task2 done")
+    reject("Uh oh!")
+  }, 200)
+})
+
+const task3 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task3...")
+  setTimeout(() => {
+    console.log("task3 done")
+    resolve(3)
+  }, 300)
+})
+
+const program = Promise.allSettled([task1, task2, task3])
+
+program.then(console.log, console.error)
+/*
+Output:
+Executing task1...
+Executing task2...
+Executing task3...
+task1 done
+task2 done
+task3 done
+[
+  { status: 'fulfilled', value: 1 },
+  { status: 'rejected', reason: 'Uh oh!' },
+  { status: 'fulfilled', value: 3 }
+]
+*/
+```
+
+</TabItem>
+
+<TabItem label="Effect">
+
+```ts twoslash
+import { Effect } from "effect"
+
+const task1 = Effect.gen(function* () {
+  console.log("Executing task1...")
+  yield* Effect.sleep("100 millis")
+  console.log("task1 done")
+  return 1
+})
+
+const task2 = Effect.gen(function* () {
+  console.log("Executing task2...")
+  yield* Effect.sleep("200 millis")
+  console.log("task2 done")
+  return yield* Effect.fail("Uh oh!")
+})
+
+const task3 = Effect.gen(function* () {
+  console.log("Executing task3...")
+  yield* Effect.sleep("300 millis")
+  console.log("task3 done")
+  return 3
+})
+
+const program = Effect.forEach(
+  [task1, task2, task3],
+  (task) => Effect.either(task), // or Effect.exit
+  {
+    concurrency: "unbounded"
+  }
+)
+
+Effect.runPromise(program).then(console.log, console.error)
+/*
+Output:
+Executing task1...
+Executing task2...
+Executing task3...
+task1 done
+task2 done
+task3 done
+[
+  {
+    _id: "Either",
+    _tag: "Right",
+    right: 1
+  }, {
+    _id: "Either",
+    _tag: "Left",
+    left: "Uh oh!"
+  }, {
+    _id: "Either",
+    _tag: "Right",
+    right: 3
+  }
+]
+*/
+```
+
+</TabItem>
+
+</Tabs>
+
+### Promise.any()
+
+<Tabs syncKey="effect-vs-promise">
+
+<TabItem label="Promise">
+
+```ts
+const task1 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task1...")
+  setTimeout(() => {
+    console.log("task1 done")
+    reject("Something went wrong!")
+  }, 100)
+})
+
+const task2 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task2...")
+  setTimeout(() => {
+    console.log("task2 done")
+    resolve(2)
+  }, 200)
+})
+
+const task3 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task3...")
+  setTimeout(() => {
+    console.log("task3 done")
+    reject("Uh oh!")
+  }, 300)
+})
+
+const program = Promise.any([task1, task2, task3])
+
+program.then(console.log, console.error)
+/*
+Output:
+Executing task1...
+Executing task2...
+Executing task3...
+task1 done
+task2 done
+2
+task3 done
+*/
+```
+
+</TabItem>
+
+<TabItem label="Effect">
+
+```ts twoslash
+import { Effect } from "effect"
+
+const task1 = Effect.gen(function* () {
+  console.log("Executing task1...")
+  yield* Effect.sleep("100 millis")
+  console.log("task1 done")
+  return yield* Effect.fail("Something went wrong!")
+})
+
+const task2 = Effect.gen(function* () {
+  console.log("Executing task2...")
+  yield* Effect.sleep("200 millis")
+  console.log("task2 done")
+  return 2
+})
+
+const task3 = Effect.gen(function* () {
+  console.log("Executing task3...")
+  yield* Effect.sleep("300 millis")
+  console.log("task3 done")
+  return yield* Effect.fail("Uh oh!")
+})
+
+const program = Effect.raceAll([task1, task2, task3])
+
+Effect.runPromise(program).then(console.log, console.error)
+/*
+Output:
+Executing task1...
+Executing task2...
+Executing task3...
+task1 done
+task2 done
+2
+*/
+```
+
+</TabItem>
+
+</Tabs>
+
+### Promise.race()
+
+<Tabs syncKey="effect-vs-promise">
+
+<TabItem label="Promise">
+
+```ts twoslash
+const task1 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task1...")
+  setTimeout(() => {
+    console.log("task1 done")
+    reject("Something went wrong!")
+  }, 100)
+})
+
+const task2 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task2...")
+  setTimeout(() => {
+    console.log("task2 done")
+    reject("Uh oh!")
+  }, 200)
+})
+
+const task3 = new Promise<number>((resolve, reject) => {
+  console.log("Executing task3...")
+  setTimeout(() => {
+    console.log("task3 done")
+    resolve(3)
+  }, 300)
+})
+
+const program = Promise.race([task1, task2, task3])
+
+program.then(console.log, console.error)
+/*
+Output:
+Executing task1...
+Executing task2...
+Executing task3...
+task1 done
+Something went wrong!
+task2 done
+task3 done
+*/
+```
+
+</TabItem>
+
+<TabItem label="Effect">
+
+```ts twoslash
+import { Effect } from "effect"
+
+const task1 = Effect.gen(function* () {
+  console.log("Executing task1...")
+  yield* Effect.sleep("100 millis")
+  console.log("task1 done")
+  return yield* Effect.fail("Something went wrong!")
+})
+
+const task2 = Effect.gen(function* () {
+  console.log("Executing task2...")
+  yield* Effect.sleep("200 millis")
+  console.log("task2 done")
+  return yield* Effect.fail("Uh oh!")
+})
+
+const task3 = Effect.gen(function* () {
+  console.log("Executing task3...")
+  yield* Effect.sleep("300 millis")
+  console.log("task3 done")
+  return 3
+})
+
+const program = Effect.raceAll([task1, task2, task3].map(Effect.either)) // or Effect.exit
+
+Effect.runPromise(program).then(console.log, console.error)
+/*
+Output:
+Executing task1...
+Executing task2...
+Executing task3...
+task1 done
+{
+  _id: "Either",
+  _tag: "Left",
+  left: "Something went wrong!"
+}
+*/
+```
+
+</TabItem>
+
+</Tabs>
+
+## FAQ
+
+**Question**. What is the equivalent of starting a promise without immediately waiting for it in Effects?
+
+```ts {10,16} twoslash
+const task = (delay: number, name: string) =>
+  new Promise((resolve) =>
+    setTimeout(() => {
+      console.log(`${name} done`)
+      return resolve(name)
+    }, delay)
+  )
+
+export async function program() {
+  const r0 = task(2_000, "long running task")
+  const r1 = await task(200, "task 2")
+  const r2 = await task(100, "task 3")
+  return {
+    r1,
+    r2,
+    r0: await r0
+  }
+}
+
+program().then(console.log)
+/*
+Output:
+task 2 done
+task 3 done
+long running task done
+{ r1: 'task 2', r2: 'task 3', r0: 'long running promise' }
+*/
+```
+
+**Answer:** You can achieve this by utilizing `Effect.fork` and `Fiber.join`.
+
+```ts {11,17} twoslash
+import { Effect, Fiber } from "effect"
+
+const task = (delay: number, name: string) =>
+  Effect.gen(function* () {
+    yield* Effect.sleep(delay)
+    console.log(`${name} done`)
+    return name
+  })
+
+const program = Effect.gen(function* () {
+  const r0 = yield* Effect.fork(task(2_000, "long running task"))
+  const r1 = yield* task(200, "task 2")
+  const r2 = yield* task(100, "task 3")
+  return {
+    r1,
+    r2,
+    r0: yield* Fiber.join(r0)
+  }
+})
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+task 2 done
+task 3 done
+long running task done
+{ r1: 'task 2', r2: 'task 3', r0: 'long running promise' }
+*/
+```
+
+> additional-resources/coming-from-zio.mdx\n\n---
+title: Coming From ZIO
+description: Key differences between Effect and ZIO.
+sidebar:
+  order: 3
+---
+
+If you are coming to Effect from ZIO, there are a few differences to be aware of.
+
+## Environment
+
+In Effect, we represent the environment required to run an effect workflow as a **union** of services:
+
+**Example** (Defining the Environment with a Union of Services)
+
+```ts twoslash "Console | Logger"
+import { Effect } from "effect"
+
+interface IOError {
+  readonly _tag: "IOError"
+}
+
+interface HttpError {
+  readonly _tag: "HttpError"
+}
+
+interface Console {
+  readonly log: (msg: string) => void
+}
+
+interface Logger {
+  readonly log: (msg: string) => void
+}
+
+type Response = Record<string, string>
+
+// `R` is a union of `Console` and `Logger`
+type Http = Effect.Effect<Response, IOError | HttpError, Console | Logger>
+```
+
+This may be confusing to folks coming from ZIO, where the environment is represented as an **intersection** of services:
+
+```scala showLineNumbers=false
+type Http = ZIO[Console with Logger, IOError, Response]
+```
+
+## Rationale
+
+The rationale for using a union to represent the environment required by an `Effect` workflow boils down to our desire to remove `Has` as a wrapper for services in the environment (similar to what was achieved in ZIO 2.0).
+
+To be able to remove `Has` from Effect, we had to think a bit more structurally given that TypeScript is a structural type system. In TypeScript, if you have a type `A & B` where there is a structural conflict between `A` and `B`, the type `A & B` will reduce to `never`.
+
+**Example** (Intersection Type Conflict)
+
+```ts twoslash
+interface A {
+  readonly prop: string
+}
+
+interface B {
+  readonly prop: number
+}
+
+const ab: A & B = {
+  // @ts-expect-error
+  prop: ""
+}
+/*
+Type 'string' is not assignable to type 'never'.ts(2322)
+*/
+```
+
+In previous versions of Effect, intersections were used for representing an environment with multiple services. The problem with using intersections (i.e. `A & B`) is that there could be multiple services in the environment that have functions and properties named in the same way. To remedy this, we wrapped services in the `Has` type (similar to ZIO 1.0), so you would have `Has<A> & Has<B>` in your environment.
+
+In ZIO 2.0, the _contravariant_ `R` type parameter of the `ZIO` type (representing the environment) became fully phantom, thus allowing for removal of the `Has` type. This significantly improved the clarity of type signatures as well as removing another "stumbling block" for new users.
+
+To facilitate removal of `Has` in Effect, we had to consider how types in the environment compose. By the rule of composition, contravariant parameters composed as an intersection (i.e. with `&`) are equivalent to covariant parameters composed together as a union (i.e. with `|`) for purposes of assignability. Based upon this fact, we decided to diverge from ZIO and make the `R` type parameter _covariant_ given `A | B` does not reduce to `never` if `A` and `B` have conflicts.
+
+From our example above:
+
+```ts twoslash
+interface A {
+  readonly prop: string
+}
+
+interface B {
+  readonly prop: number
+}
+
+// ok
+const ab: A | B = {
+  prop: ""
+}
+```
+
+Representing `R` as a covariant type parameter containing the union of services required by an `Effect` workflow allowed us to remove the requirement for `Has`.
+
+## Type Aliases
+
+In Effect, there are no predefined type aliases such as `UIO`, `URIO`, `RIO`, `Task`, or `IO` like in ZIO.
+
+The reason for this is that type aliases are lost as soon as you compose them, which renders them somewhat useless unless you maintain **multiple** signatures for **every** function. In Effect, we have chosen not to go down this path. Instead, we utilize the `never` type to indicate unused types.
+
+It's worth mentioning that the perception of type aliases being quicker to understand is often just an illusion. In Effect, the explicit notation `Effect<A>` clearly communicates that only type `A` is being used. On the other hand, when using a type alias like `RIO<R, A>`, questions arise about the type `E`. Is it `unknown`? `never`? Remembering such details becomes challenging.
+
+> additional-resources/api-reference.mdx\n\n---
+title: API Reference
+description: API docs covering tools, integrations, and functional programming features.
+sidebar:
   order: 2
 ---
 
-import {
-  Tabs,
-  TabItem,
-  Steps,
-  Aside
-} from "@astrojs/starlight/components"
+# API Reference
 
-Although logs and metrics are useful to understand the behavior of individual services, they are not enough to provide a complete overview of the lifetime of a request in a distributed system.
+- [`effect`](https://effect-ts.github.io/effect/docs/effect)
+- [`@effect/cli`](https://effect-ts.github.io/effect/docs/cli) ([Getting Started](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md))
+- [`@effect/opentelemetry`](https://effect-ts.github.io/effect/docs/opentelemetry)
+- [`@effect/platform`](https://effect-ts.github.io/effect/docs/platform) ([Experimental Features](https://github.com/Effect-TS/effect/blob/main/packages/platform/README.md))
+- [`@effect/printer`](https://effect-ts.github.io/effect/docs/printer) ([Getting Started](https://github.com/Effect-TS/effect/blob/main/packages/printer/README.md))
+- [`@effect/rpc`](https://effect-ts.github.io/effect/docs/rpc) ([Getting Started](https://github.com/Effect-TS/effect/blob/main/packages/rpc/README.md))
+- [`@effect/typeclass`](https://effect-ts.github.io/effect/docs/typeclass) ([Getting Started](https://github.com/Effect-TS/effect/blob/main/packages/typeclass/README.md))
 
-In a distributed system, a request can span multiple services and each service can make multiple requests to other services to fulfill the request. In such a scenario, we need to have a way to track the lifetime of a request across multiple services to diagnose what services are the bottlenecks and where the request is spending most of its time.
+> additional-resources/myths.mdx\n\n---
+title: Myths About Effect
+description: Debunking common misconceptions about Effect's performance, complexity, and use cases.
+sidebar:
+  label: Myths
+  order: 1
+---
 
-## Spans
+## Effect heavily relies on generators and generators are slow!
 
-A **span** represents a single unit of work or operation within a request. It provides a detailed view of what happened during the execution of that specific operation.
+Effect's internals are not built on generators, we only use generators to provide an API which closely mimics async-await. Internally async-await uses the same mechanics as generators and they are equally performant. So if you don't have a problem with async-await you won't have a problem with Effect's generators.
 
-Each span typically contains the following information:
+Where generators and iterables are unacceptably slow is in transforming collections of data, for that try to use plain arrays as much as possible.
 
-| Span Component   | Description                                                        |
-| ---------------- | ------------------------------------------------------------------ |
-| **Name**         | Describes the specific operation being tracked.                    |
-| **Timing Data**  | Timestamps indicating when the operation started and its duration. |
-| **Log Messages** | Structured logs capturing important events during the operation.   |
-| **Attributes**   | Metadata providing additional context about the operation.         |
+## Effect will make your code 500x slower!
 
-Spans are key building blocks in tracing, helping you visualize and understand the flow of requests through various services.
+Effect does perform 500x slower if you are comparing:
 
-## Traces
+```ts twoslash
+const result = 1 + 1
+```
 
-A trace records the paths taken by requests (made by an application or end-user) as they propagate through multi-service architectures, like microservice and serverless applications.
-
-Without tracing, it is challenging to pinpoint the cause of performance problems in a distributed system.
-
-A trace is made of one or more spans. The first span represents the root span. Each root span represents a request from start to finish. The spans underneath the parent provide a more in-depth context of what occurs during a request (or what steps make up a request).
-
-Many Observability back-ends visualize traces as waterfall diagrams that may look something like this:
-
-![Trace Waterfall Diagram](../_assets/waterfall-trace.svg "An image displaying an application trace visualized as a waterfall diagram")
-
-Waterfall diagrams show the parent-child relationship between a root span and its child spans. When a span encapsulates another span, this also represents a nested relationship.
-
-## Creating Spans
-
-You can add tracing to an effect by creating a span using the `Effect.withSpan` API. This helps you track specific operations within the effect.
-
-**Example** (Adding a Span to an Effect)
+to
 
 ```ts twoslash
 import { Effect } from "effect"
 
-// Define an effect that delays for 100 milliseconds
-const program = Effect.void.pipe(Effect.delay("100 millis"))
-
-// Instrument the effect with a span for tracing
-const instrumented = program.pipe(Effect.withSpan("myspan"))
+const result = Effect.runSync(
+  Effect.zipWith(Effect.succeed(1), Effect.succeed(1), (a, b) => a + b)
+)
 ```
 
-Instrumenting an effect with a span does not change its type. If you start with an `Effect<A, E, R>`, the result remains an `Effect<A, E, R>`.
+The reason is one operation is optimized by the JIT compiler to be a direct CPU instruction and the other isn't.
 
-## Printing Spans
+In reality you'd never use Effect in such cases, Effect is an app-level library to tame concurrency, error handling, and much more!
 
-To print spans for debugging or analysis, you'll need to install the required tracing tools. Here’s how to set them up for your project.
+You'd use Effect to coordinate your thunks of code, and you can build your thunks of code in the best perfoming manner as you see fit while still controlling execution through Effect.
 
-### Installing Dependencies
+## Effect has a huge performance overhead!
 
-Choose your package manager and install the necessary libraries:
+Depends what you mean by performance, many times performance bottlenecks in JS are due to bad management of concurrency.
 
-   <Tabs syncKey="package-manager">
+Thanks to structured concurrency and observability it becomes much easier to spot and optimize those issues.
 
-   <TabItem label="npm" icon="seti:npm">
+There are apps in frontend running at 120fps that use Effect intensively, so most likely effect won't be your perf problem.
 
-```sh showLineNumbers=false
-# Install the main library for integrating OpenTelemetry with Effect
-npm install @effect/opentelemetry
+In regards of memory, it doesn't use much more memory than a normal program would, there are a few more allocations compared to non Effect code but usually this is no longer the case when the non Effect code does the same thing as the Effect code.
 
-# Install the required OpenTelemetry SDKs for tracing and metrics
-npm install @opentelemetry/sdk-trace-base
-npm install @opentelemetry/sdk-trace-node
-npm install @opentelemetry/sdk-trace-web
-npm install @opentelemetry/sdk-metrics
+The advise would be start using it and monitor your code, optimise out of need not out of thought, optimizing too early is the root of all evils in software design.
+
+## The bundle size is HUGE!
+
+Effect's minimum cost is about 25k of gzipped code, that chunk contains the Effect Runtime and already includes almost all the functions that you'll need in a normal app-code scenario.
+
+From that point on Effect is tree-shaking friendly so you'll only include what you use.
+
+Also when using Effect your own code becomes shorter and terser, so the overall cost is amortized with usage, we have apps where adopting Effect in the majority of the codebase led to reduction of the final bundle.
+
+## Effect is impossible to learn, there are so many functions and modules!
+
+True, the full Effect ecosystem is quite large and some modules contain 1000s of functions, the reality is that you don't need to know them all to start being productive, you can safely start using Effect knowing just 10-20 functions and progressively discover the rest, just like you can start using TypeScript without knowing every single NPM package.
+
+A short list of commonly used functions to begin are:
+
+- [Effect.succeed](/docs/getting-started/creating-effects/#succeed)
+- [Effect.fail](/docs/getting-started/creating-effects/#fail)
+- [Effect.sync](/docs/getting-started/creating-effects/#sync)
+- [Effect.tryPromise](/docs/getting-started/creating-effects/#trypromise)
+- [Effect.gen](/docs/getting-started/using-generators/)
+- [Effect.runPromise](/docs/getting-started/running-effects/#runpromise)
+- [Effect.catchTag](/docs/error-management/expected-errors/#catchtag)
+- [Effect.catchAll](/docs/error-management/expected-errors/#catchall)
+- [Effect.acquireRelease](/docs/resource-management/scope/#acquirerelease)
+- [Effect.acquireUseRelease](/docs/resource-management/scope/#acquireuserelease)
+- [Effect.provide](/docs/requirements-management/layers/#providing-a-layer-to-an-effect)
+- [Effect.provideService](/docs/requirements-management/services/#providing-a-service-implementation)
+- [Effect.andThen](/docs/getting-started/building-pipelines/#andthen)
+- [Effect.map](/docs/getting-started/building-pipelines/#map)
+- [Effect.tap](/docs/getting-started/building-pipelines/#tap)
+
+A short list of commonly used modules:
+
+- [Effect](https://effect-ts.github.io/effect/effect/Effect.ts.html)
+- [Context](/docs/requirements-management/services/#creating-a-service)
+- [Layer](/docs/requirements-management/layers/)
+- [Option](/docs/data-types/option/)
+- [Either](/docs/data-types/either/)
+- [Array](https://effect-ts.github.io/effect/effect/Array.ts.html)
+- [Match](/docs/code-style/pattern-matching/)
+
+## Effect is the same as RxJS and shares its problems
+
+This is a sensitive topic, let's start by saying that RxJS is a great project and that it has helped millions of developers write reliable software and we all should be thankful to the developers who contributed to such an amazing project.
+
+Discussing the scope of the projects, RxJS aims to make working with Observables easy and wants to provide reactive extensions to JS, Effect instead wants to make writing production-grade TypeScript easy. While the intersection is non-empty the projects have fundamentally different objectives and strategies.
+
+Sometimes people refer to RxJS in bad light, and the reason isn't RxJS in itself but rather usage of RxJS in problem domains where RxJS wasn't thought to be used.
+
+Namely the idea that "everything is a stream" is theoretically true but it leads to fundamental limitations on developer experience, the primary issue being that streams are multi-shot (emit potentially multiple elements, or zero) and mutable delimited continuations (JS Generators) are known to be only good to represent single-shot effects (that emit a single value).
+
+In short it means that writing in imperative style (think of async/await) is practically impossible with stream primitives (practically because there would be the option of replaying the generator at every element and at every step, but this tends to be inefficient and the semantics of it are counter-intuitive, it would only work under the assumption that the full body is free of side-effects), forcing the developer to use declarative approaches such as pipe to represent all of their code.
+
+Effect has a Stream module (which is pull-based instead of push-based in order to be memory constant), but the basic Effect type is single-shot and it is optimised to act as a smart & lazy Promise that enables imperative programming, so when using Effect you're not forced to use a declarative style for everything and you can program using a model which is similar to async-await.
+
+The other big difference is that RxJS only cares about the happy-path with explicit types, it doesn't offer a way of typing errors and dependencies, Effect instead consider both errors and dependencies as explicitely typed and offers control-flow around those in a fully type-safe manner.
+
+In short if you need reactive programming around Observables, use RxJS, if you need to write production-grade TypeScript that includes by default native telemetry, error handling, dependency injection, and more use Effect.
+
+## Effect should be a language or Use a different language
+
+Neither solve the issue of writing production grade software in TypeScript.
+
+TypeScript is an amazing language to write full stack code with deep roots in the JS ecosystem and wide compatibility of tools, it is an industrial language adopted by many large scale companies.
+
+The fact that something like Effect is possible within the language and the fact that the language supports things such as generators that allows for imperative programming with custom types such as Effect makes TypeScript a unique language.
+
+In fact even in functional languages such as Scala the interop with effect systems is less optimal than it is in TypeScript, to the point that effect system authors have expressed wish for their language to support as much as TypeScript supports.
+
+> runtime.mdx\n\n---
+title: Introduction to Runtime
+description: Learn how Effect's runtime system executes concurrent programs, manages resources, and handles configuration with flexibility and efficiency.
+sidebar:
+  label: Runtime
+  order: 6
+---
+
+The `Runtime<R>` data type represents a runtime system that can **execute effects**. To run an effect, `Effect<A, E, R>`, we need a `Runtime<R>` that contains the required resources, denoted by the `R` type parameter.
+
+A `Runtime<R>` consists of three main components:
+
+- A value of type `Context<R>`
+- A value of type `FiberRefs`
+- A value of type `RuntimeFlags`
+
+## What is a Runtime System?
+
+When we write an Effect program, we construct an `Effect` using constructors and combinators.
+Essentially, we are creating a blueprint of a program.
+An `Effect` is merely a data structure that describes the execution of a concurrent program.
+It represents a tree-like structure that combines various primitives to define what the effect should do.
+
+However, this data structure itself does not perform any actions, it is solely a description of a concurrent program.
+
+To execute this program, the Effect runtime system comes into play. The `Runtime.run*` functions (e.g., `Runtime.runPromise`, `Runtime.runFork`) are responsible for taking this blueprint and executing it.
+
+When the runtime system runs an effect, it creates a root fiber, initializing it with:
+
+- The initial [context](/docs/requirements-management/services/#how-it-works)
+- The initial `FiberRefs`
+- The initial effect
+
+It then starts a loop, executing the instructions described by the `Effect` step by step.
+
+You can think of the runtime as a system that takes an [`Effect<A, E, R>`](/docs/getting-started/the-effect-type/) and its associated context `Context<R>` and produces an [`Exit<A, E>`](/docs/data-types/exit/) result.
+
+```text showLineNumbers=false
+┌────────────────────────────────┐
+│  Context<R> + Effect<A, E, R>  │
+└────────────────────────────────┘
+               │
+               ▼
+┌────────────────────────────────┐
+│      Effect Runtime System     │
+└────────────────────────────────┘
+               │
+               ▼
+┌────────────────────────────────┐
+│          Exit<A, E>            │
+└────────────────────────────────┘
 ```
 
-   </TabItem>
+Runtime Systems have a lot of responsibilities:
 
-   <TabItem label="pnpm" icon="pnpm">
+| Responsibility                | Description                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Executing the program**     | The runtime must execute every step of the effect in a loop until the program completes.                           |
+| **Handling errors**           | It handles both expected and unexpected errors that occur during execution.                                        |
+| **Managing concurrency**      | The runtime spawns new fibers when `Effect.fork` is called to handle concurrent operations.                        |
+| **Cooperative yielding**      | It ensures fibers don't monopolize resources, yielding control when necessary.                                     |
+| **Ensuring resource cleanup** | The runtime guarantees finalizers run properly to clean up resources when needed.                                  |
+| **Handling async callbacks**  | The runtime deals with asynchronous operations transparently, allowing you to write async and sync code uniformly. |
 
-```sh showLineNumbers=false
-# Install the main library for integrating OpenTelemetry with Effect
-pnpm add @effect/opentelemetry
+## The Default Runtime
 
-# Install the required OpenTelemetry SDKs for tracing and metrics
-pnpm add @opentelemetry/sdk-trace-base
-pnpm add @opentelemetry/sdk-trace-node
-pnpm add @opentelemetry/sdk-trace-web
-pnpm add @opentelemetry/sdk-metrics
+When we use [functions that run effects](/docs/getting-started/running-effects/) like `Effect.runPromise` or `Effect.runFork`, we are actually using the **default runtime** without explicitly mentioning it. These functions are designed as convenient shortcuts for executing our effects using the default runtime.
+
+Each of the `Effect.run*` functions internally calls the corresponding `Runtime.run*` function, passing in the default runtime. For example, `Effect.runPromise` is just an alias for `Runtime.runPromise(defaultRuntime)`.
+
+Both of the following executions are functionally equivalent:
+
+**Example** (Running an Effect Using the Default Runtime)
+
+```ts twoslash
+import { Effect, Runtime } from "effect"
+
+const program = Effect.log("Application started!")
+
+Effect.runPromise(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message="Application started!"
+*/
+
+Runtime.runPromise(Runtime.defaultRuntime)(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message="Application started!"
+*/
 ```
 
-   </TabItem>
+In both cases, the program runs using the default runtime, producing the same output.
 
-   <TabItem label="Yarn" icon="seti:yarn">
+The default runtime includes:
 
-```sh showLineNumbers=false
-# Install the main library for integrating OpenTelemetry with Effect
-yarn add @effect/opentelemetry
+- An empty [context](/docs/requirements-management/services/#how-it-works)
+- A set of `FiberRefs` that include the [default services](/docs/requirements-management/default-services/)
+- A default configuration for `RuntimeFlags` that enables `Interruption` and `CooperativeYielding`
 
-# Install the required OpenTelemetry SDKs for tracing and metrics
-yarn add @opentelemetry/sdk-trace-base
-yarn add @opentelemetry/sdk-trace-node
-yarn add @opentelemetry/sdk-trace-web
-yarn add @opentelemetry/sdk-metrics
+In most scenarios, using the default runtime is sufficient for effect execution.
+However, there are cases where it's helpful to create a custom runtime, particularly when you need to reuse specific configurations or contexts.
+
+For example, in a React app or when executing operations on a server in response to API requests, you might create a `Runtime<R>` by initializing a [layer](/docs/requirements-management/layers/) `Layer<R, Err, RIn>`. This allows you to maintain a consistent context across different execution boundaries.
+
+## Locally Scoped Runtime Configuration
+
+In Effect, runtime configurations are typically **inherited** from their parent workflows.
+This means that when we access a runtime configuration or obtain a runtime inside a workflow, we are essentially using the configuration of the parent workflow.
+
+However, there are cases where we want to temporarily **override the runtime configuration for a specific part** of our code.
+This concept is known as locally scoped runtime configuration.
+Once the execution of that code region is completed, the runtime configuration **reverts** to its original settings.
+
+To achieve this, we make use of the `Effect.provide` function, which allow us to provide a new runtime configuration to a specific section of our code.
+
+**Example** (Overriding the Logger Configuration)
+
+In this example, we create a simple logger using `Logger.replace`, which replaces the default logger with a custom one that logs messages without timestamps or levels. We then use `Effect.provide` to apply this custom logger to the program.
+
+```ts twoslash
+import { Logger, Effect } from "effect"
+
+const addSimpleLogger = Logger.replace(
+  Logger.defaultLogger,
+  // Custom logger implementation
+  Logger.make(({ message }) => console.log(message))
+)
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("Application started!")
+  yield* Effect.log("Application is about to exit!")
+})
+
+// Running with the default logger
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message="Application started!"
+timestamp=... level=INFO fiber=#0 message="Application is about to exit!"
+*/
+
+// Overriding the default logger with a custom one
+Effect.runFork(program.pipe(Effect.provide(addSimpleLogger)))
+/*
+Output:
+[ 'Application started!' ]
+[ 'Application is about to exit!' ]
+*/
 ```
 
-   </TabItem>
+To ensure that the runtime configuration is only applied to a specific part of an Effect application, we should provide the configuration layer exclusively to that particular section.
 
-   <TabItem label="Bun" icon="bun">
+**Example** (Providing a configuration layer to a nested workflow)
 
-```sh showLineNumbers=false
-# Install the main library for integrating OpenTelemetry with Effect
-bun add @effect/opentelemetry
+In this example, we demonstrate how to apply a custom logger configuration only to a specific section of the program. The default logger is used for most of the program, but when we apply the `Effect.provide(addSimpleLogger)` call, it overrides the logger within that specific nested block. After that, the configuration reverts to its original state.
 
-# Install the required OpenTelemetry SDKs for tracing and metrics
-bun add @opentelemetry/sdk-trace-base
-bun add @opentelemetry/sdk-trace-node
-bun add @opentelemetry/sdk-trace-web
-bun add @opentelemetry/sdk-metrics
+```ts twoslash
+import { Logger, Effect } from "effect"
+
+const addSimpleLogger = Logger.replace(
+  Logger.defaultLogger,
+  // Custom logger implementation
+  Logger.make(({ message }) => console.log(message))
+)
+
+const removeDefaultLogger = Logger.remove(Logger.defaultLogger)
+
+const program = Effect.gen(function* () {
+  // Logs with default logger
+  yield* Effect.log("Application started!")
+
+  yield* Effect.gen(function* () {
+    // This log is suppressed
+    yield* Effect.log("I'm not going to be logged!")
+
+    // Custom logger applied here
+    yield* Effect.log("I will be logged by the simple logger.").pipe(
+      Effect.provide(addSimpleLogger)
+    )
+
+    // This log is suppressed
+    yield* Effect.log(
+      "Reset back to the previous configuration, so I won't be logged."
+    )
+  }).pipe(
+    // Remove the default logger temporarily
+    Effect.provide(removeDefaultLogger)
+  )
+
+  // Logs with default logger again
+  yield* Effect.log("Application is about to exit!")
+})
+
+Effect.runSync(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message="Application started!"
+[ 'I will be logged by the simple logger.' ]
+timestamp=... level=INFO fiber=#0 message="Application is about to exit!"
+*/
 ```
 
-   </TabItem>
+## ManagedRuntime
 
-   </Tabs>
+When developing an Effect application and using `Effect.run*` functions to execute it, the application is automatically run using the default runtime behind the scenes. While it’s possible to adjust specific parts of the application by providing locally scoped configuration layers using `Effect.provide`, there are scenarios where you might want to **customize the runtime configuration for the entire application** from the top level.
 
-<Aside type="note" title="Peer Dependency">
-  The `@opentelemetry/api` package is a peer dependency of
-  `@effect/opentelemetry`. If your package manager does not automatically
-  install peer dependencies, you must add it manually.
-</Aside>
+In these cases, you can create a top-level runtime by converting a configuration layer into a runtime using the `ManagedRuntime.make` constructor.
 
-### Printing a Span to the Console
+**Example** (Creating and Using a Custom Managed Runtime)
 
-Once the dependencies are installed, you can set up span printing using OpenTelemetry. Here's an example showing how to print a span for an effect.
+In this example, we first create a custom configuration layer called `appLayer`, which replaces the default logger with a simple one that logs messages to the console. Next, we use `ManagedRuntime.make` to turn this configuration layer into a runtime.
 
-**Example** (Setting Up and Printing a Span)
+```ts twoslash
+import { Effect, ManagedRuntime, Logger } from "effect"
+
+// Define a configuration layer that replaces the default logger
+const appLayer = Logger.replace(
+  Logger.defaultLogger,
+  // Custom logger implementation
+  Logger.make(({ message }) => console.log(message))
+)
+
+// Create a custom runtime from the configuration layer
+const runtime = ManagedRuntime.make(appLayer)
+
+const program = Effect.log("Application started!")
+
+// Execute the program using the custom runtime
+runtime.runSync(program)
+
+// Clean up resources associated with the custom runtime
+Effect.runFork(runtime.disposeEffect)
+/*
+Output:
+[ 'Application started!' ]
+*/
+```
+
+### Effect.Tag
+
+When working with runtimes that you pass around, `Effect.Tag` can help simplify the access to services. It lets you define a new tag and embed the service shape directly into the static properties of the tag class.
+
+**Example** (Defining a Tag for Notifications)
 
 ```ts twoslash
 import { Effect } from "effect"
-import { NodeSdk } from "@effect/opentelemetry"
-import {
-  ConsoleSpanExporter,
-  BatchSpanProcessor
-} from "@opentelemetry/sdk-trace-base"
 
-// Define an effect that delays for 100 milliseconds
-const program = Effect.void.pipe(Effect.delay("100 millis"))
-
-// Instrument the effect with a span for tracing
-const instrumented = program.pipe(Effect.withSpan("myspan"))
-
-// Set up tracing with the OpenTelemetry SDK
-const NodeSdkLive = NodeSdk.layer(() => ({
-  resource: { serviceName: "example" },
-  // Export span data to the console
-  spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter())
-}))
-
-// Run the effect, providing the tracing layer
-Effect.runPromise(instrumented.pipe(Effect.provide(NodeSdkLive)))
-/*
-Example Output:
-{
-  resource: {
-    attributes: {
-      'service.name': 'example',
-      'telemetry.sdk.language': 'nodejs',
-      'telemetry.sdk.name': '@effect/opentelemetry',
-      'telemetry.sdk.version': '1.28.0'
-    }
-  },
-  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
-  traceId: '673c06608bd815f7a75bf897ef87e186',
-  parentId: undefined,
-  traceState: undefined,
-  name: 'myspan',
-  id: '401b2846170cd17b',
-  kind: 0,
-  timestamp: 1733220735529855.5,
-  duration: 102079.958,
-  attributes: {},
-  status: { code: 1 },
-  events: [],
-  links: []
-}
-*/
+class Notifications extends Effect.Tag("Notifications")<
+  Notifications,
+  { readonly notify: (message: string) => Effect.Effect<void> }
+>() {}
 ```
 
-### Understanding the Span Output
+In this setup, the fields of the service (in this case, the `notify` method) are turned into static properties of the `Notifications` class, making it easier to access them.
 
-The output provides detailed information about the span:
+This allows you to interact with the service directly:
 
-| Field        | Description                                                                                                                                                                                                    |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `traceId`    | A unique identifier for the entire trace, helping trace requests or operations as they move through an application.                                                                                            |
-| `parentId`   | Identifies the parent span of the current span, marked as `undefined` in the output when there is no parent span, making it a root span.                                                                       |
-| `name`       | Describes the name of the span, indicating the operation being tracked (e.g., "myspan").                                                                                                                       |
-| `id`         | A unique identifier for the current span, distinguishing it from other spans within a trace.                                                                                                                   |
-| `timestamp`  | A timestamp representing when the span started, measured in microseconds since the Unix epoch.                                                                                                                 |
-| `duration`   | Specifies the duration of the span, representing the time taken to complete the operation (e.g., `2895.769` microseconds).                                                                                     |
-| `attributes` | Spans may contain attributes, which are key-value pairs providing additional context or information about the operation. In this output, it's an empty object, indicating no specific attributes in this span. |
-| `status`     | The status field provides information about the span's status. In this case, it has a code of 1, which typically indicates an OK status (whereas a code of 2 signifies an ERROR status)                        |
-| `events`     | Spans can include events, which are records of specific moments during the span's lifecycle. In this output, it's an empty array, suggesting no specific events recorded.                                      |
-| `links`      | Links can be used to associate this span with other spans in different traces. In the output, it's an empty array, indicating no specific links for this span.                                                 |
-
-### Span Capturing an Error
-
-Here's how a span looks when the effect encounters an error:
-
-**Example** (Span for an Effect that Fails)
-
-```ts twoslash "code: 2"
-import { Effect } from "effect"
-import { NodeSdk } from "@effect/opentelemetry"
-import {
-  ConsoleSpanExporter,
-  BatchSpanProcessor
-} from "@opentelemetry/sdk-trace-base"
-
-const program = Effect.fail("Oh no!").pipe(
-  Effect.delay("100 millis"),
-  Effect.withSpan("myspan")
-)
-
-const NodeSdkLive = NodeSdk.layer(() => ({
-  resource: { serviceName: "example" },
-  spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter())
-}))
-
-Effect.runPromiseExit(program.pipe(Effect.provide(NodeSdkLive))).then(
-  console.log
-)
-/*
-Example Output:
-{
-  resource: {
-    attributes: {
-      'service.name': 'example',
-      'telemetry.sdk.language': 'nodejs',
-      'telemetry.sdk.name': '@effect/opentelemetry',
-      'telemetry.sdk.version': '1.28.0'
-    }
-  },
-  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
-  traceId: 'eee9619866179f209b7aae277283e71f',
-  parentId: undefined,
-  traceState: undefined,
-  name: 'myspan',
-  id: '3a5725c91884c9e1',
-  kind: 0,
-  timestamp: 1733220830575626,
-  duration: 106578.042,
-  attributes: {
-    'code.stacktrace': 'at <anonymous> (/Users/giuliocanti/Documents/GitHub/website/content/dev/index.ts:10:10)'
-  },
-  status: { code: 2, message: 'Oh no!' },
-  events: [
-    {
-      name: 'exception',
-      attributes: {
-        'exception.type': 'Error',
-        'exception.message': 'Oh no!',
-        'exception.stacktrace': 'Error: Oh no!'
-      },
-      time: [ 1733220830, 682204083 ],
-      droppedAttributesCount: 0
-    }
-  ],
-  links: []
-}
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: { _id: 'Cause', _tag: 'Fail', failure: 'Oh no!' }
-}
-*/
-```
-
-In this example, the span's status code is `2`, indicating an error. The message in the status provides more details about the failure.
-
-## Adding Annotations
-
-You can provide extra information to a span by utilizing the `Effect.annotateCurrentSpan` function.
-This function allows you to attach key-value pairs, offering more context about the execution of the span.
-
-**Example** (Annotating a Span)
-
-```ts twoslash "attributes: { key: 'value' }"
-import { Effect } from "effect"
-import { NodeSdk } from "@effect/opentelemetry"
-import {
-  ConsoleSpanExporter,
-  BatchSpanProcessor
-} from "@opentelemetry/sdk-trace-base"
-
-const program = Effect.void.pipe(
-  Effect.delay("100 millis"),
-  // Annotate the span with a key-value pair
-  Effect.tap(() => Effect.annotateCurrentSpan("key", "value")),
-  // Wrap the effect in a span named 'myspan'
-  Effect.withSpan("myspan")
-)
-
-// Set up tracing with the OpenTelemetry SDK
-const NodeSdkLive = NodeSdk.layer(() => ({
-  resource: { serviceName: "example" },
-  spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter())
-}))
-
-// Run the effect, providing the tracing layer
-Effect.runPromise(program.pipe(Effect.provide(NodeSdkLive)))
-/*
-Example Output:
-{
-  resource: {
-    attributes: {
-      'service.name': 'example',
-      'telemetry.sdk.language': 'nodejs',
-      'telemetry.sdk.name': '@effect/opentelemetry',
-      'telemetry.sdk.version': '1.28.0'
-    }
-  },
-  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
-  traceId: 'c8120e01c0f1ea83ccc1d388e5cdebd3',
-  parentId: undefined,
-  traceState: undefined,
-  name: 'myspan',
-  id: '81c430ba4979f1db',
-  kind: 0,
-  timestamp: 1733220874356084,
-  duration: 102821.417,
-  attributes: { key: 'value' },
-  status: { code: 1 },
-  events: [],
-  links: []
-}
-*/
-```
-
-## Logs as events
-
-In the context of tracing, logs are converted into "Span Events." These events offer structured insights into your application's activities and provide a timeline of when specific operations occurred.
-
-```ts twoslash {47}
-import { Effect } from "effect"
-import { NodeSdk } from "@effect/opentelemetry"
-import {
-  ConsoleSpanExporter,
-  BatchSpanProcessor
-} from "@opentelemetry/sdk-trace-base"
-
-// Define a program that logs a message and delays for 100 milliseconds
-const program = Effect.log("Hello").pipe(
-  Effect.delay("100 millis"),
-  Effect.withSpan("myspan")
-)
-
-// Set up tracing with the OpenTelemetry SDK
-const NodeSdkLive = NodeSdk.layer(() => ({
-  resource: { serviceName: "example" },
-  spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter())
-}))
-
-// Run the effect, providing the tracing layer
-Effect.runPromise(program.pipe(Effect.provide(NodeSdkLive)))
-/*
-Example Output:
-{
-  resource: {
-    attributes: {
-      'service.name': 'example',
-      'telemetry.sdk.language': 'nodejs',
-      'telemetry.sdk.name': '@effect/opentelemetry',
-      'telemetry.sdk.version': '1.28.0'
-    }
-  },
-  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
-  traceId: 'b0f4f012b5b13c0a040f7002a1d7b020',
-  parentId: undefined,
-  traceState: undefined,
-  name: 'myspan',
-  id: 'b9ba8472002715a8',
-  kind: 0,
-  timestamp: 1733220905504162.2,
-  duration: 103790,
-  attributes: {},
-  status: { code: 1 },
-  events: [
-    {
-      name: 'Hello',
-      attributes: { 'effect.fiberId': '#0', 'effect.logLevel': 'INFO' }, // Log attributes
-      time: [ 1733220905, 607761042 ], // Event timestamp
-      droppedAttributesCount: 0
-    }
-  ],
-  links: []
-}
-*/
-```
-
-Each span can include events, which capture specific moments during the execution of a span. In this example, a log message `"Hello"` is recorded as an event within the span. Key details of the event include:
-
-| Field                    | Description                                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------------------- |
-| `name`                   | The name of the event, which corresponds to the logged message (e.g., `'Hello'`).                 |
-| `attributes`             | Key-value pairs that provide additional context about the event, such as `fiberId` and log level. |
-| `time`                   | The timestamp of when the event occurred, shown in a high-precision format.                       |
-| `droppedAttributesCount` | Indicates how many attributes were discarded, if any. In this case, no attributes were dropped.   |
-
-## Nesting Spans
-
-Spans can be nested to represent a hierarchy of operations. This allows you to track how different parts of your application relate to one another during execution. The following example demonstrates how to create and manage nested spans.
-
-**Example** (Nesting Spans in a Trace)
-
-```ts twoslash "a09e5c3fdfdbbc1d"
-import { Effect } from "effect"
-import { NodeSdk } from "@effect/opentelemetry"
-import {
-  ConsoleSpanExporter,
-  BatchSpanProcessor
-} from "@opentelemetry/sdk-trace-base"
-
-const child = Effect.void.pipe(
-  Effect.delay("100 millis"),
-  Effect.withSpan("child")
-)
-
-const parent = Effect.gen(function* () {
-  yield* Effect.sleep("20 millis")
-  yield* child
-  yield* Effect.sleep("10 millis")
-}).pipe(Effect.withSpan("parent"))
-
-// Set up tracing with the OpenTelemetry SDK
-const NodeSdkLive = NodeSdk.layer(() => ({
-  resource: { serviceName: "example" },
-  spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter())
-}))
-
-// Run the effect, providing the tracing layer
-Effect.runPromise(parent.pipe(Effect.provide(NodeSdkLive)))
-/*
-Example Output:
-{
-  resource: {
-    attributes: {
-      'service.name': 'example',
-      'telemetry.sdk.language': 'nodejs',
-      'telemetry.sdk.name': '@effect/opentelemetry',
-      'telemetry.sdk.version': '1.28.0'
-    }
-  },
-  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
-  traceId: 'a9cd69ad70698a0c7b7b774597c77d39',
-  parentId: 'a09e5c3fdfdbbc1d', // This indicates the span is a child of 'parent'
-  traceState: undefined,
-  name: 'child',
-  id: '210d2f9b648389a4', // Unique ID for the child span
-  kind: 0,
-  timestamp: 1733220970590126.2,
-  duration: 101579.875,
-  attributes: {},
-  status: { code: 1 },
-  events: [],
-  links: []
-}
-{
-  resource: {
-    attributes: {
-      'service.name': 'example',
-      'telemetry.sdk.language': 'nodejs',
-      'telemetry.sdk.name': '@effect/opentelemetry',
-      'telemetry.sdk.version': '1.28.0'
-    }
-  },
-  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
-  traceId: 'a9cd69ad70698a0c7b7b774597c77d39',
-  parentId: undefined, // Indicates this is the root span
-  traceState: undefined,
-  name: 'parent',
-  id: 'a09e5c3fdfdbbc1d', // Unique ID for the parent span
-  kind: 0,
-  timestamp: 1733220970569015.2,
-  duration: 132612.208,
-  attributes: {},
-  status: { code: 1 },
-  events: [],
-  links: []
-}
-*/
-```
-
-The parent-child relationship is evident in the span output, where the `parentId` of the `child` span matches the `id` of the `parent` span. This structure helps track how operations are related within a single trace.
-
-## Tutorial: Visualizing Traces with Docker, Prometheus, Grafana, and Tempo
-
-In this tutorial, we'll guide you through simulating and visualizing traces using a sample instrumented Node.js application. We will use Docker, Prometheus, Grafana, and Tempo to create, collect, and visualize traces.
-
-### Tools Explained
-
-Let's understand the tools we'll be using in simple terms:
-
-- **Docker**: Docker allows us to run applications in containers. Think of a container as a lightweight and isolated environment where your application can run consistently, regardless of the host system. It's a bit like a virtual machine but more efficient.
-
-- **Prometheus**: Prometheus is a monitoring and alerting toolkit. It collects metrics and data about your applications and stores them for further analysis. This helps in identifying performance issues and understanding the behavior of your applications.
-
-- **Grafana**: Grafana is a visualization and analytics platform. It helps in creating beautiful and interactive dashboards to visualize your application's data. You can use it to graphically represent metrics collected by Prometheus.
-
-- **Tempo**: Tempo is a distributed tracing system that allows you to trace the journey of a request as it flows through your application. It provides insights into how requests are processed and helps in debugging and optimizing your applications.
-
-### Getting Docker
-
-To get Docker, follow these steps:
-
-1. Visit the Docker website at [https://www.docker.com/](https://www.docker.com/).
-
-2. Download Docker Desktop for your operating system (Windows or macOS) and install it.
-
-3. After installation, open Docker Desktop, and it will run in the background.
-
-### Simulating Traces
-
-Now, let's simulate traces using a sample Node.js application. We'll provide you with the code and guide you on setting up the necessary components.
-
-<Steps>
-
-1. **Download Docker Files**. Download the required Docker files: [docker.zip](/tracing/docker.zip)
-
-2. **Set Up docker**. Unzip the downloaded file, navigate to the `/docker/local` directory in your terminal or command prompt and run the following command to start the necessary services:
-
-   ```sh showLineNumbers=false
-   docker-compose up
-   ```
-
-3. **Simulate Traces**. Run the following example code in your Node.js environment.
-   This code simulates a set of tasks and generates traces.
-
-   Before proceeding, you'll need to install additional libraries in addition to the latest version of `effect`. Here are the required libraries:
-
-   <Tabs syncKey="package-manager">
-
-   <TabItem label="npm" icon="seti:npm">
-
-   ```sh showLineNumbers=false
-   npm install @effect/opentelemetry
-   npm install @opentelemetry/exporter-trace-otlp-http
-   npm install @opentelemetry/sdk-trace-base
-   npm install @opentelemetry/sdk-trace-web
-   npm install @opentelemetry/sdk-trace-node
-   ```
-
-   </TabItem>
-
-   <TabItem label="pnpm" icon="pnpm">
-
-   ```sh showLineNumbers=false
-   pnpm add @effect/opentelemetry
-   pnpm add @opentelemetry/exporter-trace-otlp-http
-   pnpm add @opentelemetry/sdk-trace-base
-   # For NodeJS applications
-   pnpm add @opentelemetry/sdk-trace-node
-   # For browser applications
-   pnpm add @opentelemetry/sdk-trace-web
-   # If you also need to export metrics
-   pnpm add @opentelemetry/sdk-metrics
-   ```
-
-   </TabItem>
-
-   <TabItem label="Yarn" icon="seti:yarn">
-
-   ```sh showLineNumbers=false
-   yarn add @effect/opentelemetry
-   yarn add @opentelemetry/exporter-trace-otlp-http
-   yarn add @opentelemetry/sdk-trace-base
-   # For NodeJS applications
-   yarn add @opentelemetry/sdk-trace-node
-   # For browser applications
-   yarn add @opentelemetry/sdk-trace-web
-   # If you also need to export metrics
-   yarn add @opentelemetry/sdk-metrics
-   ```
-
-   </TabItem>
-
-   <TabItem label="Bun" icon="bun">
-
-   ```sh showLineNumbers=false
-   bun add @effect/opentelemetry
-   bun add @opentelemetry/exporter-trace-otlp-http
-   bun add @opentelemetry/sdk-trace-base
-   # For NodeJS applications
-   bun add @opentelemetry/sdk-trace-node
-   # For browser applications
-   bun add @opentelemetry/sdk-trace-web
-   # If you also need to export metrics
-   bun add @opentelemetry/sdk-metrics
-   ```
-
-   </TabItem>
-
-   </Tabs>
-
-   ```ts twoslash
-   import { Effect } from "effect"
-   import { NodeSdk } from "@effect/opentelemetry"
-   import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base"
-   import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http"
-
-   // Function to simulate a task with possible subtasks
-   const task = (
-     name: string,
-     delay: number,
-     children: ReadonlyArray<Effect.Effect<void>> = []
-   ) =>
-     Effect.gen(function* () {
-       yield* Effect.log(name)
-       yield* Effect.sleep(`${delay} millis`)
-       for (const child of children) {
-         yield* child
-       }
-       yield* Effect.sleep(`${delay} millis`)
-     }).pipe(Effect.withSpan(name))
-
-   const poll = task("/poll", 1)
-
-   // Create a program with tasks and subtasks
-   const program = task("client", 2, [
-     task("/api", 3, [
-       task("/authN", 4, [task("/authZ", 5)]),
-       task("/payment Gateway", 6, [
-         task("DB", 7),
-         task("Ext. Merchant", 8)
-       ]),
-       task("/dispatch", 9, [
-         task("/dispatch/search", 10),
-         Effect.all([poll, poll, poll], { concurrency: "inherit" }),
-         task("/pollDriver/{id}", 11)
-       ])
-     ])
-   ])
-
-   const NodeSdkLive = NodeSdk.layer(() => ({
-     resource: { serviceName: "example" },
-     spanProcessor: new BatchSpanProcessor(new OTLPTraceExporter())
-   }))
-
-   Effect.runPromise(
-     program.pipe(
-       Effect.provide(NodeSdkLive),
-       Effect.catchAllCause(Effect.logError)
-     )
-   )
-   /*
-   Output:
-   timestamp=... level=INFO fiber=#0 message=client
-   timestamp=... level=INFO fiber=#0 message=/api
-   timestamp=... level=INFO fiber=#0 message=/authN
-   timestamp=... level=INFO fiber=#0 message=/authZ
-   timestamp=... level=INFO fiber=#0 message="/payment Gateway"
-   timestamp=... level=INFO fiber=#0 message=DB
-   timestamp=... level=INFO fiber=#0 message="Ext. Merchant"
-   timestamp=... level=INFO fiber=#0 message=/dispatch
-   timestamp=... level=INFO fiber=#0 message=/dispatch/search
-   timestamp=... level=INFO fiber=#3 message=/poll
-   timestamp=... level=INFO fiber=#4 message=/poll
-   timestamp=... level=INFO fiber=#5 message=/poll
-   timestamp=... level=INFO fiber=#0 message=/pollDriver/{id}
-   */
-   ```
-
-4. **Visualize Traces**. Now, open your web browser and go to `http://localhost:3000/explore`. You will see a generated `Trace ID` on the web page. Click on it to see the details of the trace.
-
-   ![Traces in Grafana Tempo](../_assets/trace.png "An image displaying an application trace visualized as a waterfall diagram in Grafana Tempo")
-
-</Steps>
-
-## Integrations
-
-### Sentry
-
-To send span data directly to Sentry for analysis, replace the default span processor with Sentry's implementation. This allows you to use Sentry as a backend for tracing and debugging.
-
-**Example** (Configuring Sentry for Tracing)
+**Example** (Using the Notifications Tag)
 
 ```ts twoslash
-import { NodeSdk } from "@effect/opentelemetry"
-import { SentrySpanProcessor } from "@sentry/opentelemetry"
+import { Effect } from "effect"
 
-const NodeSdkLive = NodeSdk.layer(() => ({
-  resource: { serviceName: "example" },
-  spanProcessor: new SentrySpanProcessor()
-}))
+class Notifications extends Effect.Tag("Notifications")<
+  Notifications,
+  { readonly notify: (message: string) => Effect.Effect<void> }
+>() {}
+
+// Create an effect that depends on the Notifications service
+const action = Notifications.notify("Hello, world!")
+//    ^? const action: Effect<void, never, Notifications>
+```
+
+In this example, the `action` effect depends on the `Notifications` service. This approach allows you to reference services without manually passing them around. Later, you can create a `Layer` that provides the `Notifications` service and build a `ManagedRuntime` with that layer to ensure the service is available where needed.
+
+### Integrations
+
+The `ManagedRuntime` simplifies the integration of services and layers with other frameworks or tools, particularly in environments where Effect is not the primary framework and access to the main entry point is restricted.
+
+For example, in environments like React or other frameworks where you have limited control over the main application entry point, `ManagedRuntime` helps manage the lifecycle of services.
+
+Here's how to manage a service's lifecycle within an external framework:
+
+**Example** (Using `ManagedRuntime` in an External Framework)
+
+```ts twoslash
+import { Effect, ManagedRuntime, Layer, Console } from "effect"
+
+// Define the Notifications service using Effect.Tag
+class Notifications extends Effect.Tag("Notifications")<
+  Notifications,
+  { readonly notify: (message: string) => Effect.Effect<void> }
+>() {
+  // Provide a live implementation of the Notifications service
+  static Live = Layer.succeed(this, {
+    notify: (message) => Console.log(message)
+  })
+}
+
+// Example entry point for an external framework
+async function main() {
+  // Create a custom runtime using the Notifications layer
+  const runtime = ManagedRuntime.make(Notifications.Live)
+
+  // Run the effect
+  await runtime.runPromise(Notifications.notify("Hello, world!"))
+
+  // Dispose of the runtime, cleaning up resources
+  await runtime.dispose()
+}
 ```
 
 > data-types/bigdecimal.mdx\n\n---
@@ -29826,619 +30303,6 @@ Error: An error has occurred
 */
 ```
 
-> observability/metrics.mdx\n\n---
-title: Metrics in Effect
-description: Effect Metrics provides powerful monitoring tools, including counters, gauges, histograms, summaries, and frequencies, to track your application's performance and behavior.
-sidebar:
-  label: Metrics
-  order: 1
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-In complex and highly concurrent applications, managing various interconnected components can be quite challenging. Ensuring that everything runs smoothly and avoiding application downtime becomes crucial in such setups.
-
-Now, let's imagine we have a sophisticated infrastructure with numerous services. These services are replicated and distributed across our servers. However, we often lack insight into what's happening across these services, including error rates, response times, and service uptime. This lack of visibility can make it challenging to identify and address issues effectively. This is where Effect Metrics comes into play; it allows us to capture and analyze various metrics, providing valuable data for later investigation.
-
-Effect Metrics offers support for five different types of metrics:
-
-| Metric        | Description                                                                                                                                                                                                                                                             |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Counter**   | Counters are used to track values that increase over time, such as request counts. They help us keep tabs on how many times a specific event or action has occurred.                                                                                                    |
-| **Gauge**     | Gauges represent a single numerical value that can fluctuate up and down over time. They are often used to monitor metrics like memory usage, which can vary continuously.                                                                                              |
-| **Histogram** | Histograms are useful for tracking the distribution of observed values across different buckets. They are commonly used for metrics like request latencies, allowing us to understand how response times are distributed.                                               |
-| **Summary**   | Summaries provide insight into a sliding window of a time series and offer metrics for specific percentiles of the time series, often referred to as quantiles. This is particularly helpful for understanding latency-related metrics, such as request response times. |
-| **Frequency** | Frequency metrics count the occurrences of distinct string values. They are useful when you want to keep track of how often different events or conditions are happening in your application.                                                                           |
-
-## Counter
-
-In the world of metrics, a Counter is a metric that represents a single numerical value that can be both incremented and decremented over time. Think of it like a tally that keeps track of changes, such as the number of a particular type of request received by your application, whether it's increasing or decreasing.
-
-Unlike some other types of metrics (like [gauges](#gauge)), where we're interested in the value at a specific moment, with counters, we care about the cumulative value over time. This means it provides a running total of changes, which can go up and down, reflecting the dynamic nature of certain metrics.
-
-Some typical use cases for counters include:
-
-- **Request Counts**: Monitoring the number of incoming requests to your server.
-- **Completed Tasks**: Keeping track of how many tasks or processes have been successfully completed.
-- **Error Counts**: Counting the occurrences of errors in your application.
-
-### How to Create a Counter
-
-To create a counter, you can use the `Metric.counter` constructor.
-
-**Example** (Creating a Counter)
-
-```ts twoslash
-import { Metric, Effect } from "effect"
-
-const requestCount = Metric.counter("request_count", {
-  // Optional
-  description: "A counter for tracking requests"
-})
-```
-
-Once created, the counter can accept an effect that returns a `number`, which will increment or decrement the counter.
-
-**Example** (Using a Counter)
-
-```ts twoslash
-import { Metric, Effect } from "effect"
-
-const requestCount = Metric.counter("request_count")
-
-const program = Effect.gen(function* () {
-  // Increment the counter by 1
-  const a = yield* requestCount(Effect.succeed(1))
-  // Increment the counter by 2
-  const b = yield* requestCount(Effect.succeed(2))
-  // Decrement the counter by 4
-  const c = yield* requestCount(Effect.succeed(-4))
-
-  // Get the current state of the counter
-  const state = yield* Metric.value(requestCount)
-  console.log(state)
-
-  return a * b * c
-})
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-CounterState {
-  count: -1,
-  ...
-}
--8
-*/
-```
-
-<Aside type="note" title="Type Preservation">
-  Applying a counter to an effect doesn't change its original type. The
-  metric simply adds tracking without affecting the effect's output type.
-</Aside>
-
-### Counter Types
-
-You can specify whether the counter tracks a `number` or `bigint`.
-
-```ts twoslash
-import { Metric } from "effect"
-
-const numberCounter = Metric.counter("request_count", {
-  description: "A counter for tracking requests"
-  // bigint: false // default
-})
-
-const bigintCounter = Metric.counter("error_count", {
-  description: "A counter for tracking errors",
-  bigint: true
-})
-```
-
-### Increment-Only Counters
-
-If you need a counter that only increments, you can use the `incremental: true` option.
-
-**Example** (Using an Increment-Only Counter)
-
-```ts twoslash
-import { Metric, Effect } from "effect"
-
-const incrementalCounter = Metric.counter("count", {
-  description: "a counter that only increases its value",
-  incremental: true
-})
-
-const program = Effect.gen(function* () {
-  const a = yield* incrementalCounter(Effect.succeed(1))
-  const b = yield* incrementalCounter(Effect.succeed(2))
-  // This will have no effect on the counter
-  const c = yield* incrementalCounter(Effect.succeed(-4))
-
-  const state = yield* Metric.value(incrementalCounter)
-  console.log(state)
-
-  return a * b * c
-})
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-CounterState {
-  count: 3,
-  ...
-}
--8
-*/
-```
-
-In this configuration, the counter only accepts positive values. Any attempts to decrement will have no effect, ensuring the counter strictly counts upwards.
-
-### Counters With Constant Input
-
-You can configure a counter to always increment by a fixed value each time it is invoked.
-
-**Example** (Constant Input)
-
-```ts twoslash
-import { Metric, Effect } from "effect"
-
-const taskCount = Metric.counter("task_count").pipe(
-  Metric.withConstantInput(1) // Automatically increments by 1
-)
-
-const task1 = Effect.succeed(1).pipe(Effect.delay("100 millis"))
-const task2 = Effect.succeed(2).pipe(Effect.delay("200 millis"))
-const task3 = Effect.succeed(-4).pipe(Effect.delay("300 millis"))
-
-const program = Effect.gen(function* () {
-  const a = yield* taskCount(task1)
-  const b = yield* taskCount(task2)
-  const c = yield* taskCount(task3)
-
-  const state = yield* Metric.value(taskCount)
-  console.log(state)
-
-  return a * b * c
-})
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-CounterState {
-  count: 3,
-  ...
-}
--8
-*/
-```
-
-## Gauge
-
-In the world of metrics, a Gauge is a metric that represents a single numerical value that can be set or adjusted. Think of it as a dynamic variable that can change over time. One common use case for a gauge is to monitor something like the current memory usage of your application.
-
-Unlike counters, where we're interested in cumulative values over time, with gauges, our focus is on the current value at a specific point in time.
-
-Gauges are the best choice when you want to monitor values that can both increase and decrease, and you're not interested in tracking their rates of change. In other words, gauges help us measure things that have a specific value at a particular moment.
-
-Some typical use cases for gauges include:
-
-- **Memory Usage**: Keeping an eye on how much memory your application is using right now.
-- **Queue Size**: Monitoring the current size of a queue where tasks are waiting to be processed.
-- **In-Progress Request Counts**: Tracking the number of requests currently being handled by your server.
-- **Temperature**: Measuring the current temperature, which can fluctuate up and down.
-
-### How to Create a Gauge
-
-To create a gauge, you can use the `Metric.gauge` constructor.
-
-**Example** (Creating a Gauge)
-
-```ts twoslash
-import { Metric } from "effect"
-
-const memory = Metric.gauge("memory_usage", {
-  // Optional
-  description: "A gauge for memory usage"
-})
-```
-
-Once created, a gauge can be updated by passing an effect that produces the value you want to set for the gauge.
-
-**Example** (Using a Gauge)
-
-```ts twoslash
-import { Metric, Effect, Random } from "effect"
-
-// Create a gauge to track temperature
-const temperature = Metric.gauge("temperature")
-
-// Simulate fetching a random temperature
-const getTemperature = Effect.gen(function* () {
-  // Get a random temperature between -10 and 10
-  const t = yield* Random.nextIntBetween(-10, 10)
-  console.log(`new temperature: ${t}`)
-  return t
-})
-
-// Program that updates the gauge multiple times
-const program = Effect.gen(function* () {
-  const series: Array<number> = []
-  // Update the gauge with new temperature readings
-  series.push(yield* temperature(getTemperature))
-  series.push(yield* temperature(getTemperature))
-  series.push(yield* temperature(getTemperature))
-
-  // Retrieve the current state of the gauge
-  const state = yield* Metric.value(temperature)
-  console.log(state)
-
-  return series
-})
-
-Effect.runPromise(program).then(console.log)
-/*
-Example Output:
-new temperature: 9
-new temperature: -9
-new temperature: 2
-GaugeState {
-  value: 2, // the most recent value set in the gauge
-  ...
-}
-[ 9, -9, 2 ]
-*/
-```
-
-<Aside type="note" title="Gauge Behavior">
-  Gauges capture the most recent value set, so if you're tracking a
-  sequence of updates, the final state will show only the last recorded
-  value, not the entire series.
-</Aside>
-
-### Gauge Types
-
-You can specify whether the gauge tracks a `number` or `bigint`.
-
-```ts twoslash
-import { Metric } from "effect"
-
-const numberGauge = Metric.gauge("memory_usage", {
-  description: "A gauge for memory usage"
-  // bigint: false // default
-})
-
-const bigintGauge = Metric.gauge("cpu_load", {
-  description: "A gauge for CPU load",
-  bigint: true
-})
-```
-
-## Histogram
-
-A Histogram is a metric used to analyze how numerical values are distributed over time. Instead of focusing on individual data points, a histogram groups values into predefined ranges, called **buckets**, and tracks how many values fall into each range.
-
-When a value is recorded, it gets assigned to one of the histogram's buckets based on its range. Each bucket has an upper boundary, and the count for that bucket is increased if the value is less than or equal to its boundary. Once recorded, the individual value is discarded, and the focus shifts to how many values have fallen into each bucket.
-
-Histograms also track:
-
-- **Total Count**: The number of values that have been observed.
-- **Sum**: The sum of all the observed values.
-- **Min**: The smallest observed value.
-- **Max**: The largest observed value.
-
-Histograms are especially useful for calculating percentiles, which can help you estimate specific points in a dataset by analyzing how many values are in each bucket.
-
-This concept is inspired by [Prometheus](https://prometheus.io/docs/concepts/metric_types#histogram), a well-known monitoring and alerting toolkit.
-
-Histograms are particularly useful in performance analysis and system monitoring. By examining how response times, latencies, or other metrics are distributed, you can gain valuable insights into your system's behavior. This data helps you identify outliers, performance bottlenecks, or trends that may require optimization.
-
-Common use cases for histograms include:
-
-- **Percentile Estimation**: Histograms allow you to approximate percentiles of observed values, like the 95th percentile of response times.
-- **Known Ranges**: If you can estimate the range of values in advance, histograms can organize the data into predefined buckets for better analysis.
-- **Performance Metrics**: Use histograms to track metrics like request latencies, memory usage, or throughput over time.
-- **Aggregation**: Histograms can be aggregated across multiple instances, making them ideal for distributed systems where you need to collect data from different sources.
-
-<Aside type="note" title="Histogram Buckets and Precision">
-  Keep in mind that histograms don't retain exact values. Instead, they
-  group values into buckets, so the precision of your data depends on how
-  you define these buckets.
-</Aside>
-
-**Example** (Histogram With Linear Buckets)
-
-In this example, we define a histogram with linear buckets, where the values range from `0` to `100` in increments of `10`. Additionally, we include a final bucket for values greater than `100`, referred to as the "Infinity" bucket. This configuration is useful for tracking numeric values, like request latencies, within specific ranges.
-
-The program generates random numbers between `1` and `120`, records them in the histogram, and then prints the histogram's state, showing the count of values that fall into each bucket.
-
-```ts twoslash
-import { Effect, Metric, MetricBoundaries, Random } from "effect"
-
-// Define a histogram to track request latencies, with linear buckets
-const latency = Metric.histogram(
-  "request_latency",
-  // Buckets from 0-100, with an extra Infinity bucket
-  MetricBoundaries.linear({ start: 0, width: 10, count: 11 }),
-  // Optional
-  "Measures the distribution of request latency."
-)
-
-const program = Effect.gen(function* () {
-  // Generate 100 random values and record them in the histogram
-  yield* latency(Random.nextIntBetween(1, 120)).pipe(Effect.repeatN(99))
-
-  // Fetch and display the histogram's state
-  const state = yield* Metric.value(latency)
-  console.log(state)
-})
-
-Effect.runPromise(program)
-/*
-Example Output:
-HistogramState {
-  buckets: [
-    [ 0, 0 ],    // No values in the 0-10 range
-    [ 10, 7 ],   // 7 values in the 10-20 range
-    [ 20, 11 ],  // 11 values in the 20-30 range
-    [ 30, 20 ],  // 20 values in the 30-40 range
-    [ 40, 27 ],  // and so on...
-    [ 50, 38 ],
-    [ 60, 53 ],
-    [ 70, 64 ],
-    [ 80, 73 ],
-    [ 90, 84 ],
-    [ Infinity, 100 ] // All 100 values have been recorded
-  ],
-  count: 100,  // Total count of observed values
-  min: 1,      // Smallest observed value
-  max: 119,    // Largest observed value
-  sum: 5980,   // Sum of all observed values
-  ...
-}
-*/
-```
-
-### Timer Metric
-
-In this example, we demonstrate how to use a timer metric to track the duration of specific workflows. The timer captures how long certain tasks take to execute, storing this information in a histogram, which provides insights into the distribution of these durations.
-
-We generate random values to simulate varying wait times, record the durations in the timer, and then print out the histogram's state.
-
-**Example** (Tracking Workflow Durations with a Timer Metric)
-
-```ts twoslash
-import { Metric, Array, Random, Effect } from "effect"
-
-// Create a timer metric with predefined boundaries from 1 to 10
-const timer = Metric.timerWithBoundaries("timer", Array.range(1, 10))
-
-// Define a task that simulates random wait times
-const task = Effect.gen(function* () {
-  // Generate a random value between 1 and 10
-  const n = yield* Random.nextIntBetween(1, 10)
-  // Simulate a delay based on the random value
-  yield* Effect.sleep(`${n} millis`)
-})
-
-const program = Effect.gen(function* () {
-  // Track the duration of the task and repeat it 100 times
-  yield* Metric.trackDuration(task, timer).pipe(Effect.repeatN(99))
-
-  // Retrieve and print the current state of the timer histogram
-  const state = yield* Metric.value(timer)
-  console.log(state)
-})
-
-Effect.runPromise(program)
-/*
-Example Output:
-HistogramState {
-  buckets: [
-    [ 1, 3 ],   // 3 tasks completed in <= 1 ms
-    [ 2, 13 ],  // 13 tasks completed in <= 2 ms
-    [ 3, 17 ],  // and so on...
-    [ 4, 26 ],
-    [ 5, 35 ],
-    [ 6, 43 ],
-    [ 7, 53 ],
-    [ 8, 56 ],
-    [ 9, 65 ],
-    [ 10, 72 ],
-    [ Infinity, 100 ]      // All 100 tasks have completed
-  ],
-  count: 100,              // Total number of tasks observed
-  min: 0.25797,            // Shortest task duration in milliseconds
-  max: 12.25421,           // Longest task duration in milliseconds
-  sum: 683.0266810000002,  // Total time spent across all tasks
-  ...
-}
-*/
-```
-
-## Summary
-
-A Summary is a metric that gives insights into a series of data points by calculating specific percentiles. Percentiles help us understand how data is distributed. For instance, if you're tracking response times for requests over the past hour, you may want to examine key percentiles such as the 50th, 90th, 95th, or 99th to better understand your system's performance.
-
-Summaries are similar to histograms in that they observe `number` values, but with a different approach. Instead of immediately sorting values into buckets and discarding them, a summary holds onto the observed values in memory. However, to avoid storing too much data, summaries use two parameters:
-
-- **maxAge**: The maximum age a value can have before it's discarded.
-- **maxSize**: The maximum number of values stored in the summary.
-
-This creates a sliding window of recent values, so the summary always represents a fixed number of the most recent observations.
-
-Summaries are commonly used to calculate **quantiles** over this sliding window. A **quantile** is a number between `0` and `1` that represents the percentage of values less than or equal to a certain threshold. For example, a quantile of `0.5` (or 50th percentile) is the **median** value, while `0.95` (or 95th percentile) would represent the value below which 95% of the observed data falls.
-
-Quantiles are helpful for monitoring important performance metrics, such as latency, and for ensuring that your system meets performance goals (like Service Level Agreements, or SLAs).
-
-The Effect Metrics API also allows you to configure summaries with an **error margin**. This margin introduces a range of acceptable values for quantiles, improving the accuracy of the result.
-
-Summaries are particularly useful in cases where:
-
-- The range of values you're observing is not known or estimated in advance, making histograms less practical.
-- You don't need to aggregate data across multiple instances or average results. Summaries calculate their results on the application side, meaning they focus on the specific instance where they are used.
-
-**Example** (Creating and Using a Summary)
-
-In this example, we will create a summary to track response times. The summary will:
-
-- Hold up to `100` samples.
-- Discard samples older than `1 day`.
-- Have a `3%` error margin when calculating quantiles.
-- Report the `10%`, `50%`, and `90%` quantiles, which help track response time distributions.
-
-We'll apply the summary to an effect that generates random integers, simulating response times.
-
-```ts twoslash
-import { Metric, Random, Effect } from "effect"
-
-// Define the summary for response times
-const responseTimeSummary = Metric.summary({
-  name: "response_time_summary", // Name of the summary metric
-  maxAge: "1 day", // Maximum sample age
-  maxSize: 100, // Maximum number of samples to retain
-  error: 0.03, // Error margin for quantile calculation
-  quantiles: [0.1, 0.5, 0.9], // Quantiles to observe (10%, 50%, 90%)
-  // Optional
-  description: "Measures the distribution of response times"
-})
-
-const program = Effect.gen(function* () {
-  // Record 100 random response times between 1 and 120 ms
-  yield* responseTimeSummary(Random.nextIntBetween(1, 120)).pipe(
-    Effect.repeatN(99)
-  )
-
-  // Retrieve and log the current state of the summary
-  const state = yield* Metric.value(responseTimeSummary)
-  console.log("%o", state)
-})
-
-Effect.runPromise(program)
-/*
-Example Output:
-SummaryState {
-  error: 0.03,    // Error margin used for quantile calculation
-  quantiles: [
-    [ 0.1, { _id: 'Option', _tag: 'Some', value: 17 } ],   // 10th percentile: 17 ms
-    [ 0.5, { _id: 'Option', _tag: 'Some', value: 62 } ],   // 50th percentile (median): 62 ms
-    [ 0.9, { _id: 'Option', _tag: 'Some', value: 109 } ]   // 90th percentile: 109 ms
-  ],
-  count: 100,    // Total number of samples recorded
-  min: 4,        // Minimum observed value
-  max: 119,      // Maximum observed value
-  sum: 6058,     // Sum of all recorded values
-  ...
-}
-*/
-```
-
-## Frequency
-
-Frequencies are metrics that help count the occurrences of specific values. Think of them as a set of counters, each associated with a unique value. When new values are observed, the frequency metric automatically creates new counters for those values.
-
-Frequencies are particularly useful for tracking how often distinct string values occur. Some example use cases include:
-
-- Counting the number of invocations for each service in an application, where each service has a logical name.
-- Monitoring how frequently different types of failures occur.
-
-**Example** (Tracking Error Occurrences)
-
-In this example, we'll create a `Frequency` to observe how often different error codes occur. This can be applied to effects that return a `string` value:
-
-```ts twoslash
-import { Metric, Random, Effect } from "effect"
-
-// Define a frequency metric to track errors
-const errorFrequency = Metric.frequency("error_frequency", {
-  // Optional
-  description: "Counts the occurrences of errors."
-})
-
-const task = Effect.gen(function* () {
-  const n = yield* Random.nextIntBetween(1, 10)
-  return `Error-${n}`
-})
-
-// Program that simulates random errors and tracks their occurrences
-const program = Effect.gen(function* () {
-  yield* errorFrequency(task).pipe(Effect.repeatN(99))
-
-  // Retrieve and log the current state of the summary
-  const state = yield* Metric.value(errorFrequency)
-  console.log("%o", state)
-})
-
-Effect.runPromise(program)
-/*
-Example Output:
-FrequencyState {
-  occurrences: Map(9) {
-    'Error-7' => 12,
-    'Error-2' => 12,
-    'Error-4' => 14,
-    'Error-1' => 14,
-    'Error-9' => 8,
-    'Error-6' => 11,
-    'Error-5' => 9,
-    'Error-3' => 14,
-    'Error-8' => 6
-  },
-  ...
-}
-*/
-```
-
-## Tagging Metrics
-
-Tags are key-value pairs you can add to metrics to provide additional context. They help categorize and filter metrics, making it easier to analyze specific aspects of your application's performance or behavior.
-
-When creating metrics, you can add tags to them. Tags are key-value pairs that provide additional context, helping in categorizing and filtering metrics. This makes it easier to analyze and monitor specific aspects of your application.
-
-### Tagging a Specific Metric
-
-You can tag individual metrics using the `Metric.tagged` function.
-This allows you to add specific tags to a single metric, providing detailed context without applying tags globally.
-
-**Example** (Tagging an Individual Metric)
-
-```ts twoslash
-import { Metric } from "effect"
-
-// Create a counter metric for request count
-// and tag it with "environment: production"
-const counter = Metric.counter("request_count").pipe(
-  Metric.tagged("environment", "production")
-)
-```
-
-Here, the `request_count` metric is tagged with `"environment": "production"`, allowing you to filter or analyze metrics by this tag later.
-
-### Tagging Multiple Metrics
-
-You can use `Effect.tagMetrics` to apply tags to all metrics within the same context. This is useful when you want to apply common tags, like the environment (e.g., "production" or "development"), across multiple metrics.
-
-**Example** (Tagging Multiple Metrics)
-
-```ts twoslash
-import { Metric, Effect } from "effect"
-
-// Create two separate counters
-const counter1 = Metric.counter("counter1")
-const counter2 = Metric.counter("counter2")
-
-// Define a task that simulates some work with a slight delay
-const task = Effect.succeed(1).pipe(Effect.delay("100 millis"))
-
-// Apply the environment tag to both counters in the same context
-Effect.gen(function* () {
-  yield* counter1(task)
-  yield* counter2(task)
-}).pipe(Effect.tagMetrics("environment", "production"))
-```
-
-If you only want to apply tags within a specific [scope](/docs/resource-management/scope/), you can use `Effect.tagMetricsScoped`. This limits the tag application to metrics within that scope, allowing for more precise tagging control.
-
 > data-types/chunk.mdx\n\n---
 title: Chunk
 description: Learn about Chunk, a high-performance immutable data structure in Effect, offering efficient operations like concatenation, slicing, and conversions.
@@ -30610,840 +30474,6 @@ declare const chunk: Chunk.Chunk<number>
 //      ┌─── readonly number[]
 //      ▼
 const array = Chunk.toReadonlyArray(chunk)
-```
-
-> observability/logging.mdx\n\n---
-title: Logging
-description: Discover Effect's logging utilities for dynamic log levels, custom outputs, and fine-grained control over logs.
-sidebar:
-  order: 0
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-Logging is an important aspect of software development, especially for debugging and monitoring the behavior of your applications. In this section, we'll explore Effect's logging utilities and see how they compare to traditional logging methods.
-
-## Advantages Over Traditional Logging
-
-Effect's logging utilities provide several benefits over conventional logging approaches:
-
-1. **Dynamic Log Level Control**: With Effect's logging, you have the ability to change the log level dynamically. This means you can control which log messages get displayed based on their severity. For example, you can configure your application to log only warnings or errors, which can be extremely helpful in production environments to reduce noise.
-
-2. **Custom Logging Output**: Effect's logging utilities allow you to change how logs are handled. You can direct log messages to various destinations, such as a service or a file, using a [custom logger](#custom-loggers). This flexibility ensures that logs are stored and processed in a way that best suits your application's requirements.
-
-3. **Fine-Grained Logging**: Effect enables fine-grained control over logging on a per-part basis of your program. You can set different log levels for different parts of your application, tailoring the level of detail to each specific component. This can be invaluable for debugging and troubleshooting, as you can focus on the information that matters most.
-
-4. **Environment-Based Logging**: Effect's logging utilities can be combined with deployment environments to achieve granular logging strategies. For instance, during development, you might choose to log everything at a trace level and above for detailed debugging. In contrast, your production version could be configured to log only errors or critical issues, minimizing the impact on performance and noise in production logs.
-
-5. **Additional Features**: Effect's logging utilities come with additional features such as the ability to measure time spans, alter log levels on a per-effect basis, and integrate spans for performance monitoring.
-
-## log
-
-The `Effect.log` function allows you to log a message at the default `INFO` level.
-
-**Example** (Logging a Simple Message)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.log("Application started")
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message="Application started"
-*/
-```
-
-The default logger in Effect adds several useful details to each log entry:
-
-| Annotation  | Description                                                                                         |
-| ----------- | --------------------------------------------------------------------------------------------------- |
-| `timestamp` | The timestamp when the log message was generated.                                                   |
-| `level`     | The log level at which the message is logged (e.g., `INFO`, `ERROR`).                               |
-| `fiber`     | The identifier of the [fiber](/docs/concurrency/fibers/) executing the program.                     |
-| `message`   | The log message content, which can include multiple strings or values.                              |
-| `span`      | (Optional) The duration of a span in milliseconds, providing insight into the timing of operations. |
-
-<Aside type="tip" title="Customizing Loggers">
-  For information on how to tailor the logging setup to meet specific
-  needs, such as integrating a custom logging framework or adjusting log
-  formats, please consult the section on [Custom
-  Loggers](#custom-loggers).
-</Aside>
-
-You can also log multiple messages at once.
-
-**Example** (Logging Multiple Messages)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.log("message1", "message2", "message3")
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message=message1 message=message2 message=message3
-*/
-```
-
-For added context, you can also include one or more [Cause](/docs/data-types/cause/) instances in your logs,
-which provide detailed error information under an additional `cause` annotation:
-
-**Example** (Logging with Causes)
-
-```ts twoslash "cause"
-import { Effect, Cause } from "effect"
-
-const program = Effect.log(
-  "message1",
-  "message2",
-  Cause.die("Oh no!"),
-  Cause.die("Oh uh!")
-)
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message=message1 message=message2 cause="Error: Oh no!
-Error: Oh uh!"
-*/
-```
-
-## Log Levels
-
-### logDebug
-
-By default, `DEBUG` messages **are not displayed**. To enable `DEBUG` logs, you can adjust the logging configuration using `Logger.withMinimumLogLevel`, setting the minimum level to `LogLevel.Debug`.
-
-**Example** (Enabling Debug Logs)
-
-```ts twoslash
-import { Effect, Logger, LogLevel } from "effect"
-
-const task1 = Effect.gen(function* () {
-  yield* Effect.sleep("2 seconds")
-  yield* Effect.logDebug("task1 done") // Log a debug message
-}).pipe(Logger.withMinimumLogLevel(LogLevel.Debug)) // Enable DEBUG level
-
-const task2 = Effect.gen(function* () {
-  yield* Effect.sleep("1 second")
-  yield* Effect.logDebug("task2 done") // This message won't be logged
-})
-
-const program = Effect.gen(function* () {
-  yield* Effect.log("start")
-  yield* task1
-  yield* task2
-  yield* Effect.log("done")
-})
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO message=start
-timestamp=... level=DEBUG message="task1 done" <-- 2 seconds later
-timestamp=... level=INFO message=done <-- 1 second later
-*/
-```
-
-<Aside type="tip" title="Controlling Log Levels Per Effect">
-  By using `Logger.withMinimumLogLevel(effect, level)`, you can enable
-  different log levels for specific parts of your program, providing
-  fine-grained control over logging behavior.
-</Aside>
-
-### logInfo
-
-The `INFO` log level is displayed by default. This level is typically used for general application events or progress updates.
-
-**Example** (Logging at the Info Level)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  yield* Effect.logInfo("start")
-  yield* Effect.sleep("2 seconds")
-  yield* Effect.sleep("1 second")
-  yield* Effect.logInfo("done")
-})
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO message=start
-timestamp=... level=INFO message=done <-- 3 seconds later
-*/
-```
-
-### logWarning
-
-The `WARN` log level is displayed by default. This level is intended for potential issues or warnings that do not immediately disrupt the flow of the program but should be monitored.
-
-**Example** (Logging at the Warning Level)
-
-```ts twoslash
-import { Effect, Either } from "effect"
-
-const task = Effect.fail("Oh uh!").pipe(Effect.as(2))
-
-const program = Effect.gen(function* () {
-  const failureOrSuccess = yield* Effect.either(task)
-  if (Either.isLeft(failureOrSuccess)) {
-    yield* Effect.logWarning(failureOrSuccess.left)
-    return 0
-  } else {
-    return failureOrSuccess.right
-  }
-})
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=WARN fiber=#0 message="Oh uh!"
-*/
-```
-
-### logError
-
-The `ERROR` log level is displayed by default. These messages represent issues that need to be addressed.
-
-**Example** (Logging at the Error Level)
-
-```ts twoslash
-import { Effect, Either } from "effect"
-
-const task = Effect.fail("Oh uh!").pipe(Effect.as(2))
-
-const program = Effect.gen(function* () {
-  const failureOrSuccess = yield* Effect.either(task)
-  if (Either.isLeft(failureOrSuccess)) {
-    yield* Effect.logError(failureOrSuccess.left)
-    return 0
-  } else {
-    return failureOrSuccess.right
-  }
-})
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=ERROR fiber=#0 message="Oh uh!"
-*/
-```
-
-### logFatal
-
-The `FATAL` log level is displayed by default. This log level is typically reserved for unrecoverable errors.
-
-**Example** (Logging at the Fatal Level)
-
-```ts twoslash
-import { Effect, Either } from "effect"
-
-const task = Effect.fail("Oh uh!").pipe(Effect.as(2))
-
-const program = Effect.gen(function* () {
-  const failureOrSuccess = yield* Effect.either(task)
-  if (Either.isLeft(failureOrSuccess)) {
-    yield* Effect.logFatal(failureOrSuccess.left)
-    return 0
-  } else {
-    return failureOrSuccess.right
-  }
-})
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=FATAL fiber=#0 message="Oh uh!"
-*/
-```
-
-## Custom Annotations
-
-You can enhance your log outputs by adding custom annotations using the `Effect.annotateLogs` function. This allows you to attach extra metadata to each log entry, making it easier to trace and add context to your logs.
-
-Enhance your log outputs by incorporating custom annotations with the `Effect.annotateLogs` function.
-This function allows you to append additional metadata to each log entry of an effect, enhancing traceability and context.
-
-### Adding a Single Annotation
-
-You can apply a single annotation as a key/value pair to all log entries within an effect.
-
-**Example** (Single Key/Value Annotation)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  yield* Effect.log("message1")
-  yield* Effect.log("message2")
-}).pipe(
-  // Annotation as key/value pair
-  Effect.annotateLogs("key", "value")
-)
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message=message1 key=value
-timestamp=... level=INFO fiber=#0 message=message2 key=value
-*/
-```
-
-In this example, all logs generated within the `program` will include the annotation `key=value`.
-
-<Aside type="tip" title="Scope of Annotations">
-  Annotations applied with `Effect.annotateLogs` are automatically added
-  to all logs generated within the annotated effect's scope, including
-  logs from nested effects.
-</Aside>
-
-### Annotations with Nested Effects
-
-Annotations propagate to all logs generated within nested or downstream effects. This ensures that logs from any child effects inherit the parent effect's annotations.
-
-**Example** (Propagating Annotations to Nested Effects)
-
-In this example, the annotation `key=value` is included in all logs, even those from the nested `anotherProgram` effect.
-
-```ts twoslash
-import { Effect } from "effect"
-
-// Define a child program that logs an error
-const anotherProgram = Effect.gen(function* () {
-  yield* Effect.logError("error1")
-})
-
-// Define the main program
-const program = Effect.gen(function* () {
-  yield* Effect.log("message1")
-  yield* Effect.log("message2")
-  yield* anotherProgram // Call the nested program
-}).pipe(
-  // Attach an annotation to all logs in the scope
-  Effect.annotateLogs("key", "value")
-)
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message=message1 key=value
-timestamp=... level=INFO fiber=#0 message=message2 key=value
-timestamp=... level=ERROR fiber=#0 message=error1 key=value
-*/
-```
-
-### Adding Multiple Annotations
-
-You can also apply multiple annotations at once by passing an object with key/value pairs. Each key/value pair will be added to every log entry within the effect.
-
-**Example** (Multiple Annotations)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  yield* Effect.log("message1")
-  yield* Effect.log("message2")
-}).pipe(
-  // Add multiple annotations
-  Effect.annotateLogs({ key1: "value1", key2: "value2" })
-)
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message=message1 key2=value2 key1=value1
-timestamp=... level=INFO fiber=#0 message=message2 key2=value2 key1=value1
-*/
-```
-
-In this case, each log will contain both `key1=value1` and `key2=value2`.
-
-### Scoped Annotations
-
-If you want to limit the scope of your annotations so that they only apply to certain log entries, you can use `Effect.annotateLogsScoped`. This function confines the annotations to logs produced within a specific scope.
-
-**Example** (Scoped Annotations)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  yield* Effect.log("no annotations") // No annotations
-  yield* Effect.annotateLogsScoped({ key: "value" }) // Scoped annotation
-  yield* Effect.log("message1") // Annotation applied
-  yield* Effect.log("message2") // Annotation applied
-}).pipe(
-  Effect.scoped,
-  // Outside scope, no annotations
-  Effect.andThen(Effect.log("no annotations again"))
-)
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message="no annotations"
-timestamp=... level=INFO fiber=#0 message=message1 key=value
-timestamp=... level=INFO fiber=#0 message=message2 key=value
-timestamp=... level=INFO fiber=#0 message="no annotations again"
-*/
-```
-
-## Log Spans
-
-Effect provides built-in support for log spans, which allow you to measure and log the duration of specific tasks or sections of your code. This feature is helpful for tracking how long certain operations take, giving you better insights into the performance of your application.
-
-**Example** (Measuring Task Duration with a Log Span)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  // Simulate a delay to represent a task taking time
-  yield* Effect.sleep("1 second")
-  // Log a message indicating the job is done
-  yield* Effect.log("The job is finished!")
-}).pipe(
-  // Apply a log span labeled "myspan" to measure
-  // the duration of this operation
-  Effect.withLogSpan("myspan")
-)
-
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message="The job is finished!" myspan=1011ms
-*/
-```
-
-## Disabling Default Logging
-
-Sometimes, perhaps during test execution, you might want to disable default logging in your application. Effect provides several ways to turn off logging when needed. In this section, we'll look at different methods to disable logging in the Effect framework.
-
-**Example** (Using `Logger.withMinimumLogLevel`)
-
-One convenient way to disable logging is by using the `Logger.withMinimumLogLevel` function. This allows you to set the minimum log level to `None`, effectively turning off all log output.
-
-```ts twoslash
-import { Effect, Logger, LogLevel } from "effect"
-
-const program = Effect.gen(function* () {
-  yield* Effect.log("Executing task...")
-  yield* Effect.sleep("100 millis")
-  console.log("task done")
-})
-
-// Default behavior: logging enabled
-Effect.runFork(program)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message="Executing task..."
-task done
-*/
-
-// Disable logging by setting minimum log level to 'None'
-Effect.runFork(program.pipe(Logger.withMinimumLogLevel(LogLevel.None)))
-/*
-Output:
-task done
-*/
-```
-
-**Example** (Using a Layer)
-
-Another approach to disable logging is by creating a layer that sets the minimum log level to `LogLevel.None`, effectively turning off all log output.
-
-```ts twoslash
-import { Effect, Logger, LogLevel } from "effect"
-
-const program = Effect.gen(function* () {
-  yield* Effect.log("Executing task...")
-  yield* Effect.sleep("100 millis")
-  console.log("task done")
-})
-
-// Create a layer that disables logging
-const layer = Logger.minimumLogLevel(LogLevel.None)
-
-// Apply the layer to disable logging
-Effect.runFork(program.pipe(Effect.provide(layer)))
-/*
-Output:
-task done
-*/
-```
-
-**Example** (Using a Custom Runtime)
-
-You can also disable logging by creating a custom runtime that includes the configuration to turn off logging:
-
-```ts twoslash
-import { Effect, Logger, LogLevel, ManagedRuntime } from "effect"
-
-const program = Effect.gen(function* () {
-  yield* Effect.log("Executing task...")
-  yield* Effect.sleep("100 millis")
-  console.log("task done")
-})
-
-// Create a custom runtime that disables logging
-const customRuntime = ManagedRuntime.make(
-  Logger.minimumLogLevel(LogLevel.None)
-)
-
-// Run the program using the custom runtime
-customRuntime.runFork(program)
-/*
-Output:
-task done
-*/
-```
-
-## Loading the Log Level from Configuration
-
-To dynamically load the log level from a [configuration](/docs/configuration/) and apply it to your program, you can use the `Logger.minimumLogLevel` layer. This allows your application to adjust its logging behavior based on external configuration.
-
-**Example** (Loading Log Level from Configuration)
-
-```ts twoslash
-import {
-  Effect,
-  Config,
-  Logger,
-  Layer,
-  ConfigProvider,
-  LogLevel
-} from "effect"
-
-// Simulate a program with logs
-const program = Effect.gen(function* () {
-  yield* Effect.logError("ERROR!")
-  yield* Effect.logWarning("WARNING!")
-  yield* Effect.logInfo("INFO!")
-  yield* Effect.logDebug("DEBUG!")
-})
-
-// Load the log level from the configuration and apply it as a layer
-const LogLevelLive = Config.logLevel("LOG_LEVEL").pipe(
-  Effect.andThen((level) =>
-    // Set the minimum log level
-    Logger.minimumLogLevel(level)
-  ),
-  Layer.unwrapEffect // Convert the effect into a layer
-)
-
-// Provide the loaded log level to the program
-const configured = Effect.provide(program, LogLevelLive)
-
-// Test the program using a mock configuration provider
-const test = Effect.provide(
-  configured,
-  Layer.setConfigProvider(
-    ConfigProvider.fromMap(
-      new Map([["LOG_LEVEL", LogLevel.Warning.label]])
-    )
-  )
-)
-
-Effect.runFork(test)
-/*
-Output:
-... level=ERROR fiber=#0 message=ERROR!
-... level=WARN fiber=#0 message=WARNING!
-*/
-```
-
-<Aside type="tip" title="Using ConfigProvider for Testing">
-  The `ConfigProvider.fromMap` function is useful for testing by
-  simulating configuration values. You can also refer to [Testing
-  Services](/docs/configuration/#testing-configurable-services) for more
-  details on using mock configuration during tests.
-</Aside>
-
-## Custom loggers
-
-In this section, you'll learn how to define a custom logger and set it as the default logger in your application. Custom loggers give you control over how log messages are handled, such as routing them to external services, writing to files, or formatting logs in a specific way.
-
-### Defining a Custom Logger
-
-You can define your own logger using the `Logger.make` function. This function allows you to specify how log messages should be processed.
-
-**Example** (Defining a Simple Custom Logger)
-
-```ts twoslash
-import { Logger } from "effect"
-
-// Custom logger that outputs log messages to the console
-const logger = Logger.make(({ logLevel, message }) => {
-  globalThis.console.log(`[${logLevel.label}] ${message}`)
-})
-```
-
-In this example, the custom logger logs messages to the console with the log level and message formatted as `[LogLevel] Message`.
-
-### Using a Custom Logger in a Program
-
-Let's assume you have the following tasks and a program where you log some messages:
-
-```ts twoslash collapse={3-6}
-import { Effect, Logger } from "effect"
-
-// Custom logger that outputs log messages to the console
-const logger = Logger.make(({ logLevel, message }) => {
-  globalThis.console.log(`[${logLevel.label}] ${message}`)
-})
-
-const task1 = Effect.gen(function* () {
-  yield* Effect.sleep("2 seconds")
-  yield* Effect.logDebug("task1 done")
-})
-
-const task2 = Effect.gen(function* () {
-  yield* Effect.sleep("1 second")
-  yield* Effect.logDebug("task2 done")
-})
-
-const program = Effect.gen(function* () {
-  yield* Effect.log("start")
-  yield* task1
-  yield* task2
-  yield* Effect.log("done")
-})
-```
-
-To replace the default logger with your custom logger, you can use the `Logger.replace` function. After creating a layer that replaces the default logger, you provide it to your program using `Effect.provide`.
-
-**Example** (Replacing the Default Logger with a Custom Logger)
-
-```ts twoslash collapse={3-23}
-import { Effect, Logger, LogLevel } from "effect"
-
-// Custom logger that outputs log messages to the console
-const logger = Logger.make(({ logLevel, message }) => {
-  globalThis.console.log(`[${logLevel.label}] ${message}`)
-})
-
-const task1 = Effect.gen(function* () {
-  yield* Effect.sleep("2 seconds")
-  yield* Effect.logDebug("task1 done")
-})
-
-const task2 = Effect.gen(function* () {
-  yield* Effect.sleep("1 second")
-  yield* Effect.logDebug("task2 done")
-})
-
-const program = Effect.gen(function* () {
-  yield* Effect.log("start")
-  yield* task1
-  yield* task2
-  yield* Effect.log("done")
-})
-
-// Replace the default logger with the custom logger
-const layer = Logger.replace(Logger.defaultLogger, logger)
-
-Effect.runFork(
-  program.pipe(
-    Logger.withMinimumLogLevel(LogLevel.Debug),
-    Effect.provide(layer)
-  )
-)
-```
-
-When you run the above program, the following log messages are printed to the console:
-
-```ansi showLineNumbers=false
-[INFO] start
-[DEBUG] task1 done
-[DEBUG] task2 done
-[INFO] done
-```
-
-## Built-in Loggers
-
-Effect provides several built-in loggers that you can use depending on your logging needs. These loggers offer different formats, each suited for different environments or purposes, such as development, production, or integration with external logging services.
-
-Each logger is available in two forms: the logger itself, and a layer that uses the logger and sends its output to the `Console` [default service](/docs/requirements-management/default-services/). For example, the `structuredLogger` logger generates logs in a detailed object-based format, while the `structured` layer uses the same logger and writes the output to the `Console` service.
-
-### stringLogger (default)
-
-The `stringLogger` logger produces logs in a human-readable key-value style. This format is commonly used in development and production because it is simple and easy to read in the console.
-
-This logger does not have a corresponding layer because it is the default logger.
-
-```ts twoslash
-import { Effect } from "effect"
-
-const program = Effect.log("msg1", "msg2", ["msg3", "msg4"]).pipe(
-  Effect.delay("100 millis"),
-  Effect.annotateLogs({ key1: "value1", key2: "value2" }),
-  Effect.withLogSpan("myspan")
-)
-
-Effect.runFork(program)
-```
-
-Output:
-
-```ansi showLineNumbers=false
-timestamp=2024-12-28T10:44:31.281Z level=INFO fiber=#0 message=msg1 message=msg2 message="[
-  \"msg3\",
-  \"msg4\"
-]" myspan=102ms key2=value2 key1=value1
-```
-
-### logfmtLogger
-
-The `logfmtLogger` logger produces logs in a human-readable key-value format, similar to the [stringLogger](#stringlogger-default) logger. The main difference is that `logfmtLogger` removes extra spaces to make logs more compact.
-
-```ts twoslash
-import { Effect, Logger } from "effect"
-
-const program = Effect.log("msg1", "msg2", ["msg3", "msg4"]).pipe(
-  Effect.delay("100 millis"),
-  Effect.annotateLogs({ key1: "value1", key2: "value2" }),
-  Effect.withLogSpan("myspan")
-)
-
-Effect.runFork(program.pipe(Effect.provide(Logger.logFmt)))
-```
-
-Output:
-
-```ansi showLineNumbers=false
-timestamp=2024-12-28T10:44:31.281Z level=INFO fiber=#0 message=msg1 message=msg2 message="[\"msg3\",\"msg4\"]" myspan=102ms key2=value2 key1=value1
-```
-
-### prettyLogger
-
-The `prettyLogger` logger enhances log output by using color and indentation for better readability, making it particularly useful during development when visually scanning logs in the console.
-
-```ts twoslash
-import { Effect, Logger } from "effect"
-
-const program = Effect.log("msg1", "msg2", ["msg3", "msg4"]).pipe(
-  Effect.delay("100 millis"),
-  Effect.annotateLogs({ key1: "value1", key2: "value2" }),
-  Effect.withLogSpan("myspan")
-)
-
-Effect.runFork(program.pipe(Effect.provide(Logger.pretty)))
-```
-
-Output:
-
-```ansi showLineNumbers=false
-[11:37:14.265] [32mINFO[0m (#0) myspan=101ms: [1;36mmsg1[0m
-  msg2
-  [ [32m'msg3'[0m, [32m'msg4'[0m ]
-  key2: value2
-  key1: value1
-```
-
-### structuredLogger
-
-The `structuredLogger` logger produces logs in a detailed object-based format. This format is helpful when you need more traceable logs, especially if other systems analyze them or store them for later review.
-
-```ts twoslash
-import { Effect, Logger } from "effect"
-
-const program = Effect.log("msg1", "msg2", ["msg3", "msg4"]).pipe(
-  Effect.delay("100 millis"),
-  Effect.annotateLogs({ key1: "value1", key2: "value2" }),
-  Effect.withLogSpan("myspan")
-)
-
-Effect.runFork(program.pipe(Effect.provide(Logger.structured)))
-```
-
-Output:
-
-```ansi showLineNumbers=false
-{
-  message: [ 'msg1', 'msg2', [ 'msg3', 'msg4' ] ],
-  logLevel: 'INFO',
-  timestamp: '2024-12-28T10:44:31.281Z',
-  cause: undefined,
-  annotations: { key2: 'value2', key1: 'value1' },
-  spans: { myspan: 102 },
-  fiberId: '#0'
-}
-```
-
-| Field         | Description                                                                                                                                                              |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `message`     | Either a single processed value or an array of processed values, depending on how many messages are logged.                                                              |
-| `logLevel`    | A string that indicates the log level label (for example, "INFO" or "DEBUG").                                                                                            |
-| `timestamp`   | An ISO 8601 timestamp for when the log was generated (for example, "2024-01-01T00:00:00.000Z").                                                                          |
-| `cause`       | A string that shows detailed error information, or `undefined` if no cause was provided.                                                                                 |
-| `annotations` | An object where each key is an annotation label and the corresponding value is parsed into a structured format (for instance, `{"key": "value"}`).                       |
-| `spans`       | An object mapping each span label to its duration in milliseconds, measured from its start time until the moment the logger was called (for example, `{"myspan": 102}`). |
-| `fiberId`     | The identifier of the fiber that generated this log (for example, "#0").                                                                                                 |
-
-### jsonLogger
-
-The `jsonLogger` logger produces logs in JSON format. This can be useful for tools or services that parse and store JSON logs.
-It calls `JSON.stringify` on the object created by the [structuredLogger](#structuredlogger) logger.
-
-```ts twoslash
-import { Effect, Logger } from "effect"
-
-const program = Effect.log("msg1", "msg2", ["msg3", "msg4"]).pipe(
-  Effect.delay("100 millis"),
-  Effect.annotateLogs({ key1: "value1", key2: "value2" }),
-  Effect.withLogSpan("myspan")
-)
-
-Effect.runFork(program.pipe(Effect.provide(Logger.json)))
-```
-
-Output:
-
-```ansi showLineNumbers=false
-{"message":["msg1","msg2",["msg3","msg4"]],"logLevel":"INFO","timestamp":"2024-12-28T10:44:31.281Z","annotations":{"key2":"value2","key1":"value1"},"spans":{"myspan":102},"fiberId":"#0"}
-```
-
-## Combine Loggers
-
-### zip
-
-The `Logger.zip` function combines two loggers into a new logger. This new logger forwards log messages to both the original loggers.
-
-**Example** (Combining Two Loggers)
-
-```ts
-import { Effect, Logger } from "effect"
-
-// Define a custom logger that logs to the console
-const logger = Logger.make(({ logLevel, message }) => {
-  globalThis.console.log(`[${logLevel.label}] ${message}`)
-})
-
-// Combine the default logger and the custom logger
-//
-//      ┌─── Logger<unknown, [void, void]>
-//      ▼
-const combined = Logger.zip(Logger.defaultLogger, logger)
-
-const program = Effect.log("something")
-
-Effect.runFork(
-  program.pipe(
-    // Replace the default logger with the combined logger
-    Effect.provide(Logger.replace(Logger.defaultLogger, combined))
-  )
-)
-/*
-Output:
-timestamp=2025-01-09T13:50:58.655Z level=INFO fiber=#0 message=something
-[INFO] something
-*/
 ```
 
 > data-types/redacted.mdx\n\n---
@@ -31648,118 +30678,6 @@ This allows `Cause` to capture richer and more complex error states compared to 
 - An `Exit`, in essence, is a "constant computation".
 - `Effect.succeed` is essentially the same as `Exit.succeed`.
 - `Effect.fail` is the same as `Exit.fail`.
-
-> observability/supervisor.mdx\n\n---
-title: Supervisor
-description: Effect's Supervisor manages fiber lifecycles, enabling tracking, monitoring, and controlling fibers' behavior within an application.
-sidebar:
-  order: 3
----
-
-A `Supervisor<A>` is a utility for managing fibers in Effect, allowing you to track their lifecycle (creation and termination) and producing a value of type `A` that reflects this supervision. Supervisors are useful when you need insight into or control over the behavior of fibers within your application.
-
-To create a supervisor, you can use the `Supervisor.track` function. This generates a new supervisor that keeps track of its child fibers, maintaining them in a set. This allows you to observe and monitor their status during execution.
-
-You can supervise an effect by using the `Effect.supervised` function. This function takes a supervisor as an argument and returns an effect where all child fibers forked within it are supervised by the provided supervisor. This enables you to capture detailed information about these child fibers, such as their status, through the supervisor.
-
-**Example** (Monitoring Fiber Count)
-
-In this example, we'll periodically monitor the number of fibers running in the application using a supervisor. The program calculates a Fibonacci number, spawning multiple fibers in the process, while a separate monitor tracks the fiber count.
-
-```ts twoslash
-import { Effect, Supervisor, Schedule, Fiber, FiberStatus } from "effect"
-
-// Main program that monitors fibers while calculating a Fibonacci number
-const program = Effect.gen(function* () {
-  // Create a supervisor to track child fibers
-  const supervisor = yield* Supervisor.track
-
-  // Start a Fibonacci calculation, supervised by the supervisor
-  const fibFiber = yield* fib(20).pipe(
-    Effect.supervised(supervisor),
-    // Fork the Fibonacci effect into a fiber
-    Effect.fork
-  )
-
-  // Define a schedule to periodically monitor the fiber count every 500ms
-  const policy = Schedule.spaced("500 millis").pipe(
-    Schedule.whileInputEffect((_) =>
-      Fiber.status(fibFiber).pipe(
-        // Continue while the Fibonacci fiber is not done
-        Effect.andThen((status) => status !== FiberStatus.done)
-      )
-    )
-  )
-
-  // Start monitoring the fibers, using the supervisor to track the count
-  const monitorFiber = yield* monitorFibers(supervisor).pipe(
-    // Repeat the monitoring according to the schedule
-    Effect.repeat(policy),
-    // Fork the monitoring into its own fiber
-    Effect.fork
-  )
-
-  // Join the monitor and Fibonacci fibers to ensure they complete
-  yield* Fiber.join(monitorFiber)
-  const result = yield* Fiber.join(fibFiber)
-
-  console.log(`fibonacci result: ${result}`)
-})
-
-// Function to monitor and log the number of active fibers
-const monitorFibers = (
-  supervisor: Supervisor.Supervisor<Array<Fiber.RuntimeFiber<any, any>>>
-): Effect.Effect<void> =>
-  Effect.gen(function* () {
-    const fibers = yield* supervisor.value // Get the current set of fibers
-    console.log(`number of fibers: ${fibers.length}`)
-  })
-
-// Recursive Fibonacci calculation, spawning fibers for each recursive step
-const fib = (n: number): Effect.Effect<number> =>
-  Effect.gen(function* () {
-    if (n <= 1) {
-      return 1
-    }
-    yield* Effect.sleep("500 millis") // Simulate work by delaying
-
-    // Fork two fibers for the recursive Fibonacci calls
-    const fiber1 = yield* Effect.fork(fib(n - 2))
-    const fiber2 = yield* Effect.fork(fib(n - 1))
-
-    // Join the fibers to retrieve their results
-    const v1 = yield* Fiber.join(fiber1)
-    const v2 = yield* Fiber.join(fiber2)
-
-    return v1 + v2 // Combine the results
-  })
-
-Effect.runPromise(program)
-/*
-Output:
-number of fibers: 0
-number of fibers: 2
-number of fibers: 6
-number of fibers: 14
-number of fibers: 30
-number of fibers: 62
-number of fibers: 126
-number of fibers: 254
-number of fibers: 510
-number of fibers: 1022
-number of fibers: 2034
-number of fibers: 3795
-number of fibers: 5810
-number of fibers: 6474
-number of fibers: 4942
-number of fibers: 2515
-number of fibers: 832
-number of fibers: 170
-number of fibers: 18
-number of fibers: 0
-fibonacci result: 10946
-*/
-```
 
 > data-types/duration.mdx\n\n---
 title: Duration
@@ -35547,6 +34465,2274 @@ done
 */
 ```
 
+> observability/tracing.mdx\n\n---
+title: Tracing in Effect
+description: Explore tracing in distributed systems to track request lifecycles across services using spans and traces for debugging and performance optimization.
+sidebar:
+  label: Tracing
+  order: 2
+---
+
+import {
+  Tabs,
+  TabItem,
+  Steps,
+  Aside
+} from "@astrojs/starlight/components"
+
+Although logs and metrics are useful to understand the behavior of individual services, they are not enough to provide a complete overview of the lifetime of a request in a distributed system.
+
+In a distributed system, a request can span multiple services and each service can make multiple requests to other services to fulfill the request. In such a scenario, we need to have a way to track the lifetime of a request across multiple services to diagnose what services are the bottlenecks and where the request is spending most of its time.
+
+## Spans
+
+A **span** represents a single unit of work or operation within a request. It provides a detailed view of what happened during the execution of that specific operation.
+
+Each span typically contains the following information:
+
+| Span Component   | Description                                                        |
+| ---------------- | ------------------------------------------------------------------ |
+| **Name**         | Describes the specific operation being tracked.                    |
+| **Timing Data**  | Timestamps indicating when the operation started and its duration. |
+| **Log Messages** | Structured logs capturing important events during the operation.   |
+| **Attributes**   | Metadata providing additional context about the operation.         |
+
+Spans are key building blocks in tracing, helping you visualize and understand the flow of requests through various services.
+
+## Traces
+
+A trace records the paths taken by requests (made by an application or end-user) as they propagate through multi-service architectures, like microservice and serverless applications.
+
+Without tracing, it is challenging to pinpoint the cause of performance problems in a distributed system.
+
+A trace is made of one or more spans. The first span represents the root span. Each root span represents a request from start to finish. The spans underneath the parent provide a more in-depth context of what occurs during a request (or what steps make up a request).
+
+Many Observability back-ends visualize traces as waterfall diagrams that may look something like this:
+
+![Trace Waterfall Diagram](../_assets/waterfall-trace.svg "An image displaying an application trace visualized as a waterfall diagram")
+
+Waterfall diagrams show the parent-child relationship between a root span and its child spans. When a span encapsulates another span, this also represents a nested relationship.
+
+## Creating Spans
+
+You can add tracing to an effect by creating a span using the `Effect.withSpan` API. This helps you track specific operations within the effect.
+
+**Example** (Adding a Span to an Effect)
+
+```ts twoslash
+import { Effect } from "effect"
+
+// Define an effect that delays for 100 milliseconds
+const program = Effect.void.pipe(Effect.delay("100 millis"))
+
+// Instrument the effect with a span for tracing
+const instrumented = program.pipe(Effect.withSpan("myspan"))
+```
+
+Instrumenting an effect with a span does not change its type. If you start with an `Effect<A, E, R>`, the result remains an `Effect<A, E, R>`.
+
+## Printing Spans
+
+To print spans for debugging or analysis, you'll need to install the required tracing tools. Here’s how to set them up for your project.
+
+### Installing Dependencies
+
+Choose your package manager and install the necessary libraries:
+
+   <Tabs syncKey="package-manager">
+
+   <TabItem label="npm" icon="seti:npm">
+
+```sh showLineNumbers=false
+# Install the main library for integrating OpenTelemetry with Effect
+npm install @effect/opentelemetry
+
+# Install the required OpenTelemetry SDKs for tracing and metrics
+npm install @opentelemetry/sdk-trace-base
+npm install @opentelemetry/sdk-trace-node
+npm install @opentelemetry/sdk-trace-web
+npm install @opentelemetry/sdk-metrics
+```
+
+   </TabItem>
+
+   <TabItem label="pnpm" icon="pnpm">
+
+```sh showLineNumbers=false
+# Install the main library for integrating OpenTelemetry with Effect
+pnpm add @effect/opentelemetry
+
+# Install the required OpenTelemetry SDKs for tracing and metrics
+pnpm add @opentelemetry/sdk-trace-base
+pnpm add @opentelemetry/sdk-trace-node
+pnpm add @opentelemetry/sdk-trace-web
+pnpm add @opentelemetry/sdk-metrics
+```
+
+   </TabItem>
+
+   <TabItem label="Yarn" icon="seti:yarn">
+
+```sh showLineNumbers=false
+# Install the main library for integrating OpenTelemetry with Effect
+yarn add @effect/opentelemetry
+
+# Install the required OpenTelemetry SDKs for tracing and metrics
+yarn add @opentelemetry/sdk-trace-base
+yarn add @opentelemetry/sdk-trace-node
+yarn add @opentelemetry/sdk-trace-web
+yarn add @opentelemetry/sdk-metrics
+```
+
+   </TabItem>
+
+   <TabItem label="Bun" icon="bun">
+
+```sh showLineNumbers=false
+# Install the main library for integrating OpenTelemetry with Effect
+bun add @effect/opentelemetry
+
+# Install the required OpenTelemetry SDKs for tracing and metrics
+bun add @opentelemetry/sdk-trace-base
+bun add @opentelemetry/sdk-trace-node
+bun add @opentelemetry/sdk-trace-web
+bun add @opentelemetry/sdk-metrics
+```
+
+   </TabItem>
+
+   </Tabs>
+
+<Aside type="note" title="Peer Dependency">
+  The `@opentelemetry/api` package is a peer dependency of
+  `@effect/opentelemetry`. If your package manager does not automatically
+  install peer dependencies, you must add it manually.
+</Aside>
+
+### Printing a Span to the Console
+
+Once the dependencies are installed, you can set up span printing using OpenTelemetry. Here's an example showing how to print a span for an effect.
+
+**Example** (Setting Up and Printing a Span)
+
+```ts twoslash
+import { Effect } from "effect"
+import { NodeSdk } from "@effect/opentelemetry"
+import {
+  ConsoleSpanExporter,
+  BatchSpanProcessor
+} from "@opentelemetry/sdk-trace-base"
+
+// Define an effect that delays for 100 milliseconds
+const program = Effect.void.pipe(Effect.delay("100 millis"))
+
+// Instrument the effect with a span for tracing
+const instrumented = program.pipe(Effect.withSpan("myspan"))
+
+// Set up tracing with the OpenTelemetry SDK
+const NodeSdkLive = NodeSdk.layer(() => ({
+  resource: { serviceName: "example" },
+  // Export span data to the console
+  spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter())
+}))
+
+// Run the effect, providing the tracing layer
+Effect.runPromise(instrumented.pipe(Effect.provide(NodeSdkLive)))
+/*
+Example Output:
+{
+  resource: {
+    attributes: {
+      'service.name': 'example',
+      'telemetry.sdk.language': 'nodejs',
+      'telemetry.sdk.name': '@effect/opentelemetry',
+      'telemetry.sdk.version': '1.28.0'
+    }
+  },
+  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
+  traceId: '673c06608bd815f7a75bf897ef87e186',
+  parentId: undefined,
+  traceState: undefined,
+  name: 'myspan',
+  id: '401b2846170cd17b',
+  kind: 0,
+  timestamp: 1733220735529855.5,
+  duration: 102079.958,
+  attributes: {},
+  status: { code: 1 },
+  events: [],
+  links: []
+}
+*/
+```
+
+### Understanding the Span Output
+
+The output provides detailed information about the span:
+
+| Field        | Description                                                                                                                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `traceId`    | A unique identifier for the entire trace, helping trace requests or operations as they move through an application.                                                                                            |
+| `parentId`   | Identifies the parent span of the current span, marked as `undefined` in the output when there is no parent span, making it a root span.                                                                       |
+| `name`       | Describes the name of the span, indicating the operation being tracked (e.g., "myspan").                                                                                                                       |
+| `id`         | A unique identifier for the current span, distinguishing it from other spans within a trace.                                                                                                                   |
+| `timestamp`  | A timestamp representing when the span started, measured in microseconds since the Unix epoch.                                                                                                                 |
+| `duration`   | Specifies the duration of the span, representing the time taken to complete the operation (e.g., `2895.769` microseconds).                                                                                     |
+| `attributes` | Spans may contain attributes, which are key-value pairs providing additional context or information about the operation. In this output, it's an empty object, indicating no specific attributes in this span. |
+| `status`     | The status field provides information about the span's status. In this case, it has a code of 1, which typically indicates an OK status (whereas a code of 2 signifies an ERROR status)                        |
+| `events`     | Spans can include events, which are records of specific moments during the span's lifecycle. In this output, it's an empty array, suggesting no specific events recorded.                                      |
+| `links`      | Links can be used to associate this span with other spans in different traces. In the output, it's an empty array, indicating no specific links for this span.                                                 |
+
+### Span Capturing an Error
+
+Here's how a span looks when the effect encounters an error:
+
+**Example** (Span for an Effect that Fails)
+
+```ts twoslash "code: 2"
+import { Effect } from "effect"
+import { NodeSdk } from "@effect/opentelemetry"
+import {
+  ConsoleSpanExporter,
+  BatchSpanProcessor
+} from "@opentelemetry/sdk-trace-base"
+
+const program = Effect.fail("Oh no!").pipe(
+  Effect.delay("100 millis"),
+  Effect.withSpan("myspan")
+)
+
+const NodeSdkLive = NodeSdk.layer(() => ({
+  resource: { serviceName: "example" },
+  spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter())
+}))
+
+Effect.runPromiseExit(program.pipe(Effect.provide(NodeSdkLive))).then(
+  console.log
+)
+/*
+Example Output:
+{
+  resource: {
+    attributes: {
+      'service.name': 'example',
+      'telemetry.sdk.language': 'nodejs',
+      'telemetry.sdk.name': '@effect/opentelemetry',
+      'telemetry.sdk.version': '1.28.0'
+    }
+  },
+  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
+  traceId: 'eee9619866179f209b7aae277283e71f',
+  parentId: undefined,
+  traceState: undefined,
+  name: 'myspan',
+  id: '3a5725c91884c9e1',
+  kind: 0,
+  timestamp: 1733220830575626,
+  duration: 106578.042,
+  attributes: {
+    'code.stacktrace': 'at <anonymous> (/Users/giuliocanti/Documents/GitHub/website/content/dev/index.ts:10:10)'
+  },
+  status: { code: 2, message: 'Oh no!' },
+  events: [
+    {
+      name: 'exception',
+      attributes: {
+        'exception.type': 'Error',
+        'exception.message': 'Oh no!',
+        'exception.stacktrace': 'Error: Oh no!'
+      },
+      time: [ 1733220830, 682204083 ],
+      droppedAttributesCount: 0
+    }
+  ],
+  links: []
+}
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: { _id: 'Cause', _tag: 'Fail', failure: 'Oh no!' }
+}
+*/
+```
+
+In this example, the span's status code is `2`, indicating an error. The message in the status provides more details about the failure.
+
+## Adding Annotations
+
+You can provide extra information to a span by utilizing the `Effect.annotateCurrentSpan` function.
+This function allows you to attach key-value pairs, offering more context about the execution of the span.
+
+**Example** (Annotating a Span)
+
+```ts twoslash "attributes: { key: 'value' }"
+import { Effect } from "effect"
+import { NodeSdk } from "@effect/opentelemetry"
+import {
+  ConsoleSpanExporter,
+  BatchSpanProcessor
+} from "@opentelemetry/sdk-trace-base"
+
+const program = Effect.void.pipe(
+  Effect.delay("100 millis"),
+  // Annotate the span with a key-value pair
+  Effect.tap(() => Effect.annotateCurrentSpan("key", "value")),
+  // Wrap the effect in a span named 'myspan'
+  Effect.withSpan("myspan")
+)
+
+// Set up tracing with the OpenTelemetry SDK
+const NodeSdkLive = NodeSdk.layer(() => ({
+  resource: { serviceName: "example" },
+  spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter())
+}))
+
+// Run the effect, providing the tracing layer
+Effect.runPromise(program.pipe(Effect.provide(NodeSdkLive)))
+/*
+Example Output:
+{
+  resource: {
+    attributes: {
+      'service.name': 'example',
+      'telemetry.sdk.language': 'nodejs',
+      'telemetry.sdk.name': '@effect/opentelemetry',
+      'telemetry.sdk.version': '1.28.0'
+    }
+  },
+  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
+  traceId: 'c8120e01c0f1ea83ccc1d388e5cdebd3',
+  parentId: undefined,
+  traceState: undefined,
+  name: 'myspan',
+  id: '81c430ba4979f1db',
+  kind: 0,
+  timestamp: 1733220874356084,
+  duration: 102821.417,
+  attributes: { key: 'value' },
+  status: { code: 1 },
+  events: [],
+  links: []
+}
+*/
+```
+
+## Logs as events
+
+In the context of tracing, logs are converted into "Span Events." These events offer structured insights into your application's activities and provide a timeline of when specific operations occurred.
+
+```ts twoslash {47}
+import { Effect } from "effect"
+import { NodeSdk } from "@effect/opentelemetry"
+import {
+  ConsoleSpanExporter,
+  BatchSpanProcessor
+} from "@opentelemetry/sdk-trace-base"
+
+// Define a program that logs a message and delays for 100 milliseconds
+const program = Effect.log("Hello").pipe(
+  Effect.delay("100 millis"),
+  Effect.withSpan("myspan")
+)
+
+// Set up tracing with the OpenTelemetry SDK
+const NodeSdkLive = NodeSdk.layer(() => ({
+  resource: { serviceName: "example" },
+  spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter())
+}))
+
+// Run the effect, providing the tracing layer
+Effect.runPromise(program.pipe(Effect.provide(NodeSdkLive)))
+/*
+Example Output:
+{
+  resource: {
+    attributes: {
+      'service.name': 'example',
+      'telemetry.sdk.language': 'nodejs',
+      'telemetry.sdk.name': '@effect/opentelemetry',
+      'telemetry.sdk.version': '1.28.0'
+    }
+  },
+  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
+  traceId: 'b0f4f012b5b13c0a040f7002a1d7b020',
+  parentId: undefined,
+  traceState: undefined,
+  name: 'myspan',
+  id: 'b9ba8472002715a8',
+  kind: 0,
+  timestamp: 1733220905504162.2,
+  duration: 103790,
+  attributes: {},
+  status: { code: 1 },
+  events: [
+    {
+      name: 'Hello',
+      attributes: { 'effect.fiberId': '#0', 'effect.logLevel': 'INFO' }, // Log attributes
+      time: [ 1733220905, 607761042 ], // Event timestamp
+      droppedAttributesCount: 0
+    }
+  ],
+  links: []
+}
+*/
+```
+
+Each span can include events, which capture specific moments during the execution of a span. In this example, a log message `"Hello"` is recorded as an event within the span. Key details of the event include:
+
+| Field                    | Description                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------- |
+| `name`                   | The name of the event, which corresponds to the logged message (e.g., `'Hello'`).                 |
+| `attributes`             | Key-value pairs that provide additional context about the event, such as `fiberId` and log level. |
+| `time`                   | The timestamp of when the event occurred, shown in a high-precision format.                       |
+| `droppedAttributesCount` | Indicates how many attributes were discarded, if any. In this case, no attributes were dropped.   |
+
+## Nesting Spans
+
+Spans can be nested to represent a hierarchy of operations. This allows you to track how different parts of your application relate to one another during execution. The following example demonstrates how to create and manage nested spans.
+
+**Example** (Nesting Spans in a Trace)
+
+```ts twoslash "a09e5c3fdfdbbc1d"
+import { Effect } from "effect"
+import { NodeSdk } from "@effect/opentelemetry"
+import {
+  ConsoleSpanExporter,
+  BatchSpanProcessor
+} from "@opentelemetry/sdk-trace-base"
+
+const child = Effect.void.pipe(
+  Effect.delay("100 millis"),
+  Effect.withSpan("child")
+)
+
+const parent = Effect.gen(function* () {
+  yield* Effect.sleep("20 millis")
+  yield* child
+  yield* Effect.sleep("10 millis")
+}).pipe(Effect.withSpan("parent"))
+
+// Set up tracing with the OpenTelemetry SDK
+const NodeSdkLive = NodeSdk.layer(() => ({
+  resource: { serviceName: "example" },
+  spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter())
+}))
+
+// Run the effect, providing the tracing layer
+Effect.runPromise(parent.pipe(Effect.provide(NodeSdkLive)))
+/*
+Example Output:
+{
+  resource: {
+    attributes: {
+      'service.name': 'example',
+      'telemetry.sdk.language': 'nodejs',
+      'telemetry.sdk.name': '@effect/opentelemetry',
+      'telemetry.sdk.version': '1.28.0'
+    }
+  },
+  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
+  traceId: 'a9cd69ad70698a0c7b7b774597c77d39',
+  parentId: 'a09e5c3fdfdbbc1d', // This indicates the span is a child of 'parent'
+  traceState: undefined,
+  name: 'child',
+  id: '210d2f9b648389a4', // Unique ID for the child span
+  kind: 0,
+  timestamp: 1733220970590126.2,
+  duration: 101579.875,
+  attributes: {},
+  status: { code: 1 },
+  events: [],
+  links: []
+}
+{
+  resource: {
+    attributes: {
+      'service.name': 'example',
+      'telemetry.sdk.language': 'nodejs',
+      'telemetry.sdk.name': '@effect/opentelemetry',
+      'telemetry.sdk.version': '1.28.0'
+    }
+  },
+  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
+  traceId: 'a9cd69ad70698a0c7b7b774597c77d39',
+  parentId: undefined, // Indicates this is the root span
+  traceState: undefined,
+  name: 'parent',
+  id: 'a09e5c3fdfdbbc1d', // Unique ID for the parent span
+  kind: 0,
+  timestamp: 1733220970569015.2,
+  duration: 132612.208,
+  attributes: {},
+  status: { code: 1 },
+  events: [],
+  links: []
+}
+*/
+```
+
+The parent-child relationship is evident in the span output, where the `parentId` of the `child` span matches the `id` of the `parent` span. This structure helps track how operations are related within a single trace.
+
+## Tutorial: Visualizing Traces with Docker, Prometheus, Grafana, and Tempo
+
+In this tutorial, we'll guide you through simulating and visualizing traces using a sample instrumented Node.js application. We will use Docker, Prometheus, Grafana, and Tempo to create, collect, and visualize traces.
+
+### Tools Explained
+
+Let's understand the tools we'll be using in simple terms:
+
+- **Docker**: Docker allows us to run applications in containers. Think of a container as a lightweight and isolated environment where your application can run consistently, regardless of the host system. It's a bit like a virtual machine but more efficient.
+
+- **Prometheus**: Prometheus is a monitoring and alerting toolkit. It collects metrics and data about your applications and stores them for further analysis. This helps in identifying performance issues and understanding the behavior of your applications.
+
+- **Grafana**: Grafana is a visualization and analytics platform. It helps in creating beautiful and interactive dashboards to visualize your application's data. You can use it to graphically represent metrics collected by Prometheus.
+
+- **Tempo**: Tempo is a distributed tracing system that allows you to trace the journey of a request as it flows through your application. It provides insights into how requests are processed and helps in debugging and optimizing your applications.
+
+### Getting Docker
+
+To get Docker, follow these steps:
+
+1. Visit the Docker website at [https://www.docker.com/](https://www.docker.com/).
+
+2. Download Docker Desktop for your operating system (Windows or macOS) and install it.
+
+3. After installation, open Docker Desktop, and it will run in the background.
+
+### Simulating Traces
+
+Now, let's simulate traces using a sample Node.js application. We'll provide you with the code and guide you on setting up the necessary components.
+
+<Steps>
+
+1. **Download Docker Files**. Download the required Docker files: [docker.zip](/tracing/docker.zip)
+
+2. **Set Up docker**. Unzip the downloaded file, navigate to the `/docker/local` directory in your terminal or command prompt and run the following command to start the necessary services:
+
+   ```sh showLineNumbers=false
+   docker-compose up
+   ```
+
+3. **Simulate Traces**. Run the following example code in your Node.js environment.
+   This code simulates a set of tasks and generates traces.
+
+   Before proceeding, you'll need to install additional libraries in addition to the latest version of `effect`. Here are the required libraries:
+
+   <Tabs syncKey="package-manager">
+
+   <TabItem label="npm" icon="seti:npm">
+
+   ```sh showLineNumbers=false
+   npm install @effect/opentelemetry
+   npm install @opentelemetry/exporter-trace-otlp-http
+   npm install @opentelemetry/sdk-trace-base
+   npm install @opentelemetry/sdk-trace-web
+   npm install @opentelemetry/sdk-trace-node
+   ```
+
+   </TabItem>
+
+   <TabItem label="pnpm" icon="pnpm">
+
+   ```sh showLineNumbers=false
+   pnpm add @effect/opentelemetry
+   pnpm add @opentelemetry/exporter-trace-otlp-http
+   pnpm add @opentelemetry/sdk-trace-base
+   # For NodeJS applications
+   pnpm add @opentelemetry/sdk-trace-node
+   # For browser applications
+   pnpm add @opentelemetry/sdk-trace-web
+   # If you also need to export metrics
+   pnpm add @opentelemetry/sdk-metrics
+   ```
+
+   </TabItem>
+
+   <TabItem label="Yarn" icon="seti:yarn">
+
+   ```sh showLineNumbers=false
+   yarn add @effect/opentelemetry
+   yarn add @opentelemetry/exporter-trace-otlp-http
+   yarn add @opentelemetry/sdk-trace-base
+   # For NodeJS applications
+   yarn add @opentelemetry/sdk-trace-node
+   # For browser applications
+   yarn add @opentelemetry/sdk-trace-web
+   # If you also need to export metrics
+   yarn add @opentelemetry/sdk-metrics
+   ```
+
+   </TabItem>
+
+   <TabItem label="Bun" icon="bun">
+
+   ```sh showLineNumbers=false
+   bun add @effect/opentelemetry
+   bun add @opentelemetry/exporter-trace-otlp-http
+   bun add @opentelemetry/sdk-trace-base
+   # For NodeJS applications
+   bun add @opentelemetry/sdk-trace-node
+   # For browser applications
+   bun add @opentelemetry/sdk-trace-web
+   # If you also need to export metrics
+   bun add @opentelemetry/sdk-metrics
+   ```
+
+   </TabItem>
+
+   </Tabs>
+
+   ```ts twoslash
+   import { Effect } from "effect"
+   import { NodeSdk } from "@effect/opentelemetry"
+   import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base"
+   import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http"
+
+   // Function to simulate a task with possible subtasks
+   const task = (
+     name: string,
+     delay: number,
+     children: ReadonlyArray<Effect.Effect<void>> = []
+   ) =>
+     Effect.gen(function* () {
+       yield* Effect.log(name)
+       yield* Effect.sleep(`${delay} millis`)
+       for (const child of children) {
+         yield* child
+       }
+       yield* Effect.sleep(`${delay} millis`)
+     }).pipe(Effect.withSpan(name))
+
+   const poll = task("/poll", 1)
+
+   // Create a program with tasks and subtasks
+   const program = task("client", 2, [
+     task("/api", 3, [
+       task("/authN", 4, [task("/authZ", 5)]),
+       task("/payment Gateway", 6, [
+         task("DB", 7),
+         task("Ext. Merchant", 8)
+       ]),
+       task("/dispatch", 9, [
+         task("/dispatch/search", 10),
+         Effect.all([poll, poll, poll], { concurrency: "inherit" }),
+         task("/pollDriver/{id}", 11)
+       ])
+     ])
+   ])
+
+   const NodeSdkLive = NodeSdk.layer(() => ({
+     resource: { serviceName: "example" },
+     spanProcessor: new BatchSpanProcessor(new OTLPTraceExporter())
+   }))
+
+   Effect.runPromise(
+     program.pipe(
+       Effect.provide(NodeSdkLive),
+       Effect.catchAllCause(Effect.logError)
+     )
+   )
+   /*
+   Output:
+   timestamp=... level=INFO fiber=#0 message=client
+   timestamp=... level=INFO fiber=#0 message=/api
+   timestamp=... level=INFO fiber=#0 message=/authN
+   timestamp=... level=INFO fiber=#0 message=/authZ
+   timestamp=... level=INFO fiber=#0 message="/payment Gateway"
+   timestamp=... level=INFO fiber=#0 message=DB
+   timestamp=... level=INFO fiber=#0 message="Ext. Merchant"
+   timestamp=... level=INFO fiber=#0 message=/dispatch
+   timestamp=... level=INFO fiber=#0 message=/dispatch/search
+   timestamp=... level=INFO fiber=#3 message=/poll
+   timestamp=... level=INFO fiber=#4 message=/poll
+   timestamp=... level=INFO fiber=#5 message=/poll
+   timestamp=... level=INFO fiber=#0 message=/pollDriver/{id}
+   */
+   ```
+
+4. **Visualize Traces**. Now, open your web browser and go to `http://localhost:3000/explore`. You will see a generated `Trace ID` on the web page. Click on it to see the details of the trace.
+
+   ![Traces in Grafana Tempo](../_assets/trace.png "An image displaying an application trace visualized as a waterfall diagram in Grafana Tempo")
+
+</Steps>
+
+## Integrations
+
+### Sentry
+
+To send span data directly to Sentry for analysis, replace the default span processor with Sentry's implementation. This allows you to use Sentry as a backend for tracing and debugging.
+
+**Example** (Configuring Sentry for Tracing)
+
+```ts twoslash
+import { NodeSdk } from "@effect/opentelemetry"
+import { SentrySpanProcessor } from "@sentry/opentelemetry"
+
+const NodeSdkLive = NodeSdk.layer(() => ({
+  resource: { serviceName: "example" },
+  spanProcessor: new SentrySpanProcessor()
+}))
+```
+
+> observability/metrics.mdx\n\n---
+title: Metrics in Effect
+description: Effect Metrics provides powerful monitoring tools, including counters, gauges, histograms, summaries, and frequencies, to track your application's performance and behavior.
+sidebar:
+  label: Metrics
+  order: 1
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+In complex and highly concurrent applications, managing various interconnected components can be quite challenging. Ensuring that everything runs smoothly and avoiding application downtime becomes crucial in such setups.
+
+Now, let's imagine we have a sophisticated infrastructure with numerous services. These services are replicated and distributed across our servers. However, we often lack insight into what's happening across these services, including error rates, response times, and service uptime. This lack of visibility can make it challenging to identify and address issues effectively. This is where Effect Metrics comes into play; it allows us to capture and analyze various metrics, providing valuable data for later investigation.
+
+Effect Metrics offers support for five different types of metrics:
+
+| Metric        | Description                                                                                                                                                                                                                                                             |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Counter**   | Counters are used to track values that increase over time, such as request counts. They help us keep tabs on how many times a specific event or action has occurred.                                                                                                    |
+| **Gauge**     | Gauges represent a single numerical value that can fluctuate up and down over time. They are often used to monitor metrics like memory usage, which can vary continuously.                                                                                              |
+| **Histogram** | Histograms are useful for tracking the distribution of observed values across different buckets. They are commonly used for metrics like request latencies, allowing us to understand how response times are distributed.                                               |
+| **Summary**   | Summaries provide insight into a sliding window of a time series and offer metrics for specific percentiles of the time series, often referred to as quantiles. This is particularly helpful for understanding latency-related metrics, such as request response times. |
+| **Frequency** | Frequency metrics count the occurrences of distinct string values. They are useful when you want to keep track of how often different events or conditions are happening in your application.                                                                           |
+
+## Counter
+
+In the world of metrics, a Counter is a metric that represents a single numerical value that can be both incremented and decremented over time. Think of it like a tally that keeps track of changes, such as the number of a particular type of request received by your application, whether it's increasing or decreasing.
+
+Unlike some other types of metrics (like [gauges](#gauge)), where we're interested in the value at a specific moment, with counters, we care about the cumulative value over time. This means it provides a running total of changes, which can go up and down, reflecting the dynamic nature of certain metrics.
+
+Some typical use cases for counters include:
+
+- **Request Counts**: Monitoring the number of incoming requests to your server.
+- **Completed Tasks**: Keeping track of how many tasks or processes have been successfully completed.
+- **Error Counts**: Counting the occurrences of errors in your application.
+
+### How to Create a Counter
+
+To create a counter, you can use the `Metric.counter` constructor.
+
+**Example** (Creating a Counter)
+
+```ts twoslash
+import { Metric, Effect } from "effect"
+
+const requestCount = Metric.counter("request_count", {
+  // Optional
+  description: "A counter for tracking requests"
+})
+```
+
+Once created, the counter can accept an effect that returns a `number`, which will increment or decrement the counter.
+
+**Example** (Using a Counter)
+
+```ts twoslash
+import { Metric, Effect } from "effect"
+
+const requestCount = Metric.counter("request_count")
+
+const program = Effect.gen(function* () {
+  // Increment the counter by 1
+  const a = yield* requestCount(Effect.succeed(1))
+  // Increment the counter by 2
+  const b = yield* requestCount(Effect.succeed(2))
+  // Decrement the counter by 4
+  const c = yield* requestCount(Effect.succeed(-4))
+
+  // Get the current state of the counter
+  const state = yield* Metric.value(requestCount)
+  console.log(state)
+
+  return a * b * c
+})
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+CounterState {
+  count: -1,
+  ...
+}
+-8
+*/
+```
+
+<Aside type="note" title="Type Preservation">
+  Applying a counter to an effect doesn't change its original type. The
+  metric simply adds tracking without affecting the effect's output type.
+</Aside>
+
+### Counter Types
+
+You can specify whether the counter tracks a `number` or `bigint`.
+
+```ts twoslash
+import { Metric } from "effect"
+
+const numberCounter = Metric.counter("request_count", {
+  description: "A counter for tracking requests"
+  // bigint: false // default
+})
+
+const bigintCounter = Metric.counter("error_count", {
+  description: "A counter for tracking errors",
+  bigint: true
+})
+```
+
+### Increment-Only Counters
+
+If you need a counter that only increments, you can use the `incremental: true` option.
+
+**Example** (Using an Increment-Only Counter)
+
+```ts twoslash
+import { Metric, Effect } from "effect"
+
+const incrementalCounter = Metric.counter("count", {
+  description: "a counter that only increases its value",
+  incremental: true
+})
+
+const program = Effect.gen(function* () {
+  const a = yield* incrementalCounter(Effect.succeed(1))
+  const b = yield* incrementalCounter(Effect.succeed(2))
+  // This will have no effect on the counter
+  const c = yield* incrementalCounter(Effect.succeed(-4))
+
+  const state = yield* Metric.value(incrementalCounter)
+  console.log(state)
+
+  return a * b * c
+})
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+CounterState {
+  count: 3,
+  ...
+}
+-8
+*/
+```
+
+In this configuration, the counter only accepts positive values. Any attempts to decrement will have no effect, ensuring the counter strictly counts upwards.
+
+### Counters With Constant Input
+
+You can configure a counter to always increment by a fixed value each time it is invoked.
+
+**Example** (Constant Input)
+
+```ts twoslash
+import { Metric, Effect } from "effect"
+
+const taskCount = Metric.counter("task_count").pipe(
+  Metric.withConstantInput(1) // Automatically increments by 1
+)
+
+const task1 = Effect.succeed(1).pipe(Effect.delay("100 millis"))
+const task2 = Effect.succeed(2).pipe(Effect.delay("200 millis"))
+const task3 = Effect.succeed(-4).pipe(Effect.delay("300 millis"))
+
+const program = Effect.gen(function* () {
+  const a = yield* taskCount(task1)
+  const b = yield* taskCount(task2)
+  const c = yield* taskCount(task3)
+
+  const state = yield* Metric.value(taskCount)
+  console.log(state)
+
+  return a * b * c
+})
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+CounterState {
+  count: 3,
+  ...
+}
+-8
+*/
+```
+
+## Gauge
+
+In the world of metrics, a Gauge is a metric that represents a single numerical value that can be set or adjusted. Think of it as a dynamic variable that can change over time. One common use case for a gauge is to monitor something like the current memory usage of your application.
+
+Unlike counters, where we're interested in cumulative values over time, with gauges, our focus is on the current value at a specific point in time.
+
+Gauges are the best choice when you want to monitor values that can both increase and decrease, and you're not interested in tracking their rates of change. In other words, gauges help us measure things that have a specific value at a particular moment.
+
+Some typical use cases for gauges include:
+
+- **Memory Usage**: Keeping an eye on how much memory your application is using right now.
+- **Queue Size**: Monitoring the current size of a queue where tasks are waiting to be processed.
+- **In-Progress Request Counts**: Tracking the number of requests currently being handled by your server.
+- **Temperature**: Measuring the current temperature, which can fluctuate up and down.
+
+### How to Create a Gauge
+
+To create a gauge, you can use the `Metric.gauge` constructor.
+
+**Example** (Creating a Gauge)
+
+```ts twoslash
+import { Metric } from "effect"
+
+const memory = Metric.gauge("memory_usage", {
+  // Optional
+  description: "A gauge for memory usage"
+})
+```
+
+Once created, a gauge can be updated by passing an effect that produces the value you want to set for the gauge.
+
+**Example** (Using a Gauge)
+
+```ts twoslash
+import { Metric, Effect, Random } from "effect"
+
+// Create a gauge to track temperature
+const temperature = Metric.gauge("temperature")
+
+// Simulate fetching a random temperature
+const getTemperature = Effect.gen(function* () {
+  // Get a random temperature between -10 and 10
+  const t = yield* Random.nextIntBetween(-10, 10)
+  console.log(`new temperature: ${t}`)
+  return t
+})
+
+// Program that updates the gauge multiple times
+const program = Effect.gen(function* () {
+  const series: Array<number> = []
+  // Update the gauge with new temperature readings
+  series.push(yield* temperature(getTemperature))
+  series.push(yield* temperature(getTemperature))
+  series.push(yield* temperature(getTemperature))
+
+  // Retrieve the current state of the gauge
+  const state = yield* Metric.value(temperature)
+  console.log(state)
+
+  return series
+})
+
+Effect.runPromise(program).then(console.log)
+/*
+Example Output:
+new temperature: 9
+new temperature: -9
+new temperature: 2
+GaugeState {
+  value: 2, // the most recent value set in the gauge
+  ...
+}
+[ 9, -9, 2 ]
+*/
+```
+
+<Aside type="note" title="Gauge Behavior">
+  Gauges capture the most recent value set, so if you're tracking a
+  sequence of updates, the final state will show only the last recorded
+  value, not the entire series.
+</Aside>
+
+### Gauge Types
+
+You can specify whether the gauge tracks a `number` or `bigint`.
+
+```ts twoslash
+import { Metric } from "effect"
+
+const numberGauge = Metric.gauge("memory_usage", {
+  description: "A gauge for memory usage"
+  // bigint: false // default
+})
+
+const bigintGauge = Metric.gauge("cpu_load", {
+  description: "A gauge for CPU load",
+  bigint: true
+})
+```
+
+## Histogram
+
+A Histogram is a metric used to analyze how numerical values are distributed over time. Instead of focusing on individual data points, a histogram groups values into predefined ranges, called **buckets**, and tracks how many values fall into each range.
+
+When a value is recorded, it gets assigned to one of the histogram's buckets based on its range. Each bucket has an upper boundary, and the count for that bucket is increased if the value is less than or equal to its boundary. Once recorded, the individual value is discarded, and the focus shifts to how many values have fallen into each bucket.
+
+Histograms also track:
+
+- **Total Count**: The number of values that have been observed.
+- **Sum**: The sum of all the observed values.
+- **Min**: The smallest observed value.
+- **Max**: The largest observed value.
+
+Histograms are especially useful for calculating percentiles, which can help you estimate specific points in a dataset by analyzing how many values are in each bucket.
+
+This concept is inspired by [Prometheus](https://prometheus.io/docs/concepts/metric_types#histogram), a well-known monitoring and alerting toolkit.
+
+Histograms are particularly useful in performance analysis and system monitoring. By examining how response times, latencies, or other metrics are distributed, you can gain valuable insights into your system's behavior. This data helps you identify outliers, performance bottlenecks, or trends that may require optimization.
+
+Common use cases for histograms include:
+
+- **Percentile Estimation**: Histograms allow you to approximate percentiles of observed values, like the 95th percentile of response times.
+- **Known Ranges**: If you can estimate the range of values in advance, histograms can organize the data into predefined buckets for better analysis.
+- **Performance Metrics**: Use histograms to track metrics like request latencies, memory usage, or throughput over time.
+- **Aggregation**: Histograms can be aggregated across multiple instances, making them ideal for distributed systems where you need to collect data from different sources.
+
+<Aside type="note" title="Histogram Buckets and Precision">
+  Keep in mind that histograms don't retain exact values. Instead, they
+  group values into buckets, so the precision of your data depends on how
+  you define these buckets.
+</Aside>
+
+**Example** (Histogram With Linear Buckets)
+
+In this example, we define a histogram with linear buckets, where the values range from `0` to `100` in increments of `10`. Additionally, we include a final bucket for values greater than `100`, referred to as the "Infinity" bucket. This configuration is useful for tracking numeric values, like request latencies, within specific ranges.
+
+The program generates random numbers between `1` and `120`, records them in the histogram, and then prints the histogram's state, showing the count of values that fall into each bucket.
+
+```ts twoslash
+import { Effect, Metric, MetricBoundaries, Random } from "effect"
+
+// Define a histogram to track request latencies, with linear buckets
+const latency = Metric.histogram(
+  "request_latency",
+  // Buckets from 0-100, with an extra Infinity bucket
+  MetricBoundaries.linear({ start: 0, width: 10, count: 11 }),
+  // Optional
+  "Measures the distribution of request latency."
+)
+
+const program = Effect.gen(function* () {
+  // Generate 100 random values and record them in the histogram
+  yield* latency(Random.nextIntBetween(1, 120)).pipe(Effect.repeatN(99))
+
+  // Fetch and display the histogram's state
+  const state = yield* Metric.value(latency)
+  console.log(state)
+})
+
+Effect.runPromise(program)
+/*
+Example Output:
+HistogramState {
+  buckets: [
+    [ 0, 0 ],    // No values in the 0-10 range
+    [ 10, 7 ],   // 7 values in the 10-20 range
+    [ 20, 11 ],  // 11 values in the 20-30 range
+    [ 30, 20 ],  // 20 values in the 30-40 range
+    [ 40, 27 ],  // and so on...
+    [ 50, 38 ],
+    [ 60, 53 ],
+    [ 70, 64 ],
+    [ 80, 73 ],
+    [ 90, 84 ],
+    [ Infinity, 100 ] // All 100 values have been recorded
+  ],
+  count: 100,  // Total count of observed values
+  min: 1,      // Smallest observed value
+  max: 119,    // Largest observed value
+  sum: 5980,   // Sum of all observed values
+  ...
+}
+*/
+```
+
+### Timer Metric
+
+In this example, we demonstrate how to use a timer metric to track the duration of specific workflows. The timer captures how long certain tasks take to execute, storing this information in a histogram, which provides insights into the distribution of these durations.
+
+We generate random values to simulate varying wait times, record the durations in the timer, and then print out the histogram's state.
+
+**Example** (Tracking Workflow Durations with a Timer Metric)
+
+```ts twoslash
+import { Metric, Array, Random, Effect } from "effect"
+
+// Create a timer metric with predefined boundaries from 1 to 10
+const timer = Metric.timerWithBoundaries("timer", Array.range(1, 10))
+
+// Define a task that simulates random wait times
+const task = Effect.gen(function* () {
+  // Generate a random value between 1 and 10
+  const n = yield* Random.nextIntBetween(1, 10)
+  // Simulate a delay based on the random value
+  yield* Effect.sleep(`${n} millis`)
+})
+
+const program = Effect.gen(function* () {
+  // Track the duration of the task and repeat it 100 times
+  yield* Metric.trackDuration(task, timer).pipe(Effect.repeatN(99))
+
+  // Retrieve and print the current state of the timer histogram
+  const state = yield* Metric.value(timer)
+  console.log(state)
+})
+
+Effect.runPromise(program)
+/*
+Example Output:
+HistogramState {
+  buckets: [
+    [ 1, 3 ],   // 3 tasks completed in <= 1 ms
+    [ 2, 13 ],  // 13 tasks completed in <= 2 ms
+    [ 3, 17 ],  // and so on...
+    [ 4, 26 ],
+    [ 5, 35 ],
+    [ 6, 43 ],
+    [ 7, 53 ],
+    [ 8, 56 ],
+    [ 9, 65 ],
+    [ 10, 72 ],
+    [ Infinity, 100 ]      // All 100 tasks have completed
+  ],
+  count: 100,              // Total number of tasks observed
+  min: 0.25797,            // Shortest task duration in milliseconds
+  max: 12.25421,           // Longest task duration in milliseconds
+  sum: 683.0266810000002,  // Total time spent across all tasks
+  ...
+}
+*/
+```
+
+## Summary
+
+A Summary is a metric that gives insights into a series of data points by calculating specific percentiles. Percentiles help us understand how data is distributed. For instance, if you're tracking response times for requests over the past hour, you may want to examine key percentiles such as the 50th, 90th, 95th, or 99th to better understand your system's performance.
+
+Summaries are similar to histograms in that they observe `number` values, but with a different approach. Instead of immediately sorting values into buckets and discarding them, a summary holds onto the observed values in memory. However, to avoid storing too much data, summaries use two parameters:
+
+- **maxAge**: The maximum age a value can have before it's discarded.
+- **maxSize**: The maximum number of values stored in the summary.
+
+This creates a sliding window of recent values, so the summary always represents a fixed number of the most recent observations.
+
+Summaries are commonly used to calculate **quantiles** over this sliding window. A **quantile** is a number between `0` and `1` that represents the percentage of values less than or equal to a certain threshold. For example, a quantile of `0.5` (or 50th percentile) is the **median** value, while `0.95` (or 95th percentile) would represent the value below which 95% of the observed data falls.
+
+Quantiles are helpful for monitoring important performance metrics, such as latency, and for ensuring that your system meets performance goals (like Service Level Agreements, or SLAs).
+
+The Effect Metrics API also allows you to configure summaries with an **error margin**. This margin introduces a range of acceptable values for quantiles, improving the accuracy of the result.
+
+Summaries are particularly useful in cases where:
+
+- The range of values you're observing is not known or estimated in advance, making histograms less practical.
+- You don't need to aggregate data across multiple instances or average results. Summaries calculate their results on the application side, meaning they focus on the specific instance where they are used.
+
+**Example** (Creating and Using a Summary)
+
+In this example, we will create a summary to track response times. The summary will:
+
+- Hold up to `100` samples.
+- Discard samples older than `1 day`.
+- Have a `3%` error margin when calculating quantiles.
+- Report the `10%`, `50%`, and `90%` quantiles, which help track response time distributions.
+
+We'll apply the summary to an effect that generates random integers, simulating response times.
+
+```ts twoslash
+import { Metric, Random, Effect } from "effect"
+
+// Define the summary for response times
+const responseTimeSummary = Metric.summary({
+  name: "response_time_summary", // Name of the summary metric
+  maxAge: "1 day", // Maximum sample age
+  maxSize: 100, // Maximum number of samples to retain
+  error: 0.03, // Error margin for quantile calculation
+  quantiles: [0.1, 0.5, 0.9], // Quantiles to observe (10%, 50%, 90%)
+  // Optional
+  description: "Measures the distribution of response times"
+})
+
+const program = Effect.gen(function* () {
+  // Record 100 random response times between 1 and 120 ms
+  yield* responseTimeSummary(Random.nextIntBetween(1, 120)).pipe(
+    Effect.repeatN(99)
+  )
+
+  // Retrieve and log the current state of the summary
+  const state = yield* Metric.value(responseTimeSummary)
+  console.log("%o", state)
+})
+
+Effect.runPromise(program)
+/*
+Example Output:
+SummaryState {
+  error: 0.03,    // Error margin used for quantile calculation
+  quantiles: [
+    [ 0.1, { _id: 'Option', _tag: 'Some', value: 17 } ],   // 10th percentile: 17 ms
+    [ 0.5, { _id: 'Option', _tag: 'Some', value: 62 } ],   // 50th percentile (median): 62 ms
+    [ 0.9, { _id: 'Option', _tag: 'Some', value: 109 } ]   // 90th percentile: 109 ms
+  ],
+  count: 100,    // Total number of samples recorded
+  min: 4,        // Minimum observed value
+  max: 119,      // Maximum observed value
+  sum: 6058,     // Sum of all recorded values
+  ...
+}
+*/
+```
+
+## Frequency
+
+Frequencies are metrics that help count the occurrences of specific values. Think of them as a set of counters, each associated with a unique value. When new values are observed, the frequency metric automatically creates new counters for those values.
+
+Frequencies are particularly useful for tracking how often distinct string values occur. Some example use cases include:
+
+- Counting the number of invocations for each service in an application, where each service has a logical name.
+- Monitoring how frequently different types of failures occur.
+
+**Example** (Tracking Error Occurrences)
+
+In this example, we'll create a `Frequency` to observe how often different error codes occur. This can be applied to effects that return a `string` value:
+
+```ts twoslash
+import { Metric, Random, Effect } from "effect"
+
+// Define a frequency metric to track errors
+const errorFrequency = Metric.frequency("error_frequency", {
+  // Optional
+  description: "Counts the occurrences of errors."
+})
+
+const task = Effect.gen(function* () {
+  const n = yield* Random.nextIntBetween(1, 10)
+  return `Error-${n}`
+})
+
+// Program that simulates random errors and tracks their occurrences
+const program = Effect.gen(function* () {
+  yield* errorFrequency(task).pipe(Effect.repeatN(99))
+
+  // Retrieve and log the current state of the summary
+  const state = yield* Metric.value(errorFrequency)
+  console.log("%o", state)
+})
+
+Effect.runPromise(program)
+/*
+Example Output:
+FrequencyState {
+  occurrences: Map(9) {
+    'Error-7' => 12,
+    'Error-2' => 12,
+    'Error-4' => 14,
+    'Error-1' => 14,
+    'Error-9' => 8,
+    'Error-6' => 11,
+    'Error-5' => 9,
+    'Error-3' => 14,
+    'Error-8' => 6
+  },
+  ...
+}
+*/
+```
+
+## Tagging Metrics
+
+Tags are key-value pairs you can add to metrics to provide additional context. They help categorize and filter metrics, making it easier to analyze specific aspects of your application's performance or behavior.
+
+When creating metrics, you can add tags to them. Tags are key-value pairs that provide additional context, helping in categorizing and filtering metrics. This makes it easier to analyze and monitor specific aspects of your application.
+
+### Tagging a Specific Metric
+
+You can tag individual metrics using the `Metric.tagged` function.
+This allows you to add specific tags to a single metric, providing detailed context without applying tags globally.
+
+**Example** (Tagging an Individual Metric)
+
+```ts twoslash
+import { Metric } from "effect"
+
+// Create a counter metric for request count
+// and tag it with "environment: production"
+const counter = Metric.counter("request_count").pipe(
+  Metric.tagged("environment", "production")
+)
+```
+
+Here, the `request_count` metric is tagged with `"environment": "production"`, allowing you to filter or analyze metrics by this tag later.
+
+### Tagging Multiple Metrics
+
+You can use `Effect.tagMetrics` to apply tags to all metrics within the same context. This is useful when you want to apply common tags, like the environment (e.g., "production" or "development"), across multiple metrics.
+
+**Example** (Tagging Multiple Metrics)
+
+```ts twoslash
+import { Metric, Effect } from "effect"
+
+// Create two separate counters
+const counter1 = Metric.counter("counter1")
+const counter2 = Metric.counter("counter2")
+
+// Define a task that simulates some work with a slight delay
+const task = Effect.succeed(1).pipe(Effect.delay("100 millis"))
+
+// Apply the environment tag to both counters in the same context
+Effect.gen(function* () {
+  yield* counter1(task)
+  yield* counter2(task)
+}).pipe(Effect.tagMetrics("environment", "production"))
+```
+
+If you only want to apply tags within a specific [scope](/docs/resource-management/scope/), you can use `Effect.tagMetricsScoped`. This limits the tag application to metrics within that scope, allowing for more precise tagging control.
+
+> observability/logging.mdx\n\n---
+title: Logging
+description: Discover Effect's logging utilities for dynamic log levels, custom outputs, and fine-grained control over logs.
+sidebar:
+  order: 0
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+Logging is an important aspect of software development, especially for debugging and monitoring the behavior of your applications. In this section, we'll explore Effect's logging utilities and see how they compare to traditional logging methods.
+
+## Advantages Over Traditional Logging
+
+Effect's logging utilities provide several benefits over conventional logging approaches:
+
+1. **Dynamic Log Level Control**: With Effect's logging, you have the ability to change the log level dynamically. This means you can control which log messages get displayed based on their severity. For example, you can configure your application to log only warnings or errors, which can be extremely helpful in production environments to reduce noise.
+
+2. **Custom Logging Output**: Effect's logging utilities allow you to change how logs are handled. You can direct log messages to various destinations, such as a service or a file, using a [custom logger](#custom-loggers). This flexibility ensures that logs are stored and processed in a way that best suits your application's requirements.
+
+3. **Fine-Grained Logging**: Effect enables fine-grained control over logging on a per-part basis of your program. You can set different log levels for different parts of your application, tailoring the level of detail to each specific component. This can be invaluable for debugging and troubleshooting, as you can focus on the information that matters most.
+
+4. **Environment-Based Logging**: Effect's logging utilities can be combined with deployment environments to achieve granular logging strategies. For instance, during development, you might choose to log everything at a trace level and above for detailed debugging. In contrast, your production version could be configured to log only errors or critical issues, minimizing the impact on performance and noise in production logs.
+
+5. **Additional Features**: Effect's logging utilities come with additional features such as the ability to measure time spans, alter log levels on a per-effect basis, and integrate spans for performance monitoring.
+
+## log
+
+The `Effect.log` function allows you to log a message at the default `INFO` level.
+
+**Example** (Logging a Simple Message)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.log("Application started")
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message="Application started"
+*/
+```
+
+The default logger in Effect adds several useful details to each log entry:
+
+| Annotation  | Description                                                                                         |
+| ----------- | --------------------------------------------------------------------------------------------------- |
+| `timestamp` | The timestamp when the log message was generated.                                                   |
+| `level`     | The log level at which the message is logged (e.g., `INFO`, `ERROR`).                               |
+| `fiber`     | The identifier of the [fiber](/docs/concurrency/fibers/) executing the program.                     |
+| `message`   | The log message content, which can include multiple strings or values.                              |
+| `span`      | (Optional) The duration of a span in milliseconds, providing insight into the timing of operations. |
+
+<Aside type="tip" title="Customizing Loggers">
+  For information on how to tailor the logging setup to meet specific
+  needs, such as integrating a custom logging framework or adjusting log
+  formats, please consult the section on [Custom
+  Loggers](#custom-loggers).
+</Aside>
+
+You can also log multiple messages at once.
+
+**Example** (Logging Multiple Messages)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.log("message1", "message2", "message3")
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message=message1 message=message2 message=message3
+*/
+```
+
+For added context, you can also include one or more [Cause](/docs/data-types/cause/) instances in your logs,
+which provide detailed error information under an additional `cause` annotation:
+
+**Example** (Logging with Causes)
+
+```ts twoslash "cause"
+import { Effect, Cause } from "effect"
+
+const program = Effect.log(
+  "message1",
+  "message2",
+  Cause.die("Oh no!"),
+  Cause.die("Oh uh!")
+)
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message=message1 message=message2 cause="Error: Oh no!
+Error: Oh uh!"
+*/
+```
+
+## Log Levels
+
+### logDebug
+
+By default, `DEBUG` messages **are not displayed**. To enable `DEBUG` logs, you can adjust the logging configuration using `Logger.withMinimumLogLevel`, setting the minimum level to `LogLevel.Debug`.
+
+**Example** (Enabling Debug Logs)
+
+```ts twoslash
+import { Effect, Logger, LogLevel } from "effect"
+
+const task1 = Effect.gen(function* () {
+  yield* Effect.sleep("2 seconds")
+  yield* Effect.logDebug("task1 done") // Log a debug message
+}).pipe(Logger.withMinimumLogLevel(LogLevel.Debug)) // Enable DEBUG level
+
+const task2 = Effect.gen(function* () {
+  yield* Effect.sleep("1 second")
+  yield* Effect.logDebug("task2 done") // This message won't be logged
+})
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("start")
+  yield* task1
+  yield* task2
+  yield* Effect.log("done")
+})
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO message=start
+timestamp=... level=DEBUG message="task1 done" <-- 2 seconds later
+timestamp=... level=INFO message=done <-- 1 second later
+*/
+```
+
+<Aside type="tip" title="Controlling Log Levels Per Effect">
+  By using `Logger.withMinimumLogLevel(effect, level)`, you can enable
+  different log levels for specific parts of your program, providing
+  fine-grained control over logging behavior.
+</Aside>
+
+### logInfo
+
+The `INFO` log level is displayed by default. This level is typically used for general application events or progress updates.
+
+**Example** (Logging at the Info Level)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  yield* Effect.logInfo("start")
+  yield* Effect.sleep("2 seconds")
+  yield* Effect.sleep("1 second")
+  yield* Effect.logInfo("done")
+})
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO message=start
+timestamp=... level=INFO message=done <-- 3 seconds later
+*/
+```
+
+### logWarning
+
+The `WARN` log level is displayed by default. This level is intended for potential issues or warnings that do not immediately disrupt the flow of the program but should be monitored.
+
+**Example** (Logging at the Warning Level)
+
+```ts twoslash
+import { Effect, Either } from "effect"
+
+const task = Effect.fail("Oh uh!").pipe(Effect.as(2))
+
+const program = Effect.gen(function* () {
+  const failureOrSuccess = yield* Effect.either(task)
+  if (Either.isLeft(failureOrSuccess)) {
+    yield* Effect.logWarning(failureOrSuccess.left)
+    return 0
+  } else {
+    return failureOrSuccess.right
+  }
+})
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=WARN fiber=#0 message="Oh uh!"
+*/
+```
+
+### logError
+
+The `ERROR` log level is displayed by default. These messages represent issues that need to be addressed.
+
+**Example** (Logging at the Error Level)
+
+```ts twoslash
+import { Effect, Either } from "effect"
+
+const task = Effect.fail("Oh uh!").pipe(Effect.as(2))
+
+const program = Effect.gen(function* () {
+  const failureOrSuccess = yield* Effect.either(task)
+  if (Either.isLeft(failureOrSuccess)) {
+    yield* Effect.logError(failureOrSuccess.left)
+    return 0
+  } else {
+    return failureOrSuccess.right
+  }
+})
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=ERROR fiber=#0 message="Oh uh!"
+*/
+```
+
+### logFatal
+
+The `FATAL` log level is displayed by default. This log level is typically reserved for unrecoverable errors.
+
+**Example** (Logging at the Fatal Level)
+
+```ts twoslash
+import { Effect, Either } from "effect"
+
+const task = Effect.fail("Oh uh!").pipe(Effect.as(2))
+
+const program = Effect.gen(function* () {
+  const failureOrSuccess = yield* Effect.either(task)
+  if (Either.isLeft(failureOrSuccess)) {
+    yield* Effect.logFatal(failureOrSuccess.left)
+    return 0
+  } else {
+    return failureOrSuccess.right
+  }
+})
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=FATAL fiber=#0 message="Oh uh!"
+*/
+```
+
+## Custom Annotations
+
+You can enhance your log outputs by adding custom annotations using the `Effect.annotateLogs` function. This allows you to attach extra metadata to each log entry, making it easier to trace and add context to your logs.
+
+Enhance your log outputs by incorporating custom annotations with the `Effect.annotateLogs` function.
+This function allows you to append additional metadata to each log entry of an effect, enhancing traceability and context.
+
+### Adding a Single Annotation
+
+You can apply a single annotation as a key/value pair to all log entries within an effect.
+
+**Example** (Single Key/Value Annotation)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("message1")
+  yield* Effect.log("message2")
+}).pipe(
+  // Annotation as key/value pair
+  Effect.annotateLogs("key", "value")
+)
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message=message1 key=value
+timestamp=... level=INFO fiber=#0 message=message2 key=value
+*/
+```
+
+In this example, all logs generated within the `program` will include the annotation `key=value`.
+
+<Aside type="tip" title="Scope of Annotations">
+  Annotations applied with `Effect.annotateLogs` are automatically added
+  to all logs generated within the annotated effect's scope, including
+  logs from nested effects.
+</Aside>
+
+### Annotations with Nested Effects
+
+Annotations propagate to all logs generated within nested or downstream effects. This ensures that logs from any child effects inherit the parent effect's annotations.
+
+**Example** (Propagating Annotations to Nested Effects)
+
+In this example, the annotation `key=value` is included in all logs, even those from the nested `anotherProgram` effect.
+
+```ts twoslash
+import { Effect } from "effect"
+
+// Define a child program that logs an error
+const anotherProgram = Effect.gen(function* () {
+  yield* Effect.logError("error1")
+})
+
+// Define the main program
+const program = Effect.gen(function* () {
+  yield* Effect.log("message1")
+  yield* Effect.log("message2")
+  yield* anotherProgram // Call the nested program
+}).pipe(
+  // Attach an annotation to all logs in the scope
+  Effect.annotateLogs("key", "value")
+)
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message=message1 key=value
+timestamp=... level=INFO fiber=#0 message=message2 key=value
+timestamp=... level=ERROR fiber=#0 message=error1 key=value
+*/
+```
+
+### Adding Multiple Annotations
+
+You can also apply multiple annotations at once by passing an object with key/value pairs. Each key/value pair will be added to every log entry within the effect.
+
+**Example** (Multiple Annotations)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("message1")
+  yield* Effect.log("message2")
+}).pipe(
+  // Add multiple annotations
+  Effect.annotateLogs({ key1: "value1", key2: "value2" })
+)
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message=message1 key2=value2 key1=value1
+timestamp=... level=INFO fiber=#0 message=message2 key2=value2 key1=value1
+*/
+```
+
+In this case, each log will contain both `key1=value1` and `key2=value2`.
+
+### Scoped Annotations
+
+If you want to limit the scope of your annotations so that they only apply to certain log entries, you can use `Effect.annotateLogsScoped`. This function confines the annotations to logs produced within a specific scope.
+
+**Example** (Scoped Annotations)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("no annotations") // No annotations
+  yield* Effect.annotateLogsScoped({ key: "value" }) // Scoped annotation
+  yield* Effect.log("message1") // Annotation applied
+  yield* Effect.log("message2") // Annotation applied
+}).pipe(
+  Effect.scoped,
+  // Outside scope, no annotations
+  Effect.andThen(Effect.log("no annotations again"))
+)
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message="no annotations"
+timestamp=... level=INFO fiber=#0 message=message1 key=value
+timestamp=... level=INFO fiber=#0 message=message2 key=value
+timestamp=... level=INFO fiber=#0 message="no annotations again"
+*/
+```
+
+## Log Spans
+
+Effect provides built-in support for log spans, which allow you to measure and log the duration of specific tasks or sections of your code. This feature is helpful for tracking how long certain operations take, giving you better insights into the performance of your application.
+
+**Example** (Measuring Task Duration with a Log Span)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  // Simulate a delay to represent a task taking time
+  yield* Effect.sleep("1 second")
+  // Log a message indicating the job is done
+  yield* Effect.log("The job is finished!")
+}).pipe(
+  // Apply a log span labeled "myspan" to measure
+  // the duration of this operation
+  Effect.withLogSpan("myspan")
+)
+
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message="The job is finished!" myspan=1011ms
+*/
+```
+
+## Disabling Default Logging
+
+Sometimes, perhaps during test execution, you might want to disable default logging in your application. Effect provides several ways to turn off logging when needed. In this section, we'll look at different methods to disable logging in the Effect framework.
+
+**Example** (Using `Logger.withMinimumLogLevel`)
+
+One convenient way to disable logging is by using the `Logger.withMinimumLogLevel` function. This allows you to set the minimum log level to `None`, effectively turning off all log output.
+
+```ts twoslash
+import { Effect, Logger, LogLevel } from "effect"
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("Executing task...")
+  yield* Effect.sleep("100 millis")
+  console.log("task done")
+})
+
+// Default behavior: logging enabled
+Effect.runFork(program)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message="Executing task..."
+task done
+*/
+
+// Disable logging by setting minimum log level to 'None'
+Effect.runFork(program.pipe(Logger.withMinimumLogLevel(LogLevel.None)))
+/*
+Output:
+task done
+*/
+```
+
+**Example** (Using a Layer)
+
+Another approach to disable logging is by creating a layer that sets the minimum log level to `LogLevel.None`, effectively turning off all log output.
+
+```ts twoslash
+import { Effect, Logger, LogLevel } from "effect"
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("Executing task...")
+  yield* Effect.sleep("100 millis")
+  console.log("task done")
+})
+
+// Create a layer that disables logging
+const layer = Logger.minimumLogLevel(LogLevel.None)
+
+// Apply the layer to disable logging
+Effect.runFork(program.pipe(Effect.provide(layer)))
+/*
+Output:
+task done
+*/
+```
+
+**Example** (Using a Custom Runtime)
+
+You can also disable logging by creating a custom runtime that includes the configuration to turn off logging:
+
+```ts twoslash
+import { Effect, Logger, LogLevel, ManagedRuntime } from "effect"
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("Executing task...")
+  yield* Effect.sleep("100 millis")
+  console.log("task done")
+})
+
+// Create a custom runtime that disables logging
+const customRuntime = ManagedRuntime.make(
+  Logger.minimumLogLevel(LogLevel.None)
+)
+
+// Run the program using the custom runtime
+customRuntime.runFork(program)
+/*
+Output:
+task done
+*/
+```
+
+## Loading the Log Level from Configuration
+
+To dynamically load the log level from a [configuration](/docs/configuration/) and apply it to your program, you can use the `Logger.minimumLogLevel` layer. This allows your application to adjust its logging behavior based on external configuration.
+
+**Example** (Loading Log Level from Configuration)
+
+```ts twoslash
+import {
+  Effect,
+  Config,
+  Logger,
+  Layer,
+  ConfigProvider,
+  LogLevel
+} from "effect"
+
+// Simulate a program with logs
+const program = Effect.gen(function* () {
+  yield* Effect.logError("ERROR!")
+  yield* Effect.logWarning("WARNING!")
+  yield* Effect.logInfo("INFO!")
+  yield* Effect.logDebug("DEBUG!")
+})
+
+// Load the log level from the configuration and apply it as a layer
+const LogLevelLive = Config.logLevel("LOG_LEVEL").pipe(
+  Effect.andThen((level) =>
+    // Set the minimum log level
+    Logger.minimumLogLevel(level)
+  ),
+  Layer.unwrapEffect // Convert the effect into a layer
+)
+
+// Provide the loaded log level to the program
+const configured = Effect.provide(program, LogLevelLive)
+
+// Test the program using a mock configuration provider
+const test = Effect.provide(
+  configured,
+  Layer.setConfigProvider(
+    ConfigProvider.fromMap(
+      new Map([["LOG_LEVEL", LogLevel.Warning.label]])
+    )
+  )
+)
+
+Effect.runFork(test)
+/*
+Output:
+... level=ERROR fiber=#0 message=ERROR!
+... level=WARN fiber=#0 message=WARNING!
+*/
+```
+
+<Aside type="tip" title="Using ConfigProvider for Testing">
+  The `ConfigProvider.fromMap` function is useful for testing by
+  simulating configuration values. You can also refer to [Testing
+  Services](/docs/configuration/#testing-configurable-services) for more
+  details on using mock configuration during tests.
+</Aside>
+
+## Custom loggers
+
+In this section, you'll learn how to define a custom logger and set it as the default logger in your application. Custom loggers give you control over how log messages are handled, such as routing them to external services, writing to files, or formatting logs in a specific way.
+
+### Defining a Custom Logger
+
+You can define your own logger using the `Logger.make` function. This function allows you to specify how log messages should be processed.
+
+**Example** (Defining a Simple Custom Logger)
+
+```ts twoslash
+import { Logger } from "effect"
+
+// Custom logger that outputs log messages to the console
+const logger = Logger.make(({ logLevel, message }) => {
+  globalThis.console.log(`[${logLevel.label}] ${message}`)
+})
+```
+
+In this example, the custom logger logs messages to the console with the log level and message formatted as `[LogLevel] Message`.
+
+### Using a Custom Logger in a Program
+
+Let's assume you have the following tasks and a program where you log some messages:
+
+```ts twoslash collapse={3-6}
+import { Effect, Logger } from "effect"
+
+// Custom logger that outputs log messages to the console
+const logger = Logger.make(({ logLevel, message }) => {
+  globalThis.console.log(`[${logLevel.label}] ${message}`)
+})
+
+const task1 = Effect.gen(function* () {
+  yield* Effect.sleep("2 seconds")
+  yield* Effect.logDebug("task1 done")
+})
+
+const task2 = Effect.gen(function* () {
+  yield* Effect.sleep("1 second")
+  yield* Effect.logDebug("task2 done")
+})
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("start")
+  yield* task1
+  yield* task2
+  yield* Effect.log("done")
+})
+```
+
+To replace the default logger with your custom logger, you can use the `Logger.replace` function. After creating a layer that replaces the default logger, you provide it to your program using `Effect.provide`.
+
+**Example** (Replacing the Default Logger with a Custom Logger)
+
+```ts twoslash collapse={3-23}
+import { Effect, Logger, LogLevel } from "effect"
+
+// Custom logger that outputs log messages to the console
+const logger = Logger.make(({ logLevel, message }) => {
+  globalThis.console.log(`[${logLevel.label}] ${message}`)
+})
+
+const task1 = Effect.gen(function* () {
+  yield* Effect.sleep("2 seconds")
+  yield* Effect.logDebug("task1 done")
+})
+
+const task2 = Effect.gen(function* () {
+  yield* Effect.sleep("1 second")
+  yield* Effect.logDebug("task2 done")
+})
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("start")
+  yield* task1
+  yield* task2
+  yield* Effect.log("done")
+})
+
+// Replace the default logger with the custom logger
+const layer = Logger.replace(Logger.defaultLogger, logger)
+
+Effect.runFork(
+  program.pipe(
+    Logger.withMinimumLogLevel(LogLevel.Debug),
+    Effect.provide(layer)
+  )
+)
+```
+
+When you run the above program, the following log messages are printed to the console:
+
+```ansi showLineNumbers=false
+[INFO] start
+[DEBUG] task1 done
+[DEBUG] task2 done
+[INFO] done
+```
+
+## Built-in Loggers
+
+Effect provides several built-in loggers that you can use depending on your logging needs. These loggers offer different formats, each suited for different environments or purposes, such as development, production, or integration with external logging services.
+
+Each logger is available in two forms: the logger itself, and a layer that uses the logger and sends its output to the `Console` [default service](/docs/requirements-management/default-services/). For example, the `structuredLogger` logger generates logs in a detailed object-based format, while the `structured` layer uses the same logger and writes the output to the `Console` service.
+
+### stringLogger (default)
+
+The `stringLogger` logger produces logs in a human-readable key-value style. This format is commonly used in development and production because it is simple and easy to read in the console.
+
+This logger does not have a corresponding layer because it is the default logger.
+
+```ts twoslash
+import { Effect } from "effect"
+
+const program = Effect.log("msg1", "msg2", ["msg3", "msg4"]).pipe(
+  Effect.delay("100 millis"),
+  Effect.annotateLogs({ key1: "value1", key2: "value2" }),
+  Effect.withLogSpan("myspan")
+)
+
+Effect.runFork(program)
+```
+
+Output:
+
+```ansi showLineNumbers=false
+timestamp=2024-12-28T10:44:31.281Z level=INFO fiber=#0 message=msg1 message=msg2 message="[
+  \"msg3\",
+  \"msg4\"
+]" myspan=102ms key2=value2 key1=value1
+```
+
+### logfmtLogger
+
+The `logfmtLogger` logger produces logs in a human-readable key-value format, similar to the [stringLogger](#stringlogger-default) logger. The main difference is that `logfmtLogger` removes extra spaces to make logs more compact.
+
+```ts twoslash
+import { Effect, Logger } from "effect"
+
+const program = Effect.log("msg1", "msg2", ["msg3", "msg4"]).pipe(
+  Effect.delay("100 millis"),
+  Effect.annotateLogs({ key1: "value1", key2: "value2" }),
+  Effect.withLogSpan("myspan")
+)
+
+Effect.runFork(program.pipe(Effect.provide(Logger.logFmt)))
+```
+
+Output:
+
+```ansi showLineNumbers=false
+timestamp=2024-12-28T10:44:31.281Z level=INFO fiber=#0 message=msg1 message=msg2 message="[\"msg3\",\"msg4\"]" myspan=102ms key2=value2 key1=value1
+```
+
+### prettyLogger
+
+The `prettyLogger` logger enhances log output by using color and indentation for better readability, making it particularly useful during development when visually scanning logs in the console.
+
+```ts twoslash
+import { Effect, Logger } from "effect"
+
+const program = Effect.log("msg1", "msg2", ["msg3", "msg4"]).pipe(
+  Effect.delay("100 millis"),
+  Effect.annotateLogs({ key1: "value1", key2: "value2" }),
+  Effect.withLogSpan("myspan")
+)
+
+Effect.runFork(program.pipe(Effect.provide(Logger.pretty)))
+```
+
+Output:
+
+```ansi showLineNumbers=false
+[11:37:14.265] [32mINFO[0m (#0) myspan=101ms: [1;36mmsg1[0m
+  msg2
+  [ [32m'msg3'[0m, [32m'msg4'[0m ]
+  key2: value2
+  key1: value1
+```
+
+### structuredLogger
+
+The `structuredLogger` logger produces logs in a detailed object-based format. This format is helpful when you need more traceable logs, especially if other systems analyze them or store them for later review.
+
+```ts twoslash
+import { Effect, Logger } from "effect"
+
+const program = Effect.log("msg1", "msg2", ["msg3", "msg4"]).pipe(
+  Effect.delay("100 millis"),
+  Effect.annotateLogs({ key1: "value1", key2: "value2" }),
+  Effect.withLogSpan("myspan")
+)
+
+Effect.runFork(program.pipe(Effect.provide(Logger.structured)))
+```
+
+Output:
+
+```ansi showLineNumbers=false
+{
+  message: [ 'msg1', 'msg2', [ 'msg3', 'msg4' ] ],
+  logLevel: 'INFO',
+  timestamp: '2024-12-28T10:44:31.281Z',
+  cause: undefined,
+  annotations: { key2: 'value2', key1: 'value1' },
+  spans: { myspan: 102 },
+  fiberId: '#0'
+}
+```
+
+| Field         | Description                                                                                                                                                              |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `message`     | Either a single processed value or an array of processed values, depending on how many messages are logged.                                                              |
+| `logLevel`    | A string that indicates the log level label (for example, "INFO" or "DEBUG").                                                                                            |
+| `timestamp`   | An ISO 8601 timestamp for when the log was generated (for example, "2024-01-01T00:00:00.000Z").                                                                          |
+| `cause`       | A string that shows detailed error information, or `undefined` if no cause was provided.                                                                                 |
+| `annotations` | An object where each key is an annotation label and the corresponding value is parsed into a structured format (for instance, `{"key": "value"}`).                       |
+| `spans`       | An object mapping each span label to its duration in milliseconds, measured from its start time until the moment the logger was called (for example, `{"myspan": 102}`). |
+| `fiberId`     | The identifier of the fiber that generated this log (for example, "#0").                                                                                                 |
+
+### jsonLogger
+
+The `jsonLogger` logger produces logs in JSON format. This can be useful for tools or services that parse and store JSON logs.
+It calls `JSON.stringify` on the object created by the [structuredLogger](#structuredlogger) logger.
+
+```ts twoslash
+import { Effect, Logger } from "effect"
+
+const program = Effect.log("msg1", "msg2", ["msg3", "msg4"]).pipe(
+  Effect.delay("100 millis"),
+  Effect.annotateLogs({ key1: "value1", key2: "value2" }),
+  Effect.withLogSpan("myspan")
+)
+
+Effect.runFork(program.pipe(Effect.provide(Logger.json)))
+```
+
+Output:
+
+```ansi showLineNumbers=false
+{"message":["msg1","msg2",["msg3","msg4"]],"logLevel":"INFO","timestamp":"2024-12-28T10:44:31.281Z","annotations":{"key2":"value2","key1":"value1"},"spans":{"myspan":102},"fiberId":"#0"}
+```
+
+## Combine Loggers
+
+### zip
+
+The `Logger.zip` function combines two loggers into a new logger. This new logger forwards log messages to both the original loggers.
+
+**Example** (Combining Two Loggers)
+
+```ts
+import { Effect, Logger } from "effect"
+
+// Define a custom logger that logs to the console
+const logger = Logger.make(({ logLevel, message }) => {
+  globalThis.console.log(`[${logLevel.label}] ${message}`)
+})
+
+// Combine the default logger and the custom logger
+//
+//      ┌─── Logger<unknown, [void, void]>
+//      ▼
+const combined = Logger.zip(Logger.defaultLogger, logger)
+
+const program = Effect.log("something")
+
+Effect.runFork(
+  program.pipe(
+    // Replace the default logger with the combined logger
+    Effect.provide(Logger.replace(Logger.defaultLogger, combined))
+  )
+)
+/*
+Output:
+timestamp=2025-01-09T13:50:58.655Z level=INFO fiber=#0 message=something
+[INFO] something
+*/
+```
+
+> observability/supervisor.mdx\n\n---
+title: Supervisor
+description: Effect's Supervisor manages fiber lifecycles, enabling tracking, monitoring, and controlling fibers' behavior within an application.
+sidebar:
+  order: 3
+---
+
+A `Supervisor<A>` is a utility for managing fibers in Effect, allowing you to track their lifecycle (creation and termination) and producing a value of type `A` that reflects this supervision. Supervisors are useful when you need insight into or control over the behavior of fibers within your application.
+
+To create a supervisor, you can use the `Supervisor.track` function. This generates a new supervisor that keeps track of its child fibers, maintaining them in a set. This allows you to observe and monitor their status during execution.
+
+You can supervise an effect by using the `Effect.supervised` function. This function takes a supervisor as an argument and returns an effect where all child fibers forked within it are supervised by the provided supervisor. This enables you to capture detailed information about these child fibers, such as their status, through the supervisor.
+
+**Example** (Monitoring Fiber Count)
+
+In this example, we'll periodically monitor the number of fibers running in the application using a supervisor. The program calculates a Fibonacci number, spawning multiple fibers in the process, while a separate monitor tracks the fiber count.
+
+```ts twoslash
+import { Effect, Supervisor, Schedule, Fiber, FiberStatus } from "effect"
+
+// Main program that monitors fibers while calculating a Fibonacci number
+const program = Effect.gen(function* () {
+  // Create a supervisor to track child fibers
+  const supervisor = yield* Supervisor.track
+
+  // Start a Fibonacci calculation, supervised by the supervisor
+  const fibFiber = yield* fib(20).pipe(
+    Effect.supervised(supervisor),
+    // Fork the Fibonacci effect into a fiber
+    Effect.fork
+  )
+
+  // Define a schedule to periodically monitor the fiber count every 500ms
+  const policy = Schedule.spaced("500 millis").pipe(
+    Schedule.whileInputEffect((_) =>
+      Fiber.status(fibFiber).pipe(
+        // Continue while the Fibonacci fiber is not done
+        Effect.andThen((status) => status !== FiberStatus.done)
+      )
+    )
+  )
+
+  // Start monitoring the fibers, using the supervisor to track the count
+  const monitorFiber = yield* monitorFibers(supervisor).pipe(
+    // Repeat the monitoring according to the schedule
+    Effect.repeat(policy),
+    // Fork the monitoring into its own fiber
+    Effect.fork
+  )
+
+  // Join the monitor and Fibonacci fibers to ensure they complete
+  yield* Fiber.join(monitorFiber)
+  const result = yield* Fiber.join(fibFiber)
+
+  console.log(`fibonacci result: ${result}`)
+})
+
+// Function to monitor and log the number of active fibers
+const monitorFibers = (
+  supervisor: Supervisor.Supervisor<Array<Fiber.RuntimeFiber<any, any>>>
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const fibers = yield* supervisor.value // Get the current set of fibers
+    console.log(`number of fibers: ${fibers.length}`)
+  })
+
+// Recursive Fibonacci calculation, spawning fibers for each recursive step
+const fib = (n: number): Effect.Effect<number> =>
+  Effect.gen(function* () {
+    if (n <= 1) {
+      return 1
+    }
+    yield* Effect.sleep("500 millis") // Simulate work by delaying
+
+    // Fork two fibers for the recursive Fibonacci calls
+    const fiber1 = yield* Effect.fork(fib(n - 2))
+    const fiber2 = yield* Effect.fork(fib(n - 1))
+
+    // Join the fibers to retrieve their results
+    const v1 = yield* Fiber.join(fiber1)
+    const v2 = yield* Fiber.join(fiber2)
+
+    return v1 + v2 // Combine the results
+  })
+
+Effect.runPromise(program)
+/*
+Output:
+number of fibers: 0
+number of fibers: 2
+number of fibers: 6
+number of fibers: 14
+number of fibers: 30
+number of fibers: 62
+number of fibers: 126
+number of fibers: 254
+number of fibers: 510
+number of fibers: 1022
+number of fibers: 2034
+number of fibers: 3795
+number of fibers: 5810
+number of fibers: 6474
+number of fibers: 4942
+number of fibers: 2515
+number of fibers: 832
+number of fibers: 170
+number of fibers: 18
+number of fibers: 0
+fibonacci result: 10946
+*/
+```
+
 > requirements-management/layers.mdx\n\n---
 title: Managing Layers
 description: Learn how to use layers in Effect to manage service dependencies and build efficient, clean dependency graphs for your applications.
@@ -37211,833 +38397,6 @@ const program = Effect.gen(function* () {
 
 As you can observe, even if our program utilizes both `Clock` and `Console`, the `Requirements` parameter, representing the services required for the effect to execute, remains set to `never`.
 Effect takes care of handling these services seamlessly for us.
-
-> sink/creating.mdx\n\n---
-title: Creating Sinks
-description: Discover how to create and use various sinks for processing streams, including counting, summing, collecting, folding, and handling success or failure.
-sidebar:
-  order: 1
----
-
-In stream processing, sinks are used to consume and handle elements from a stream. Here, we'll explore various sink constructors that allow you to create sinks for specific tasks.
-
-## Common Constructors
-
-### head
-
-The `Sink.head` sink retrieves only the first element from a stream, wrapping it in `Some`. If the stream has no elements, it returns `None`.
-
-**Example** (Retrieving the First Element)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const nonEmptyStream = Stream.make(1, 2, 3, 4)
-
-Effect.runPromise(Stream.run(nonEmptyStream, Sink.head())).then(
-  console.log
-)
-/*
-Output:
-{ _id: 'Option', _tag: 'Some', value: 1 }
-*/
-
-const emptyStream = Stream.empty
-
-Effect.runPromise(Stream.run(emptyStream, Sink.head())).then(console.log)
-/*
-Output:
-{ _id: 'Option', _tag: 'None' }
-*/
-```
-
-### last
-
-The `Sink.last` sink retrieves only the last element from a stream, wrapping it in `Some`. If the stream has no elements, it returns `None`.
-
-**Example** (Retrieving the Last Element)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const nonEmptyStream = Stream.make(1, 2, 3, 4)
-
-Effect.runPromise(Stream.run(nonEmptyStream, Sink.last())).then(
-  console.log
-)
-/*
-Output:
-{ _id: 'Option', _tag: 'Some', value: 4 }
-*/
-
-const emptyStream = Stream.empty
-
-Effect.runPromise(Stream.run(emptyStream, Sink.last())).then(console.log)
-/*
-Output:
-{ _id: 'Option', _tag: 'None' }
-*/
-```
-
-### count
-
-The `Sink.count` sink consumes all elements of the stream and counts the number of elements fed to it.
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4)
-
-Effect.runPromise(Stream.run(stream, Sink.count)).then(console.log)
-// Output: 4
-```
-
-### sum
-
-The `Sink.sum` sink consumes all elements of the stream and sums incoming numeric values.
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4)
-
-Effect.runPromise(Stream.run(stream, Sink.sum)).then(console.log)
-// Output: 10
-```
-
-### take
-
-The `Sink.take` sink takes the specified number of values from the stream and results in a [Chunk](/docs/data-types/chunk/) data type.
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4)
-
-Effect.runPromise(Stream.run(stream, Sink.take(3))).then(console.log)
-/*
-Output:
-{ _id: 'Chunk', values: [ 1, 2, 3 ] }
-*/
-```
-
-### drain
-
-The `Sink.drain` sink ignores its inputs, effectively discarding them.
-
-```ts twoslash
-import { Stream, Console, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4).pipe(Stream.tap(Console.log))
-
-Effect.runPromise(Stream.run(stream, Sink.drain)).then(console.log)
-/*
-Output:
-1
-2
-3
-4
-undefined
-*/
-```
-
-### timed
-
-The `Sink.timed` sink executes the stream and measures its execution time, providing the [Duration](/docs/data-types/duration/).
-
-```ts twoslash
-import { Stream, Schedule, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4).pipe(
-  Stream.schedule(Schedule.spaced("100 millis"))
-)
-
-Effect.runPromise(Stream.run(stream, Sink.timed)).then(console.log)
-/*
-Output:
-{ _id: 'Duration', _tag: 'Millis', millis: 408 }
-*/
-```
-
-### forEach
-
-The `Sink.forEach` sink executes the provided effectful function for every element fed to it.
-
-```ts twoslash
-import { Stream, Console, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4)
-
-Effect.runPromise(Stream.run(stream, Sink.forEach(Console.log))).then(
-  console.log
-)
-/*
-Output:
-1
-2
-3
-4
-undefined
-*/
-```
-
-## Creating Sinks from Success and Failure
-
-Just as you can define streams to hold or manipulate data, you can also create sinks with specific success or failure outcomes using the `Sink.fail` and `Sink.succeed` functions.
-
-### Succeeding Sink
-
-This example creates a sink that doesn’t consume any elements from its upstream source but instead immediately succeeds with a specified numeric value:
-
-**Example** (Sink that Always Succeeds with a Value)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4)
-
-Effect.runPromise(Stream.run(stream, Sink.succeed(0))).then(console.log)
-// Output: 0
-```
-
-### Failing Sink
-
-In this example, the sink also doesn’t consume any elements from its upstream source. Instead, it fails with a specified error message of type `string`:
-
-**Example** (Sink that Always Fails with an Error Message)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4)
-
-Effect.runPromiseExit(Stream.run(stream, Sink.fail("fail!"))).then(
-  console.log
-)
-/*
-Output:
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: { _id: 'Cause', _tag: 'Fail', failure: 'fail!' }
-}
-*/
-```
-
-## Collecting
-
-### Collecting All Elements
-
-To gather all elements from a data stream into a [Chunk](/docs/data-types/chunk/), use the `Sink.collectAll` sink.
-
-The final output is a chunk containing all elements from the stream, in the order they were emitted.
-
-**Example** (Collecting All Stream Elements)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4)
-
-Effect.runPromise(Stream.run(stream, Sink.collectAll())).then(console.log)
-/*
-Output:
-{ _id: 'Chunk', values: [ 1, 2, 3, 4 ] }
-*/
-```
-
-### Collecting a Specified Number
-
-To collect a fixed number of elements from a stream into a [Chunk](/docs/data-types/chunk/), use `Sink.collectAllN`. This sink stops collecting once it reaches the specified limit.
-
-**Example** (Collecting a Limited Number of Elements)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4, 5)
-
-Effect.runPromise(
-  Stream.run(
-    stream,
-    // Collect the first 3 elements into a Chunk
-    Sink.collectAllN(3)
-  )
-).then(console.log)
-/*
-Output:
-{ _id: 'Chunk', values: [ 1, 2, 3 ] }
-*/
-```
-
-### Collecting While Meeting a Condition
-
-To gather elements from a stream while they satisfy a specific condition, use `Sink.collectAllWhile`. This sink collects elements until the provided predicate returns `false`.
-
-**Example** (Collecting Elements Until a Condition Fails)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 0, 4, 0, 6, 7)
-
-Effect.runPromise(
-  Stream.run(
-    stream,
-    // Collect elements while they are not equal to 0
-    Sink.collectAllWhile((n) => n !== 0)
-  )
-).then(console.log)
-/*
-Output:
-{ _id: 'Chunk', values: [ 1, 2 ] }
-*/
-```
-
-### Collecting into a HashSet
-
-To accumulate stream elements into a `HashSet`, use `Sink.collectAllToSet()`. This ensures that each element appears only once in the final set.
-
-**Example** (Collecting Unique Elements into a HashSet)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 2, 3, 4, 4)
-
-Effect.runPromise(Stream.run(stream, Sink.collectAllToSet())).then(
-  console.log
-)
-/*
-Output:
-{ _id: 'HashSet', values: [ 1, 2, 3, 4 ] }
-*/
-```
-
-### Collecting into HashSets of a Specific Size
-
-For controlled collection into a `HashSet` with a specified maximum size, use `Sink.collectAllToSetN`. This sink gathers unique elements up to the given limit.
-
-**Example** (Collecting Unique Elements with a Set Size Limit)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 2, 3, 4, 4)
-
-Effect.runPromise(
-  Stream.run(
-    stream,
-    // Collect unique elements, limiting the set size to 3
-    Sink.collectAllToSetN(3)
-  )
-).then(console.log)
-/*
-Output:
-{ _id: 'HashSet', values: [ 1, 2, 3 ] }
-*/
-```
-
-### Collecting into a HashMap
-
-For more complex collection scenarios, `Sink.collectAllToMap` lets you gather elements into a `HashMap<K, A>` with a specified keying and merging strategy.
-This sink requires both a key function to define each element's grouping and a merge function to combine values sharing the same key.
-
-**Example** (Grouping and Merging Stream Elements in a HashMap)
-
-In this example, we use `(n) => n % 3` to determine map keys and `(a, b) => a + b` to merge elements with the same key:
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 3, 2, 3, 1, 5, 1)
-
-Effect.runPromise(
-  Stream.run(
-    stream,
-    Sink.collectAllToMap(
-      (n) => n % 3, // Key function to group by element value
-      (a, b) => a + b // Merge function to sum values with the same key
-    )
-  )
-).then(console.log)
-/*
-Output:
-{ _id: 'HashMap', values: [ [ 0, 6 ], [ 1, 3 ], [ 2, 7 ] ] }
-*/
-```
-
-### Collecting into a HashMap with Limited Keys
-
-To accumulate elements into a `HashMap` with a maximum number of keys, use `Sink.collectAllToMapN`. This sink collects elements until it reaches the specified key limit, requiring a key function to define the grouping of each element and a merge function to combine values with the same key.
-
-**Example** (Limiting Collected Keys in a HashMap)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 3, 2, 3, 1, 5, 1)
-
-Effect.runPromise(
-  Stream.run(
-    stream,
-    Sink.collectAllToMapN(
-      3, // Maximum of 3 keys
-      (n) => n, // Key function to group by element value
-      (a, b) => a + b // Merge function to sum values with the same key
-    )
-  )
-).then(console.log)
-/*
-Output:
-{ _id: 'HashMap', values: [ [ 1, 2 ], [ 2, 2 ], [ 3, 6 ] ] }
-*/
-```
-
-## Folding
-
-### Folding Left
-
-If you want to reduce a stream into a single cumulative value by applying an operation to each element in sequence, you can use the `Sink.foldLeft` function.
-
-**Example** (Summing Elements in a Stream Using Fold Left)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4)
-
-Effect.runPromise(
-  Stream.run(
-    stream,
-    // Use foldLeft to sequentially add each element, starting with 0
-    Sink.foldLeft(0, (a, b) => a + b)
-  )
-).then(console.log)
-// Output: 10
-```
-
-### Folding with Termination
-
-Sometimes, you may want to fold elements in a stream but stop the process once a specific condition is met. This is known as "short-circuiting." You can accomplish this with the `Sink.fold` function, which lets you define a termination condition.
-
-**Example** (Folding with a Condition to Stop Early)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.iterate(0, (n) => n + 1)
-
-Effect.runPromise(
-  Stream.run(
-    stream,
-    Sink.fold(
-      0, // Initial value
-      (sum) => sum <= 10, // Termination condition
-      (a, b) => a + b // Folding operation
-    )
-  )
-).then(console.log)
-// Output: 15
-```
-
-### Folding Until a Limit
-
-To accumulate elements until a specific count is reached, use `Sink.foldUntil`. This sink folds elements up to the specified limit and then stops.
-
-**Example** (Accumulating a Set Number of Elements)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-
-Effect.runPromise(
-  Stream.run(
-    stream,
-    // Fold elements, stopping after accumulating 3 values
-    Sink.foldUntil(0, 3, (a, b) => a + b)
-  )
-).then(console.log)
-// Output: 6
-```
-
-### Folding with Weighted Elements
-
-In some scenarios, you may want to fold elements based on a defined "weight" or "cost," accumulating elements until a specified maximum cost is reached. You can accomplish this with `Sink.foldWeighted`.
-
-**Example** (Accumulating Elements Based on Weight)
-
-In the example below, each element has a weight of `1`, and the folding resets when the accumulated weight hits `3`.
-
-```ts twoslash
-import { Stream, Sink, Chunk, Effect } from "effect"
-
-const stream = Stream.make(3, 2, 4, 1, 5, 6, 2, 1, 3, 5, 6).pipe(
-  Stream.transduce(
-    Sink.foldWeighted({
-      initial: Chunk.empty<number>(), // Initial empty Chunk
-      maxCost: 3, // Maximum accumulated cost
-      cost: () => 1, // Each element has a weight of 1
-      body: (acc, el) => Chunk.append(acc, el) // Append element to the Chunk
-    })
-  )
-)
-
-Effect.runPromise(Stream.runCollect(stream)).then((chunk) =>
-  console.log("%o", chunk)
-)
-/*
-Output:
-{
-  _id: 'Chunk',
-  values: [
-    { _id: 'Chunk', values: [ 3, 2, 4, [length]: 3 ] },
-    { _id: 'Chunk', values: [ 1, 5, 6, [length]: 3 ] },
-    { _id: 'Chunk', values: [ 2, 1, 3, [length]: 3 ] },
-    { _id: 'Chunk', values: [ 5, 6, [length]: 2 ] },
-    [length]: 4
-  ]
-}
-*/
-```
-
-> sink/operations.mdx\n\n---
-title: Sink Operations
-description: Explore operations to transform, filter, and adapt sinks, enabling custom input-output handling and element filtering in stream processing.
-sidebar:
-  label: Operations
-  order: 2
----
-
-In previous sections, we learned how to create and use sinks. Now, let's explore some operations that let you transform or filter sink behavior.
-
-## Adapting Sink Input
-
-At times, you may have a sink that works with one type of input, but your current stream uses a different type. The `Sink.mapInput` function helps you adapt your sink to a new input type by transforming the input values. While `Sink.map` changes the sink's output, `Sink.mapInput` changes the input it accepts.
-
-**Example** (Converting String Input to Numeric for Summing)
-
-Suppose you have a `Sink.sum` that calculates the sum of numbers. If your stream contains strings rather than numbers, `Sink.mapInput` can convert those strings into numbers, allowing `Sink.sum` to work with your stream:
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-// A stream of numeric strings
-const stream = Stream.make("1", "2", "3", "4", "5")
-
-// Define a sink for summing numeric values
-const numericSum = Sink.sum
-
-// Use mapInput to adapt the sink, converting strings to numbers
-const stringSum = numericSum.pipe(
-  Sink.mapInput((s: string) => Number.parseFloat(s))
-)
-
-Effect.runPromise(Stream.run(stream, stringSum)).then(console.log)
-// Output: 15
-```
-
-## Transforming Both Input and Output
-
-When you need to transform both the input and output of a sink, `Sink.dimap` provides a flexible solution. It extends `mapInput` by allowing you to transform the input type, perform the operation, and then transform the output to a new type. This can be useful for complete conversions between input and output types.
-
-**Example** (Converting Input to Integer, Summing, and Converting Output to String)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-// A stream of numeric strings
-const stream = Stream.make("1", "2", "3", "4", "5")
-
-// Convert string inputs to numbers, sum them,
-// then convert the result to a string
-const sumSink = Sink.dimap(Sink.sum, {
-  // Transform input: string to number
-  onInput: (s: string) => Number.parseFloat(s),
-  // Transform output: number to string
-  onDone: (n) => String(n)
-})
-
-Effect.runPromise(Stream.run(stream, sumSink)).then(console.log)
-// Output: "15"
-```
-
-## Filtering Input
-
-Sinks can also filter incoming elements based on specific conditions with `Sink.filterInput`. This operation allows the sink to process only elements that meet certain criteria.
-
-**Example** (Filtering Negative Numbers in Chunks of Three)
-
-In the example below, elements are collected in chunks of three, but only positive numbers are included:
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-// Define a stream with positive, negative, and zero values
-const stream = Stream.fromIterable([
-  1, -2, 0, 1, 3, -3, 4, 2, 0, 1, -3, 1, 1, 6
-]).pipe(
-  Stream.transduce(
-    // Collect chunks of 3, filtering out non-positive numbers
-    Sink.collectAllN<number>(3).pipe(Sink.filterInput((n) => n > 0))
-  )
-)
-
-Effect.runPromise(Stream.runCollect(stream)).then((chunk) =>
-  console.log("%o", chunk)
-)
-/*
-Output:
-{
-  _id: 'Chunk',
-  values: [
-    { _id: 'Chunk', values: [ 1, 1, 3, [length]: 3 ] },
-    { _id: 'Chunk', values: [ 4, 2, 1, [length]: 3 ] },
-    { _id: 'Chunk', values: [ 1, 1, 6, [length]: 3 ] },
-    { _id: 'Chunk', values: [ [length]: 0 ] },
-    [length]: 4
-  ]
-}
-*/
-```
-
-> sink/leftovers.mdx\n\n---
-title: Leftovers
-description: Learn how to handle unconsumed elements in streams, collecting or ignoring leftovers for efficient data processing.
-sidebar:
-  order: 4
----
-
-In this section, we'll look at handling elements left unconsumed by sinks. Sinks may process only a portion of the elements from an upstream source, leaving some elements as "leftovers." Here's how to collect or ignore these remaining elements.
-
-## Collecting Leftovers
-
-If a sink doesn't consume all elements from the upstream source, the remaining elements are called leftovers. To capture these leftovers, use `Sink.collectLeftover`, which returns a tuple containing the result of the sink operation and any unconsumed elements.
-
-**Example** (Collecting Leftover Elements)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4, 5)
-
-// Take the first 3 elements and collect any leftovers
-const sink1 = Sink.take<number>(3).pipe(Sink.collectLeftover)
-
-Effect.runPromise(Stream.run(stream, sink1)).then(console.log)
-/*
-Output:
-[
-  { _id: 'Chunk', values: [ 1, 2, 3 ] },
-  { _id: 'Chunk', values: [ 4, 5 ] }
-]
-*/
-
-// Take only the first element and collect the rest as leftovers
-const sink2 = Sink.head<number>().pipe(Sink.collectLeftover)
-
-Effect.runPromise(Stream.run(stream, sink2)).then(console.log)
-/*
-Output:
-[
-  { _id: 'Option', _tag: 'Some', value: 1 },
-  { _id: 'Chunk', values: [ 2, 3, 4, 5 ] }
-]
-*/
-```
-
-## Ignoring Leftovers
-
-If leftover elements are not needed, you can ignore them using `Sink.ignoreLeftover`. This approach discards any unconsumed elements, so the sink operation focuses only on the elements it needs.
-
-**Example** (Ignoring Leftover Elements)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-const stream = Stream.make(1, 2, 3, 4, 5)
-
-// Take the first 3 elements and ignore any remaining elements
-const sink = Sink.take<number>(3).pipe(
-  Sink.ignoreLeftover,
-  Sink.collectLeftover
-)
-
-Effect.runPromise(Stream.run(stream, sink)).then(console.log)
-/*
-Output:
-[ { _id: 'Chunk', values: [ 1, 2, 3 ] }, { _id: 'Chunk', values: [] } ]
-*/
-```
-
-> sink/introduction.mdx\n\n---
-title: Introduction
-description: Learn the role of Sink in stream processing, handling element consumption, error management, result production, and leftover elements.
-sidebar:
-  order: 0
----
-
-In stream processing, a `Sink` is a construct designed to consume elements generated by a `Stream`.
-
-```text showLineNumbers=false
-     ┌─── Type of the result produced by the Sink
-     |  ┌─── Type of elements consumed by the Sink
-     |  |   ┌─── Type of any leftover elements
-     │  |   |  ┌─── Type of possible errors
-     │  │   |  |  ┌─── Type of required dependencies
-     ▼  ▼   ▼  ▼  ▼
-Sink<A, In, L, E, R>
-```
-
-Here's an overview of what a `Sink` does:
-
-- It consumes a varying number of `In` elements, which may include zero, one, or multiple elements.
-- It can encounter errors of type `E` during processing.
-- It produces a result of type `A` once processing completes.
-- It can also return a remainder of type `L`, representing any leftover elements.
-
-To process a stream using a `Sink`, you can pass it directly to the `Stream.run` function:
-
-**Example** (Using a Sink to Collect Stream Elements)
-
-```ts twoslash
-import { Stream, Sink, Effect } from "effect"
-
-//      ┌─── Stream<number, never, never>
-//      ▼
-const stream = Stream.make(1, 2, 3)
-
-// Create a sink to take the first 2 elements of the stream
-//
-//      ┌─── Sink<Chunk<number>, number, number, never, never>
-//      ▼
-const sink = Sink.take<number>(2)
-
-// Run the stream through the sink to collect the elements
-//
-//      ┌─── Effect<number, never, never>
-//      ▼
-const sum = Stream.run(stream, sink)
-
-Effect.runPromise(sum).then(console.log)
-/*
-Output:
-{ _id: 'Chunk', values: [ 1, 2 ] }
-*/
-```
-
-The type of `sink` is as follows:
-
-```text showLineNumbers=false
-       ┌─── result
-       |              ┌─── consumed elements
-       |              |       ┌─── leftover elements
-       │              |       |       ┌─── no errors
-       │              │       |       |      ┌─── no dependencies
-       ▼              ▼       ▼       ▼      ▼
-Sink<Chunk<number>, number, number, never, never>
-```
-
-Here's the breakdown:
-
-- `Chunk<number>`: The final result produced by the sink after processing elements (in this case, a [Chunk](/docs/data-types/chunk/) of numbers).
-- `number` (first occurrence): The type of elements that the sink will consume from the stream.
-- `number` (second occurrence): The type of leftover elements, if any, that are not consumed.
-- `never` (first occurrence): Indicates that this sink does not produce any errors.
-- `never` (second occurrence): Shows that no dependencies are required to operate this sink.
-
-> sink/concurrency.mdx\n\n---
-title: Sink Concurrency
-excerpt: Learn how to enhance performance with concurrent sink operations, such as combining results or racing to capture the first completion.
-sidebar:
-  label: Concurrency
-  order: 3
----
-
-This section covers concurrent operations that allow multiple sinks to run simultaneously. These can be valuable for enhancing task performance when concurrent execution is desired.
-
-## Combining Results with Concurrent Zipping
-
-To run two sinks concurrently and combine their results, use `Sink.zip`. This operation executes both sinks concurrently and combines their outcomes into a tuple.
-
-**Example** (Running Two Sinks Concurrently and Combining Results)
-
-```ts twoslash
-import { Sink, Console, Stream, Schedule, Effect } from "effect"
-
-const stream = Stream.make("1", "2", "3", "4", "5").pipe(
-  Stream.schedule(Schedule.spaced("10 millis"))
-)
-
-const sink1 = Sink.forEach((s: string) =>
-  Console.log(`sink 1: ${s}`)
-).pipe(Sink.as(1))
-
-const sink2 = Sink.forEach((s: string) =>
-  Console.log(`sink 2: ${s}`)
-).pipe(Sink.as(2))
-
-// Combine the two sinks to run concurrently and collect results in a tuple
-const sink = Sink.zip(sink1, sink2, { concurrent: true })
-
-Effect.runPromise(Stream.run(stream, sink)).then(console.log)
-/*
-Output:
-sink 1: 1
-sink 2: 1
-sink 1: 2
-sink 2: 2
-sink 1: 3
-sink 2: 3
-sink 1: 4
-sink 2: 4
-sink 1: 5
-sink 2: 5
-[ 1, 2 ]
-*/
-```
-
-## Racing Sinks: First Completion Wins
-
-The `Sink.race` operation allows multiple sinks to compete for completion. The first sink to finish provides the result.
-
-**Example** (Racing Two Sinks to Capture the First Result)
-
-```ts twoslash
-import { Sink, Console, Stream, Schedule, Effect } from "effect"
-
-const stream = Stream.make("1", "2", "3", "4", "5").pipe(
-  Stream.schedule(Schedule.spaced("10 millis"))
-)
-
-const sink1 = Sink.forEach((s: string) =>
-  Console.log(`sink 1: ${s}`)
-).pipe(Sink.as(1))
-
-const sink2 = Sink.forEach((s: string) =>
-  Console.log(`sink 2: ${s}`)
-).pipe(Sink.as(2))
-
-// Race the two sinks, the result will be from the first to complete
-const sink = Sink.race(sink1, sink2)
-
-Effect.runPromise(Stream.run(stream, sink)).then(console.log)
-/*
-Output:
-sink 1: 1
-sink 2: 1
-sink 1: 2
-sink 2: 2
-sink 1: 3
-sink 2: 3
-sink 1: 4
-sink 2: 4
-sink 1: 5
-sink 2: 5
-1
-*/
-```
 
 > micro/new-users.mdx\n\n---
 title: Getting Started with Micro
@@ -41113,2198 +41472,831 @@ Console output: Secret(<redacted>)
 Actual value: my-api-key
 ```
 
-> platform/platformlogger.mdx\n\n---
-title: PlatformLogger
-description: Log messages to a file using the FileSystem APIs.
-sidebar:
-  order: 6
----
-
-Effect's logging system generally writes messages to the console by default. However, you might prefer to store logs in a file for easier debugging or archiving. The `PlatformLogger.toFile` function creates a logger that sends log messages to a file on disk.
-
-### toFile
-
-Creates a new logger from an existing string-based logger, writing its output to the specified file.
-
-If you include a `batchWindow` duration when calling `toFile`, logs are batched for that period before being written. This can reduce overhead if your application produces many log entries. Without a `batchWindow`, logs are written as they arrive.
-
-Note that `toFile` returns an `Effect` that may fail with a `PlatformError` if the file cannot be opened or written to. Be sure to handle this possibility if you need to react to file I/O issues.
-
-**Example** (Directing Logs to a File)
-
-This logger requires a `FileSystem` implementation to open and write to the file. For Node.js, you can use `NodeFileSystem.layer`.
-
-```ts twoslash
-import { PlatformLogger } from "@effect/platform"
-import { NodeFileSystem } from "@effect/platform-node"
-import { Effect, Layer, Logger } from "effect"
-
-// Create a string-based logger (logfmtLogger in this case)
-const myStringLogger = Logger.logfmtLogger
-
-// Apply toFile to write logs to "/tmp/log.txt"
-const fileLogger = myStringLogger.pipe(
-  PlatformLogger.toFile("/tmp/log.txt")
-)
-
-// Replace the default logger, providing NodeFileSystem
-// to access the file system
-const LoggerLive = Logger.replaceScoped(
-  Logger.defaultLogger,
-  fileLogger
-).pipe(Layer.provide(NodeFileSystem.layer))
-
-const program = Effect.log("Hello")
-
-// Run the program, writing logs to /tmp/log.txt
-Effect.runFork(program.pipe(Effect.provide(LoggerLive)))
-/*
-Logs will be written to "/tmp/log.txt" in the logfmt format,
-and won't appear on the console.
-*/
-```
-
-In the following example, logs are written to both the console and a file. The console uses the pretty logger, while the file uses the logfmt format.
-
-**Example** (Directing Logs to Both a File and the Console)
-
-```ts twoslash
-import { PlatformLogger } from "@effect/platform"
-import { NodeFileSystem } from "@effect/platform-node"
-import { Effect, Layer, Logger } from "effect"
-
-const fileLogger = Logger.logfmtLogger.pipe(
-  PlatformLogger.toFile("/tmp/log.txt")
-)
-
-// Combine the pretty logger for console output with the file logger
-const bothLoggers = Effect.map(fileLogger, (fileLogger) =>
-  Logger.zip(Logger.prettyLoggerDefault, fileLogger)
-)
-
-const LoggerLive = Logger.replaceScoped(
-  Logger.defaultLogger,
-  bothLoggers
-).pipe(Layer.provide(NodeFileSystem.layer))
-
-const program = Effect.log("Hello")
-
-// Run the program, writing logs to both the console (pretty format)
-// and "/tmp/log.txt" (logfmt)
-Effect.runFork(program.pipe(Effect.provide(LoggerLive)))
-```
-
-> additional-resources/effect-vs-fp-ts.mdx\n\n---
-title: Effect vs fp-ts
-description: Comparison of Effect and fp-ts, covering features like typed services, resource management, concurrency, and stream processing.
-sidebar:
-  order: 4
----
-
-## Key Developments
-
-- **Project Merger**: The fp-ts project is officially merging with the Effect-TS ecosystem. Giulio Canti, the author of fp-ts, is being welcomed into the Effect organization. For more details, see the [announcement here](https://dev.to/effect/a-bright-future-for-effect-455m).
-- **Continuity and Evolution**: Effect can be seen as the successor to fp-ts v2 and is effectively fp-ts v3, marking a significant evolution in the library's capabilities.
-
-## FAQ
-
-### Bundle Size Comparison Between Effect and fp-ts
-
-**Q: I compared the bundle sizes of two simple programs using Effect and fp-ts. Why does Effect have a larger bundle size?**
-
-A: It's natural to observe different bundle sizes because Effect and fp-ts are distinct systems designed for different purposes.
-Effect's bundle size is larger due to its included fiber runtime, which is crucial for its functionality.
-While the initial bundle size may seem large, the overhead amortizes as you use Effect.
-
-**Q: Should I be concerned about the bundle size difference when choosing between Effect and fp-ts?**
-
-A: Not necessarily. Consider the specific requirements and benefits of each library for your project.
-
-The **Micro** module in Effect is designed as a lightweight alternative to the standard `Effect` module, specifically for scenarios where reducing bundle size is crucial.
-This module is self-contained and does not include more complex features like `Layer`, `Ref`, `Queue`, and `Deferred`.
-If any major Effect modules (beyond basic data modules like `Option`, `Either`, `Array`, etc.) are used, the effect runtime will be added to your bundle, negating the benefits of Micro.
-This makes Micro ideal for libraries that aim to implement Effect functionality with minimal impact on bundle size, especially for libraries that plan to expose `Promise`-based APIs.
-It also supports scenarios where a client might use Micro while a server uses the full suite of Effect features, maintaining compatibility and shared logic between different parts of an application.
-
-## Comparison Table
-
-The following table compares the features of the Effect and [fp-ts](https://github.com/gcanti/fp-ts) libraries.
-
-| Feature                   | fp-ts | Effect |
-| ------------------------- | ----- | ------ |
-| Typed Services            | ❌    | ✅     |
-| Built-in Services         | ❌    | ✅     |
-| Typed errors              | ✅    | ✅     |
-| Pipeable APIs             | ✅    | ✅     |
-| Dual APIs                 | ❌    | ✅     |
-| Testability               | ❌    | ✅     |
-| Resource Management       | ❌    | ✅     |
-| Interruptions             | ❌    | ✅     |
-| Defects                   | ❌    | ✅     |
-| Fiber-Based Concurrency   | ❌    | ✅     |
-| Fiber Supervision         | ❌    | ✅     |
-| Retry and Retry Policies  | ❌    | ✅     |
-| Built-in Logging          | ❌    | ✅     |
-| Built-in Scheduling       | ❌    | ✅     |
-| Built-in Caching          | ❌    | ✅     |
-| Built-in Batching         | ❌    | ✅     |
-| Metrics                   | ❌    | ✅     |
-| Tracing                   | ❌    | ✅     |
-| Configuration             | ❌    | ✅     |
-| Immutable Data Structures | ❌    | ✅     |
-| Stream Processing         | ❌    | ✅     |
-
-Here's an explanation of each feature:
-
-### Typed Services
-
-Both fp-ts and Effect libraries provide the ability to track requirements at the type level, allowing you to define and use services with specific types. In fp-ts, you can utilize the `ReaderTaskEither<R, E, A>` type, while in Effect, the `Effect<A, E, R>` type is available. It's important to note that in fp-ts, the `R` type parameter is contravariant, which means that there is no guarantee of avoiding conflicts, and the library offers only basic tools for dependency management.
-
-On the other hand, in Effect, the `R` type parameter is covariant and all APIs have the ability to merge dependencies at the type level when multiple effects are involved. Effect also provides a range of specifically designed tools to simplify the management of dependencies, including `Tag`, `Context`, and `Layer`. These tools enhance the ease and flexibility of handling dependencies in your code, making it easier to compose and manage complex applications.
-
-### Built-in Services
-
-The Effect library has built-in services like `Clock`, `Random` and `Tracer`, while fp-ts does not provide any default services.
-
-### Typed errors
-
-Both libraries support typed errors, enabling you to define and handle errors with specific types. However, in Effect, all APIs have the ability to merge errors at the type-level when multiple effects are involved, and each effect can potentially fail with different types of errors.
-
-This means that when combining multiple effects that can fail, the resulting type of the error will be a union of the individual error types. Effect provides utilities and type-level operations to handle and manage these merged error types effectively.
-
-### Pipeable APIs
-
-Both fp-ts and Effect libraries provide pipeable APIs, allowing you to compose and sequence operations in a functional and readable manner using the `pipe` function. However, Effect goes a step further and offers a `.pipe()` method on each data type, making it more convenient to work with pipelines without the need to explicitly import the `pipe` function every time.
-
-### Dual APIs
-
-Effect library provides dual APIs, allowing you to use the same API in different ways (e.g., "data-last" and "data-first" variants).
-
-### Testability
-
-The functional style of fp-ts generally promotes good testability of the code written using it, but the library itself does not provide dedicated tools specifically designed for the testing phase. On the other hand, Effect takes testability a step further by offering additional tools that are specifically tailored to simplify the testing process.
-
-Effect provides a range of utilities that improve testability. For example, it offers the `TestClock` utility, which allows you to control the passage of time during tests. This is useful for testing time-dependent code. Additionally, Effect provides the `TestRandom` utility, which enables fully deterministic testing of code that involves randomness. This ensures consistent and predictable test results. Another helpful tool is `ConfigProvider.fromMap`, which makes it easy to define mock configurations for your application during testing.
-
-### Resource Management
-
-The Effect library provides built-in capabilities for resource management, while fp-ts has limited features in this area (mainly `bracket`) and they are less sophisticated.
-
-In Effect, resource management refers to the ability to acquire and release resources, such as database connections, file handles, or network sockets, in a safe and controlled manner. The library offers comprehensive and refined mechanisms to handle resource acquisition and release, ensuring proper cleanup and preventing resource leaks.
-
-### Interruptions
-
-The Effect library supports interruptions, which means you can interrupt and cancel ongoing computations if needed. This feature gives you more control over the execution of your code and allows you to handle situations where you want to stop a computation before it completes.
-
-In Effect, interruptions are useful in scenarios where you need to handle user cancellations, timeouts, or other external events that require stopping ongoing computations. You can explicitly request an interruption and the library will safely and efficiently halt the execution of the computation.
-
-On the other hand, fp-ts does not have built-in support for interruptions. Once a computation starts in fp-ts, it will continue until it completes or encounters an error, without the ability to be interrupted midway.
-
-### Defects
-
-The Effect library provides mechanisms for handling defects and managing **unexpected** failures. In Effect, defects refer to unexpected errors or failures that can occur during the execution of a program.
-
-With the Effect library, you have built-in tools and utilities to handle defects in a structured and reliable manner. It offers error handling capabilities that allow you to catch and handle exceptions, recover from failures, and gracefully handle unexpected scenarios.
-
-On the other hand, fp-ts does not have built-in support specifically dedicated to managing defects. While you can handle errors using standard functional programming techniques in fp-ts, the Effect library provides a more comprehensive and streamlined approach to dealing with defects.
-
-### Fiber-Based Concurrency
-
-The Effect library leverages fiber-based concurrency, which enables lightweight and efficient concurrent computations. In simpler terms, fiber-based concurrency allows multiple tasks to run concurrently, making your code more responsive and efficient.
-
-With fiber-based concurrency, the Effect library can handle concurrent operations in a way that is lightweight and doesn't block the execution of other tasks. This means that you can run multiple computations simultaneously, taking advantage of the available resources and maximizing performance.
-
-On the other hand, fp-ts does not have built-in support for fiber-based concurrency. While fp-ts provides a rich set of functional programming features, it doesn't have the same level of support for concurrent computations as the Effect library.
-
-### Fiber Supervision
-
-Effect library provides supervision strategies for managing and monitoring fibers. fp-ts does not have built-in support for fiber supervision.
-
-### Retry and Retry Policies
-
-The Effect library includes built-in support for retrying computations with customizable retry policies. This feature is not available in fp-ts out of the box, and you would need to rely on external libraries to achieve similar functionality. However, it's important to note that the external libraries may not offer the same level of sophistication and fine-tuning as the built-in retry capabilities provided by the Effect library.
-
-Retry functionality allows you to automatically retry a computation or action when it fails, based on a set of predefined rules or policies. This can be particularly useful in scenarios where you are working with unreliable or unpredictable resources, such as network requests or external services.
-
-The Effect library provides a comprehensive set of retry policies that you can customize to fit your specific needs. These policies define the conditions for retrying a computation, such as the number of retries, the delay between retries, and the criteria for determining if a retry should be attempted.
-
-By leveraging the built-in retry functionality in the Effect library, you can handle transient errors or temporary failures in a more robust and resilient manner. This can help improve the overall reliability and stability of your applications, especially in scenarios where you need to interact with external systems or services.
-
-In contrast, fp-ts does not offer built-in support for retrying computations. If you require retry functionality in fp-ts, you would need to rely on external libraries, which may not provide the same level of sophistication and flexibility as the Effect library.
-
-It's worth noting that the built-in retry capabilities of the Effect library are designed to work seamlessly with its other features, such as error handling and resource management. This integration allows for a more cohesive and comprehensive approach to handling failures and retries within your computations.
-
-### Built-in Logging
-
-The Effect library comes with built-in logging capabilities. This means that you can easily incorporate logging into your applications without the need for additional libraries or dependencies. In addition, the default logger provided by Effect can be replaced with a custom logger to suit your specific logging requirements.
-
-Logging is an essential aspect of software development as it allows you to record and track important information during the execution of your code. It helps you monitor the behavior of your application, debug issues, and gather insights for analysis.
-
-With the built-in logging capabilities of the Effect library, you can easily log messages, warnings, errors, or any other relevant information at various points in your code. This can be particularly useful for tracking the flow of execution, identifying potential issues, or capturing important events during the operation of your application.
-
-On the other hand, fp-ts does not provide built-in logging capabilities. If you need logging functionality in fp-ts, you would need to rely on external libraries or implement your own logging solution from scratch. This can introduce additional complexity and dependencies into your codebase.
-
-### Built-in Scheduling
-
-The Effect library provides built-in scheduling capabilities, which allows you to manage the execution of computations over time. This feature is not available in fp-ts.
-
-In many applications, it's common to have tasks or computations that need to be executed at specific intervals or scheduled for future execution. For example, you might want to perform periodic data updates, trigger notifications, or run background processes at specific times. This is where built-in scheduling comes in handy.
-
-On the other hand, fp-ts does not have built-in scheduling capabilities. If you need to schedule tasks or manage timed computations in fp-ts, you would have to rely on external libraries or implement your own scheduling mechanisms, which can add complexity to your codebase.
-
-### Built-in Caching
-
-The Effect library provides built-in caching mechanisms, which enable you to cache the results of computations for improved performance. This feature is not available in fp-ts.
-
-In many applications, computations can be time-consuming or resource-intensive, especially when dealing with complex operations or accessing remote resources. Caching is a technique used to store the results of computations so that they can be retrieved quickly without the need to recompute them every time.
-
-With the built-in caching capabilities of the Effect library, you can easily cache the results of computations and reuse them when needed. This can significantly improve the performance of your application by avoiding redundant computations and reducing the load on external resources.
-
-### Built-in Batching
-
-The Effect library offers built-in batching capabilities, which enable you to combine multiple computations into a single batched computation. This feature is not available in fp-ts.
-
-In many scenarios, you may need to perform multiple computations that share similar inputs or dependencies. Performing these computations individually can result in inefficiencies and increased overhead. Batching is a technique that allows you to group these computations together and execute them as a single batch, improving performance and reducing unnecessary processing.
-
-### Metrics
-
-The Effect library includes built-in support for collecting and reporting metrics related to computations and system behavior. It specifically supports [OpenTelemetry Metrics](https://opentelemetry.io/docs/specs/otel/metrics/). This feature is not available in fp-ts.
-
-Metrics play a crucial role in understanding and monitoring the performance and behavior of your applications. They provide valuable insights into various aspects, such as response times, resource utilization, error rates, and more. By collecting and analyzing metrics, you can identify performance bottlenecks, optimize your code, and make informed decisions to improve your application's overall quality.
-
-### Tracing
-
-The Effect library has built-in tracing capabilities, which enable you to trace and debug the execution of your code and track the path of a request through an application. Additionally, Effect offers a dedicated [OpenTelemetry exporter](https://opentelemetry.io/docs/instrumentation/js/exporters/) for integrating with the OpenTelemetry observability framework. In contrast, fp-ts does not offer a similar tracing tool to enhance visibility into code execution.
-
-### Configuration
-
-The Effect library provides built-in support for managing and accessing configuration values within your computations. This feature is not available in fp-ts.
-
-Configuration values are an essential aspect of software development. They allow you to customize the behavior of your applications without modifying the code. Examples of configuration values include database connection strings, API endpoints, feature flags, and various settings that can vary between environments or deployments.
-
-With the Effect library's built-in support for configuration, you can easily manage and access these values within your computations. It provides convenient utilities and abstractions to load, validate, and access configuration values, ensuring that your application has the necessary settings it requires to function correctly.
-
-By leveraging the built-in configuration support in the Effect library, you can:
-
-- Load configuration values from various sources such as environment variables, configuration files, or remote configuration providers.
-- Validate and ensure that the loaded configuration values adhere to the expected format and structure.
-- Access the configuration values within your computations, allowing you to use them wherever necessary.
-
-### Immutable Data Structures
-
-The Effect library provides built-in support for immutable data structures such as `Chunk`, `HashSet`, and `HashMap`. These data structures ensure that once created, their values cannot be modified, promoting safer and more predictable code. In contrast, fp-ts does not have built-in support for such data structures and only provides modules that add additional APIs to standard data types like `Set` and `Map`. While these modules can be useful, they do not offer the same level of performance optimizations and specialized operations as the built-in immutable data structures provided by the Effect library.
-
-Immutable data structures offer several benefits, including:
-
-- Immutability: Immutable data structures cannot be changed after they are created. This property eliminates the risk of accidental modifications and enables safer concurrent programming.
-
-- Predictability: With immutable data structures, you can rely on the fact that their values won't change unexpectedly. This predictability simplifies reasoning about code behavior and reduces bugs caused by mutable state.
-
-- Sharing and Reusability: Immutable data structures can be safely shared between different parts of your program. Since they cannot be modified, you don't need to create defensive copies, resulting in more efficient memory usage and improved performance.
-
-### Stream Processing
-
-The Effect ecosystem provides built-in support for stream processing, enabling you to work with streams of data. Stream processing is a powerful concept that allows you to efficiently process and transform continuous streams of data in a reactive and asynchronous manner. However, fp-ts does not have this feature built-in and relies on external libraries like RxJS to handle stream processing.
-
-> platform/command.mdx\n\n---
-title: Command
-description: Learn how to create, run, and manage commands with custom arguments, environment variables, and input/output handling in Effect.
+> sink/creating.mdx\n\n---
+title: Creating Sinks
+description: Discover how to create and use various sinks for processing streams, including counting, summing, collecting, folding, and handling success or failure.
 sidebar:
   order: 1
 ---
 
-The `@effect/platform/Command` module provides a way to create and run commands with the specified process name and an optional list of arguments.
+In stream processing, sinks are used to consume and handle elements from a stream. Here, we'll explore various sink constructors that allow you to create sinks for specific tasks.
 
-## Creating Commands
+## Common Constructors
 
-The `Command.make` function generates a command object, which includes details such as the process name, arguments, and environment.
+### head
 
-**Example** (Defining a Command for Directory Listing)
+The `Sink.head` sink retrieves only the first element from a stream, wrapping it in `Some`. If the stream has no elements, it returns `None`.
+
+**Example** (Retrieving the First Element)
 
 ```ts twoslash
-import { Command } from "@effect/platform"
+import { Stream, Sink, Effect } from "effect"
 
-const command = Command.make("ls", "-al")
-console.log(command)
+const nonEmptyStream = Stream.make(1, 2, 3, 4)
+
+Effect.runPromise(Stream.run(nonEmptyStream, Sink.head())).then(
+  console.log
+)
 /*
-{
-  _id: '@effect/platform/Command',
-  _tag: 'StandardCommand',
-  command: 'ls',
-  args: [ '-al' ],
-  env: {},
-  cwd: { _id: 'Option', _tag: 'None' },
-  shell: false,
-  gid: { _id: 'Option', _tag: 'None' },
-  uid: { _id: 'Option', _tag: 'None' }
-}
+Output:
+{ _id: 'Option', _tag: 'Some', value: 1 }
+*/
+
+const emptyStream = Stream.empty
+
+Effect.runPromise(Stream.run(emptyStream, Sink.head())).then(console.log)
+/*
+Output:
+{ _id: 'Option', _tag: 'None' }
 */
 ```
 
-This command object does not execute until run by an executor.
+### last
 
-## Running Commands
+The `Sink.last` sink retrieves only the last element from a stream, wrapping it in `Some`. If the stream has no elements, it returns `None`.
 
-You need a `CommandExecutor` to run the command, which can capture output in various formats such as strings, lines, or streams.
-
-**Example** (Running a Command and Printing Output)
+**Example** (Retrieving the Last Element)
 
 ```ts twoslash
-import { Command } from "@effect/platform"
-import { NodeContext, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
+import { Stream, Sink, Effect } from "effect"
 
-const command = Command.make("ls", "-al")
+const nonEmptyStream = Stream.make(1, 2, 3, 4)
 
-// The program depends on a CommandExecutor
-const program = Effect.gen(function* () {
-  // Runs the command returning the output as a string
-  const output = yield* Command.string(command)
-  console.log(output)
-})
+Effect.runPromise(Stream.run(nonEmptyStream, Sink.last())).then(
+  console.log
+)
+/*
+Output:
+{ _id: 'Option', _tag: 'Some', value: 4 }
+*/
 
-// Provide the necessary CommandExecutor
-NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
+const emptyStream = Stream.empty
+
+Effect.runPromise(Stream.run(emptyStream, Sink.last())).then(console.log)
+/*
+Output:
+{ _id: 'Option', _tag: 'None' }
+*/
 ```
 
-### Output Formats
+### count
 
-You can choose different methods to handle command output:
-
-| Method        | Description                                                                              |
-| ------------- | ---------------------------------------------------------------------------------------- |
-| `string`      | Runs the command returning the output as a string (with the specified encoding)          |
-| `lines`       | Runs the command returning the output as an array of lines (with the specified encoding) |
-| `stream`      | Runs the command returning the output as a stream of `Uint8Array` chunks                 |
-| `streamLines` | Runs the command returning the output as a stream of lines (with the specified encoding) |
-
-### exitCode
-
-If you only need the exit code of a command, use `Command.exitCode`.
-
-**Example** (Getting the Exit Code)
+The `Sink.count` sink consumes all elements of the stream and counts the number of elements fed to it.
 
 ```ts twoslash
-import { Command } from "@effect/platform"
-import { NodeContext, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
+import { Stream, Sink, Effect } from "effect"
 
-const command = Command.make("ls", "-al")
+const stream = Stream.make(1, 2, 3, 4)
 
-const program = Effect.gen(function* () {
-  const exitCode = yield* Command.exitCode(command)
-  console.log(exitCode)
-})
+Effect.runPromise(Stream.run(stream, Sink.count)).then(console.log)
+// Output: 4
+```
 
-NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
+### sum
+
+The `Sink.sum` sink consumes all elements of the stream and sums incoming numeric values.
+
+```ts twoslash
+import { Stream, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 3, 4)
+
+Effect.runPromise(Stream.run(stream, Sink.sum)).then(console.log)
+// Output: 10
+```
+
+### take
+
+The `Sink.take` sink takes the specified number of values from the stream and results in a [Chunk](/docs/data-types/chunk/) data type.
+
+```ts twoslash
+import { Stream, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 3, 4)
+
+Effect.runPromise(Stream.run(stream, Sink.take(3))).then(console.log)
+/*
+Output:
+{ _id: 'Chunk', values: [ 1, 2, 3 ] }
+*/
+```
+
+### drain
+
+The `Sink.drain` sink ignores its inputs, effectively discarding them.
+
+```ts twoslash
+import { Stream, Console, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 3, 4).pipe(Stream.tap(Console.log))
+
+Effect.runPromise(Stream.run(stream, Sink.drain)).then(console.log)
+/*
+Output:
+1
+2
+3
+4
+undefined
+*/
+```
+
+### timed
+
+The `Sink.timed` sink executes the stream and measures its execution time, providing the [Duration](/docs/data-types/duration/).
+
+```ts twoslash
+import { Stream, Schedule, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 3, 4).pipe(
+  Stream.schedule(Schedule.spaced("100 millis"))
+)
+
+Effect.runPromise(Stream.run(stream, Sink.timed)).then(console.log)
+/*
+Output:
+{ _id: 'Duration', _tag: 'Millis', millis: 408 }
+*/
+```
+
+### forEach
+
+The `Sink.forEach` sink executes the provided effectful function for every element fed to it.
+
+```ts twoslash
+import { Stream, Console, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 3, 4)
+
+Effect.runPromise(Stream.run(stream, Sink.forEach(Console.log))).then(
+  console.log
+)
+/*
+Output:
+1
+2
+3
+4
+undefined
+*/
+```
+
+## Creating Sinks from Success and Failure
+
+Just as you can define streams to hold or manipulate data, you can also create sinks with specific success or failure outcomes using the `Sink.fail` and `Sink.succeed` functions.
+
+### Succeeding Sink
+
+This example creates a sink that doesn’t consume any elements from its upstream source but instead immediately succeeds with a specified numeric value:
+
+**Example** (Sink that Always Succeeds with a Value)
+
+```ts twoslash
+import { Stream, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 3, 4)
+
+Effect.runPromise(Stream.run(stream, Sink.succeed(0))).then(console.log)
 // Output: 0
 ```
 
-## Custom Environment Variables
+### Failing Sink
 
-You can customize environment variables in a command by using `Command.env`. This is useful when you need specific variables for the command's execution.
+In this example, the sink also doesn’t consume any elements from its upstream source. Instead, it fails with a specified error message of type `string`:
 
-**Example** (Setting Environment Variables)
-
-In this example, the command runs in a shell to ensure environment variables are correctly processed.
+**Example** (Sink that Always Fails with an Error Message)
 
 ```ts twoslash
-import { Command } from "@effect/platform"
-import { NodeContext, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
+import { Stream, Sink, Effect } from "effect"
 
-const command = Command.make("echo", "-n", "$MY_CUSTOM_VAR").pipe(
-  Command.env({
-    MY_CUSTOM_VAR: "Hello, this is a custom environment variable!"
-  }),
-  // Use shell to interpret variables correctly
-  // on Windows and Unix-like systems
-  Command.runInShell(true)
+const stream = Stream.make(1, 2, 3, 4)
+
+Effect.runPromiseExit(Stream.run(stream, Sink.fail("fail!"))).then(
+  console.log
 )
-
-const program = Effect.gen(function* () {
-  const output = yield* Command.string(command)
-  console.log(output)
-})
-
-NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
-// Output: Hello, this is a custom environment variable!
+/*
+Output:
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: { _id: 'Cause', _tag: 'Fail', failure: 'fail!' }
+}
+*/
 ```
 
-## Feeding Input to a Command
+## Collecting
 
-You can send input directly to a command's standard input using the `Command.feed` function.
+### Collecting All Elements
 
-**Example** (Sending Input to a Command's Standard Input)
+To gather all elements from a data stream into a [Chunk](/docs/data-types/chunk/), use the `Sink.collectAll` sink.
+
+The final output is a chunk containing all elements from the stream, in the order they were emitted.
+
+**Example** (Collecting All Stream Elements)
 
 ```ts twoslash
-import { Command } from "@effect/platform"
-import { NodeContext, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
+import { Stream, Sink, Effect } from "effect"
 
-const command = Command.make("cat").pipe(Command.feed("Hello"))
+const stream = Stream.make(1, 2, 3, 4)
 
-const program = Effect.gen(function* () {
-  console.log(yield* Command.string(command))
-})
-
-NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
-// Output: Hello
+Effect.runPromise(Stream.run(stream, Sink.collectAll())).then(console.log)
+/*
+Output:
+{ _id: 'Chunk', values: [ 1, 2, 3, 4 ] }
+*/
 ```
 
-## Fetching Process Details
+### Collecting a Specified Number
 
-You can access details about a running process, such as `exitCode`, `stdout`, and `stderr`.
+To collect a fixed number of elements from a stream into a [Chunk](/docs/data-types/chunk/), use `Sink.collectAllN`. This sink stops collecting once it reaches the specified limit.
 
-**Example** (Accessing Exit Code and Streams from a Running Process)
+**Example** (Collecting a Limited Number of Elements)
 
 ```ts twoslash
-import { Command } from "@effect/platform"
-import { NodeContext, NodeRuntime } from "@effect/platform-node"
-import { Effect, Stream, String, pipe } from "effect"
+import { Stream, Sink, Effect } from "effect"
 
-// Helper function to collect stream output as a string
-const runString = <E, R>(
-  stream: Stream.Stream<Uint8Array, E, R>
-): Effect.Effect<string, E, R> =>
-  stream.pipe(
-    Stream.decodeText(),
-    Stream.runFold(String.empty, String.concat)
+const stream = Stream.make(1, 2, 3, 4, 5)
+
+Effect.runPromise(
+  Stream.run(
+    stream,
+    // Collect the first 3 elements into a Chunk
+    Sink.collectAllN(3)
   )
+).then(console.log)
+/*
+Output:
+{ _id: 'Chunk', values: [ 1, 2, 3 ] }
+*/
+```
 
-const program = Effect.gen(function* () {
-  const command = Command.make("ls")
+### Collecting While Meeting a Condition
 
-  const [exitCode, stdout, stderr] = yield* pipe(
-    // Start running the command and return a handle to the running process
-    Command.start(command),
-    Effect.flatMap((process) =>
-      Effect.all(
-        [
-          // Waits for the process to exit and returns
-          // the ExitCode of the command that was run
-          process.exitCode,
-          // The standard output stream of the process
-          runString(process.stdout),
-          // The standard error stream of the process
-          runString(process.stderr)
-        ],
-        { concurrency: 3 }
-      )
+To gather elements from a stream while they satisfy a specific condition, use `Sink.collectAllWhile`. This sink collects elements until the provided predicate returns `false`.
+
+**Example** (Collecting Elements Until a Condition Fails)
+
+```ts twoslash
+import { Stream, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 0, 4, 0, 6, 7)
+
+Effect.runPromise(
+  Stream.run(
+    stream,
+    // Collect elements while they are not equal to 0
+    Sink.collectAllWhile((n) => n !== 0)
+  )
+).then(console.log)
+/*
+Output:
+{ _id: 'Chunk', values: [ 1, 2 ] }
+*/
+```
+
+### Collecting into a HashSet
+
+To accumulate stream elements into a `HashSet`, use `Sink.collectAllToSet()`. This ensures that each element appears only once in the final set.
+
+**Example** (Collecting Unique Elements into a HashSet)
+
+```ts twoslash
+import { Stream, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 2, 3, 4, 4)
+
+Effect.runPromise(Stream.run(stream, Sink.collectAllToSet())).then(
+  console.log
+)
+/*
+Output:
+{ _id: 'HashSet', values: [ 1, 2, 3, 4 ] }
+*/
+```
+
+### Collecting into HashSets of a Specific Size
+
+For controlled collection into a `HashSet` with a specified maximum size, use `Sink.collectAllToSetN`. This sink gathers unique elements up to the given limit.
+
+**Example** (Collecting Unique Elements with a Set Size Limit)
+
+```ts twoslash
+import { Stream, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 2, 3, 4, 4)
+
+Effect.runPromise(
+  Stream.run(
+    stream,
+    // Collect unique elements, limiting the set size to 3
+    Sink.collectAllToSetN(3)
+  )
+).then(console.log)
+/*
+Output:
+{ _id: 'HashSet', values: [ 1, 2, 3 ] }
+*/
+```
+
+### Collecting into a HashMap
+
+For more complex collection scenarios, `Sink.collectAllToMap` lets you gather elements into a `HashMap<K, A>` with a specified keying and merging strategy.
+This sink requires both a key function to define each element's grouping and a merge function to combine values sharing the same key.
+
+**Example** (Grouping and Merging Stream Elements in a HashMap)
+
+In this example, we use `(n) => n % 3` to determine map keys and `(a, b) => a + b` to merge elements with the same key:
+
+```ts twoslash
+import { Stream, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 3, 2, 3, 1, 5, 1)
+
+Effect.runPromise(
+  Stream.run(
+    stream,
+    Sink.collectAllToMap(
+      (n) => n % 3, // Key function to group by element value
+      (a, b) => a + b // Merge function to sum values with the same key
     )
   )
-  console.log({ exitCode, stdout, stderr })
-})
-
-NodeRuntime.runMain(
-  Effect.scoped(program).pipe(Effect.provide(NodeContext.layer))
-)
-```
-
-## Streaming stdout to process.stdout
-
-To stream a command's `stdout` directly to `process.stdout`, you can use the following approach:
-
-**Example** (Streaming Command Output Directly to Standard Output)
-
-```ts twoslash
-import { Command } from "@effect/platform"
-import { NodeContext, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
-
-// Create a command to run `cat` on a file and inherit stdout
-const program = Command.make("cat", "./some-file.txt").pipe(
-  Command.stdout("inherit"), // Stream stdout to process.stdout
-  Command.exitCode // Get the exit code
-)
-
-NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
-```
-
-> additional-resources/effect-vs-promise.mdx\n\n---
-title: Effect vs Promise
-description: Comparison of Effect and Promise, covering features like type safety, concurrency, and error handling.
-sidebar:
-  order: 5
----
-
-import { Tabs, TabItem } from "@astrojs/starlight/components"
-
-In this guide, we will explore the differences between `Promise` and `Effect`, two approaches to handling asynchronous operations in TypeScript. We'll discuss their type safety, creation, chaining, and concurrency, providing examples to help you understand their usage.
-
-## Comparing Effects and Promises: Key Distinctions
-
-- **Evaluation Strategy:** Promises are eagerly evaluated, whereas effects are lazily evaluated.
-- **Execution Mode:** Promises are one-shot, executing once, while effects are multi-shot, repeatable.
-- **Interruption Handling and Automatic Propagation:** Promises lack built-in interruption handling, posing challenges in managing interruptions, and don't automatically propagate interruptions, requiring manual abort controller management. In contrast, effects come with interruption handling capabilities and automatically compose interruption, simplifying management locally on smaller computations without the need for high-level orchestration.
-- **Structured Concurrency:** Effects offer structured concurrency built-in, which is challenging to achieve with Promises.
-- **Error Reporting (Type Safety):** Promises don't inherently provide detailed error reporting at the type level, whereas effects do, offering type-safe insight into error cases.
-- **Runtime Behavior:** The Effect runtime aims to remain synchronous as long as possible, transitioning into asynchronous mode only when necessary due to computation requirements or main thread starvation.
-
-## Type safety
-
-Let's start by comparing the types of `Promise` and `Effect`. The type parameter `A` represents the resolved value of the operation:
-
-<Tabs syncKey="effect-vs-promise">
-
-<TabItem label="Promise">
-
-```ts showLineNumbers=false
-Promise<A>
-```
-
-</TabItem>
-
-<TabItem label="Effect">
-
-```ts showLineNumbers=false
-Effect<A, Error, Context>
-```
-
-</TabItem>
-
-</Tabs>
-
-Here's what sets `Effect` apart:
-
-- It allows you to track the types of errors statically through the type parameter `Error`. For more information about error management in `Effect`, see [Expected Errors](/docs/error-management/expected-errors/).
-- It allows you to track the types of required dependencies statically through the type parameter `Context`. For more information about context management in `Effect`, see [Managing Services](/docs/requirements-management/services/).
-
-## Creating
-
-### Success
-
-Let's compare creating a successful operation using `Promise` and `Effect`:
-
-<Tabs syncKey="effect-vs-promise">
-
-<TabItem label="Promise">
-
-```ts twoslash
-const success = Promise.resolve(2)
-```
-
-</TabItem>
-
-<TabItem label="Effect">
-
-```ts twoslash
-import { Effect } from "effect"
-
-const success = Effect.succeed(2)
-```
-
-</TabItem>
-
-</Tabs>
-
-### Failure
-
-Now, let's see how to handle failures with `Promise` and `Effect`:
-
-<Tabs syncKey="effect-vs-promise">
-
-<TabItem label="Promise">
-
-```ts twoslash
-const failure = Promise.reject("Uh oh!")
-```
-
-</TabItem>
-
-<TabItem label="Effect">
-
-```ts twoslash
-import { Effect } from "effect"
-
-const failure = Effect.fail("Uh oh!")
-```
-
-</TabItem>
-
-</Tabs>
-
-### Constructor
-
-Creating operations with custom logic:
-
-<Tabs syncKey="effect-vs-promise">
-
-<TabItem label="Promise">
-
-```ts twoslash
-const task = new Promise<number>((resolve, reject) => {
-  setTimeout(() => {
-    Math.random() > 0.5 ? resolve(2) : reject("Uh oh!")
-  }, 300)
-})
-```
-
-</TabItem>
-
-<TabItem label="Effect">
-
-```ts twoslash
-import { Effect } from "effect"
-
-const task = Effect.gen(function* () {
-  yield* Effect.sleep("300 millis")
-  return Math.random() > 0.5 ? 2 : yield* Effect.fail("Uh oh!")
-})
-```
-
-</TabItem>
-
-</Tabs>
-
-## Thenable
-
-Mapping the result of an operation:
-
-### map
-
-<Tabs syncKey="effect-vs-promise">
-
-<TabItem label="Promise">
-
-```ts twoslash
-const mapped = Promise.resolve("Hello").then((s) => s.length)
-```
-
-</TabItem>
-
-<TabItem label="Effect">
-
-```ts twoslash
-import { Effect } from "effect"
-
-const mapped = Effect.succeed("Hello").pipe(
-  Effect.map((s) => s.length)
-  // or Effect.andThen((s) => s.length)
-)
-```
-
-</TabItem>
-
-</Tabs>
-
-### flatMap
-
-Chaining multiple operations:
-
-<Tabs syncKey="effect-vs-promise">
-
-<TabItem label="Promise">
-
-```ts twoslash
-const flatMapped = Promise.resolve("Hello").then((s) =>
-  Promise.resolve(s.length)
-)
-```
-
-</TabItem>
-
-<TabItem label="Effect">
-
-```ts twoslash
-import { Effect } from "effect"
-
-const flatMapped = Effect.succeed("Hello").pipe(
-  Effect.flatMap((s) => Effect.succeed(s.length))
-  // or Effect.andThen((s) => Effect.succeed(s.length))
-)
-```
-
-</TabItem>
-
-</Tabs>
-
-## Comparing Effect.gen with async/await
-
-If you are familiar with `async`/`await`, you may notice that the flow of writing code is similar.
-
-Let's compare the two approaches:
-
-<Tabs syncKey="effect-vs-promise">
-
-<TabItem label="Promise">
-
-```ts twoslash
-const increment = (x: number) => x + 1
-
-const divide = (a: number, b: number): Promise<number> =>
-  b === 0
-    ? Promise.reject(new Error("Cannot divide by zero"))
-    : Promise.resolve(a / b)
-
-const task1 = Promise.resolve(10)
-
-const task2 = Promise.resolve(2)
-
-const program = async function () {
-  const a = await task1
-  const b = await task2
-  const n1 = await divide(a, b)
-  const n2 = increment(n1)
-  return `Result is: ${n2}`
-}
-
-program().then(console.log) // Output: "Result is: 6"
-```
-
-</TabItem>
-
-<TabItem label="Effect">
-
-```ts twoslash
-import { Effect } from "effect"
-
-const increment = (x: number) => x + 1
-
-const divide = (a: number, b: number): Effect.Effect<number, Error> =>
-  b === 0
-    ? Effect.fail(new Error("Cannot divide by zero"))
-    : Effect.succeed(a / b)
-
-const task1 = Effect.promise(() => Promise.resolve(10))
-
-const task2 = Effect.promise(() => Promise.resolve(2))
-
-const program = Effect.gen(function* () {
-  const a = yield* task1
-  const b = yield* task2
-  const n1 = yield* divide(a, b)
-  const n2 = increment(n1)
-  return `Result is: ${n2}`
-})
-
-Effect.runPromise(program).then(console.log)
-// Output: "Result is: 6"
-```
-
-</TabItem>
-
-</Tabs>
-
-It's important to note that although the code appears similar, the two programs are not identical. The purpose of comparing them side by side is just to highlight the resemblance in how they are written.
-
-## Concurrency
-
-### Promise.all()
-
-<Tabs syncKey="effect-vs-promise">
-
-<TabItem label="Promise">
-
-```ts twoslash
-const task1 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task1...")
-  setTimeout(() => {
-    console.log("task1 done")
-    resolve(1)
-  }, 100)
-})
-
-const task2 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task2...")
-  setTimeout(() => {
-    console.log("task2 done")
-    reject("Uh oh!")
-  }, 200)
-})
-
-const task3 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task3...")
-  setTimeout(() => {
-    console.log("task3 done")
-    resolve(3)
-  }, 300)
-})
-
-const program = Promise.all([task1, task2, task3])
-
-program.then(console.log, console.error)
+).then(console.log)
 /*
 Output:
-Executing task1...
-Executing task2...
-Executing task3...
-task1 done
-task2 done
-Uh oh!
-task3 done
+{ _id: 'HashMap', values: [ [ 0, 6 ], [ 1, 3 ], [ 2, 7 ] ] }
 */
 ```
 
-</TabItem>
+### Collecting into a HashMap with Limited Keys
 
-<TabItem label="Effect">
+To accumulate elements into a `HashMap` with a maximum number of keys, use `Sink.collectAllToMapN`. This sink collects elements until it reaches the specified key limit, requiring a key function to define the grouping of each element and a merge function to combine values with the same key.
 
-```ts twoslash
-import { Effect } from "effect"
-
-const task1 = Effect.gen(function* () {
-  console.log("Executing task1...")
-  yield* Effect.sleep("100 millis")
-  console.log("task1 done")
-  return 1
-})
-
-const task2 = Effect.gen(function* () {
-  console.log("Executing task2...")
-  yield* Effect.sleep("200 millis")
-  console.log("task2 done")
-  return yield* Effect.fail("Uh oh!")
-})
-
-const task3 = Effect.gen(function* () {
-  console.log("Executing task3...")
-  yield* Effect.sleep("300 millis")
-  console.log("task3 done")
-  return 3
-})
-
-const program = Effect.all([task1, task2, task3], {
-  concurrency: "unbounded"
-})
-
-Effect.runPromise(program).then(console.log, console.error)
-/*
-Output:
-Executing task1...
-Executing task2...
-Executing task3...
-task1 done
-task2 done
-(FiberFailure) Error: Uh oh!
-*/
-```
-
-</TabItem>
-
-</Tabs>
-
-### Promise.allSettled()
-
-<Tabs syncKey="effect-vs-promise">
-
-<TabItem label="Promise">
-
-```ts
-const task1 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task1...")
-  setTimeout(() => {
-    console.log("task1 done")
-    resolve(1)
-  }, 100)
-})
-
-const task2 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task2...")
-  setTimeout(() => {
-    console.log("task2 done")
-    reject("Uh oh!")
-  }, 200)
-})
-
-const task3 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task3...")
-  setTimeout(() => {
-    console.log("task3 done")
-    resolve(3)
-  }, 300)
-})
-
-const program = Promise.allSettled([task1, task2, task3])
-
-program.then(console.log, console.error)
-/*
-Output:
-Executing task1...
-Executing task2...
-Executing task3...
-task1 done
-task2 done
-task3 done
-[
-  { status: 'fulfilled', value: 1 },
-  { status: 'rejected', reason: 'Uh oh!' },
-  { status: 'fulfilled', value: 3 }
-]
-*/
-```
-
-</TabItem>
-
-<TabItem label="Effect">
+**Example** (Limiting Collected Keys in a HashMap)
 
 ```ts twoslash
-import { Effect } from "effect"
+import { Stream, Sink, Effect } from "effect"
 
-const task1 = Effect.gen(function* () {
-  console.log("Executing task1...")
-  yield* Effect.sleep("100 millis")
-  console.log("task1 done")
-  return 1
-})
+const stream = Stream.make(1, 3, 2, 3, 1, 5, 1)
 
-const task2 = Effect.gen(function* () {
-  console.log("Executing task2...")
-  yield* Effect.sleep("200 millis")
-  console.log("task2 done")
-  return yield* Effect.fail("Uh oh!")
-})
-
-const task3 = Effect.gen(function* () {
-  console.log("Executing task3...")
-  yield* Effect.sleep("300 millis")
-  console.log("task3 done")
-  return 3
-})
-
-const program = Effect.forEach(
-  [task1, task2, task3],
-  (task) => Effect.either(task), // or Effect.exit
-  {
-    concurrency: "unbounded"
-  }
-)
-
-Effect.runPromise(program).then(console.log, console.error)
-/*
-Output:
-Executing task1...
-Executing task2...
-Executing task3...
-task1 done
-task2 done
-task3 done
-[
-  {
-    _id: "Either",
-    _tag: "Right",
-    right: 1
-  }, {
-    _id: "Either",
-    _tag: "Left",
-    left: "Uh oh!"
-  }, {
-    _id: "Either",
-    _tag: "Right",
-    right: 3
-  }
-]
-*/
-```
-
-</TabItem>
-
-</Tabs>
-
-### Promise.any()
-
-<Tabs syncKey="effect-vs-promise">
-
-<TabItem label="Promise">
-
-```ts
-const task1 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task1...")
-  setTimeout(() => {
-    console.log("task1 done")
-    reject("Something went wrong!")
-  }, 100)
-})
-
-const task2 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task2...")
-  setTimeout(() => {
-    console.log("task2 done")
-    resolve(2)
-  }, 200)
-})
-
-const task3 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task3...")
-  setTimeout(() => {
-    console.log("task3 done")
-    reject("Uh oh!")
-  }, 300)
-})
-
-const program = Promise.any([task1, task2, task3])
-
-program.then(console.log, console.error)
-/*
-Output:
-Executing task1...
-Executing task2...
-Executing task3...
-task1 done
-task2 done
-2
-task3 done
-*/
-```
-
-</TabItem>
-
-<TabItem label="Effect">
-
-```ts twoslash
-import { Effect } from "effect"
-
-const task1 = Effect.gen(function* () {
-  console.log("Executing task1...")
-  yield* Effect.sleep("100 millis")
-  console.log("task1 done")
-  return yield* Effect.fail("Something went wrong!")
-})
-
-const task2 = Effect.gen(function* () {
-  console.log("Executing task2...")
-  yield* Effect.sleep("200 millis")
-  console.log("task2 done")
-  return 2
-})
-
-const task3 = Effect.gen(function* () {
-  console.log("Executing task3...")
-  yield* Effect.sleep("300 millis")
-  console.log("task3 done")
-  return yield* Effect.fail("Uh oh!")
-})
-
-const program = Effect.raceAll([task1, task2, task3])
-
-Effect.runPromise(program).then(console.log, console.error)
-/*
-Output:
-Executing task1...
-Executing task2...
-Executing task3...
-task1 done
-task2 done
-2
-*/
-```
-
-</TabItem>
-
-</Tabs>
-
-### Promise.race()
-
-<Tabs syncKey="effect-vs-promise">
-
-<TabItem label="Promise">
-
-```ts twoslash
-const task1 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task1...")
-  setTimeout(() => {
-    console.log("task1 done")
-    reject("Something went wrong!")
-  }, 100)
-})
-
-const task2 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task2...")
-  setTimeout(() => {
-    console.log("task2 done")
-    reject("Uh oh!")
-  }, 200)
-})
-
-const task3 = new Promise<number>((resolve, reject) => {
-  console.log("Executing task3...")
-  setTimeout(() => {
-    console.log("task3 done")
-    resolve(3)
-  }, 300)
-})
-
-const program = Promise.race([task1, task2, task3])
-
-program.then(console.log, console.error)
-/*
-Output:
-Executing task1...
-Executing task2...
-Executing task3...
-task1 done
-Something went wrong!
-task2 done
-task3 done
-*/
-```
-
-</TabItem>
-
-<TabItem label="Effect">
-
-```ts twoslash
-import { Effect } from "effect"
-
-const task1 = Effect.gen(function* () {
-  console.log("Executing task1...")
-  yield* Effect.sleep("100 millis")
-  console.log("task1 done")
-  return yield* Effect.fail("Something went wrong!")
-})
-
-const task2 = Effect.gen(function* () {
-  console.log("Executing task2...")
-  yield* Effect.sleep("200 millis")
-  console.log("task2 done")
-  return yield* Effect.fail("Uh oh!")
-})
-
-const task3 = Effect.gen(function* () {
-  console.log("Executing task3...")
-  yield* Effect.sleep("300 millis")
-  console.log("task3 done")
-  return 3
-})
-
-const program = Effect.raceAll([task1, task2, task3].map(Effect.either)) // or Effect.exit
-
-Effect.runPromise(program).then(console.log, console.error)
-/*
-Output:
-Executing task1...
-Executing task2...
-Executing task3...
-task1 done
-{
-  _id: "Either",
-  _tag: "Left",
-  left: "Something went wrong!"
-}
-*/
-```
-
-</TabItem>
-
-</Tabs>
-
-## FAQ
-
-**Question**. What is the equivalent of starting a promise without immediately waiting for it in Effects?
-
-```ts {10,16} twoslash
-const task = (delay: number, name: string) =>
-  new Promise((resolve) =>
-    setTimeout(() => {
-      console.log(`${name} done`)
-      return resolve(name)
-    }, delay)
+Effect.runPromise(
+  Stream.run(
+    stream,
+    Sink.collectAllToMapN(
+      3, // Maximum of 3 keys
+      (n) => n, // Key function to group by element value
+      (a, b) => a + b // Merge function to sum values with the same key
+    )
   )
-
-export async function program() {
-  const r0 = task(2_000, "long running task")
-  const r1 = await task(200, "task 2")
-  const r2 = await task(100, "task 3")
-  return {
-    r1,
-    r2,
-    r0: await r0
-  }
-}
-
-program().then(console.log)
+).then(console.log)
 /*
 Output:
-task 2 done
-task 3 done
-long running task done
-{ r1: 'task 2', r2: 'task 3', r0: 'long running promise' }
+{ _id: 'HashMap', values: [ [ 1, 2 ], [ 2, 2 ], [ 3, 6 ] ] }
 */
 ```
 
-**Answer:** You can achieve this by utilizing `Effect.fork` and `Fiber.join`.
+## Folding
 
-```ts {11,17} twoslash
-import { Effect, Fiber } from "effect"
+### Folding Left
 
-const task = (delay: number, name: string) =>
-  Effect.gen(function* () {
-    yield* Effect.sleep(delay)
-    console.log(`${name} done`)
-    return name
-  })
+If you want to reduce a stream into a single cumulative value by applying an operation to each element in sequence, you can use the `Sink.foldLeft` function.
 
-const program = Effect.gen(function* () {
-  const r0 = yield* Effect.fork(task(2_000, "long running task"))
-  const r1 = yield* task(200, "task 2")
-  const r2 = yield* task(100, "task 3")
-  return {
-    r1,
-    r2,
-    r0: yield* Fiber.join(r0)
-  }
-})
+**Example** (Summing Elements in a Stream Using Fold Left)
 
-Effect.runPromise(program).then(console.log)
+```ts twoslash
+import { Stream, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 3, 4)
+
+Effect.runPromise(
+  Stream.run(
+    stream,
+    // Use foldLeft to sequentially add each element, starting with 0
+    Sink.foldLeft(0, (a, b) => a + b)
+  )
+).then(console.log)
+// Output: 10
+```
+
+### Folding with Termination
+
+Sometimes, you may want to fold elements in a stream but stop the process once a specific condition is met. This is known as "short-circuiting." You can accomplish this with the `Sink.fold` function, which lets you define a termination condition.
+
+**Example** (Folding with a Condition to Stop Early)
+
+```ts twoslash
+import { Stream, Sink, Effect } from "effect"
+
+const stream = Stream.iterate(0, (n) => n + 1)
+
+Effect.runPromise(
+  Stream.run(
+    stream,
+    Sink.fold(
+      0, // Initial value
+      (sum) => sum <= 10, // Termination condition
+      (a, b) => a + b // Folding operation
+    )
+  )
+).then(console.log)
+// Output: 15
+```
+
+### Folding Until a Limit
+
+To accumulate elements until a specific count is reached, use `Sink.foldUntil`. This sink folds elements up to the specified limit and then stops.
+
+**Example** (Accumulating a Set Number of Elements)
+
+```ts twoslash
+import { Stream, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+
+Effect.runPromise(
+  Stream.run(
+    stream,
+    // Fold elements, stopping after accumulating 3 values
+    Sink.foldUntil(0, 3, (a, b) => a + b)
+  )
+).then(console.log)
+// Output: 6
+```
+
+### Folding with Weighted Elements
+
+In some scenarios, you may want to fold elements based on a defined "weight" or "cost," accumulating elements until a specified maximum cost is reached. You can accomplish this with `Sink.foldWeighted`.
+
+**Example** (Accumulating Elements Based on Weight)
+
+In the example below, each element has a weight of `1`, and the folding resets when the accumulated weight hits `3`.
+
+```ts twoslash
+import { Stream, Sink, Chunk, Effect } from "effect"
+
+const stream = Stream.make(3, 2, 4, 1, 5, 6, 2, 1, 3, 5, 6).pipe(
+  Stream.transduce(
+    Sink.foldWeighted({
+      initial: Chunk.empty<number>(), // Initial empty Chunk
+      maxCost: 3, // Maximum accumulated cost
+      cost: () => 1, // Each element has a weight of 1
+      body: (acc, el) => Chunk.append(acc, el) // Append element to the Chunk
+    })
+  )
+)
+
+Effect.runPromise(Stream.runCollect(stream)).then((chunk) =>
+  console.log("%o", chunk)
+)
 /*
 Output:
-task 2 done
-task 3 done
-long running task done
-{ r1: 'task 2', r2: 'task 3', r0: 'long running promise' }
+{
+  _id: 'Chunk',
+  values: [
+    { _id: 'Chunk', values: [ 3, 2, 4, [length]: 3 ] },
+    { _id: 'Chunk', values: [ 1, 5, 6, [length]: 3 ] },
+    { _id: 'Chunk', values: [ 2, 1, 3, [length]: 3 ] },
+    { _id: 'Chunk', values: [ 5, 6, [length]: 2 ] },
+    [length]: 4
+  ]
+}
 */
 ```
 
-> platform/introduction.mdx\n\n---
-title: Introduction to Effect Platform
-description: Build cross-platform applications with unified abstractions for Node.js, Deno, Bun, and browsers using @effect/platform.
+> sink/operations.mdx\n\n---
+title: Sink Operations
+description: Explore operations to transform, filter, and adapt sinks, enabling custom input-output handling and element filtering in stream processing.
 sidebar:
-  label: Introduction
-  order: 0
----
-
-import {
-  Aside,
-  Tabs,
-  TabItem,
-  Badge
-} from "@astrojs/starlight/components"
-
-`@effect/platform` is a library for building platform-independent abstractions in environments such as Node.js, Deno, Bun, and browsers.
-
-With `@effect/platform`, you can integrate abstract services like [FileSystem](/docs/platform/file-system/) or [Terminal](/docs/platform/terminal/) into your program.
-When assembling your final application, you can provide specific [layers](/docs/requirements-management/layers/) for the target platform using the corresponding packages:
-
-- `@effect/platform-node` for Node.js or Deno
-- `@effect/platform-bun` for Bun
-- `@effect/platform-browser` for browsers
-
-### Stable Modules
-
-The following modules are stable and their documentation is available on this website:
-
-| Module                                           | Description                                       | Status                                    |
-| ------------------------------------------------ | ------------------------------------------------- | ----------------------------------------- |
-| [Command](/docs/platform/command/)               | Provides a way to interact with the command line. | <Badge text="Stable" variant="success" /> |
-| [FileSystem](/docs/platform/file-system/)        | A module for file system operations.              | <Badge text="Stable" variant="success" /> |
-| [KeyValueStore](/docs/platform/key-value-store/) | Manages key-value pairs for data storage.         | <Badge text="Stable" variant="success" /> |
-| [Path](/docs/platform/path/)                     | Utilities for working with file paths.            | <Badge text="Stable" variant="success" /> |
-| [PlatformLogger](/docs/platform/platformlogger/) | Log messages to a file using the FileSystem APIs. | <Badge text="Stable" variant="success" /> |
-| [Terminal](/docs/platform/terminal/)             | Tools for terminal interaction.                   | <Badge text="Stable" variant="success" /> |
-
-### Unstable Modules
-
-Some modules in `@effect/platform` are still in development or marked as experimental.
-These features are subject to change.
-
-| Module                                                                                               | Description                                     | Status                                      |
-| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------- |
-| [Http API](https://github.com/Effect-TS/effect/blob/main/packages/platform/README.md#http-api)       | Provide a declarative way to define HTTP APIs.  | <Badge text="Unstable" variant="caution" /> |
-| [Http Client](https://github.com/Effect-TS/effect/blob/main/packages/platform/README.md#http-client) | A client for making HTTP requests.              | <Badge text="Unstable" variant="caution" /> |
-| [Http Server](https://github.com/Effect-TS/effect/blob/main/packages/platform/README.md#http-server) | A server for handling HTTP requests.            | <Badge text="Unstable" variant="caution" /> |
-| [Socket](https://effect-ts.github.io/effect/platform/Socket.ts.html)                                 | A module for socket-based communication.        | <Badge text="Unstable" variant="caution" /> |
-| [Worker](https://effect-ts.github.io/effect/platform/Worker.ts.html)                                 | A module for running tasks in separate workers. | <Badge text="Unstable" variant="caution" /> |
-
-For the most up-to-date documentation and details, please refer to the official [README](https://github.com/Effect-TS/effect/blob/main/packages/platform/README.md) of the package.
-
-## Installation
-
-To install the **beta** version:
-
-<Tabs syncKey="package-manager">
-
-<TabItem label="npm" icon="seti:npm">
-
-```sh showLineNumbers=false
-npm install @effect/platform
-```
-
-</TabItem>
-
-<TabItem label="pnpm" icon="pnpm">
-
-```sh showLineNumbers=false
-pnpm add @effect/platform
-```
-
-</TabItem>
-
-<TabItem label="Yarn" icon="yarn">
-
-```sh showLineNumbers=false
-yarn add @effect/platform
-```
-
-</TabItem>
-
-<TabItem label="Bun" icon="bun">
-
-```sh showLineNumbers=false
-bun add @effect/platform
-```
-
-</TabItem>
-
-<TabItem label="Deno" icon="deno">
-
-```sh showLineNumbers=false
-deno add npm:@effect/platform
-```
-
-</TabItem>
-
-</Tabs>
-
-## Getting Started with Cross-Platform Programming
-
-Here's a basic example using the `Path` module to create a file path, which can run across different environments:
-
-**Example** (Cross-Platform Path Handling)
-
-```ts twoslash title="index.ts"
-import { Path } from "@effect/platform"
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  // Access the Path service
-  const path = yield* Path.Path
-
-  // Join parts of a path to create a complete file path
-  const mypath = path.join("tmp", "file.txt")
-
-  console.log(mypath)
-})
-```
-
-### Running the Program in Node.js or Deno
-
-First, install the Node.js-specific package:
-
-<Tabs syncKey="package-manager">
-
-<TabItem label="npm" icon="seti:npm">
-
-```sh showLineNumbers=false
-npm install @effect/platform-node
-```
-
-</TabItem>
-
-<TabItem label="pnpm" icon="pnpm">
-
-```sh showLineNumbers=false
-pnpm add @effect/platform-node
-```
-
-</TabItem>
-
-<TabItem label="Yarn" icon="yarn">
-
-```sh showLineNumbers=false
-yarn add @effect/platform-node
-```
-
-</TabItem>
-
-<TabItem label="Deno" icon="deno">
-
-```sh showLineNumbers=false
-deno add npm:@effect/platform-node
-```
-
-</TabItem>
-
-</Tabs>
-
-Update the program to load the Node.js-specific context:
-
-**Example** (Providing Node.js Context)
-
-```ts twoslash title="index.ts" ins={3,15}
-import { Path } from "@effect/platform"
-import { Effect } from "effect"
-import { NodeContext, NodeRuntime } from "@effect/platform-node"
-
-const program = Effect.gen(function* () {
-  // Access the Path service
-  const path = yield* Path.Path
-
-  // Join parts of a path to create a complete file path
-  const mypath = path.join("tmp", "file.txt")
-
-  console.log(mypath)
-})
-
-NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
-```
-
-Finally, run the program in Node.js using `tsx`, or directly in Deno:
-
-<Tabs syncKey="package-manager">
-
-<TabItem label="npm" icon="seti:npm">
-
-```sh showLineNumbers=false
-npx tsx index.ts
-# Output: tmp/file.txt
-```
-
-</TabItem>
-
-<TabItem label="pnpm" icon="pnpm">
-
-```sh showLineNumbers=false
-pnpm dlx tsx index.ts
-# Output: tmp/file.txt
-```
-
-</TabItem>
-
-<TabItem label="Yarn" icon="seti:yarn">
-
-```sh showLineNumbers=false
-yarn dlx tsx index.ts
-# Output: tmp/file.txt
-```
-
-</TabItem>
-
-<TabItem label="Deno" icon="deno">
-
-```sh showLineNumbers=false
-deno run index.ts
-# Output: tmp/file.txt
-
-# or
-
-deno run -RE index.ts
-# Output: tmp/file.txt
-# (granting required Read and Environment permissions without being prompted)
-```
-
-</TabItem>
-
-</Tabs>
-
-### Running the Program in Bun
-
-To run the same program in Bun, first install the Bun-specific package:
-
-```sh showLineNumbers=false
-bun add @effect/platform-bun
-```
-
-Update the program to use the Bun-specific context:
-
-**Example** (Providing Bun Context)
-
-```ts twoslash title="index.ts" ins={3,15}
-import { Path } from "@effect/platform"
-import { Effect } from "effect"
-import { BunContext, BunRuntime } from "@effect/platform-bun"
-
-const program = Effect.gen(function* () {
-  // Access the Path service
-  const path = yield* Path.Path
-
-  // Join parts of a path to create a complete file path
-  const mypath = path.join("tmp", "file.txt")
-
-  console.log(mypath)
-})
-
-BunRuntime.runMain(program.pipe(Effect.provide(BunContext.layer)))
-```
-
-Run the program in Bun:
-
-```sh showLineNumbers=false
-bun index.ts
-tmp/file.txt
-```
-
-> additional-resources/coming-from-zio.mdx\n\n---
-title: Coming From ZIO
-description: Key differences between Effect and ZIO.
-sidebar:
-  order: 3
----
-
-If you are coming to Effect from ZIO, there are a few differences to be aware of.
-
-## Environment
-
-In Effect, we represent the environment required to run an effect workflow as a **union** of services:
-
-**Example** (Defining the Environment with a Union of Services)
-
-```ts twoslash "Console | Logger"
-import { Effect } from "effect"
-
-interface IOError {
-  readonly _tag: "IOError"
-}
-
-interface HttpError {
-  readonly _tag: "HttpError"
-}
-
-interface Console {
-  readonly log: (msg: string) => void
-}
-
-interface Logger {
-  readonly log: (msg: string) => void
-}
-
-type Response = Record<string, string>
-
-// `R` is a union of `Console` and `Logger`
-type Http = Effect.Effect<Response, IOError | HttpError, Console | Logger>
-```
-
-This may be confusing to folks coming from ZIO, where the environment is represented as an **intersection** of services:
-
-```scala showLineNumbers=false
-type Http = ZIO[Console with Logger, IOError, Response]
-```
-
-## Rationale
-
-The rationale for using a union to represent the environment required by an `Effect` workflow boils down to our desire to remove `Has` as a wrapper for services in the environment (similar to what was achieved in ZIO 2.0).
-
-To be able to remove `Has` from Effect, we had to think a bit more structurally given that TypeScript is a structural type system. In TypeScript, if you have a type `A & B` where there is a structural conflict between `A` and `B`, the type `A & B` will reduce to `never`.
-
-**Example** (Intersection Type Conflict)
-
-```ts twoslash
-interface A {
-  readonly prop: string
-}
-
-interface B {
-  readonly prop: number
-}
-
-const ab: A & B = {
-  // @ts-expect-error
-  prop: ""
-}
-/*
-Type 'string' is not assignable to type 'never'.ts(2322)
-*/
-```
-
-In previous versions of Effect, intersections were used for representing an environment with multiple services. The problem with using intersections (i.e. `A & B`) is that there could be multiple services in the environment that have functions and properties named in the same way. To remedy this, we wrapped services in the `Has` type (similar to ZIO 1.0), so you would have `Has<A> & Has<B>` in your environment.
-
-In ZIO 2.0, the _contravariant_ `R` type parameter of the `ZIO` type (representing the environment) became fully phantom, thus allowing for removal of the `Has` type. This significantly improved the clarity of type signatures as well as removing another "stumbling block" for new users.
-
-To facilitate removal of `Has` in Effect, we had to consider how types in the environment compose. By the rule of composition, contravariant parameters composed as an intersection (i.e. with `&`) are equivalent to covariant parameters composed together as a union (i.e. with `|`) for purposes of assignability. Based upon this fact, we decided to diverge from ZIO and make the `R` type parameter _covariant_ given `A | B` does not reduce to `never` if `A` and `B` have conflicts.
-
-From our example above:
-
-```ts twoslash
-interface A {
-  readonly prop: string
-}
-
-interface B {
-  readonly prop: number
-}
-
-// ok
-const ab: A | B = {
-  prop: ""
-}
-```
-
-Representing `R` as a covariant type parameter containing the union of services required by an `Effect` workflow allowed us to remove the requirement for `Has`.
-
-## Type Aliases
-
-In Effect, there are no predefined type aliases such as `UIO`, `URIO`, `RIO`, `Task`, or `IO` like in ZIO.
-
-The reason for this is that type aliases are lost as soon as you compose them, which renders them somewhat useless unless you maintain **multiple** signatures for **every** function. In Effect, we have chosen not to go down this path. Instead, we utilize the `never` type to indicate unused types.
-
-It's worth mentioning that the perception of type aliases being quicker to understand is often just an illusion. In Effect, the explicit notation `Effect<A>` clearly communicates that only type `A` is being used. On the other hand, when using a type alias like `RIO<R, A>`, questions arise about the type `E`. Is it `unknown`? `never`? Remembering such details becomes challenging.
-
-> additional-resources/api-reference.mdx\n\n---
-title: API Reference
-description: API docs covering tools, integrations, and functional programming features.
-sidebar:
+  label: Operations
   order: 2
 ---
 
-# API Reference
+In previous sections, we learned how to create and use sinks. Now, let's explore some operations that let you transform or filter sink behavior.
 
-- [`effect`](https://effect-ts.github.io/effect/docs/effect)
-- [`@effect/cli`](https://effect-ts.github.io/effect/docs/cli) ([Getting Started](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md))
-- [`@effect/opentelemetry`](https://effect-ts.github.io/effect/docs/opentelemetry)
-- [`@effect/platform`](https://effect-ts.github.io/effect/docs/platform) ([Experimental Features](https://github.com/Effect-TS/effect/blob/main/packages/platform/README.md))
-- [`@effect/printer`](https://effect-ts.github.io/effect/docs/printer) ([Getting Started](https://github.com/Effect-TS/effect/blob/main/packages/printer/README.md))
-- [`@effect/rpc`](https://effect-ts.github.io/effect/docs/rpc) ([Getting Started](https://github.com/Effect-TS/effect/blob/main/packages/rpc/README.md))
-- [`@effect/typeclass`](https://effect-ts.github.io/effect/docs/typeclass) ([Getting Started](https://github.com/Effect-TS/effect/blob/main/packages/typeclass/README.md))
+## Adapting Sink Input
 
-> platform/key-value-store.mdx\n\n---
-title: KeyValueStore
-description: Manage key-value pairs with asynchronous, consistent storage, supporting in-memory, file system, and schema-based implementations.
-sidebar:
-  order: 3
----
+At times, you may have a sink that works with one type of input, but your current stream uses a different type. The `Sink.mapInput` function helps you adapt your sink to a new input type by transforming the input values. While `Sink.map` changes the sink's output, `Sink.mapInput` changes the input it accepts.
 
-The `@effect/platform/KeyValueStore` module provides a robust and effectful interface for managing key-value pairs.
-It supports asynchronous operations, ensuring data integrity and consistency, and includes built-in implementations for in-memory, file system-based, and schema-validated stores.
+**Example** (Converting String Input to Numeric for Summing)
 
-## Basic Usage
-
-The module provides a single `KeyValueStore` [tag](/docs/requirements-management/services/), which acts as the gateway for interacting with the store.
-
-**Example** (Accessing the KeyValueStore Service)
+Suppose you have a `Sink.sum` that calculates the sum of numbers. If your stream contains strings rather than numbers, `Sink.mapInput` can convert those strings into numbers, allowing `Sink.sum` to work with your stream:
 
 ```ts twoslash
-import { KeyValueStore } from "@effect/platform"
-import { Effect } from "effect"
+import { Stream, Sink, Effect } from "effect"
 
-const program = Effect.gen(function* () {
-  const kv = yield* KeyValueStore.KeyValueStore
+// A stream of numeric strings
+const stream = Stream.make("1", "2", "3", "4", "5")
 
-  // Use `kv` to perform operations on the store
-})
-```
+// Define a sink for summing numeric values
+const numericSum = Sink.sum
 
-The `KeyValueStore` interface includes the following operations:
-
-| Operation            | Description                                                          |
-| -------------------- | -------------------------------------------------------------------- |
-| **get**              | Returns the value as `string` of the specified key if it exists.     |
-| **getUint8Array**    | Returns the value as `Uint8Array` of the specified key if it exists. |
-| **set**              | Sets the value of the specified key.                                 |
-| **remove**           | Removes the specified key.                                           |
-| **clear**            | Removes all entries.                                                 |
-| **size**             | Returns the number of entries.                                       |
-| **modify**           | Updates the value of the specified key if it exists.                 |
-| **modifyUint8Array** | Updates the value of the specified key if it exists.                 |
-| **has**              | Check if a key exists.                                               |
-| **isEmpty**          | Check if the store is empty.                                         |
-| **forSchema**        | Create a [SchemaStore](#schemastore) for the specified schema.       |
-
-**Example** (Working with Key-Value Pairs)
-
-```ts twoslash
-import {
-  KeyValueStore,
-  layerMemory
-} from "@effect/platform/KeyValueStore"
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  const kv = yield* KeyValueStore
-
-  // Initially, the store is empty
-  console.log(yield* kv.size)
-
-  // Set a key-value pair
-  yield* kv.set("key", "value")
-  console.log(yield* kv.size)
-
-  // Retrieve the value for the specified key
-  const value = yield* kv.get("key")
-  console.log(value)
-
-  // Remove the key-value pair
-  yield* kv.remove("key")
-  console.log(yield* kv.size)
-})
-
-// Provide an in-memory KeyValueStore implementation
-Effect.runPromise(program.pipe(Effect.provide(layerMemory)))
-/*
-Output:
-0
-1
-{ _id: 'Option', _tag: 'Some', value: 'value' }
-0
-*/
-```
-
-## Built-in Implementations
-
-The module provides several built-in implementations of the `KeyValueStore` interface, available as [layers](/docs/requirements-management/layers/), to suit different needs:
-
-| Implementation        | Description                                                                                               |
-| --------------------- | --------------------------------------------------------------------------------------------------------- |
-| **In-Memory Store**   | `layerMemory` provides a simple, in-memory key-value store, ideal for lightweight or testing scenarios.   |
-| **File System Store** | `layerFileSystem` offers a file-based store for persistent storage needs.                                 |
-| **Schema Store**      | `layerSchema` enables schema-based validation for stored values, ensuring data integrity and type safety. |
-
-## SchemaStore
-
-The `SchemaStore` interface allows you to validate and parse values according to a defined [schema](/docs/schema/introduction/).
-This ensures that all data stored in the key-value store adheres to the specified structure, enhancing data integrity and type safety.
-
-**Example** (Using Schema Validation in KeyValueStore)
-
-```ts twoslash
-import {
-  KeyValueStore,
-  layerMemory
-} from "@effect/platform/KeyValueStore"
-import { Effect, Schema } from "effect"
-
-// Define a schema for the values
-const Person = Schema.Struct({
-  name: Schema.String,
-  age: Schema.Number
-})
-
-const program = Effect.gen(function* () {
-  // Create a SchemaStore based on the Person schema
-  const kv = (yield* KeyValueStore).forSchema(Person)
-
-  // Add a value that adheres to the schema
-  const value = { name: "Alice", age: 30 }
-  yield* kv.set("user1", value)
-  console.log(yield* kv.size)
-
-  // Retrieve and log the value
-  console.log(yield* kv.get("user1"))
-})
-
-// Use the in-memory store implementation
-Effect.runPromise(program.pipe(Effect.provide(layerMemory)))
-/*
-Output:
-1
-{ _id: 'Option', _tag: 'Some', value: { name: 'Alice', age: 30 } }
-*/
-```
-
-> additional-resources/myths.mdx\n\n---
-title: Myths About Effect
-description: Debunking common misconceptions about Effect's performance, complexity, and use cases.
-sidebar:
-  label: Myths
-  order: 1
----
-
-## Effect heavily relies on generators and generators are slow!
-
-Effect's internals are not built on generators, we only use generators to provide an API which closely mimics async-await. Internally async-await uses the same mechanics as generators and they are equally performant. So if you don't have a problem with async-await you won't have a problem with Effect's generators.
-
-Where generators and iterables are unacceptably slow is in transforming collections of data, for that try to use plain arrays as much as possible.
-
-## Effect will make your code 500x slower!
-
-Effect does perform 500x slower if you are comparing:
-
-```ts twoslash
-const result = 1 + 1
-```
-
-to
-
-```ts twoslash
-import { Effect } from "effect"
-
-const result = Effect.runSync(
-  Effect.zipWith(Effect.succeed(1), Effect.succeed(1), (a, b) => a + b)
+// Use mapInput to adapt the sink, converting strings to numbers
+const stringSum = numericSum.pipe(
+  Sink.mapInput((s: string) => Number.parseFloat(s))
 )
+
+Effect.runPromise(Stream.run(stream, stringSum)).then(console.log)
+// Output: 15
 ```
 
-The reason is one operation is optimized by the JIT compiler to be a direct CPU instruction and the other isn't.
+## Transforming Both Input and Output
 
-In reality you'd never use Effect in such cases, Effect is an app-level library to tame concurrency, error handling, and much more!
+When you need to transform both the input and output of a sink, `Sink.dimap` provides a flexible solution. It extends `mapInput` by allowing you to transform the input type, perform the operation, and then transform the output to a new type. This can be useful for complete conversions between input and output types.
 
-You'd use Effect to coordinate your thunks of code, and you can build your thunks of code in the best perfoming manner as you see fit while still controlling execution through Effect.
-
-## Effect has a huge performance overhead!
-
-Depends what you mean by performance, many times performance bottlenecks in JS are due to bad management of concurrency.
-
-Thanks to structured concurrency and observability it becomes much easier to spot and optimize those issues.
-
-There are apps in frontend running at 120fps that use Effect intensively, so most likely effect won't be your perf problem.
-
-In regards of memory, it doesn't use much more memory than a normal program would, there are a few more allocations compared to non Effect code but usually this is no longer the case when the non Effect code does the same thing as the Effect code.
-
-The advise would be start using it and monitor your code, optimise out of need not out of thought, optimizing too early is the root of all evils in software design.
-
-## The bundle size is HUGE!
-
-Effect's minimum cost is about 25k of gzipped code, that chunk contains the Effect Runtime and already includes almost all the functions that you'll need in a normal app-code scenario.
-
-From that point on Effect is tree-shaking friendly so you'll only include what you use.
-
-Also when using Effect your own code becomes shorter and terser, so the overall cost is amortized with usage, we have apps where adopting Effect in the majority of the codebase led to reduction of the final bundle.
-
-## Effect is impossible to learn, there are so many functions and modules!
-
-True, the full Effect ecosystem is quite large and some modules contain 1000s of functions, the reality is that you don't need to know them all to start being productive, you can safely start using Effect knowing just 10-20 functions and progressively discover the rest, just like you can start using TypeScript without knowing every single NPM package.
-
-A short list of commonly used functions to begin are:
-
-- [Effect.succeed](/docs/getting-started/creating-effects/#succeed)
-- [Effect.fail](/docs/getting-started/creating-effects/#fail)
-- [Effect.sync](/docs/getting-started/creating-effects/#sync)
-- [Effect.tryPromise](/docs/getting-started/creating-effects/#trypromise)
-- [Effect.gen](/docs/getting-started/using-generators/)
-- [Effect.runPromise](/docs/getting-started/running-effects/#runpromise)
-- [Effect.catchTag](/docs/error-management/expected-errors/#catchtag)
-- [Effect.catchAll](/docs/error-management/expected-errors/#catchall)
-- [Effect.acquireRelease](/docs/resource-management/scope/#acquirerelease)
-- [Effect.acquireUseRelease](/docs/resource-management/scope/#acquireuserelease)
-- [Effect.provide](/docs/requirements-management/layers/#providing-a-layer-to-an-effect)
-- [Effect.provideService](/docs/requirements-management/services/#providing-a-service-implementation)
-- [Effect.andThen](/docs/getting-started/building-pipelines/#andthen)
-- [Effect.map](/docs/getting-started/building-pipelines/#map)
-- [Effect.tap](/docs/getting-started/building-pipelines/#tap)
-
-A short list of commonly used modules:
-
-- [Effect](https://effect-ts.github.io/effect/effect/Effect.ts.html)
-- [Context](/docs/requirements-management/services/#creating-a-service)
-- [Layer](/docs/requirements-management/layers/)
-- [Option](/docs/data-types/option/)
-- [Either](/docs/data-types/either/)
-- [Array](https://effect-ts.github.io/effect/effect/Array.ts.html)
-- [Match](/docs/code-style/pattern-matching/)
-
-## Effect is the same as RxJS and shares its problems
-
-This is a sensitive topic, let's start by saying that RxJS is a great project and that it has helped millions of developers write reliable software and we all should be thankful to the developers who contributed to such an amazing project.
-
-Discussing the scope of the projects, RxJS aims to make working with Observables easy and wants to provide reactive extensions to JS, Effect instead wants to make writing production-grade TypeScript easy. While the intersection is non-empty the projects have fundamentally different objectives and strategies.
-
-Sometimes people refer to RxJS in bad light, and the reason isn't RxJS in itself but rather usage of RxJS in problem domains where RxJS wasn't thought to be used.
-
-Namely the idea that "everything is a stream" is theoretically true but it leads to fundamental limitations on developer experience, the primary issue being that streams are multi-shot (emit potentially multiple elements, or zero) and mutable delimited continuations (JS Generators) are known to be only good to represent single-shot effects (that emit a single value).
-
-In short it means that writing in imperative style (think of async/await) is practically impossible with stream primitives (practically because there would be the option of replaying the generator at every element and at every step, but this tends to be inefficient and the semantics of it are counter-intuitive, it would only work under the assumption that the full body is free of side-effects), forcing the developer to use declarative approaches such as pipe to represent all of their code.
-
-Effect has a Stream module (which is pull-based instead of push-based in order to be memory constant), but the basic Effect type is single-shot and it is optimised to act as a smart & lazy Promise that enables imperative programming, so when using Effect you're not forced to use a declarative style for everything and you can program using a model which is similar to async-await.
-
-The other big difference is that RxJS only cares about the happy-path with explicit types, it doesn't offer a way of typing errors and dependencies, Effect instead consider both errors and dependencies as explicitely typed and offers control-flow around those in a fully type-safe manner.
-
-In short if you need reactive programming around Observables, use RxJS, if you need to write production-grade TypeScript that includes by default native telemetry, error handling, dependency injection, and more use Effect.
-
-## Effect should be a language or Use a different language
-
-Neither solve the issue of writing production grade software in TypeScript.
-
-TypeScript is an amazing language to write full stack code with deep roots in the JS ecosystem and wide compatibility of tools, it is an industrial language adopted by many large scale companies.
-
-The fact that something like Effect is possible within the language and the fact that the language supports things such as generators that allows for imperative programming with custom types such as Effect makes TypeScript a unique language.
-
-In fact even in functional languages such as Scala the interop with effect systems is less optimal than it is in TypeScript, to the point that effect system authors have expressed wish for their language to support as much as TypeScript supports.
-
-> platform/terminal.mdx\n\n---
-title: Terminal
-description: Interact with standard input and output to read user input and display messages on the terminal.
-sidebar:
-  order: 6
----
-
-The `@effect/platform/Terminal` module provides an abstraction for interacting with standard input and output, including reading user input and displaying messages on the terminal.
-
-## Basic Usage
-
-The module provides a single `Terminal` [tag](/docs/requirements-management/services/), which serves as the entry point to reading from and writing to standard input and standard output.
-
-**Example** (Using the Terminal Service)
+**Example** (Converting Input to Integer, Summing, and Converting Output to String)
 
 ```ts twoslash
-import { Terminal } from "@effect/platform"
-import { Effect } from "effect"
+import { Stream, Sink, Effect } from "effect"
 
-const program = Effect.gen(function* () {
-  const terminal = yield* Terminal.Terminal
+// A stream of numeric strings
+const stream = Stream.make("1", "2", "3", "4", "5")
 
-  // Use `terminal` to interact with standard input and output
+// Convert string inputs to numbers, sum them,
+// then convert the result to a string
+const sumSink = Sink.dimap(Sink.sum, {
+  // Transform input: string to number
+  onInput: (s: string) => Number.parseFloat(s),
+  // Transform output: number to string
+  onDone: (n) => String(n)
 })
+
+Effect.runPromise(Stream.run(stream, sumSink)).then(console.log)
+// Output: "15"
 ```
 
-## Writing to standard output
+## Filtering Input
 
-**Example** (Displaying a Message on the Terminal)
+Sinks can also filter incoming elements based on specific conditions with `Sink.filterInput`. This operation allows the sink to process only elements that meet certain criteria.
 
-```ts twoslash
-import { Terminal } from "@effect/platform"
-import { NodeRuntime, NodeTerminal } from "@effect/platform-node"
-import { Effect } from "effect"
+**Example** (Filtering Negative Numbers in Chunks of Three)
 
-const program = Effect.gen(function* () {
-  const terminal = yield* Terminal.Terminal
-  yield* terminal.display("a message\n")
-})
-
-NodeRuntime.runMain(program.pipe(Effect.provide(NodeTerminal.layer)))
-// Output: "a message"
-```
-
-## Reading from standard input
-
-**Example** (Reading a Line from Standard Input)
+In the example below, elements are collected in chunks of three, but only positive numbers are included:
 
 ```ts twoslash
-import { Terminal } from "@effect/platform"
-import { NodeRuntime, NodeTerminal } from "@effect/platform-node"
-import { Effect } from "effect"
+import { Stream, Sink, Effect } from "effect"
 
-const program = Effect.gen(function* () {
-  const terminal = yield* Terminal.Terminal
-  const input = yield* terminal.readLine
-  console.log(`input: ${input}`)
-})
-
-NodeRuntime.runMain(program.pipe(Effect.provide(NodeTerminal.layer)))
-// Input: "hello"
-// Output: "input: hello"
-```
-
-## Example: Number guessing game
-
-This example demonstrates how to create a complete number-guessing game by reading input from the terminal and providing feedback to the user. The game continues until the user guesses the correct number.
-
-**Example** (Interactive Number Guessing Game)
-
-```ts twoslash
-import { Terminal } from "@effect/platform"
-import type { PlatformError } from "@effect/platform/Error"
-import { Effect, Option, Random } from "effect"
-import { NodeRuntime, NodeTerminal } from "@effect/platform-node"
-
-// Generate a secret random number between 1 and 100
-const secret = Random.nextIntBetween(1, 100)
-
-// Parse the user's input into a valid number
-const parseGuess = (input: string) => {
-  const n = parseInt(input, 10)
-  return isNaN(n) || n < 1 || n > 100 ? Option.none() : Option.some(n)
-}
-
-// Display a message on the terminal
-const display = (message: string) =>
-  Effect.gen(function* () {
-    const terminal = yield* Terminal.Terminal
-    yield* terminal.display(`${message}\n`)
-  })
-
-// Prompt the user for a guess
-const prompt = Effect.gen(function* () {
-  const terminal = yield* Terminal.Terminal
-  yield* terminal.display("Enter a guess: ")
-  return yield* terminal.readLine
-})
-
-// Get the user's guess, validating it as an integer between 1 and 100
-const answer: Effect.Effect<
-  number,
-  Terminal.QuitException | PlatformError,
-  Terminal.Terminal
-> = Effect.gen(function* () {
-  const input = yield* prompt
-  const guess = parseGuess(input)
-  if (Option.isNone(guess)) {
-    yield* display("You must enter an integer from 1 to 100")
-    return yield* answer
-  }
-  return guess.value
-})
-
-// Check if the guess is too high, too low, or correct
-const check = <A, E, R>(
-  secret: number,
-  guess: number,
-  ok: Effect.Effect<A, E, R>,
-  ko: Effect.Effect<A, E, R>
-) =>
-  Effect.gen(function* () {
-    if (guess > secret) {
-      yield* display("Too high")
-      return yield* ko
-    } else if (guess < secret) {
-      yield* display("Too low")
-      return yield* ko
-    } else {
-      return yield* ok
-    }
-  })
-
-// End the game with a success message
-const end = display("You guessed it!")
-
-// Main game loop
-const loop = (
-  secret: number
-): Effect.Effect<
-  void,
-  Terminal.QuitException | PlatformError,
-  Terminal.Terminal
-> =>
-  Effect.gen(function* () {
-    const guess = yield* answer
-    return yield* check(
-      secret,
-      guess,
-      end,
-      Effect.suspend(() => loop(secret))
-    )
-  })
-
-// Full game setup and execution
-const game = Effect.gen(function* () {
-  yield* display(
-    `We have selected a random number between 1 and 100.
-See if you can guess it in 10 turns or fewer.
-We'll tell you if your guess was too high or too low.`
+// Define a stream with positive, negative, and zero values
+const stream = Stream.fromIterable([
+  1, -2, 0, 1, 3, -3, 4, 2, 0, 1, -3, 1, 1, 6
+]).pipe(
+  Stream.transduce(
+    // Collect chunks of 3, filtering out non-positive numbers
+    Sink.collectAllN<number>(3).pipe(Sink.filterInput((n) => n > 0))
   )
-  yield* loop(yield* secret)
-})
+)
 
-// Run the game
-NodeRuntime.runMain(game.pipe(Effect.provide(NodeTerminal.layer)))
+Effect.runPromise(Stream.runCollect(stream)).then((chunk) =>
+  console.log("%o", chunk)
+)
+/*
+Output:
+{
+  _id: 'Chunk',
+  values: [
+    { _id: 'Chunk', values: [ 1, 1, 3, [length]: 3 ] },
+    { _id: 'Chunk', values: [ 4, 2, 1, [length]: 3 ] },
+    { _id: 'Chunk', values: [ 1, 1, 6, [length]: 3 ] },
+    { _id: 'Chunk', values: [ [length]: 0 ] },
+    [length]: 4
+  ]
+}
+*/
 ```
 
-> platform/path.mdx\n\n---
-title: Path
-description: Perform file path operations such as joining, resolving, and normalizing across platforms.
+> sink/leftovers.mdx\n\n---
+title: Leftovers
+description: Learn how to handle unconsumed elements in streams, collecting or ignoring leftovers for efficient data processing.
 sidebar:
   order: 4
 ---
 
-The `@effect/platform/Path` module provides a set of operations for working with file paths.
+In this section, we'll look at handling elements left unconsumed by sinks. Sinks may process only a portion of the elements from an upstream source, leaving some elements as "leftovers." Here's how to collect or ignore these remaining elements.
 
-## Basic Usage
+## Collecting Leftovers
 
-The module provides a single `Path` [tag](/docs/requirements-management/services/), which acts as the gateway for interacting with paths.
+If a sink doesn't consume all elements from the upstream source, the remaining elements are called leftovers. To capture these leftovers, use `Sink.collectLeftover`, which returns a tuple containing the result of the sink operation and any unconsumed elements.
 
-**Example** (Accessing the Path Service)
-
-```ts twoslash
-import { Path } from "@effect/platform"
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  const path = yield* Path.Path
-
-  // Use `path` to perform various path operations
-})
-```
-
-The `Path` interface includes the following operations:
-
-| Operation            | Description                                                                |
-| -------------------- | -------------------------------------------------------------------------- |
-| **basename**         | Returns the last part of a path, optionally removing a given suffix.       |
-| **dirname**          | Returns the directory part of a path.                                      |
-| **extname**          | Returns the file extension from a path.                                    |
-| **format**           | Formats a path object into a path string.                                  |
-| **fromFileUrl**      | Converts a file URL to a path.                                             |
-| **isAbsolute**       | Checks if a path is absolute.                                              |
-| **join**             | Joins multiple path segments into one.                                     |
-| **normalize**        | Normalizes a path by resolving `.` and `..` segments.                      |
-| **parse**            | Parses a path string into an object with its segments.                     |
-| **relative**         | Computes the relative path from one path to another.                       |
-| **resolve**          | Resolves a sequence of paths to an absolute path.                          |
-| **sep**              | Returns the platform-specific path segment separator (e.g., `/` on POSIX). |
-| **toFileUrl**        | Converts a path to a file URL.                                             |
-| **toNamespacedPath** | Converts a path to a namespaced path (specific to Windows).                |
-
-**Example** (Joining Path Segments)
+**Example** (Collecting Leftover Elements)
 
 ```ts twoslash
-import { Path } from "@effect/platform"
-import { Effect } from "effect"
-import { NodeContext, NodeRuntime } from "@effect/platform-node"
+import { Stream, Sink, Effect } from "effect"
 
-const program = Effect.gen(function* () {
-  const path = yield* Path.Path
+const stream = Stream.make(1, 2, 3, 4, 5)
 
-  const mypath = path.join("tmp", "file.txt")
-  console.log(mypath)
-})
+// Take the first 3 elements and collect any leftovers
+const sink1 = Sink.take<number>(3).pipe(Sink.collectLeftover)
 
-NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
-// Output: "tmp/file.txt"
+Effect.runPromise(Stream.run(stream, sink1)).then(console.log)
+/*
+Output:
+[
+  { _id: 'Chunk', values: [ 1, 2, 3 ] },
+  { _id: 'Chunk', values: [ 4, 5 ] }
+]
+*/
+
+// Take only the first element and collect the rest as leftovers
+const sink2 = Sink.head<number>().pipe(Sink.collectLeftover)
+
+Effect.runPromise(Stream.run(stream, sink2)).then(console.log)
+/*
+Output:
+[
+  { _id: 'Option', _tag: 'Some', value: 1 },
+  { _id: 'Chunk', values: [ 2, 3, 4, 5 ] }
+]
+*/
 ```
 
-> platform/file-system.mdx\n\n---
-title: FileSystem
-description: Explore file system operations for reading, writing, and managing files and directories in Effect.
+## Ignoring Leftovers
+
+If leftover elements are not needed, you can ignore them using `Sink.ignoreLeftover`. This approach discards any unconsumed elements, so the sink operation focuses only on the elements it needs.
+
+**Example** (Ignoring Leftover Elements)
+
+```ts twoslash
+import { Stream, Sink, Effect } from "effect"
+
+const stream = Stream.make(1, 2, 3, 4, 5)
+
+// Take the first 3 elements and ignore any remaining elements
+const sink = Sink.take<number>(3).pipe(
+  Sink.ignoreLeftover,
+  Sink.collectLeftover
+)
+
+Effect.runPromise(Stream.run(stream, sink)).then(console.log)
+/*
+Output:
+[ { _id: 'Chunk', values: [ 1, 2, 3 ] }, { _id: 'Chunk', values: [] } ]
+*/
+```
+
+> sink/introduction.mdx\n\n---
+title: Introduction
+description: Learn the role of Sink in stream processing, handling element consumption, error management, result production, and leftover elements.
 sidebar:
-  order: 2
+  order: 0
 ---
 
-The `@effect/platform/FileSystem` module provides a set of operations for reading and writing from/to the file system.
+In stream processing, a `Sink` is a construct designed to consume elements generated by a `Stream`.
 
-## Basic Usage
-
-The module provides a single `FileSystem` [tag](/docs/requirements-management/services/), which acts as the gateway for interacting with the filesystem.
-
-**Example** (Accessing File System Operations)
-
-```ts twoslash
-import { FileSystem } from "@effect/platform"
-import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  const fs = yield* FileSystem.FileSystem
-
-  // Use `fs` to perform file system operations
-})
+```text showLineNumbers=false
+     ┌─── Type of the result produced by the Sink
+     |  ┌─── Type of elements consumed by the Sink
+     |  |   ┌─── Type of any leftover elements
+     │  |   |  ┌─── Type of possible errors
+     │  │   |  |  ┌─── Type of required dependencies
+     ▼  ▼   ▼  ▼  ▼
+Sink<A, In, L, E, R>
 ```
 
-The `FileSystem` interface includes the following operations:
+Here's an overview of what a `Sink` does:
 
-| Operation                   | Description                                                                                                                                                            |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **access**                  | Check if a file can be accessed. You can optionally specify the level of access to check for.                                                                          |
-| **copy**                    | Copy a file or directory from `fromPath` to `toPath`. Equivalent to `cp -r`.                                                                                           |
-| **copyFile**                | Copy a file from `fromPath` to `toPath`.                                                                                                                               |
-| **chmod**                   | Change the permissions of a file.                                                                                                                                      |
-| **chown**                   | Change the owner and group of a file.                                                                                                                                  |
-| **exists**                  | Check if a path exists.                                                                                                                                                |
-| **link**                    | Create a hard link from `fromPath` to `toPath`.                                                                                                                        |
-| **makeDirectory**           | Create a directory at `path`. You can optionally specify the mode and whether to recursively create nested directories.                                                |
-| **makeTempDirectory**       | Create a temporary directory. By default, the directory will be created inside the system's default temporary directory.                                               |
-| **makeTempDirectoryScoped** | Create a temporary directory inside a scope. Functionally equivalent to `makeTempDirectory`, but the directory will be automatically deleted when the scope is closed. |
-| **makeTempFile**            | Create a temporary file. The directory creation is functionally equivalent to `makeTempDirectory`. The file name will be a randomly generated string.                  |
-| **makeTempFileScoped**      | Create a temporary file inside a scope. Functionally equivalent to `makeTempFile`, but the file will be automatically deleted when the scope is closed.                |
-| **open**                    | Open a file at `path` with the specified `options`. The file handle will be automatically closed when the scope is closed.                                             |
-| **readDirectory**           | List the contents of a directory. You can recursively list the contents of nested directories by setting the `recursive` option.                                       |
-| **readFile**                | Read the contents of a file.                                                                                                                                           |
-| **readFileString**          | Read the contents of a file as a string.                                                                                                                               |
-| **readLink**                | Read the destination of a symbolic link.                                                                                                                               |
-| **realPath**                | Resolve a path to its canonicalized absolute pathname.                                                                                                                 |
-| **remove**                  | Remove a file or directory. By setting the `recursive` option to `true`, you can recursively remove nested directories.                                                |
-| **rename**                  | Rename a file or directory.                                                                                                                                            |
-| **sink**                    | Create a writable `Sink` for the specified `path`.                                                                                                                     |
-| **stat**                    | Get information about a file at `path`.                                                                                                                                |
-| **stream**                  | Create a readable `Stream` for the specified `path`.                                                                                                                   |
-| **symlink**                 | Create a symbolic link from `fromPath` to `toPath`.                                                                                                                    |
-| **truncate**                | Truncate a file to a specified length. If the `length` is not specified, the file will be truncated to length `0`.                                                     |
-| **utimes**                  | Change the file system timestamps of the file at `path`.                                                                                                               |
-| **watch**                   | Watch a directory or file for changes.                                                                                                                                 |
-| **writeFile**               | Write data to a file at `path`.                                                                                                                                        |
-| **writeFileString**         | Write a string to a file at `path`.                                                                                                                                    |
+- It consumes a varying number of `In` elements, which may include zero, one, or multiple elements.
+- It can encounter errors of type `E` during processing.
+- It produces a result of type `A` once processing completes.
+- It can also return a remainder of type `L`, representing any leftover elements.
 
-**Example** (Reading a File as a String)
+To process a stream using a `Sink`, you can pass it directly to the `Stream.run` function:
+
+**Example** (Using a Sink to Collect Stream Elements)
 
 ```ts twoslash
-import { FileSystem } from "@effect/platform"
-import { NodeContext, NodeRuntime } from "@effect/platform-node"
-import { Effect } from "effect"
+import { Stream, Sink, Effect } from "effect"
 
-const program = Effect.gen(function* () {
-  const fs = yield* FileSystem.FileSystem
+//      ┌─── Stream<number, never, never>
+//      ▼
+const stream = Stream.make(1, 2, 3)
 
-  // Reading the content of the same file where this code is written
-  const content = yield* fs.readFileString("./index.ts", "utf8")
-  console.log(content)
-})
+// Create a sink to take the first 2 elements of the stream
+//
+//      ┌─── Sink<Chunk<number>, number, number, never, never>
+//      ▼
+const sink = Sink.take<number>(2)
 
-// Provide the necessary context and run the program
-NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
+// Run the stream through the sink to collect the elements
+//
+//      ┌─── Effect<number, never, never>
+//      ▼
+const sum = Stream.run(stream, sink)
+
+Effect.runPromise(sum).then(console.log)
+/*
+Output:
+{ _id: 'Chunk', values: [ 1, 2 ] }
+*/
+```
+
+The type of `sink` is as follows:
+
+```text showLineNumbers=false
+       ┌─── result
+       |              ┌─── consumed elements
+       |              |       ┌─── leftover elements
+       │              |       |       ┌─── no errors
+       │              │       |       |      ┌─── no dependencies
+       ▼              ▼       ▼       ▼      ▼
+Sink<Chunk<number>, number, number, never, never>
+```
+
+Here's the breakdown:
+
+- `Chunk<number>`: The final result produced by the sink after processing elements (in this case, a [Chunk](/docs/data-types/chunk/) of numbers).
+- `number` (first occurrence): The type of elements that the sink will consume from the stream.
+- `number` (second occurrence): The type of leftover elements, if any, that are not consumed.
+- `never` (first occurrence): Indicates that this sink does not produce any errors.
+- `never` (second occurrence): Shows that no dependencies are required to operate this sink.
+
+> sink/concurrency.mdx\n\n---
+title: Sink Concurrency
+excerpt: Learn how to enhance performance with concurrent sink operations, such as combining results or racing to capture the first completion.
+sidebar:
+  label: Concurrency
+  order: 3
+---
+
+This section covers concurrent operations that allow multiple sinks to run simultaneously. These can be valuable for enhancing task performance when concurrent execution is desired.
+
+## Combining Results with Concurrent Zipping
+
+To run two sinks concurrently and combine their results, use `Sink.zip`. This operation executes both sinks concurrently and combines their outcomes into a tuple.
+
+**Example** (Running Two Sinks Concurrently and Combining Results)
+
+```ts twoslash
+import { Sink, Console, Stream, Schedule, Effect } from "effect"
+
+const stream = Stream.make("1", "2", "3", "4", "5").pipe(
+  Stream.schedule(Schedule.spaced("10 millis"))
+)
+
+const sink1 = Sink.forEach((s: string) =>
+  Console.log(`sink 1: ${s}`)
+).pipe(Sink.as(1))
+
+const sink2 = Sink.forEach((s: string) =>
+  Console.log(`sink 2: ${s}`)
+).pipe(Sink.as(2))
+
+// Combine the two sinks to run concurrently and collect results in a tuple
+const sink = Sink.zip(sink1, sink2, { concurrent: true })
+
+Effect.runPromise(Stream.run(stream, sink)).then(console.log)
+/*
+Output:
+sink 1: 1
+sink 2: 1
+sink 1: 2
+sink 2: 2
+sink 1: 3
+sink 2: 3
+sink 1: 4
+sink 2: 4
+sink 1: 5
+sink 2: 5
+[ 1, 2 ]
+*/
+```
+
+## Racing Sinks: First Completion Wins
+
+The `Sink.race` operation allows multiple sinks to compete for completion. The first sink to finish provides the result.
+
+**Example** (Racing Two Sinks to Capture the First Result)
+
+```ts twoslash
+import { Sink, Console, Stream, Schedule, Effect } from "effect"
+
+const stream = Stream.make("1", "2", "3", "4", "5").pipe(
+  Stream.schedule(Schedule.spaced("10 millis"))
+)
+
+const sink1 = Sink.forEach((s: string) =>
+  Console.log(`sink 1: ${s}`)
+).pipe(Sink.as(1))
+
+const sink2 = Sink.forEach((s: string) =>
+  Console.log(`sink 2: ${s}`)
+).pipe(Sink.as(2))
+
+// Race the two sinks, the result will be from the first to complete
+const sink = Sink.race(sink1, sink2)
+
+Effect.runPromise(Stream.run(stream, sink)).then(console.log)
+/*
+Output:
+sink 1: 1
+sink 2: 1
+sink 1: 2
+sink 2: 2
+sink 1: 3
+sink 2: 3
+sink 1: 4
+sink 2: 4
+sink 1: 5
+sink 2: 5
+1
+*/
 ```
 
 > stream/creating.mdx\n\n---
@@ -46347,4 +45339,1012 @@ Doing some other works after stream's finalization
 ```
 
 In this code example, we start with our application logic represented by the `Application Logic.` message. We then use `Stream.finalizer` to specify the finalization step, which logs `Finalizing the stream`. After that, we use `Stream.ensuring` to indicate that we want to perform additional tasks after the stream's finalization, resulting in the message `Performing additional tasks after stream's finalization`. This ensures that our post-finalization actions are executed as expected.
+
+> platform/file-system.mdx\n\n---
+title: FileSystem
+description: Explore file system operations for reading, writing, and managing files and directories in Effect.
+sidebar:
+  order: 2
+---
+
+The `@effect/platform/FileSystem` module provides a set of operations for reading and writing from/to the file system.
+
+## Basic Usage
+
+The module provides a single `FileSystem` [tag](/docs/requirements-management/services/), which acts as the gateway for interacting with the filesystem.
+
+**Example** (Accessing File System Operations)
+
+```ts twoslash
+import { FileSystem } from "@effect/platform"
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem
+
+  // Use `fs` to perform file system operations
+})
+```
+
+The `FileSystem` interface includes the following operations:
+
+| Operation                   | Description                                                                                                                                                            |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **access**                  | Check if a file can be accessed. You can optionally specify the level of access to check for.                                                                          |
+| **copy**                    | Copy a file or directory from `fromPath` to `toPath`. Equivalent to `cp -r`.                                                                                           |
+| **copyFile**                | Copy a file from `fromPath` to `toPath`.                                                                                                                               |
+| **chmod**                   | Change the permissions of a file.                                                                                                                                      |
+| **chown**                   | Change the owner and group of a file.                                                                                                                                  |
+| **exists**                  | Check if a path exists.                                                                                                                                                |
+| **link**                    | Create a hard link from `fromPath` to `toPath`.                                                                                                                        |
+| **makeDirectory**           | Create a directory at `path`. You can optionally specify the mode and whether to recursively create nested directories.                                                |
+| **makeTempDirectory**       | Create a temporary directory. By default, the directory will be created inside the system's default temporary directory.                                               |
+| **makeTempDirectoryScoped** | Create a temporary directory inside a scope. Functionally equivalent to `makeTempDirectory`, but the directory will be automatically deleted when the scope is closed. |
+| **makeTempFile**            | Create a temporary file. The directory creation is functionally equivalent to `makeTempDirectory`. The file name will be a randomly generated string.                  |
+| **makeTempFileScoped**      | Create a temporary file inside a scope. Functionally equivalent to `makeTempFile`, but the file will be automatically deleted when the scope is closed.                |
+| **open**                    | Open a file at `path` with the specified `options`. The file handle will be automatically closed when the scope is closed.                                             |
+| **readDirectory**           | List the contents of a directory. You can recursively list the contents of nested directories by setting the `recursive` option.                                       |
+| **readFile**                | Read the contents of a file.                                                                                                                                           |
+| **readFileString**          | Read the contents of a file as a string.                                                                                                                               |
+| **readLink**                | Read the destination of a symbolic link.                                                                                                                               |
+| **realPath**                | Resolve a path to its canonicalized absolute pathname.                                                                                                                 |
+| **remove**                  | Remove a file or directory. By setting the `recursive` option to `true`, you can recursively remove nested directories.                                                |
+| **rename**                  | Rename a file or directory.                                                                                                                                            |
+| **sink**                    | Create a writable `Sink` for the specified `path`.                                                                                                                     |
+| **stat**                    | Get information about a file at `path`.                                                                                                                                |
+| **stream**                  | Create a readable `Stream` for the specified `path`.                                                                                                                   |
+| **symlink**                 | Create a symbolic link from `fromPath` to `toPath`.                                                                                                                    |
+| **truncate**                | Truncate a file to a specified length. If the `length` is not specified, the file will be truncated to length `0`.                                                     |
+| **utimes**                  | Change the file system timestamps of the file at `path`.                                                                                                               |
+| **watch**                   | Watch a directory or file for changes.                                                                                                                                 |
+| **writeFile**               | Write data to a file at `path`.                                                                                                                                        |
+| **writeFileString**         | Write a string to a file at `path`.                                                                                                                                    |
+
+**Example** (Reading a File as a String)
+
+```ts twoslash
+import { FileSystem } from "@effect/platform"
+import { NodeContext, NodeRuntime } from "@effect/platform-node"
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem
+
+  // Reading the content of the same file where this code is written
+  const content = yield* fs.readFileString("./index.ts", "utf8")
+  console.log(content)
+})
+
+// Provide the necessary context and run the program
+NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
+```
+
+> platform/path.mdx\n\n---
+title: Path
+description: Perform file path operations such as joining, resolving, and normalizing across platforms.
+sidebar:
+  order: 4
+---
+
+The `@effect/platform/Path` module provides a set of operations for working with file paths.
+
+## Basic Usage
+
+The module provides a single `Path` [tag](/docs/requirements-management/services/), which acts as the gateway for interacting with paths.
+
+**Example** (Accessing the Path Service)
+
+```ts twoslash
+import { Path } from "@effect/platform"
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  const path = yield* Path.Path
+
+  // Use `path` to perform various path operations
+})
+```
+
+The `Path` interface includes the following operations:
+
+| Operation            | Description                                                                |
+| -------------------- | -------------------------------------------------------------------------- |
+| **basename**         | Returns the last part of a path, optionally removing a given suffix.       |
+| **dirname**          | Returns the directory part of a path.                                      |
+| **extname**          | Returns the file extension from a path.                                    |
+| **format**           | Formats a path object into a path string.                                  |
+| **fromFileUrl**      | Converts a file URL to a path.                                             |
+| **isAbsolute**       | Checks if a path is absolute.                                              |
+| **join**             | Joins multiple path segments into one.                                     |
+| **normalize**        | Normalizes a path by resolving `.` and `..` segments.                      |
+| **parse**            | Parses a path string into an object with its segments.                     |
+| **relative**         | Computes the relative path from one path to another.                       |
+| **resolve**          | Resolves a sequence of paths to an absolute path.                          |
+| **sep**              | Returns the platform-specific path segment separator (e.g., `/` on POSIX). |
+| **toFileUrl**        | Converts a path to a file URL.                                             |
+| **toNamespacedPath** | Converts a path to a namespaced path (specific to Windows).                |
+
+**Example** (Joining Path Segments)
+
+```ts twoslash
+import { Path } from "@effect/platform"
+import { Effect } from "effect"
+import { NodeContext, NodeRuntime } from "@effect/platform-node"
+
+const program = Effect.gen(function* () {
+  const path = yield* Path.Path
+
+  const mypath = path.join("tmp", "file.txt")
+  console.log(mypath)
+})
+
+NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
+// Output: "tmp/file.txt"
+```
+
+> platform/terminal.mdx\n\n---
+title: Terminal
+description: Interact with standard input and output to read user input and display messages on the terminal.
+sidebar:
+  order: 6
+---
+
+The `@effect/platform/Terminal` module provides an abstraction for interacting with standard input and output, including reading user input and displaying messages on the terminal.
+
+## Basic Usage
+
+The module provides a single `Terminal` [tag](/docs/requirements-management/services/), which serves as the entry point to reading from and writing to standard input and standard output.
+
+**Example** (Using the Terminal Service)
+
+```ts twoslash
+import { Terminal } from "@effect/platform"
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  const terminal = yield* Terminal.Terminal
+
+  // Use `terminal` to interact with standard input and output
+})
+```
+
+## Writing to standard output
+
+**Example** (Displaying a Message on the Terminal)
+
+```ts twoslash
+import { Terminal } from "@effect/platform"
+import { NodeRuntime, NodeTerminal } from "@effect/platform-node"
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  const terminal = yield* Terminal.Terminal
+  yield* terminal.display("a message\n")
+})
+
+NodeRuntime.runMain(program.pipe(Effect.provide(NodeTerminal.layer)))
+// Output: "a message"
+```
+
+## Reading from standard input
+
+**Example** (Reading a Line from Standard Input)
+
+```ts twoslash
+import { Terminal } from "@effect/platform"
+import { NodeRuntime, NodeTerminal } from "@effect/platform-node"
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  const terminal = yield* Terminal.Terminal
+  const input = yield* terminal.readLine
+  console.log(`input: ${input}`)
+})
+
+NodeRuntime.runMain(program.pipe(Effect.provide(NodeTerminal.layer)))
+// Input: "hello"
+// Output: "input: hello"
+```
+
+## Example: Number guessing game
+
+This example demonstrates how to create a complete number-guessing game by reading input from the terminal and providing feedback to the user. The game continues until the user guesses the correct number.
+
+**Example** (Interactive Number Guessing Game)
+
+```ts twoslash
+import { Terminal } from "@effect/platform"
+import type { PlatformError } from "@effect/platform/Error"
+import { Effect, Option, Random } from "effect"
+import { NodeRuntime, NodeTerminal } from "@effect/platform-node"
+
+// Generate a secret random number between 1 and 100
+const secret = Random.nextIntBetween(1, 100)
+
+// Parse the user's input into a valid number
+const parseGuess = (input: string) => {
+  const n = parseInt(input, 10)
+  return isNaN(n) || n < 1 || n > 100 ? Option.none() : Option.some(n)
+}
+
+// Display a message on the terminal
+const display = (message: string) =>
+  Effect.gen(function* () {
+    const terminal = yield* Terminal.Terminal
+    yield* terminal.display(`${message}\n`)
+  })
+
+// Prompt the user for a guess
+const prompt = Effect.gen(function* () {
+  const terminal = yield* Terminal.Terminal
+  yield* terminal.display("Enter a guess: ")
+  return yield* terminal.readLine
+})
+
+// Get the user's guess, validating it as an integer between 1 and 100
+const answer: Effect.Effect<
+  number,
+  Terminal.QuitException | PlatformError,
+  Terminal.Terminal
+> = Effect.gen(function* () {
+  const input = yield* prompt
+  const guess = parseGuess(input)
+  if (Option.isNone(guess)) {
+    yield* display("You must enter an integer from 1 to 100")
+    return yield* answer
+  }
+  return guess.value
+})
+
+// Check if the guess is too high, too low, or correct
+const check = <A, E, R>(
+  secret: number,
+  guess: number,
+  ok: Effect.Effect<A, E, R>,
+  ko: Effect.Effect<A, E, R>
+) =>
+  Effect.gen(function* () {
+    if (guess > secret) {
+      yield* display("Too high")
+      return yield* ko
+    } else if (guess < secret) {
+      yield* display("Too low")
+      return yield* ko
+    } else {
+      return yield* ok
+    }
+  })
+
+// End the game with a success message
+const end = display("You guessed it!")
+
+// Main game loop
+const loop = (
+  secret: number
+): Effect.Effect<
+  void,
+  Terminal.QuitException | PlatformError,
+  Terminal.Terminal
+> =>
+  Effect.gen(function* () {
+    const guess = yield* answer
+    return yield* check(
+      secret,
+      guess,
+      end,
+      Effect.suspend(() => loop(secret))
+    )
+  })
+
+// Full game setup and execution
+const game = Effect.gen(function* () {
+  yield* display(
+    `We have selected a random number between 1 and 100.
+See if you can guess it in 10 turns or fewer.
+We'll tell you if your guess was too high or too low.`
+  )
+  yield* loop(yield* secret)
+})
+
+// Run the game
+NodeRuntime.runMain(game.pipe(Effect.provide(NodeTerminal.layer)))
+```
+
+> platform/key-value-store.mdx\n\n---
+title: KeyValueStore
+description: Manage key-value pairs with asynchronous, consistent storage, supporting in-memory, file system, and schema-based implementations.
+sidebar:
+  order: 3
+---
+
+The `@effect/platform/KeyValueStore` module provides a robust and effectful interface for managing key-value pairs.
+It supports asynchronous operations, ensuring data integrity and consistency, and includes built-in implementations for in-memory, file system-based, and schema-validated stores.
+
+## Basic Usage
+
+The module provides a single `KeyValueStore` [tag](/docs/requirements-management/services/), which acts as the gateway for interacting with the store.
+
+**Example** (Accessing the KeyValueStore Service)
+
+```ts twoslash
+import { KeyValueStore } from "@effect/platform"
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  const kv = yield* KeyValueStore.KeyValueStore
+
+  // Use `kv` to perform operations on the store
+})
+```
+
+The `KeyValueStore` interface includes the following operations:
+
+| Operation            | Description                                                          |
+| -------------------- | -------------------------------------------------------------------- |
+| **get**              | Returns the value as `string` of the specified key if it exists.     |
+| **getUint8Array**    | Returns the value as `Uint8Array` of the specified key if it exists. |
+| **set**              | Sets the value of the specified key.                                 |
+| **remove**           | Removes the specified key.                                           |
+| **clear**            | Removes all entries.                                                 |
+| **size**             | Returns the number of entries.                                       |
+| **modify**           | Updates the value of the specified key if it exists.                 |
+| **modifyUint8Array** | Updates the value of the specified key if it exists.                 |
+| **has**              | Check if a key exists.                                               |
+| **isEmpty**          | Check if the store is empty.                                         |
+| **forSchema**        | Create a [SchemaStore](#schemastore) for the specified schema.       |
+
+**Example** (Working with Key-Value Pairs)
+
+```ts twoslash
+import {
+  KeyValueStore,
+  layerMemory
+} from "@effect/platform/KeyValueStore"
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  const kv = yield* KeyValueStore
+
+  // Initially, the store is empty
+  console.log(yield* kv.size)
+
+  // Set a key-value pair
+  yield* kv.set("key", "value")
+  console.log(yield* kv.size)
+
+  // Retrieve the value for the specified key
+  const value = yield* kv.get("key")
+  console.log(value)
+
+  // Remove the key-value pair
+  yield* kv.remove("key")
+  console.log(yield* kv.size)
+})
+
+// Provide an in-memory KeyValueStore implementation
+Effect.runPromise(program.pipe(Effect.provide(layerMemory)))
+/*
+Output:
+0
+1
+{ _id: 'Option', _tag: 'Some', value: 'value' }
+0
+*/
+```
+
+## Built-in Implementations
+
+The module provides several built-in implementations of the `KeyValueStore` interface, available as [layers](/docs/requirements-management/layers/), to suit different needs:
+
+| Implementation        | Description                                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------- |
+| **In-Memory Store**   | `layerMemory` provides a simple, in-memory key-value store, ideal for lightweight or testing scenarios.   |
+| **File System Store** | `layerFileSystem` offers a file-based store for persistent storage needs.                                 |
+| **Schema Store**      | `layerSchema` enables schema-based validation for stored values, ensuring data integrity and type safety. |
+
+## SchemaStore
+
+The `SchemaStore` interface allows you to validate and parse values according to a defined [schema](/docs/schema/introduction/).
+This ensures that all data stored in the key-value store adheres to the specified structure, enhancing data integrity and type safety.
+
+**Example** (Using Schema Validation in KeyValueStore)
+
+```ts twoslash
+import {
+  KeyValueStore,
+  layerMemory
+} from "@effect/platform/KeyValueStore"
+import { Effect, Schema } from "effect"
+
+// Define a schema for the values
+const Person = Schema.Struct({
+  name: Schema.String,
+  age: Schema.Number
+})
+
+const program = Effect.gen(function* () {
+  // Create a SchemaStore based on the Person schema
+  const kv = (yield* KeyValueStore).forSchema(Person)
+
+  // Add a value that adheres to the schema
+  const value = { name: "Alice", age: 30 }
+  yield* kv.set("user1", value)
+  console.log(yield* kv.size)
+
+  // Retrieve and log the value
+  console.log(yield* kv.get("user1"))
+})
+
+// Use the in-memory store implementation
+Effect.runPromise(program.pipe(Effect.provide(layerMemory)))
+/*
+Output:
+1
+{ _id: 'Option', _tag: 'Some', value: { name: 'Alice', age: 30 } }
+*/
+```
+
+> platform/platformlogger.mdx\n\n---
+title: PlatformLogger
+description: Log messages to a file using the FileSystem APIs.
+sidebar:
+  order: 6
+---
+
+Effect's logging system generally writes messages to the console by default. However, you might prefer to store logs in a file for easier debugging or archiving. The `PlatformLogger.toFile` function creates a logger that sends log messages to a file on disk.
+
+### toFile
+
+Creates a new logger from an existing string-based logger, writing its output to the specified file.
+
+If you include a `batchWindow` duration when calling `toFile`, logs are batched for that period before being written. This can reduce overhead if your application produces many log entries. Without a `batchWindow`, logs are written as they arrive.
+
+Note that `toFile` returns an `Effect` that may fail with a `PlatformError` if the file cannot be opened or written to. Be sure to handle this possibility if you need to react to file I/O issues.
+
+**Example** (Directing Logs to a File)
+
+This logger requires a `FileSystem` implementation to open and write to the file. For Node.js, you can use `NodeFileSystem.layer`.
+
+```ts twoslash
+import { PlatformLogger } from "@effect/platform"
+import { NodeFileSystem } from "@effect/platform-node"
+import { Effect, Layer, Logger } from "effect"
+
+// Create a string-based logger (logfmtLogger in this case)
+const myStringLogger = Logger.logfmtLogger
+
+// Apply toFile to write logs to "/tmp/log.txt"
+const fileLogger = myStringLogger.pipe(
+  PlatformLogger.toFile("/tmp/log.txt")
+)
+
+// Replace the default logger, providing NodeFileSystem
+// to access the file system
+const LoggerLive = Logger.replaceScoped(
+  Logger.defaultLogger,
+  fileLogger
+).pipe(Layer.provide(NodeFileSystem.layer))
+
+const program = Effect.log("Hello")
+
+// Run the program, writing logs to /tmp/log.txt
+Effect.runFork(program.pipe(Effect.provide(LoggerLive)))
+/*
+Logs will be written to "/tmp/log.txt" in the logfmt format,
+and won't appear on the console.
+*/
+```
+
+In the following example, logs are written to both the console and a file. The console uses the pretty logger, while the file uses the logfmt format.
+
+**Example** (Directing Logs to Both a File and the Console)
+
+```ts twoslash
+import { PlatformLogger } from "@effect/platform"
+import { NodeFileSystem } from "@effect/platform-node"
+import { Effect, Layer, Logger } from "effect"
+
+const fileLogger = Logger.logfmtLogger.pipe(
+  PlatformLogger.toFile("/tmp/log.txt")
+)
+
+// Combine the pretty logger for console output with the file logger
+const bothLoggers = Effect.map(fileLogger, (fileLogger) =>
+  Logger.zip(Logger.prettyLoggerDefault, fileLogger)
+)
+
+const LoggerLive = Logger.replaceScoped(
+  Logger.defaultLogger,
+  bothLoggers
+).pipe(Layer.provide(NodeFileSystem.layer))
+
+const program = Effect.log("Hello")
+
+// Run the program, writing logs to both the console (pretty format)
+// and "/tmp/log.txt" (logfmt)
+Effect.runFork(program.pipe(Effect.provide(LoggerLive)))
+```
+
+> platform/command.mdx\n\n---
+title: Command
+description: Learn how to create, run, and manage commands with custom arguments, environment variables, and input/output handling in Effect.
+sidebar:
+  order: 1
+---
+
+The `@effect/platform/Command` module provides a way to create and run commands with the specified process name and an optional list of arguments.
+
+## Creating Commands
+
+The `Command.make` function generates a command object, which includes details such as the process name, arguments, and environment.
+
+**Example** (Defining a Command for Directory Listing)
+
+```ts twoslash
+import { Command } from "@effect/platform"
+
+const command = Command.make("ls", "-al")
+console.log(command)
+/*
+{
+  _id: '@effect/platform/Command',
+  _tag: 'StandardCommand',
+  command: 'ls',
+  args: [ '-al' ],
+  env: {},
+  cwd: { _id: 'Option', _tag: 'None' },
+  shell: false,
+  gid: { _id: 'Option', _tag: 'None' },
+  uid: { _id: 'Option', _tag: 'None' }
+}
+*/
+```
+
+This command object does not execute until run by an executor.
+
+## Running Commands
+
+You need a `CommandExecutor` to run the command, which can capture output in various formats such as strings, lines, or streams.
+
+**Example** (Running a Command and Printing Output)
+
+```ts twoslash
+import { Command } from "@effect/platform"
+import { NodeContext, NodeRuntime } from "@effect/platform-node"
+import { Effect } from "effect"
+
+const command = Command.make("ls", "-al")
+
+// The program depends on a CommandExecutor
+const program = Effect.gen(function* () {
+  // Runs the command returning the output as a string
+  const output = yield* Command.string(command)
+  console.log(output)
+})
+
+// Provide the necessary CommandExecutor
+NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
+```
+
+### Output Formats
+
+You can choose different methods to handle command output:
+
+| Method        | Description                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| `string`      | Runs the command returning the output as a string (with the specified encoding)          |
+| `lines`       | Runs the command returning the output as an array of lines (with the specified encoding) |
+| `stream`      | Runs the command returning the output as a stream of `Uint8Array` chunks                 |
+| `streamLines` | Runs the command returning the output as a stream of lines (with the specified encoding) |
+
+### exitCode
+
+If you only need the exit code of a command, use `Command.exitCode`.
+
+**Example** (Getting the Exit Code)
+
+```ts twoslash
+import { Command } from "@effect/platform"
+import { NodeContext, NodeRuntime } from "@effect/platform-node"
+import { Effect } from "effect"
+
+const command = Command.make("ls", "-al")
+
+const program = Effect.gen(function* () {
+  const exitCode = yield* Command.exitCode(command)
+  console.log(exitCode)
+})
+
+NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
+// Output: 0
+```
+
+## Custom Environment Variables
+
+You can customize environment variables in a command by using `Command.env`. This is useful when you need specific variables for the command's execution.
+
+**Example** (Setting Environment Variables)
+
+In this example, the command runs in a shell to ensure environment variables are correctly processed.
+
+```ts twoslash
+import { Command } from "@effect/platform"
+import { NodeContext, NodeRuntime } from "@effect/platform-node"
+import { Effect } from "effect"
+
+const command = Command.make("echo", "-n", "$MY_CUSTOM_VAR").pipe(
+  Command.env({
+    MY_CUSTOM_VAR: "Hello, this is a custom environment variable!"
+  }),
+  // Use shell to interpret variables correctly
+  // on Windows and Unix-like systems
+  Command.runInShell(true)
+)
+
+const program = Effect.gen(function* () {
+  const output = yield* Command.string(command)
+  console.log(output)
+})
+
+NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
+// Output: Hello, this is a custom environment variable!
+```
+
+## Feeding Input to a Command
+
+You can send input directly to a command's standard input using the `Command.feed` function.
+
+**Example** (Sending Input to a Command's Standard Input)
+
+```ts twoslash
+import { Command } from "@effect/platform"
+import { NodeContext, NodeRuntime } from "@effect/platform-node"
+import { Effect } from "effect"
+
+const command = Command.make("cat").pipe(Command.feed("Hello"))
+
+const program = Effect.gen(function* () {
+  console.log(yield* Command.string(command))
+})
+
+NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
+// Output: Hello
+```
+
+## Fetching Process Details
+
+You can access details about a running process, such as `exitCode`, `stdout`, and `stderr`.
+
+**Example** (Accessing Exit Code and Streams from a Running Process)
+
+```ts twoslash
+import { Command } from "@effect/platform"
+import { NodeContext, NodeRuntime } from "@effect/platform-node"
+import { Effect, Stream, String, pipe } from "effect"
+
+// Helper function to collect stream output as a string
+const runString = <E, R>(
+  stream: Stream.Stream<Uint8Array, E, R>
+): Effect.Effect<string, E, R> =>
+  stream.pipe(
+    Stream.decodeText(),
+    Stream.runFold(String.empty, String.concat)
+  )
+
+const program = Effect.gen(function* () {
+  const command = Command.make("ls")
+
+  const [exitCode, stdout, stderr] = yield* pipe(
+    // Start running the command and return a handle to the running process
+    Command.start(command),
+    Effect.flatMap((process) =>
+      Effect.all(
+        [
+          // Waits for the process to exit and returns
+          // the ExitCode of the command that was run
+          process.exitCode,
+          // The standard output stream of the process
+          runString(process.stdout),
+          // The standard error stream of the process
+          runString(process.stderr)
+        ],
+        { concurrency: 3 }
+      )
+    )
+  )
+  console.log({ exitCode, stdout, stderr })
+})
+
+NodeRuntime.runMain(
+  Effect.scoped(program).pipe(Effect.provide(NodeContext.layer))
+)
+```
+
+## Streaming stdout to process.stdout
+
+To stream a command's `stdout` directly to `process.stdout`, you can use the following approach:
+
+**Example** (Streaming Command Output Directly to Standard Output)
+
+```ts twoslash
+import { Command } from "@effect/platform"
+import { NodeContext, NodeRuntime } from "@effect/platform-node"
+import { Effect } from "effect"
+
+// Create a command to run `cat` on a file and inherit stdout
+const program = Command.make("cat", "./some-file.txt").pipe(
+  Command.stdout("inherit"), // Stream stdout to process.stdout
+  Command.exitCode // Get the exit code
+)
+
+NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
+```
+
+> platform/introduction.mdx\n\n---
+title: Introduction to Effect Platform
+description: Build cross-platform applications with unified abstractions for Node.js, Deno, Bun, and browsers using @effect/platform.
+sidebar:
+  label: Introduction
+  order: 0
+---
+
+import {
+  Aside,
+  Tabs,
+  TabItem,
+  Badge
+} from "@astrojs/starlight/components"
+
+`@effect/platform` is a library for building platform-independent abstractions in environments such as Node.js, Deno, Bun, and browsers.
+
+With `@effect/platform`, you can integrate abstract services like [FileSystem](/docs/platform/file-system/) or [Terminal](/docs/platform/terminal/) into your program.
+When assembling your final application, you can provide specific [layers](/docs/requirements-management/layers/) for the target platform using the corresponding packages:
+
+- `@effect/platform-node` for Node.js or Deno
+- `@effect/platform-bun` for Bun
+- `@effect/platform-browser` for browsers
+
+### Stable Modules
+
+The following modules are stable and their documentation is available on this website:
+
+| Module                                           | Description                                       | Status                                    |
+| ------------------------------------------------ | ------------------------------------------------- | ----------------------------------------- |
+| [Command](/docs/platform/command/)               | Provides a way to interact with the command line. | <Badge text="Stable" variant="success" /> |
+| [FileSystem](/docs/platform/file-system/)        | A module for file system operations.              | <Badge text="Stable" variant="success" /> |
+| [KeyValueStore](/docs/platform/key-value-store/) | Manages key-value pairs for data storage.         | <Badge text="Stable" variant="success" /> |
+| [Path](/docs/platform/path/)                     | Utilities for working with file paths.            | <Badge text="Stable" variant="success" /> |
+| [PlatformLogger](/docs/platform/platformlogger/) | Log messages to a file using the FileSystem APIs. | <Badge text="Stable" variant="success" /> |
+| [Terminal](/docs/platform/terminal/)             | Tools for terminal interaction.                   | <Badge text="Stable" variant="success" /> |
+
+### Unstable Modules
+
+Some modules in `@effect/platform` are still in development or marked as experimental.
+These features are subject to change.
+
+| Module                                                                                               | Description                                     | Status                                      |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------- |
+| [Http API](https://github.com/Effect-TS/effect/blob/main/packages/platform/README.md#http-api)       | Provide a declarative way to define HTTP APIs.  | <Badge text="Unstable" variant="caution" /> |
+| [Http Client](https://github.com/Effect-TS/effect/blob/main/packages/platform/README.md#http-client) | A client for making HTTP requests.              | <Badge text="Unstable" variant="caution" /> |
+| [Http Server](https://github.com/Effect-TS/effect/blob/main/packages/platform/README.md#http-server) | A server for handling HTTP requests.            | <Badge text="Unstable" variant="caution" /> |
+| [Socket](https://effect-ts.github.io/effect/platform/Socket.ts.html)                                 | A module for socket-based communication.        | <Badge text="Unstable" variant="caution" /> |
+| [Worker](https://effect-ts.github.io/effect/platform/Worker.ts.html)                                 | A module for running tasks in separate workers. | <Badge text="Unstable" variant="caution" /> |
+
+For the most up-to-date documentation and details, please refer to the official [README](https://github.com/Effect-TS/effect/blob/main/packages/platform/README.md) of the package.
+
+## Installation
+
+To install the **beta** version:
+
+<Tabs syncKey="package-manager">
+
+<TabItem label="npm" icon="seti:npm">
+
+```sh showLineNumbers=false
+npm install @effect/platform
+```
+
+</TabItem>
+
+<TabItem label="pnpm" icon="pnpm">
+
+```sh showLineNumbers=false
+pnpm add @effect/platform
+```
+
+</TabItem>
+
+<TabItem label="Yarn" icon="yarn">
+
+```sh showLineNumbers=false
+yarn add @effect/platform
+```
+
+</TabItem>
+
+<TabItem label="Bun" icon="bun">
+
+```sh showLineNumbers=false
+bun add @effect/platform
+```
+
+</TabItem>
+
+<TabItem label="Deno" icon="deno">
+
+```sh showLineNumbers=false
+deno add npm:@effect/platform
+```
+
+</TabItem>
+
+</Tabs>
+
+## Getting Started with Cross-Platform Programming
+
+Here's a basic example using the `Path` module to create a file path, which can run across different environments:
+
+**Example** (Cross-Platform Path Handling)
+
+```ts twoslash title="index.ts"
+import { Path } from "@effect/platform"
+import { Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  // Access the Path service
+  const path = yield* Path.Path
+
+  // Join parts of a path to create a complete file path
+  const mypath = path.join("tmp", "file.txt")
+
+  console.log(mypath)
+})
+```
+
+### Running the Program in Node.js or Deno
+
+First, install the Node.js-specific package:
+
+<Tabs syncKey="package-manager">
+
+<TabItem label="npm" icon="seti:npm">
+
+```sh showLineNumbers=false
+npm install @effect/platform-node
+```
+
+</TabItem>
+
+<TabItem label="pnpm" icon="pnpm">
+
+```sh showLineNumbers=false
+pnpm add @effect/platform-node
+```
+
+</TabItem>
+
+<TabItem label="Yarn" icon="yarn">
+
+```sh showLineNumbers=false
+yarn add @effect/platform-node
+```
+
+</TabItem>
+
+<TabItem label="Deno" icon="deno">
+
+```sh showLineNumbers=false
+deno add npm:@effect/platform-node
+```
+
+</TabItem>
+
+</Tabs>
+
+Update the program to load the Node.js-specific context:
+
+**Example** (Providing Node.js Context)
+
+```ts twoslash title="index.ts" ins={3,15}
+import { Path } from "@effect/platform"
+import { Effect } from "effect"
+import { NodeContext, NodeRuntime } from "@effect/platform-node"
+
+const program = Effect.gen(function* () {
+  // Access the Path service
+  const path = yield* Path.Path
+
+  // Join parts of a path to create a complete file path
+  const mypath = path.join("tmp", "file.txt")
+
+  console.log(mypath)
+})
+
+NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
+```
+
+Finally, run the program in Node.js using `tsx`, or directly in Deno:
+
+<Tabs syncKey="package-manager">
+
+<TabItem label="npm" icon="seti:npm">
+
+```sh showLineNumbers=false
+npx tsx index.ts
+# Output: tmp/file.txt
+```
+
+</TabItem>
+
+<TabItem label="pnpm" icon="pnpm">
+
+```sh showLineNumbers=false
+pnpm dlx tsx index.ts
+# Output: tmp/file.txt
+```
+
+</TabItem>
+
+<TabItem label="Yarn" icon="seti:yarn">
+
+```sh showLineNumbers=false
+yarn dlx tsx index.ts
+# Output: tmp/file.txt
+```
+
+</TabItem>
+
+<TabItem label="Deno" icon="deno">
+
+```sh showLineNumbers=false
+deno run index.ts
+# Output: tmp/file.txt
+
+# or
+
+deno run -RE index.ts
+# Output: tmp/file.txt
+# (granting required Read and Environment permissions without being prompted)
+```
+
+</TabItem>
+
+</Tabs>
+
+### Running the Program in Bun
+
+To run the same program in Bun, first install the Bun-specific package:
+
+```sh showLineNumbers=false
+bun add @effect/platform-bun
+```
+
+Update the program to use the Bun-specific context:
+
+**Example** (Providing Bun Context)
+
+```ts twoslash title="index.ts" ins={3,15}
+import { Path } from "@effect/platform"
+import { Effect } from "effect"
+import { BunContext, BunRuntime } from "@effect/platform-bun"
+
+const program = Effect.gen(function* () {
+  // Access the Path service
+  const path = yield* Path.Path
+
+  // Join parts of a path to create a complete file path
+  const mypath = path.join("tmp", "file.txt")
+
+  console.log(mypath)
+})
+
+BunRuntime.runMain(program.pipe(Effect.provide(BunContext.layer)))
+```
+
+Run the program in Bun:
+
+```sh showLineNumbers=false
+bun index.ts
+tmp/file.txt
+```
 

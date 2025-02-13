@@ -81,10 +81,10 @@ You can customize the processing behavior by modifying the config files in the `
 
 ### File Types
 
-| Extension | Count | Size | Tokens | Origin URL |
-|-----------|-------|------|--------|-----------|
-| .md | 2 | 3.91 MB | 1,019,001 | [https://effect.website/docs](https://effect.website/docs) |
-| .json | 1 | 11.2 MB | 3,023,372 | [https://effect.website/docs](https://effect.website/docs) |
+| Extension | Count | Size | Tokens | Origin URL | GitHub |
+|-----------|-------|------|--------|------------|--------|
+| .md | 2 | 3.91 MB | 1,019,001 | [https://effect.website/docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.md) |
+| .json | 1 | 11.2 MB | 3,023,372 | [https://effect.website/docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.json) |
 
 ### Website Documentation
 
@@ -94,15 +94,15 @@ You can customize the processing behavior by modifying the config files in the `
 
 #### File Types
 
-| Extension | Count | Size | Tokens |
-|-----------|-------|------|--------|
-| .md | 1 | 1.49 MB | 346,080 |
+| Extension | Count | Size | Tokens | GitHub |
+|-----------|-------|------|--------|--------|
+| .md | 1 | 1.49 MB | 346,080 | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.md) |
 
 #### Files
 
-| File | Size | Tokens | Origin URL |
-|------|------|--------|----------|
-| docs.md | 1.49 MB | 346,080 | [https://effect.website/docs](https://effect.website/docs)
+| File | Size | Tokens | Origin URL | GitHub | Raw |
+|------|------|--------|------------|--------|-----|
+| [docs.md](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.md) | 1.49 MB | 346,080 | [Docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/docs.md) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents/main/output/docs.md) |
 
 ### API Documentation
 
@@ -112,15 +112,15 @@ You can customize the processing behavior by modifying the config files in the `
 
 #### File Types
 
-| Extension | Count | Size | Tokens |
-|-----------|-------|------|--------|
-| .md | 1 | 2.43 MB | 672,921 |
+| Extension | Count | Size | Tokens | GitHub |
+|-----------|-------|------|--------|--------|
+| .md | 1 | 2.43 MB | 672,921 | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) |
 
 #### Files
 
-| File | Size | Tokens | Origin URL |
-|------|------|--------|----------|
-| api.md | 2.43 MB | 672,921 | [https://effect.website](https://effect.website)
+| File | Size | Tokens | Origin URL | GitHub | Raw |
+|------|------|--------|------------|--------|-----|
+| [api.md](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) | 2.43 MB | 672,921 | [Docs](https://effect.website) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/api.md) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents/main/output/api.md) |
 
 ### Module Documentation
 
@@ -130,15 +130,15 @@ You can customize the processing behavior by modifying the config files in the `
 
 #### File Types
 
-| Extension | Count | Size | Tokens |
-|-----------|-------|------|--------|
-| .json | 1 | 11.2 MB | 3,023,372 |
+| Extension | Count | Size | Tokens | GitHub |
+|-----------|-------|------|--------|--------|
+| .json | 1 | 11.2 MB | 3,023,372 | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/module.json) |
 
 #### Files
 
-| File | Size | Tokens | Origin URL |
-|------|------|--------|----------|
-| module.json | 11.2 MB | 3,023,372 | [https://effect.website](https://effect.website)
+| File | Size | Tokens | Origin URL | GitHub | Raw |
+|------|------|--------|------------|--------|-----|
+| [module.json](https://github.com/xesrevinu/effect-contents/blob/main/output/module.json) | 11.2 MB | 3,023,372 | [Docs](https://effect.website) | [View](https://github.com/xesrevinu/effect-contents/blob/main/output/module.json) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents/main/output/module.json) |
 
 
 <!-- STATS_END -->

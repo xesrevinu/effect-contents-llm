@@ -133,7 +133,7 @@ class FileStats {
   }
 
   toMarkdown(): string {
-    return `| [${this.path}](${this.githubUrl}) | ${prettyBytes(this.size)} | ${this.tokens.toLocaleString()} | [${this.originUrl}](${this.originUrl}) | [Raw](${this.rawUrl}) |`;
+    return `| [${this.path}](${this.githubUrl}) | ${prettyBytes(this.size)} | ${this.tokens.toLocaleString()} | [Docs](${this.originUrl}) | [View](${this.githubUrl}) | [Raw](${this.rawUrl}) |`;
   }
 }
 
@@ -222,7 +222,7 @@ function generateReport(results: ProcessResult[]): string {
 
   report += `### File Types\n\n`;
   report += `| Extension | Count | Size | Tokens | Origin URL | GitHub |\n`;
-  report += `|-----------|-------|------|--------|------------|--------||\n`;
+  report += `|-----------|-------|------|--------|------------|--------|\n`;
   for (const [ext, stats] of allFileTypes.entries()) {
     const docConfig = DOC_TYPES.find(doc => 
       doc.pattern.some(p => p.endsWith(ext))
@@ -245,7 +245,7 @@ function generateReport(results: ProcessResult[]): string {
     if (result.stats.length > 0) {
       report += `#### File Types\n\n`;
       report += `| Extension | Count | Size | Tokens | GitHub |\n`;
-      report += `|-----------|-------|------|---------|--------||\n`;
+      report += `|-----------|-------|------|--------|--------|\n`;
       for (const stats of result.fileTypes.values()) {
         const githubPattern = docConfig.pattern[0].replace('output/', '').replace('.*', stats.extension);
         const githubUrl = `${GITHUB_REPO}/blob/main/output/${githubPattern}`;
@@ -254,10 +254,10 @@ function generateReport(results: ProcessResult[]): string {
       report += '\n';
 
       report += `#### Files\n\n`;
-      report += `| File | Size | Tokens | Origin URL | GitHub |\n`;
-      report += `|------|------|--------|------------|--------||\n`;
+      report += `| File | Size | Tokens | Origin URL | GitHub | Raw |\n`;
+      report += `|------|------|--------|------------|--------|-----|\n`;
       report += result.stats.map(s => 
-        `| ${s.path} | ${prettyBytes(s.size)} | ${s.tokens.toLocaleString()} | [${s.originUrl}](${s.originUrl}) | [View](${s.githubUrl}) |`
+        `| [${s.path}](${s.githubUrl}) | ${prettyBytes(s.size)} | ${s.tokens.toLocaleString()} | [Docs](${s.originUrl}) | [View](${s.githubUrl}) | [Raw](${s.rawUrl}) |`
       ).join('\n');
       report += '\n\n';
     }
