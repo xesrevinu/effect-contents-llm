@@ -67,9 +67,9 @@ This will:
 
 ### Summary
 
-- Total Files: 3
-- Total Size: 9.08 MB
-- Total Tokens: 2,503,023
+- Total Files: 14
+- Total Size: 9.35 MB
+- Total Tokens: 2,564,394
 
 ### website-docs
 
@@ -95,7 +95,7 @@ This will:
 | --- | --- | --- | --- |
 | [output/effect-api.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-api.txt) | 2.34 MB | 646,373 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-api.txt) |
 
-### effect-module
+### effect-modules
 
 - Files: 1
 - Size: 5.26 MB
@@ -105,7 +105,139 @@ This will:
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/effect-module.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-module.txt) | 5.26 MB | 1,511,620 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-module.txt) |
+| [output/effect-modules.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-modules.txt) | 5.26 MB | 1,511,620 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-modules.txt) |
+
+### effect-core
+
+- Files: 1
+- Size: 2.68 kB
+- Tokens: 473
+
+#### Files
+
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-core.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-core.txt) | 2.68 kB | 473 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-core.txt) |
+
+### effect-ai
+
+- Files: 1
+- Size: 17 B
+- Tokens: 8
+
+#### Files
+
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-ai.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-ai.txt) | 17 B | 8 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-ai.txt) |
+
+### effect-cli
+
+- Files: 1
+- Size: 48.6 kB
+- Tokens: 10,885
+
+#### Files
+
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-cli.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-cli.txt) | 48.6 kB | 10,885 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-cli.txt) |
+
+### printer
+
+- Files: 1
+- Size: 11 kB
+- Tokens: 2,279
+
+#### Files
+
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/printer.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/printer.txt) | 11 kB | 2,279 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/printer.txt) |
+
+### effect-experimental
+
+- Files: 1
+- Size: 152 B
+- Tokens: 34
+
+#### Files
+
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-experimental.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-experimental.txt) | 152 B | 34 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-experimental.txt) |
+
+### effect-opentelemetry
+
+- Files: 1
+- Size: 154 B
+- Tokens: 36
+
+#### Files
+
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-opentelemetry.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-opentelemetry.txt) | 154 B | 36 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-opentelemetry.txt) |
+
+### effect-platform
+
+- Files: 1
+- Size: 154 kB
+- Tokens: 35,130
+
+#### Files
+
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-platform.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-platform.txt) | 154 kB | 35,130 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-platform.txt) |
+
+### effect-rpc
+
+- Files: 1
+- Size: 10.9 kB
+- Tokens: 2,534
+
+#### Files
+
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-rpc.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-rpc.txt) | 10.9 kB | 2,534 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-rpc.txt) |
+
+### effect-sql
+
+- Files: 1
+- Size: 11.6 kB
+- Tokens: 2,933
+
+#### Files
+
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-sql.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-sql.txt) | 11.6 kB | 2,933 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-sql.txt) |
+
+### effect-typeclass
+
+- Files: 1
+- Size: 15.8 kB
+- Tokens: 4,176
+
+#### Files
+
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-typeclass.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-typeclass.txt) | 15.8 kB | 4,176 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-typeclass.txt) |
+
+### effect-vitest
+
+- Files: 1
+- Size: 12.3 kB
+- Tokens: 2,883
+
+#### Files
+
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-vitest.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-vitest.txt) | 12.3 kB | 2,883 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-vitest.txt) |
 
 
 <!-- STATS_END -->
