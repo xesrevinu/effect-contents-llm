@@ -20,10 +20,12 @@ export async function addSubmodule(url: string, name: string): Promise<void> {
   }
 }
 
+const DefaultBatchSize = process.env.CI ? 50 : 100;
+
 export async function runYek(
   files: string[],
   outputFile: string,
-  batchSize = 50
+  batchSize = DefaultBatchSize
 ): Promise<void> {
   console.log(`Processing ${files.length} files in batches of ${batchSize}...`);
 

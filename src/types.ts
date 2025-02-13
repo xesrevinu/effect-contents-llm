@@ -13,7 +13,8 @@ export interface RemoteSource {
 
 export interface Resource {
   name: string;
-  pattern: string;
+  include: string | string[];
+  exclude?: string | string[];
 }
 
 export interface ProcessedResource {

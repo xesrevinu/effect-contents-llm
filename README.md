@@ -114,10 +114,6 @@ This will:
 
 ```
 effect-contents-llm/
-├── config/               # Configuration files
-│   ├── docs.yaml
-│   ├── api.yaml
-│   └── module.yaml
 ├── src/                 # Source code
 │   └── process.ts      # Main processing logic
 ├── output/             # Processed documentation

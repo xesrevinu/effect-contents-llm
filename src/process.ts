@@ -161,11 +161,11 @@ async function processResource(
     }
 
     const files = (
-      await glob(resource.pattern, {
+      await glob(resource.include, {
         cwd: repoPath,
         absolute: true,
         nodir: true,
-        ignore: ["node_modules/**"],
+        ignore: resource.exclude ? ["node_modules/**"] : [],
       })
     ).sort((a, b) => a.localeCompare(b));
 
@@ -176,7 +176,7 @@ async function processResource(
 
     console.log(`Processing resource: ${resource.name}`);
     console.log(`Repository path: ${repoPath}`);
-    console.log(`Pattern: ${resource.pattern}`);
+    console.log(`Pattern: ${resource.include}`);
     console.log(`Files found:`, files.length);
 
     if (files.length > 0) {
@@ -212,34 +212,7 @@ async function processResource(
   }
 }
 
-const SOURCES: RemoteSource[] = [
-  {
-    name: "effect-website",
-    url: "https://github.com/Effect-TS/website.git",
-    resources: [
-      {
-        name: "website-docs",
-        pattern: "content/src/content/docs/docs/**/*.{md,mdx}",
-      },
-    ],
-  },
-  {
-    name: "effect-io-ai",
-    url: "https://github.com/tim-smart/effect-io-ai.git",
-    resources: [
-      {
-        name: "effect-api",
-        pattern: "effect/**/*.{md,mdx}",
-      },
-      {
-        name: "effect-module",
-        pattern: "json/_all.json",
-      },
-    ],
-  },
-];
-
-async function main(): Promise<void> {
+export async function run(sources: RemoteSource[]): Promise<void> {
   try {
     console.log("Starting documentation processing...");
 
@@ -253,12 +226,12 @@ async function main(): Promise<void> {
 
     await initSubmodules();
 
-    for (const source of SOURCES) {
+    for (const source of sources) {
       await addSubmodule(source.url, source.name);
     }
 
     const results: ProcessedResource[] = [];
-    for (const source of SOURCES) {
+    for (const source of sources) {
       for (const resource of source.resources) {
         const result = await processResource(source, resource);
         results.push(result);
@@ -277,5 +250,3 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 }
-
-main().catch(console.error);

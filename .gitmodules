@@ -4,3 +4,6 @@
 [submodule "sources/effect-website"]
 	path = sources/effect-website
 	url = https://github.com/Effect-TS/website.git
+[submodule "sources/effect"]
+	path = sources/effect
+	url = https://github.com/Effect-TS/effect.git
