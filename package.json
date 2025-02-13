@@ -4,14 +4,7 @@
   "description": "Effect documentation processor",
   "type": "module",
   "scripts": {
-    "init:website": "git submodule add https://github.com/Effect-TS/website.git sources/website",
-    "init:effect-io-ai": "git submodule add https://github.com/tim-smart/effect-io-ai.git sources/effect-io-ai",
-    "init": "npm run init:website && npm run init:effect-io-ai",
-    "update": "git submodule update --init --recursive",
-    "build:docs": "yek sources/website/content/src/content/docs/docs --config-file ./config/docs.yaml --output-template '> FILE_PATH\\n\\nFILE_CONTENT' > ./output/docs.md",
-    "build:api-docs": "yek sources/effect-io-ai/effect --config-file ./config/api.yaml --output-template '> FILE_PATH\\n\\nFILE_CONTENT' > ./output/api.md",
-    "build:module-docs": "yek sources/effect-io-ai/json --config-file ./config/module.yaml --output-template '#FILE_PATH\nFILE_CONTENT' > ./output/module.json",
-    "build": "rm -rf output && mkdir -p output && npm run build:docs && npm run build:api-docs && npm run build:module-docs && node --experimental-strip-types ./src/process.ts"
+    "build": "rm -rf output && mkdir -p output && node --experimental-strip-types ./src/process.ts"
   },
   "dependencies": {
     "glob": "^11.0.1",

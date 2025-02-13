@@ -1,109 +1,20 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { glob } from 'glob';
-import prettyBytes from 'pretty-bytes';
-import { encode } from 'gpt-tokenizer';
+import fs from "node:fs";
+import path from "node:path";
+import { glob } from "glob";
+import prettyBytes from "pretty-bytes";
+import { encode } from "gpt-tokenizer";
+import { addSubmodule, initSubmodules, runYek, buildTable } from "./utils.ts";
+import type {
+  RemoteSource,
+  ProcessedResource,
+  GrandTotal,
+  FileTypeStats,
+  Resource,
+} from "./types.ts";
 
 const GITHUB_REPO = "https://github.com/xesrevinu/effect-contents-llm";
-const GITHUB_RAW = "https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main";
-
-interface DocConfig {
-  title: string;
-  originUrl: string;
-  pattern: string[];
-}
-
-interface FileTypeStats {
-  extension: string;
-  count: number;
-  size: number;
-  tokens: number;
-}
-
-interface ProcessResult {
-  type: string;
-  stats: FileStats[];
-  totalSize: number;
-  totalTokens: number;
-  content: string;
-  fileTypes: Map<string, FileTypeStats>; 
-}
-
-interface GrandTotal {
-  size: number;
-  tokens: number;
-  files: number;
-}
-
-const DOC_TYPES: DocConfig[] = [
-  {
-    title: 'Website Documentation',
-    originUrl: "https://effect.website/docs",
-    pattern: [
-      'output/docs.*'
-    ]
-  },
-  {
-    title: 'API Documentation',
-    originUrl: "https://effect.website",
-    pattern: [
-      'output/api.*'
-    ]
-  },
-  {
-    title: 'Module Documentation',
-    originUrl: "https://effect.website",
-    pattern: [
-      'output/module.*'
-    ]
-  }
-];
-
-function processContent(filePath: string, content: string, extension: string): string {
-  switch (extension) {
-    case '.json':
-      try {
-        const jsonParts = content.split(/^#.*\.json$/gm)
-          .map(part => part.trim())
-          .filter(part => part.length > 0);
-
-        if (jsonParts.length === 0) {
-          console.warn(`No valid JSON parts found in ${filePath}`);
-          return content;
-        }
-
-        const jsonObjects = [];
-        for (const part of jsonParts) {
-          try {
-            const obj = JSON.parse(part);
-            jsonObjects.push(obj);
-          } catch (parseError) {
-            console.error(`Error parsing JSON part in ${filePath}:`, parseError);
-            console.error('Problematic content:', part.substring(0, 100) + '...');
-          }
-        }
-
-        if (jsonObjects.length === 0) {
-          console.warn(`No valid JSON objects parsed from ${filePath}`);
-          return content;
-        }
-
-        const jsonContent = JSON.stringify(jsonObjects, null, 2);
-        try {
-          fs.writeFileSync(`output/${filePath}`, jsonContent);
-        } catch (writeError) {
-          console.error(`Error writing processed JSON to ${filePath}:`, writeError);
-        }
-
-        return jsonContent;
-      } catch (error) {
-        console.error(`Error processing JSON file ${filePath}:`, error);
-        return content;
-      }
-    default:
-      return content;
-  }
-}
+const GITHUB_RAW =
+  "https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main";
 
 class FileStats {
   public path: string;
@@ -118,86 +29,26 @@ class FileStats {
   constructor(filePath: string, content: string, originUrl: string) {
     this.path = filePath;
     this.extension = path.extname(filePath).toLowerCase();
-    this.content = processContent(filePath, content, this.extension);
+    this.content = content;
     this.size = Buffer.byteLength(this.content);
     this.tokens = encode(this.content).length;
     this.originUrl = originUrl;
-    this.githubUrl = `${GITHUB_REPO}/blob/main/output/${filePath}`;
-    this.rawUrl = `${GITHUB_RAW}/output/${filePath}`;
-
-    console.log(`File stats for ${filePath}:`, {
-      size: prettyBytes(this.size),
-      tokens: this.tokens,
-      extension: this.extension
-    });
-  }
-
-  toMarkdown(): string {
-    return `| [${this.path}](${this.githubUrl}) | ${prettyBytes(this.size)} | ${this.tokens.toLocaleString()} | [Docs](${this.originUrl}) | [View](${this.githubUrl}) | [Raw](${this.rawUrl}) |`;
+    this.githubUrl = `${GITHUB_REPO}/blob/main/${filePath}`;
+    this.rawUrl = `${GITHUB_RAW}/${filePath}`;
   }
 }
 
-async function processDocType(docConfig: DocConfig, index: number): Promise<ProcessResult> {
-  const stats: FileStats[] = [];
-  const fileTypes = new Map<string, FileTypeStats>();
-  let totalSize = 0;
-  let totalTokens = 0;
-
-  for (const pattern of docConfig.pattern) {
-    console.log(`Searching for files with pattern: ${pattern}`);
-    const files = await glob(pattern);
-    console.log(`Found ${files.length} files:`, files);
-
-    for (const file of files) {
-      try {
-        console.log(`Processing file: ${file}`);
-        const content = fs.readFileSync(file, 'utf8');
-        const fileStats = new FileStats(path.basename(file), content, docConfig.originUrl);
-        stats.push(fileStats);
-        totalSize += fileStats.size;
-        totalTokens += fileStats.tokens;
-
-        const typeStats = fileTypes.get(fileStats.extension) || {
-          extension: fileStats.extension,
-          count: 0,
-          size: 0,
-          tokens: 0
-        };
-        typeStats.count++;
-        typeStats.size += fileStats.size;
-        typeStats.tokens += fileStats.tokens;
-        fileTypes.set(fileStats.extension, typeStats);
-
-        console.log(`File stats:`, {
-          path: fileStats.path,
-          size: prettyBytes(fileStats.size),
-          tokens: fileStats.tokens,
-          extension: fileStats.extension
-        });
-      } catch (error) {
-        console.error(`Error processing file ${file}:`, error);
-      }
-    }
-  }
-
-  return {
-    type: index.toString(),
-    stats,
-    totalSize,
-    totalTokens,
-    content: stats.map(s => s.content).join('\n\n'),
-    fileTypes
-  };
-}
-
-function generateReport(results: ProcessResult[]): string {
+function generateReport(results: ProcessedResource[]): string {
   let report = `## Documentation Statistics\n\n`;
-  
-  const grandTotal = results.reduce<GrandTotal>((acc, r) => ({
-    size: acc.size + r.totalSize,
-    tokens: acc.tokens + r.totalTokens,
-    files: acc.files + r.stats.length
-  }), { size: 0, tokens: 0, files: 0 });
+
+  const grandTotal = results.reduce<GrandTotal>(
+    (acc, r) => ({
+      size: acc.size + r.totalSize,
+      tokens: acc.tokens + r.totalTokens,
+      files: acc.files + r.files.length,
+    }),
+    { size: 0, tokens: 0, files: 0 }
+  );
 
   const allFileTypes = new Map<string, FileTypeStats>();
   for (const result of results) {
@@ -206,7 +57,7 @@ function generateReport(results: ProcessResult[]): string {
         extension: ext,
         count: 0,
         size: 0,
-        tokens: 0
+        tokens: 0,
       };
       existing.count += stats.count;
       existing.size += stats.size;
@@ -220,46 +71,36 @@ function generateReport(results: ProcessResult[]): string {
   report += `- Total Size: ${prettyBytes(grandTotal.size)}\n`;
   report += `- Total Tokens: ${grandTotal.tokens.toLocaleString()}\n\n`;
 
-  report += `### File Types\n\n`;
-  report += `| Extension | Count | Size | Tokens | Origin URL | GitHub |\n`;
-  report += `|-----------|-------|------|--------|------------|--------|\n`;
-  for (const [ext, stats] of allFileTypes.entries()) {
-    const docConfig = DOC_TYPES.find(doc => 
-      doc.pattern.some(p => p.endsWith(ext))
-    ) || DOC_TYPES[0];
-    const githubPattern = docConfig.pattern[0].replace('output/', '').replace('.*', ext);
-    const githubUrl = `${GITHUB_REPO}/blob/main/output/${githubPattern}`;
-    report += `| ${stats.extension || '(none)'} | ${stats.count} | ${prettyBytes(stats.size)} | ${stats.tokens.toLocaleString()} | [${docConfig.originUrl}](${docConfig.originUrl}) | [View](${githubUrl}) |\n`;
-  }
-  report += '\n';
-
   for (let i = 0; i < results.length; i++) {
     const result = results[i];
-    const docConfig = DOC_TYPES[i];
-    
-    report += `### ${docConfig.title}\n\n`;
-    report += `- Files: ${result.stats.length}\n`;
+
+    report += `### ${result.name}\n\n`;
+    report += `- Files: ${result.files.length}\n`;
     report += `- Size: ${prettyBytes(result.totalSize)}\n`;
     report += `- Tokens: ${result.totalTokens.toLocaleString()}\n\n`;
 
-    if (result.stats.length > 0) {
-      report += `#### File Types\n\n`;
-      report += `| Extension | Count | Size | Tokens | GitHub |\n`;
-      report += `|-----------|-------|------|--------|--------|\n`;
-      for (const stats of result.fileTypes.values()) {
-        const githubPattern = docConfig.pattern[0].replace('output/', '').replace('.*', stats.extension);
-        const githubUrl = `${GITHUB_REPO}/blob/main/output/${githubPattern}`;
-        report += `| ${stats.extension || '(none)'} | ${stats.count} | ${prettyBytes(stats.size)} | ${stats.tokens.toLocaleString()} | [View](${githubUrl}) |\n`;
-      }
-      report += '\n';
-
+    if (result.files.length > 0) {
       report += `#### Files\n\n`;
-      report += `| File | Size | Tokens | Origin URL | GitHub | Raw |\n`;
-      report += `|------|------|--------|------------|--------|-----|\n`;
-      report += result.stats.map(s => 
-        `| [${s.path}](${s.githubUrl}) | ${prettyBytes(s.size)} | ${s.tokens.toLocaleString()} | [Docs](${s.originUrl}) | [View](${s.githubUrl}) | [Raw](${s.rawUrl}) |`
-      ).join('\n');
-      report += '\n\n';
+      const fileColumns = [
+        {
+          header: "File",
+          render: (file: FileStats) => `[${file.path}](${file.githubUrl})`,
+        },
+        {
+          header: "Size",
+          render: (file: FileStats) => prettyBytes(file.size),
+        },
+        {
+          header: "Tokens",
+          render: (file: FileStats) => file.tokens.toLocaleString(),
+        },
+        {
+          header: "Raw",
+          render: (file: FileStats) => `[Raw](${file.rawUrl})`,
+        },
+      ];
+
+      report += buildTable<FileStats>(fileColumns, result.files) + "\n\n";
     }
   }
 
@@ -267,49 +108,172 @@ function generateReport(results: ProcessResult[]): string {
 }
 
 function updateReadme(statsContent: string): void {
-  const readmePath = 'README.md';
-  let readmeContent = fs.readFileSync(readmePath, 'utf8');
+  const readmePath = "README.md";
+  let readmeContent = fs.readFileSync(readmePath, "utf8");
 
-  const statsStartMarker = '<!-- STATS_START -->';
-  const statsEndMarker = '<!-- STATS_END -->';
-  
+  const statsStartMarker = "<!-- STATS_START -->";
+  const statsEndMarker = "<!-- STATS_END -->";
+
   const startIndex = readmeContent.indexOf(statsStartMarker);
   const endIndex = readmeContent.indexOf(statsEndMarker);
 
   if (startIndex === -1 || endIndex === -1) {
     readmeContent += `\n${statsStartMarker}\n${statsContent}\n${statsEndMarker}\n`;
   } else {
-    readmeContent = 
+    readmeContent =
       readmeContent.substring(0, startIndex + statsStartMarker.length) +
-      '\n' + statsContent + '\n' +
+      "\n" +
+      statsContent +
+      "\n" +
       readmeContent.substring(endIndex);
   }
 
   fs.writeFileSync(readmePath, readmeContent);
 }
 
+function updateFileTypeStats(
+  fileTypes: Map<string, FileTypeStats>,
+  fileStats: FileStats
+): void {
+  const typeStats = fileTypes.get(fileStats.extension) || {
+    extension: fileStats.extension,
+    count: 0,
+    size: 0,
+    tokens: 0,
+  };
+
+  typeStats.count++;
+  typeStats.size += fileStats.size;
+  typeStats.tokens += fileStats.tokens;
+  fileTypes.set(fileStats.extension, typeStats);
+}
+
+async function processResource(
+  source: RemoteSource,
+  resource: Resource
+): Promise<ProcessedResource> {
+  try {
+    const pwd = process.cwd();
+    const repoPath = path.join(pwd, "sources", source.name);
+
+    if (!fs.existsSync(repoPath)) {
+      throw new Error(`Repository path does not exist: ${repoPath}`);
+    }
+
+    const files = await glob(resource.pattern, {
+      cwd: repoPath,
+      absolute: true,
+      nodir: true,
+      ignore: ["node_modules/**"],
+    });
+
+    const stats: FileStats[] = [];
+    const fileTypes = new Map<string, FileTypeStats>();
+    let totalSize = 0;
+    let totalTokens = 0;
+
+    console.log(`Processing resource: ${resource.name}`);
+    console.log(`Repository path: ${repoPath}`);
+    console.log(`Pattern: ${resource.pattern}`);
+    console.log(`Files found:`, files.length);
+
+    if (files.length > 0) {
+      const outputFile = path.join("output", `${resource.name}.txt`);
+
+      await runYek(files, outputFile);
+
+      let outputContent = fs.readFileSync(outputFile, "utf8");
+      if (source.transform) {
+        outputContent = source.transform(outputContent);
+      }
+
+      const fileStats = new FileStats(outputFile, outputContent, source.url);
+      stats.push(fileStats);
+      totalSize += fileStats.size;
+      totalTokens += fileStats.tokens;
+      updateFileTypeStats(fileTypes, fileStats);
+    }
+
+    return {
+      name: resource.name,
+      files: stats,
+      totalSize,
+      totalTokens,
+      fileTypes,
+    };
+  } catch (error) {
+    console.error(
+      `Failed to process resource ${resource.name} from ${source.name}:`,
+      error
+    );
+    throw error;
+  }
+}
+
+const SOURCES: RemoteSource[] = [
+  {
+    name: "effect-website",
+    url: "https://github.com/Effect-TS/website.git",
+    resources: [
+      {
+        name: "website-docs",
+        pattern: "content/src/content/docs/docs/**/*.{md,mdx}",
+      },
+    ],
+  },
+  {
+    name: "effect-io-ai",
+    url: "https://github.com/tim-smart/effect-io-ai.git",
+    resources: [
+      {
+        name: "effect-api",
+        pattern: "effect/**/*.{md,mdx}",
+      },
+      {
+        name: "effect-module",
+        pattern: "json/_all.json",
+      },
+    ],
+  },
+];
+
 async function main(): Promise<void> {
   try {
-    console.log('Starting documentation processing...');
-    
-    const results = await Promise.all(
-      DOC_TYPES.map((config, index) => {
-        console.log(`Processing ${config.title}...`);
-        return processDocType(config, index);
-      })
-    );
+    console.log("Starting documentation processing...");
 
-    console.log('Generating statistics report...');
+    if (!fs.existsSync("output")) {
+      fs.mkdirSync("output", { recursive: true });
+    }
+
+    if (!fs.existsSync("sources")) {
+      fs.mkdirSync("sources", { recursive: true });
+    }
+
+    await initSubmodules();
+
+    for (const source of SOURCES) {
+      await addSubmodule(source.url, source.name);
+    }
+
+    const results: ProcessedResource[] = [];
+    for (const source of SOURCES) {
+      for (const resource of source.resources) {
+        const result = await processResource(source, resource);
+        results.push(result);
+      }
+    }
+
+    console.log("Generating statistics report...");
     const statsReport = generateReport(results);
-    
-    console.log('Updating README.md...');
+
+    console.log("Updating README.md...");
     updateReadme(statsReport);
 
-    console.log('Documentation processing completed successfully.');
+    console.log("Documentation processing completed successfully.");
   } catch (error) {
-    console.error('Error processing documentation:', error);
+    console.error("Error processing documentation:", error);
     process.exit(1);
   }
 }
 
-main().catch(console.error); 
+main().catch(console.error);

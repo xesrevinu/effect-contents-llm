@@ -82,69 +82,44 @@ You can customize the processing behavior by modifying the config files in the `
 ### Summary
 
 - Total Files: 3
-- Total Size: 15.1 MB
-- Total Tokens: 4,045,292
+- Total Size: 9.07 MB
+- Total Tokens: 2,500,334
 
-### File Types
-
-| Extension | Count | Size | Tokens | Origin URL | GitHub |
-|-----------|-------|------|--------|------------|--------|
-| .md | 2 | 3.92 MB | 1,021,920 | [https://effect.website/docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/docs.md) |
-| .json | 1 | 11.2 MB | 3,023,372 | [https://effect.website/docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/docs.json) |
-
-### Website Documentation
+### website-docs
 
 - Files: 1
-- Size: 1.49 MB
-- Tokens: 346,080
-
-#### File Types
-
-| Extension | Count | Size | Tokens | GitHub |
-|-----------|-------|------|--------|--------|
-| .md | 1 | 1.49 MB | 346,080 | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/docs.md) |
+- Size: 1.48 MB
+- Tokens: 345,030
 
 #### Files
 
-| File | Size | Tokens | Origin URL | GitHub | Raw |
-|------|------|--------|------------|--------|-----|
-| [docs.md](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/docs.md) | 1.49 MB | 346,080 | [Docs](https://effect.website/docs) | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/docs.md) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/docs.md) |
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/website-docs.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/website-docs.txt) | 1.48 MB | 345,030 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/website-docs.txt) |
 
-### API Documentation
+### effect-api
 
 - Files: 1
-- Size: 2.44 MB
-- Tokens: 675,840
-
-#### File Types
-
-| Extension | Count | Size | Tokens | GitHub |
-|-----------|-------|------|--------|--------|
-| .md | 1 | 2.44 MB | 675,840 | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/api.md) |
+- Size: 2.33 MB
+- Tokens: 643,684
 
 #### Files
 
-| File | Size | Tokens | Origin URL | GitHub | Raw |
-|------|------|--------|------------|--------|-----|
-| [api.md](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/api.md) | 2.44 MB | 675,840 | [Docs](https://effect.website) | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/api.md) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/api.md) |
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-api.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-api.txt) | 2.33 MB | 643,684 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-api.txt) |
 
-### Module Documentation
+### effect-module
 
 - Files: 1
-- Size: 11.2 MB
-- Tokens: 3,023,372
-
-#### File Types
-
-| Extension | Count | Size | Tokens | GitHub |
-|-----------|-------|------|--------|--------|
-| .json | 1 | 11.2 MB | 3,023,372 | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/module.json) |
+- Size: 5.26 MB
+- Tokens: 1,511,620
 
 #### Files
 
-| File | Size | Tokens | Origin URL | GitHub | Raw |
-|------|------|--------|------------|--------|-----|
-| [module.json](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/module.json) | 11.2 MB | 3,023,372 | [Docs](https://effect.website) | [View](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/module.json) | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/module.json) |
+| File | Size | Tokens | Raw |
+| --- | --- | --- | --- |
+| [output/effect-module.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-module.txt) | 5.26 MB | 1,511,620 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-module.txt) |
 
 
 <!-- STATS_END -->
