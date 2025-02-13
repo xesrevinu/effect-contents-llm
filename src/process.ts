@@ -74,13 +74,8 @@ function generateReport(results: ProcessedResource[]): string {
   for (let i = 0; i < results.length; i++) {
     const result = results[i];
 
-    report += `### ${result.name}\n\n`;
-    report += `- Files: ${result.files.length}\n`;
-    report += `- Size: ${prettyBytes(result.totalSize)}\n`;
-    report += `- Tokens: ${result.totalTokens.toLocaleString()}\n\n`;
-
     if (result.files.length > 0) {
-      report += `#### Files\n\n`;
+      report += `#### ${result.name}\n\n`;
       const fileColumns = [
         {
           header: "File",
