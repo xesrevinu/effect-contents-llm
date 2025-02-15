@@ -12541,17 +12541,17 @@ Channel.provideService
 
 ```ts
 export declare const provideService: {
-  <T extends Context.Tag<any, any>>(
-    tag: T,
-    service: Context.Tag.Service<T>
+  <I, S>(
+    tag: Context.Tag<I, S>,
+    service: Types.NoInfer<S>
   ): <OutElem, InElem, OutErr, InErr, OutDone, InDone, Env>(
     self: Channel<OutElem, InElem, OutErr, InErr, OutDone, InDone, Env>
-  ) => Channel<OutElem, InElem, OutErr, InErr, OutDone, InDone, Exclude<Env, Context.Tag.Identifier<T>>>
-  <OutElem, InElem, OutErr, InErr, OutDone, InDone, Env, T extends Context.Tag<any, any>>(
+  ) => Channel<OutElem, InElem, OutErr, InErr, OutDone, InDone, Exclude<Env, I>>
+  <OutElem, InElem, OutErr, InErr, OutDone, InDone, Env, I, S>(
     self: Channel<OutElem, InElem, OutErr, InErr, OutDone, InDone, Env>,
-    tag: T,
-    service: Context.Tag.Service<T>
-  ): Channel<OutElem, InElem, OutErr, InErr, OutDone, InDone, Exclude<Env, Context.Tag.Identifier<T>>>
+    tag: Context.Tag<I, S>,
+    service: Types.NoInfer<S>
+  ): Channel<OutElem, InElem, OutErr, InErr, OutDone, InDone, Exclude<Env, I>>
 }
 ```
 
@@ -13053,17 +13053,17 @@ Channel.updateService
 
 ```ts
 export declare const updateService: {
-  <T extends Context.Tag<any, any>>(
-    tag: T,
-    f: (resource: Context.Tag.Service<T>) => Context.Tag.Service<T>
+  <I, S>(
+    tag: Context.Tag<I, S>,
+    f: (resource: Types.NoInfer<S>) => Types.NoInfer<S>
   ): <OutElem, OutErr, InErr, OutDone, InDone, R>(
     self: Channel<OutElem, unknown, OutErr, InErr, OutDone, InDone, R>
-  ) => Channel<OutElem, unknown, OutErr, InErr, OutDone, InDone, T | R>
-  <OutElem, OutErr, InErr, OutDone, InDone, R, T extends Context.Tag<any, any>>(
+  ) => Channel<OutElem, unknown, OutErr, InErr, OutDone, InDone, I | R>
+  <OutElem, OutErr, InErr, OutDone, InDone, R, I, S>(
     self: Channel<OutElem, unknown, OutErr, InErr, OutDone, InDone, R>,
-    tag: T,
-    f: (resource: Context.Tag.Service<T>) => Context.Tag.Service<T>
-  ): Channel<OutElem, unknown, OutErr, InErr, OutDone, InDone, R | T>
+    tag: Context.Tag<I, S>,
+    f: (resource: Types.NoInfer<S>) => Types.NoInfer<S>
+  ): Channel<OutElem, unknown, OutErr, InErr, OutDone, InDone, I | R>
 }
 ```
 
@@ -20659,6 +20659,36 @@ export declare const toPartsUtc: (self: DateTime) => DateTime.PartsWithWeekday
 ```
 
 
+# toUtc
+
+For a `DateTime` returns a new `DateTime.Utc`.
+
+To import and use `toUtc` from the "DateTime" module:
+
+```ts
+import * as DateTime from "effect/DateTime"
+// Can be accessed like this
+DateTime.toUtc
+```
+
+**Example**
+
+```ts
+import { DateTime } from "effect"
+
+const now = DateTime.unsafeMakeZoned({ year: 2024 }, { timeZone: "Europe/London" })
+
+// set as UTC
+const utc: DateTime.Utc = DateTime.toUtc(now)
+```
+
+**Signature**
+
+```ts
+export declare const toUtc: (self: DateTime) => Utc
+```
+
+
 # unsafeFromDate
 
 Create a `DateTime` from a `Date`.
@@ -25699,6 +25729,72 @@ export declare const format: (self: DurationInput) => string
 ```
 
 
+# formatIso
+
+Formats a Duration into an ISO8601 duration string.
+
+Months are assumed to be 30 days and years are assumed to be 365 days.
+
+Returns `Option.none()` if the duration is infinite.
+
+To import and use `formatIso` from the "Duration" module:
+
+```ts
+import * as Duration from "effect/Duration"
+// Can be accessed like this
+Duration.formatIso
+```
+
+**Example**
+
+```ts
+import { Duration, Option } from "effect"
+
+Duration.formatIso(Duration.days(1)) // => Option.some("P1D")
+Duration.formatIso(Duration.minutes(90)) // => Option.some("PT1H30M")
+Duration.formatIso(Duration.millis(1500)) // => Option.some("PT1.5S")
+Duration.formatIso(Duration.infinity) // => Option.none()
+```
+
+**Signature**
+
+```ts
+export declare const formatIso: (self: DurationInput) => Option.Option<string>
+```
+
+
+# fromIso
+
+Parses an ISO8601 duration string into a `Duration`.
+
+Months are assumed to be 30 days and years are assumed to be 365 days.
+
+To import and use `fromIso` from the "Duration" module:
+
+```ts
+import * as Duration from "effect/Duration"
+// Can be accessed like this
+Duration.fromIso
+```
+
+**Example**
+
+```ts
+import { Duration, Option } from "effect"
+
+Duration.fromIso("P1D") // => Option.some(Duration.days(1))
+Duration.fromIso("PT1H") // => Option.some(Duration.hours(1))
+Duration.fromIso("PT1M") // => Option.some(Duration.minutes(1))
+Duration.fromIso("PT1.5S") // => Option.some(Duration.seconds(1.5))
+```
+
+**Signature**
+
+```ts
+export declare const fromIso: (iso: string) => Option.Option<Duration>
+```
+
+
 # parts
 
 Converts a `Duration` to its parts.
@@ -25743,6 +25839,41 @@ Duration.toNanos
 
 ```ts
 export declare const toNanos: (self: DurationInput) => Option.Option<bigint>
+```
+
+
+# unsafeFormatIso
+
+Formats a Duration into an ISO8601 duration string.
+
+The ISO8601 duration format is generally specified as P[n]Y[n]M[n]DT[n]H[n]M[n]S. However, since
+the `Duration` type does not support years or months, this function will only output the days, hours,
+minutes and seconds. Thus, the effective format is P[n]DT[n]H[n]M[n]S.
+
+Milliseconds and nanoseconds are expressed as fractional seconds.
+
+To import and use `unsafeFormatIso` from the "Duration" module:
+
+```ts
+import * as Duration from "effect/Duration"
+// Can be accessed like this
+Duration.unsafeFormatIso
+```
+
+**Example**
+
+```ts
+import { Duration } from "effect"
+
+Duration.unsafeFormatIso(Duration.days(1)) // => "P1D"
+Duration.unsafeFormatIso(Duration.minutes(90)) // => "PT1H30M"
+Duration.unsafeFormatIso(Duration.millis(1500)) // => "PT1.5S"
+```
+
+**Signature**
+
+```ts
+export declare const unsafeFormatIso: (self: DurationInput) => string
 ```
 
 
@@ -29876,6 +30007,127 @@ export declare const filter: {
 ```
 
 
+# filterEffectOrElse
+
+Filters an effect with an effectful predicate, falling back to an alternative
+effect if the predicate fails.
+
+**Details**
+
+This function applies a predicate to the result of an effect. If the
+predicate evaluates to `false`, the effect falls back to the `orElse`
+effect. The `orElse` effect can produce an alternative value or perform
+additional computations.
+
+To import and use `filterEffectOrElse` from the "Effect" module:
+
+```ts
+import * as Effect from "effect/Effect"
+// Can be accessed like this
+Effect.filterEffectOrElse
+```
+
+**Example**
+
+```ts
+import { Effect, pipe } from "effect"
+
+// Define a user interface
+interface User {
+  readonly name: string
+}
+
+// Simulate an asynchronous authentication function
+declare const auth: () => Promise<User | null>
+
+const program = pipe(
+  Effect.promise(() => auth()),
+  // Use filterEffectOrElse with an effectful predicate
+  Effect.filterEffectOrElse({
+    predicate: (user) => Effect.succeed(user !== null),
+    orElse: (user) => Effect.fail(new Error(`Unauthorized user: ${user}`))
+  })
+)
+```
+
+**Signature**
+
+```ts
+export declare const filterEffectOrElse: {
+  <A, E2, R2, A2, E3, R3>(options: {
+    readonly predicate: (a: NoInfer<A>) => Effect<boolean, E2, R2>
+    readonly orElse: (a: NoInfer<A>) => Effect<A2, E3, R3>
+  }): <E, R>(self: Effect<A, E, R>) => Effect<A | A2, E | E2 | E3, R | R2 | R3>
+  <A, E, R, E2, R2, A2, E3, R3>(
+    self: Effect<A, E, R>,
+    options: { readonly predicate: (a: A) => Effect<boolean, E2, R2>; readonly orElse: (a: A) => Effect<A2, E3, R3> }
+  ): Effect<A | A2, E | E2 | E3, R | R2 | R3>
+}
+```
+
+
+# filterEffectOrFail
+
+Filters an effect with an effectful predicate, failing with a custom error if the predicate fails.
+
+**Details**
+
+This function applies a predicate to the result of an effect. If the
+predicate evaluates to `false`, the effect fails with a custom error
+generated by the `orFailWith` function.
+
+**When to Use**
+
+This is useful for enforcing constraints and treating violations as
+recoverable errors.
+
+To import and use `filterEffectOrFail` from the "Effect" module:
+
+```ts
+import * as Effect from "effect/Effect"
+// Can be accessed like this
+Effect.filterEffectOrFail
+```
+
+**Example**
+
+```ts
+import { Effect, pipe } from "effect"
+
+// Define a user interface
+interface User {
+  readonly name: string
+}
+
+// Simulate an asynchronous authentication function
+declare const auth: () => Promise<User | null>
+
+const program = pipe(
+  Effect.promise(() => auth()),
+  // Use filterEffectOrFail with an effectful predicate
+  Effect.filterEffectOrFail({
+    predicate: (user) => Effect.succeed(user !== null),
+    orFailWith: () => new Error("Unauthorized")
+  })
+)
+```
+
+**Signature**
+
+```ts
+export declare const filterEffectOrFail: {
+  <A, E2, R2, E3>(options: {
+    readonly predicate: (a: NoInfer<A>) => Effect<boolean, E2, R2>
+    readonly orFailWith: (a: NoInfer<A>) => E3
+  }): <E, R>(self: Effect<A, E, R>) => Effect<A, E | E2 | E3, R | R2>
+  <A, E, R, E2, R2, E3>(
+    self: Effect<A, E, R>,
+    options: { readonly predicate: (a: A) => Effect<boolean, E2, R2>; readonly orFailWith: (a: A) => E3 }
+  ): Effect<A, E | E2 | E3, R | R2>
+}
+```
+
+
 # filterMap
 
 Filters and maps elements sequentially in one operation.
@@ -32306,7 +32558,7 @@ const program = Effect.logWithLevel(LogLevel.Error, "Critical error encountered"
 **Signature**
 
 ```ts
-export declare const logWithLevel: (level: LogLevel, ...message: ReadonlyArray<any>) => Effect<void>
+export declare const logWithLevel: (level: LogLevel.LogLevel, ...message: ReadonlyArray<any>) => Effect<void>
 ```
 
 
@@ -34508,15 +34760,8 @@ const runnable = Effect.provideService(program, Random, {
 
 ```ts
 export declare const provideService: {
-  <T extends Context.Tag<any, any>>(
-    tag: T,
-    service: Context.Tag.Service<T>
-  ): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, Context.Tag.Identifier<T>>>
-  <A, E, R, T extends Context.Tag<any, any>>(
-    self: Effect<A, E, R>,
-    tag: T,
-    service: Context.Tag.Service<T>
-  ): Effect<A, E, Exclude<R, Context.Tag.Identifier<T>>>
+  <I, S>(tag: Context.Tag<I, S>, service: NoInfer<S>): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, I>>
+  <A, E, R, I, S>(self: Effect<A, E, R>, tag: Context.Tag<I, S>, service: NoInfer<S>): Effect<A, E, Exclude<R, I>>
 }
 ```
 
@@ -34549,15 +34794,15 @@ Effect.provideServiceEffect
 
 ```ts
 export declare const provideServiceEffect: {
-  <T extends Context.Tag<any, any>, E1, R1>(
-    tag: T,
-    effect: Effect<Context.Tag.Service<T>, E1, R1>
-  ): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E1 | E, R1 | Exclude<R, Context.Tag.Identifier<T>>>
-  <A, E, R, T extends Context.Tag<any, any>, E1, R1>(
+  <I, S, E1, R1>(
+    tag: Context.Tag<I, S>,
+    effect: Effect<NoInfer<S>, E1, R1>
+  ): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E | E1, R1 | Exclude<R, I>>
+  <A, E, R, I, S, E1, R1>(
     self: Effect<A, E, R>,
-    tag: T,
-    effect: Effect<Context.Tag.Service<T>, E1, R1>
-  ): Effect<A, E | E1, R1 | Exclude<R, Context.Tag.Identifier<T>>>
+    tag: Context.Tag<I, S>,
+    effect: Effect<NoInfer<S>, E1, R1>
+  ): Effect<A, E | E1, R1 | Exclude<R, I>>
 }
 ```
 
@@ -38591,6 +38836,51 @@ export declare const transplant: <A, E, R>(
 ```
 
 
+# transposeOption
+
+Converts an `Option` of an `Effect` into an `Effect` of an `Option`.
+
+**Details**
+
+This function transforms an `Option<Effect<A, E, R>>` into an
+`Effect<Option<A>, E, R>`. If the `Option` is `None`, the resulting `Effect`
+will immediately succeed with a `None` value. If the `Option` is `Some`, the
+inner `Effect` will be executed, and its result wrapped in a `Some`.
+
+To import and use `transposeOption` from the "Effect" module:
+
+```ts
+import * as Effect from "effect/Effect"
+// Can be accessed like this
+Effect.transposeOption
+```
+
+**Example**
+
+```ts
+import { Effect, Option } from "effect"
+
+//      ┌─── Option<Effect<number, never, never>>
+//      ▼
+const maybe = Option.some(Effect.succeed(42))
+
+//      ┌─── Effect<Option<number>, never, never>
+//      ▼
+const result = Effect.transposeOption(maybe)
+
+console.log(Effect.runSync(result))
+// Output: { _id: 'Option', _tag: 'Some', value: 42 }
+```
+
+**Signature**
+
+```ts
+export declare const transposeOption: <A = never, E = never, R = never>(
+  self: Option.Option<Effect<A, E, R>>
+) => Effect<Option.Option<A>, E, R>
+```
+
+
 # try
 
 Creates an `Effect` that represents a synchronous computation that might
@@ -38985,15 +39275,15 @@ Effect.updateService
 
 ```ts
 export declare const updateService: {
-  <T extends Context.Tag<any, any>>(
-    tag: T,
-    f: (service: Context.Tag.Service<T>) => Context.Tag.Service<T>
-  ): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, R | Context.Tag.Identifier<T>>
-  <A, E, R, T extends Context.Tag<any, any>>(
+  <I, S>(
+    tag: Context.Tag<I, S>,
+    f: (service: NoInfer<S>) => NoInfer<S>
+  ): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, R | I>
+  <A, E, R, I, S>(
     self: Effect<A, E, R>,
-    tag: T,
-    f: (service: Context.Tag.Service<T>) => Context.Tag.Service<T>
-  ): Effect<A, E, R | Context.Tag.Identifier<T>>
+    tag: Context.Tag<I, S>,
+    f: (service: NoInfer<S>) => NoInfer<S>
+  ): Effect<A, E, R | I>
 }
 ```
 
@@ -39575,6 +39865,52 @@ export declare const whenFiberRef: {
     fiberRef: FiberRef.FiberRef<S>,
     predicate: Predicate<S>
   ): Effect<[S, Option.Option<A>], E, R>
+}
+```
+
+
+# whenLogLevel
+
+Conditionally executes an effect based on the specified log level and currently enabled log level.
+
+**Details**
+
+This function runs the provided effect only if the specified log level is
+enabled. If the log level is enabled, the effect is executed and its result
+is wrapped in `Some`. If the log level is not enabled, the effect is not
+executed and `None` is returned.
+
+This function is useful for conditionally executing logging-related effects
+or other operations that depend on the current log level configuration.
+
+To import and use `whenLogLevel` from the "Effect" module:
+
+```ts
+import * as Effect from "effect/Effect"
+// Can be accessed like this
+Effect.whenLogLevel
+```
+
+**Example**
+
+```ts
+import { Effect, Logger, LogLevel } from "effect"
+
+const program = Effect.gen(function* () {
+  yield* Effect.whenLogLevel(Effect.logTrace("message1"), LogLevel.Trace) // returns `None`
+  yield* Effect.whenLogLevel(Effect.logDebug("message2"), LogLevel.Debug) // returns `Some`
+}).pipe(Logger.withMinimumLogLevel(LogLevel.Debug))
+
+// Effect.runFork(program)
+// timestamp=... level=DEBUG fiber=#0 message=message2
+```
+
+**Signature**
+
+```ts
+export declare const whenLogLevel: {
+  (level: LogLevel.LogLevel | LogLevel.Literal): <A, E, R>(self: Effect<A, E, R>) => Effect<Option.Option<A>, E, R>
+  <A, E, R>(self: Effect<A, E, R>, level: LogLevel.LogLevel | LogLevel.Literal): Effect<Option.Option<A>, E, R>
 }
 ```
 
@@ -40164,8 +40500,8 @@ const program = Effect.gen(function* () {
 
 ```ts
 export declare const withUnhandledErrorLogLevel: {
-  (level: Option.Option<LogLevel>): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, R>
-  <A, E, R>(self: Effect<A, E, R>, level: Option.Option<LogLevel>): Effect<A, E, R>
+  (level: Option.Option<LogLevel.LogLevel>): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, R>
+  <A, E, R>(self: Effect<A, E, R>, level: Option.Option<LogLevel.LogLevel>): Effect<A, E, R>
 }
 ```
 
@@ -43503,6 +43839,25 @@ export declare const zipWith: {
 ```
 
 
+# awaitEmpty
+
+Wait for the fiber in the FiberHandle to complete.
+
+To import and use `awaitEmpty` from the "FiberHandle" module:
+
+```ts
+import * as FiberHandle from "effect/FiberHandle"
+// Can be accessed like this
+FiberHandle.awaitEmpty
+```
+
+**Signature**
+
+```ts
+export declare const awaitEmpty: <A, E>(self: FiberHandle<A, E>) => Effect.Effect<void, E>
+```
+
+
 # get
 
 Retrieve the fiber from the FiberHandle.
@@ -43626,6 +43981,32 @@ export declare const makeRuntime: <R, E = unknown, A = unknown>() => Effect.Effe
 ```
 
 
+# makeRuntimePromise
+
+Create an Effect run function that is backed by a FiberHandle.
+
+To import and use `makeRuntimePromise` from the "FiberHandle" module:
+
+```ts
+import * as FiberHandle from "effect/FiberHandle"
+// Can be accessed like this
+FiberHandle.makeRuntimePromise
+```
+
+**Signature**
+
+```ts
+export declare const makeRuntimePromise: <R = never, A = unknown, E = unknown>() => Effect.Effect<
+  <XE extends E, XA extends A>(
+    effect: Effect.Effect<XA, XE, R>,
+    options?: Runtime.RunForkOptions | undefined
+  ) => Promise<XA>,
+  never,
+  Scope.Scope | R
+>
+```
+
+
 # run
 
 Run an Effect and add the forked fiber to the FiberHandle.
@@ -43714,6 +44095,37 @@ export declare const runtime: <A, E>(
         })
       | undefined
   ) => Fiber.RuntimeFiber<XA, XE>,
+  never,
+  R
+>
+```
+
+
+# runtimePromise
+
+Capture a Runtime and use it to fork Effect's, adding the forked fibers to the FiberHandle.
+
+The returned run function will return Promise's that will resolve when the
+fiber completes.
+
+To import and use `runtimePromise` from the "FiberHandle" module:
+
+```ts
+import * as FiberHandle from "effect/FiberHandle"
+// Can be accessed like this
+FiberHandle.runtimePromise
+```
+
+**Signature**
+
+```ts
+export declare const runtimePromise: <A, E>(
+  self: FiberHandle<A, E>
+) => <R = never>() => Effect.Effect<
+  <XE extends E, XA extends A>(
+    effect: Effect.Effect<XA, XE, R>,
+    options?: (Runtime.RunForkOptions & { readonly propagateInterruption?: boolean | undefined }) | undefined
+  ) => Promise<XA>,
   never,
   R
 >
@@ -44056,6 +44468,25 @@ export declare const unsafeMake: (_: void) => Runtime
 ```
 
 
+# awaitEmpty
+
+Wait for the FiberMap to be empty.
+
+To import and use `awaitEmpty` from the "FiberMap" module:
+
+```ts
+import * as FiberMap from "effect/FiberMap"
+// Can be accessed like this
+FiberMap.awaitEmpty
+```
+
+**Signature**
+
+```ts
+export declare const awaitEmpty: <K, A, E>(self: FiberMap<K, A, E>) => Effect.Effect<void, E>
+```
+
+
 # get
 
 Retrieve a fiber from the FiberMap.
@@ -44202,6 +44633,33 @@ export declare const makeRuntime: <R, K, E = unknown, A = unknown>() => Effect.E
 ```
 
 
+# makeRuntimePromise
+
+Create an Effect run function that is backed by a FiberMap.
+
+To import and use `makeRuntimePromise` from the "FiberMap" module:
+
+```ts
+import * as FiberMap from "effect/FiberMap"
+// Can be accessed like this
+FiberMap.makeRuntimePromise
+```
+
+**Signature**
+
+```ts
+export declare const makeRuntimePromise: <R, K, A = unknown, E = unknown>() => Effect.Effect<
+  <XE extends E, XA extends A>(
+    key: K,
+    effect: Effect.Effect<XA, XE, R>,
+    options?: (Runtime.RunForkOptions & { readonly onlyIfMissing?: boolean | undefined }) | undefined
+  ) => Promise<XA>,
+  never,
+  Scope.Scope | R
+>
+```
+
+
 # remove
 
 Remove a fiber from the FiberMap, interrupting it if it exists.
@@ -44323,6 +44781,40 @@ export declare const runtime: <K, A, E>(
         })
       | undefined
   ) => Fiber.RuntimeFiber<XA, XE>,
+  never,
+  R
+>
+```
+
+
+# runtimePromise
+
+Capture a Runtime and use it to fork Effect's, adding the forked fibers to the FiberMap.
+
+To import and use `runtimePromise` from the "FiberMap" module:
+
+```ts
+import * as FiberMap from "effect/FiberMap"
+// Can be accessed like this
+FiberMap.runtimePromise
+```
+
+**Signature**
+
+```ts
+export declare const runtimePromise: <K, A, E>(
+  self: FiberMap<K, A, E>
+) => <R = never>() => Effect.Effect<
+  <XE extends E, XA extends A>(
+    key: K,
+    effect: Effect.Effect<XA, XE, R>,
+    options?:
+      | (Runtime.RunForkOptions & {
+          readonly onlyIfMissing?: boolean | undefined
+          readonly propagateInterruption?: boolean | undefined
+        })
+      | undefined
+  ) => Promise<XA>,
   never,
   R
 >
@@ -44848,6 +45340,25 @@ export declare const add: {
 ```
 
 
+# awaitEmpty
+
+Wait until the fiber set is empty.
+
+To import and use `awaitEmpty` from the "FiberSet" module:
+
+```ts
+import * as FiberSet from "effect/FiberSet"
+// Can be accessed like this
+FiberSet.awaitEmpty
+```
+
+**Signature**
+
+```ts
+export declare const awaitEmpty: <A, E>(self: FiberSet<A, E>) => Effect.Effect<void>
+```
+
+
 # join
 
 Join all fibers in the FiberSet. If any of the Fiber's in the set terminate with a failure,
@@ -44949,6 +45460,32 @@ export declare const makeRuntime: <R = never, A = unknown, E = unknown>() => Eff
 ```
 
 
+# makeRuntimePromise
+
+Create an Effect run function that is backed by a FiberSet.
+
+To import and use `makeRuntimePromise` from the "FiberSet" module:
+
+```ts
+import * as FiberSet from "effect/FiberSet"
+// Can be accessed like this
+FiberSet.makeRuntimePromise
+```
+
+**Signature**
+
+```ts
+export declare const makeRuntimePromise: <R = never, A = unknown, E = unknown>() => Effect.Effect<
+  <XE extends E, XA extends A>(
+    effect: Effect.Effect<XA, XE, R>,
+    options?: Runtime.RunForkOptions | undefined
+  ) => Promise<XA>,
+  never,
+  Scope.Scope | R
+>
+```
+
+
 # run
 
 Fork an Effect and add the forked fiber to the FiberSet.
@@ -45029,6 +45566,36 @@ export declare const runtime: <A, E>(
     effect: Effect.Effect<XA, XE, R>,
     options?: (Runtime.RunForkOptions & { readonly propagateInterruption?: boolean | undefined }) | undefined
   ) => Fiber.RuntimeFiber<XA, XE>,
+  never,
+  R
+>
+```
+
+
+# runtimePromise
+
+Capture a Runtime and use it to fork Effect's, adding the forked fibers to the FiberSet.
+
+The returned run function will return Promise's.
+
+To import and use `runtimePromise` from the "FiberSet" module:
+
+```ts
+import * as FiberSet from "effect/FiberSet"
+// Can be accessed like this
+FiberSet.runtimePromise
+```
+
+**Signature**
+
+```ts
+export declare const runtimePromise: <A, E>(
+  self: FiberSet<A, E>
+) => <R = never>() => Effect.Effect<
+  <XE extends E, XA extends A>(
+    effect: Effect.Effect<XA, XE, R>,
+    options?: (Runtime.RunForkOptions & { readonly propagateInterruption?: boolean | undefined }) | undefined
+  ) => Promise<XA>,
   never,
   R
 >
@@ -47445,6 +48012,28 @@ export declare const size: <K, V>(self: HashMap<K, V>) => number
 ```
 
 
+# some
+
+Checks if any entry in a hashmap meets a specific condition.
+
+To import and use `some` from the "HashMap" module:
+
+```ts
+import * as HashMap from "effect/HashMap"
+// Can be accessed like this
+HashMap.some
+```
+
+**Signature**
+
+```ts
+export declare const some: {
+  <K, A>(predicate: (a: NoInfer<A>, k: K) => boolean): (self: HashMap<K, A>) => boolean
+  <K, A>(self: HashMap<K, A>, predicate: (a: A, k: K) => boolean): boolean
+}
+```
+
+
 # toEntries
 
 Returns an `Array<[K, V]>` of the entries within the `HashMap`.
@@ -47461,6 +48050,25 @@ HashMap.toEntries
 
 ```ts
 export declare const toEntries: <K, V>(self: HashMap<K, V>) => Array<[K, V]>
+```
+
+
+# toValues
+
+Returns an `Array` of the values within the `HashMap`.
+
+To import and use `toValues` from the "HashMap" module:
+
+```ts
+import * as HashMap from "effect/HashMap"
+// Can be accessed like this
+HashMap.toValues
+```
+
+**Signature**
+
+```ts
+export declare const toValues: <K, V>(self: HashMap<K, V>) => Array<V>
 ```
 
 
@@ -48016,6 +48624,25 @@ export declare const toggle: {
   <A>(value: A): (self: HashSet<A>) => HashSet<A>
   <A>(self: HashSet<A>, value: A): HashSet<A>
 }
+```
+
+
+# toValues
+
+Returns an `Array` of the values within the `HashSet`.
+
+To import and use `toValues` from the "HashSet" module:
+
+```ts
+import * as HashSet from "effect/HashSet"
+// Can be accessed like this
+HashSet.toValues
+```
+
+**Signature**
+
+```ts
+export declare const toValues: <A>(self: HashSet<A>) => Array<A>
 ```
 
 
@@ -50665,13 +51292,8 @@ Layer.effect
 
 ```ts
 export declare const effect: {
-  <T extends Context.Tag<any, any>>(
-    tag: T
-  ): <E, R>(effect: Effect.Effect<Context.Tag.Service<T>, E, R>) => Layer<Context.Tag.Identifier<T>, E, R>
-  <T extends Context.Tag<any, any>, E, R>(
-    tag: T,
-    effect: Effect.Effect<Context.Tag.Service<T>, E, R>
-  ): Layer<Context.Tag.Identifier<T>, E, R>
+  <I, S>(tag: Context.Tag<I, S>): <E, R>(effect: Effect.Effect<Types.NoInfer<S>, E, R>) => Layer<I, E, R>
+  <I, S, E, R>(tag: Context.Tag<I, S>, effect: Effect.Effect<Types.NoInfer<S>, E, R>): Layer<I, E, R>
 }
 ```
 
@@ -51274,17 +51896,17 @@ Layer.project
 
 ```ts
 export declare const project: {
-  <A extends Context.Tag<any, any>, B extends Context.Tag<any, any>>(
-    tagA: A,
-    tagB: B,
-    f: (a: Context.Tag.Service<A>) => Context.Tag.Service<B>
-  ): <RIn, E>(self: Layer<Context.Tag.Identifier<A>, E, RIn>) => Layer<Context.Tag.Identifier<B>, E, RIn>
-  <RIn, E, A extends Context.Tag<any, any>, B extends Context.Tag<any, any>>(
-    self: Layer<Context.Tag.Identifier<A>, E, RIn>,
-    tagA: A,
-    tagB: B,
-    f: (a: Context.Tag.Service<A>) => Context.Tag.Service<B>
-  ): Layer<Context.Tag.Identifier<B>, E, RIn>
+  <I1, S1, I2, S2>(
+    tagA: Context.Tag<I1, S1>,
+    tagB: Context.Tag<I2, S2>,
+    f: (a: Types.NoInfer<S1>) => Types.NoInfer<S2>
+  ): <RIn, E>(self: Layer<I1, E, RIn>) => Layer<I2, E, RIn>
+  <RIn, E, I1, S1, I2, S2>(
+    self: Layer<I1, E, RIn>,
+    tagA: Context.Tag<I1, S1>,
+    tagB: Context.Tag<I2, S2>,
+    f: (a: Types.NoInfer<S1>) => Types.NoInfer<S2>
+  ): Layer<I2, E, RIn>
 }
 ```
 
@@ -51431,15 +52053,13 @@ Layer.scoped
 
 ```ts
 export declare const scoped: {
-  <T extends Context.Tag<any, any>>(
-    tag: T
-  ): <E, R>(
-    effect: Effect.Effect<Context.Tag.Service<T>, E, R>
-  ) => Layer<Context.Tag.Identifier<T>, E, Exclude<R, Scope.Scope>>
-  <T extends Context.Tag<any, any>, E, R>(
-    tag: T,
-    effect: Effect.Effect<Context.Tag.Service<T>, E, R>
-  ): Layer<Context.Tag.Identifier<T>, E, Exclude<R, Scope.Scope>>
+  <I, S>(
+    tag: Context.Tag<I, S>
+  ): <E, R>(effect: Effect.Effect<Types.NoInfer<S>, E, R>) => Layer<I, E, Exclude<R, Scope.Scope>>
+  <I, S, E, R>(
+    tag: Context.Tag<I, S>,
+    effect: Effect.Effect<Types.NoInfer<S>, E, R>
+  ): Layer<I, E, Exclude<R, Scope.Scope>>
 }
 ```
 
@@ -51503,9 +52123,7 @@ Layer.service
 **Signature**
 
 ```ts
-export declare const service: <T extends Context.Tag<any, any>>(
-  tag: T
-) => Layer<Context.Tag.Identifier<T>, never, Context.Tag.Identifier<T>>
+export declare const service: <I, S>(tag: Context.Tag<I, S>) => Layer<I, never, I>
 ```
 
 
@@ -51589,8 +52207,8 @@ Layer.succeed
 
 ```ts
 export declare const succeed: {
-  <T extends Context.Tag<any, any>>(tag: T): (resource: Context.Tag.Service<T>) => Layer<Context.Tag.Identifier<T>>
-  <T extends Context.Tag<any, any>>(tag: T, resource: Context.Tag.Service<T>): Layer<Context.Tag.Identifier<T>>
+  <I, S>(tag: Context.Tag<I, S>): (resource: Types.NoInfer<S>) => Layer<I>
+  <I, S>(tag: Context.Tag<I, S>, resource: Types.NoInfer<S>): Layer<I>
 }
 ```
 
@@ -51651,10 +52269,8 @@ Layer.sync
 
 ```ts
 export declare const sync: {
-  <T extends Context.Tag<any, any>>(
-    tag: T
-  ): (evaluate: LazyArg<Context.Tag.Service<T>>) => Layer<Context.Tag.Identifier<T>>
-  <T extends Context.Tag<any, any>>(tag: T, evaluate: LazyArg<Context.Tag.Service<T>>): Layer<Context.Tag.Identifier<T>>
+  <I, S>(tag: Context.Tag<I, S>): (evaluate: LazyArg<Types.NoInfer<S>>) => Layer<I>
+  <I, S>(tag: Context.Tag<I, S>, evaluate: LazyArg<Types.NoInfer<S>>): Layer<I>
 }
 ```
 
@@ -51807,6 +52423,41 @@ export declare const toRuntimeWithMemoMap: {
     memoMap: MemoMap
   ): Effect.Effect<Runtime.Runtime<ROut>, E, Scope.Scope | RIn>
 }
+```
+
+
+# updateService
+
+Updates a service in the context with a new implementation.
+
+**Details**
+
+This function modifies the existing implementation of a service in the
+context. It retrieves the current service, applies the provided
+transformation function `f`, and replaces the old service with the
+transformed one.
+
+**When to Use**
+
+This is useful for adapting or extending a service's behavior during the
+creation of a layer.
+
+To import and use `updateService` from the "Layer" module:
+
+```ts
+import * as Layer from "effect/Layer"
+// Can be accessed like this
+Layer.updateService
+```
+
+**Signature**
+
+```ts
+export declare const updateService: (<I, A>(
+  tag: Context.Tag<I, A>,
+  f: (a: A) => A
+) => <A1, E1, R1>(layer: Layer<A1, E1, R1>) => Layer<A1, E1, I | R1>) &
+  (<A1, E1, R1, I, A>(layer: Layer<A1, E1, R1>, tag: Context.Tag<I, A>, f: (a: A) => A) => Layer<A1, E1, I | R1>)
 ```
 
 
@@ -53941,6 +54592,1435 @@ To import and use `ManagerConfig` from the "ManagerConfig" module:
 import * as ManagerConfig from "@effect/cluster/ManagerConfig"
 // Can be accessed like this
 ManagerConfig.ManagerConfig
+```
+
+
+# any
+
+Matches any value without restrictions.
+
+To import and use `any` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.any
+```
+
+**Signature**
+
+```ts
+export declare const any: SafeRefinement<unknown, any>
+```
+
+
+# bigint
+
+Matches values of type `bigint`.
+
+To import and use `bigint` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.bigint
+```
+
+**Signature**
+
+```ts
+export declare const bigint: Predicate.Refinement<unknown, bigint>
+```
+
+
+# boolean
+
+Matches values of type `boolean`.
+
+To import and use `boolean` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.boolean
+```
+
+**Signature**
+
+```ts
+export declare const boolean: Predicate.Refinement<unknown, boolean>
+```
+
+
+# date
+
+Matches values that are instances of `Date`.
+
+To import and use `date` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.date
+```
+
+**Signature**
+
+```ts
+export declare const date: Predicate.Refinement<unknown, Date>
+```
+
+
+# defined
+
+Matches any defined (non-null and non-undefined) value.
+
+To import and use `defined` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.defined
+```
+
+**Signature**
+
+```ts
+export declare const defined: <A>(u: A) => u is A & {}
+```
+
+
+# discriminator
+
+Matches values based on a specified discriminant field.
+
+**Details**
+
+This function is used to define pattern matching on objects that follow a
+**discriminated union** structure, where a specific field (e.g., `type`,
+`kind`, `_tag`) determines the variant of the object. It allows matching
+multiple values of the discriminant and provides a function to handle the
+matched cases.
+
+To import and use `discriminator` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.discriminator
+```
+
+**Example**
+
+```ts
+import { Match, pipe } from "effect"
+
+const match = pipe(
+  Match.type<{ type: "A"; a: string } | { type: "B"; b: number } | { type: "C"; c: boolean }>(),
+  Match.discriminator("type")("A", "B", (_) => `A or B: ${_.type}`),
+  Match.discriminator("type")("C", (_) => `C(${_.c})`),
+  Match.exhaustive
+)
+```
+
+**Signature**
+
+```ts
+export declare const discriminator: <D extends string>(
+  field: D
+) => <R, P extends Types.Tags<D, R> & string, Ret, B extends Ret>(
+  ...pattern: [first: P, ...values: Array<P>, f: (_: Extract<R, Record<D, P>>) => B]
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => Matcher<
+  I,
+  Types.AddWithout<F, Extract<R, Record<D, P>>>,
+  Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<D, P>>>>,
+  B | A,
+  Pr,
+  Ret
+>
+```
+
+
+# discriminators
+
+Matches values based on a field that serves as a discriminator, mapping each
+possible value to a corresponding handler.
+
+**Details**
+
+This function simplifies working with discriminated unions by letting you
+define a set of handlers for each possible value of a given field. Instead of
+chaining multiple calls to {@link discriminator}, this function allows
+defining all possible cases at once using an object where the keys are the
+possible values of the field, and the values are the corresponding handler
+functions.
+
+To import and use `discriminators` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.discriminators
+```
+
+**Example**
+
+```ts
+import { Match, pipe } from "effect"
+
+const match = pipe(
+  Match.type<{ type: "A"; a: string } | { type: "B"; b: number } | { type: "C"; c: boolean }>(),
+  Match.discriminators("type")({
+    A: (a) => a.a,
+    B: (b) => b.b,
+    C: (c) => c.c
+  }),
+  Match.exhaustive
+)
+```
+
+**Signature**
+
+```ts
+export declare const discriminators: <D extends string>(
+  field: D
+) => <
+  R,
+  Ret,
+  P extends { readonly [Tag in Types.Tags<D, R> & string]?: ((_: Extract<R, Record<D, Tag>>) => Ret) | undefined } & {
+    readonly [Tag in Exclude<keyof P, Types.Tags<D, R>>]: never
+  }
+>(
+  fields: P
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => Matcher<
+  I,
+  Types.AddWithout<F, Extract<R, Record<D, keyof P>>>,
+  Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<D, keyof P>>>>,
+  A | ReturnType<P[keyof P] & {}>,
+  Pr,
+  Ret
+>
+```
+
+
+# discriminatorsExhaustive
+
+Matches values based on a discriminator field and **ensures all cases are
+handled**.
+
+\*_Details_+
+
+This function is similar to {@link discriminators}, but **requires that all
+possible cases** are explicitly handled. It is useful when working with
+discriminated unions, where a specific field (e.g., `"type"`) determines the
+shape of an object. Each possible value of the field must have a
+corresponding handler, ensuring **exhaustiveness checking** at compile time.
+
+This function **does not require** `Match.exhaustive` at the end of the
+pipeline because it enforces exhaustiveness by design.
+
+To import and use `discriminatorsExhaustive` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.discriminatorsExhaustive
+```
+
+**Example**
+
+```ts
+import { Match, pipe } from "effect"
+
+const match = pipe(
+  Match.type<{ type: "A"; a: string } | { type: "B"; b: number } | { type: "C"; c: boolean }>(),
+  Match.discriminatorsExhaustive("type")({
+    A: (a) => a.a,
+    B: (b) => b.b,
+    C: (c) => c.c
+  })
+)
+```
+
+**Signature**
+
+```ts
+export declare const discriminatorsExhaustive: <D extends string>(
+  field: D
+) => <
+  R,
+  Ret,
+  P extends { readonly [Tag in Types.Tags<D, R> & string]: (_: Extract<R, Record<D, Tag>>) => Ret } & {
+    readonly [Tag in Exclude<keyof P, Types.Tags<D, R>>]: never
+  }
+>(
+  fields: P
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => [Pr] extends [never] ? (u: I) => Unify<A | ReturnType<P[keyof P]>> : Unify<A | ReturnType<P[keyof P]>>
+```
+
+
+# discriminatorStartsWith
+
+Matches values where a specified field starts with a given prefix.
+
+**Details**
+
+This function is useful for working with discriminated unions where the
+discriminant field follows a hierarchical or namespaced structure. It allows
+you to match values based on whether the specified field starts with a given
+prefix, making it easier to handle grouped cases.
+
+Instead of checking for exact matches, this function lets you match values
+that share a common prefix. For example, if your discriminant field contains
+hierarchical names like `"A"`, `"A.A"`, and `"B"`, you can match all values
+starting with `"A"` using a single rule.
+
+To import and use `discriminatorStartsWith` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.discriminatorStartsWith
+```
+
+**Example**
+
+```ts
+import { Match, pipe } from "effect"
+
+const match = pipe(
+  Match.type<{ type: "A" } | { type: "B" } | { type: "A.A" } | {}>(),
+  Match.discriminatorStartsWith("type")("A", (_) => 1 as const),
+  Match.discriminatorStartsWith("type")("B", (_) => 2 as const),
+  Match.orElse((_) => 3 as const)
+)
+
+console.log(match({ type: "A" })) // 1
+console.log(match({ type: "B" })) // 2
+console.log(match({ type: "A.A" })) // 1
+```
+
+**Signature**
+
+```ts
+export declare const discriminatorStartsWith: <D extends string>(
+  field: D
+) => <R, P extends string, Ret, B extends Ret>(
+  pattern: P,
+  f: (_: Extract<R, Record<D, `${P}${string}`>>) => B
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => Matcher<
+  I,
+  Types.AddWithout<F, Extract<R, Record<D, `${P}${string}`>>>,
+  Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<D, `${P}${string}`>>>>,
+  B | A,
+  Pr,
+  Ret
+>
+```
+
+
+# either
+
+Wraps the match result in an `Either`, distinguishing matched and unmatched
+cases.
+
+**Details**
+
+This function ensures that the result of a matcher is always wrapped in an
+`Either`, allowing clear differentiation between successful matches
+(`Right(value)`) and cases where no pattern matched (`Left(unmatched
+value)`).
+
+This approach is particularly useful when handling optional values or when an
+unmatched case should be explicitly handled rather than returning a default
+value or throwing an error.
+
+To import and use `either` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.either
+```
+
+**Example**
+
+```ts
+// Title: Extracting a User Role with Either
+import { Match } from "effect"
+
+type User = { readonly role: "admin" | "editor" | "viewer" }
+
+// Create a matcher to extract user roles
+const getRole = Match.type<User>().pipe(
+  Match.when({ role: "admin" }, () => "Has full access"),
+  Match.when({ role: "editor" }, () => "Can edit content"),
+  Match.either // Wrap the result in an Either
+)
+
+console.log(getRole({ role: "admin" }))
+// Output: { _id: 'Either', _tag: 'Right', right: 'Has full access' }
+
+console.log(getRole({ role: "viewer" }))
+// Output: { _id: 'Either', _tag: 'Left', left: { role: 'viewer' } }
+```
+
+**Signature**
+
+```ts
+export declare const either: <I, F, R, A, Pr, Ret>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => [Pr] extends [never] ? (input: I) => Either.Either<Unify<A>, R> : Either.Either<Unify<A>, R>
+```
+
+
+# exhaustive
+
+The `Match.exhaustive` method finalizes the pattern matching process by
+ensuring that all possible cases are accounted for. If any case is missing,
+TypeScript will produce a type error. This is particularly useful when
+working with unions, as it helps prevent unintended gaps in pattern matching.
+
+To import and use `exhaustive` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.exhaustive
+```
+
+**Example**
+
+```ts
+// Title: Ensuring All Cases Are Covered
+import { Match } from "effect"
+
+// Create a matcher for string or number values
+const match = Match.type<string | number>().pipe(
+  // Match when the value is a number
+  Match.when(Match.number, (n) => `number: ${n}`),
+  // Mark the match as exhaustive, ensuring all cases are handled
+  // TypeScript will throw an error if any case is missing
+  // @ts-expect-error Type 'string' is not assignable to type 'never'
+  Match.exhaustive
+)
+```
+
+**Signature**
+
+```ts
+export declare const exhaustive: <I, F, A, Pr, Ret>(
+  self: Matcher<I, F, never, A, Pr, Ret>
+) => [Pr] extends [never] ? (u: I) => Unify<A> : Unify<A>
+```
+
+
+# instanceOf
+
+Matches instances of a given class.
+
+To import and use `instanceOf` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.instanceOf
+```
+
+**Signature**
+
+```ts
+export declare const instanceOf: <A extends abstract new (...args: any) => any>(
+  constructor: A
+) => SafeRefinement<InstanceType<A>, never>
+```
+
+
+# is
+
+Matches a specific set of literal values (e.g., `Match.is("a", 42, true)`).
+
+To import and use `is` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.is
+```
+
+**Signature**
+
+```ts
+export declare const is: <Literals extends ReadonlyArray<string | number | bigint | boolean | null>>(
+  ...literals: Literals
+) => Predicate.Refinement<unknown, Literals[number]>
+```
+
+
+# Matcher
+
+Pattern matching follows a structured process:
+
+- **Creating a matcher**: Define a `Matcher` that operates on either a
+  specific `Match.type` or `Match.value`.
+
+- **Defining patterns**: Use combinators such as `Match.when`, `Match.not`,
+  and `Match.tag` to specify matching conditions.
+
+- **Completing the match**: Apply a finalizer such as `Match.exhaustive`,
+  `Match.orElse`, or `Match.option` to determine how unmatched cases should
+  be handled.
+
+To import and use `Matcher` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.Matcher
+```
+
+**Example**
+
+```ts
+import { Match } from "effect"
+
+// Simulated dynamic input that can be a string or a number
+const input: string | number = "some input"
+
+//      ┌─── string
+//      ▼
+const result = Match.value(input).pipe(
+  // Match if the value is a number
+  Match.when(Match.number, (n) => `number: ${n}`),
+  // Match if the value is a string
+  Match.when(Match.string, (s) => `string: ${s}`),
+  // Ensure all possible cases are covered
+  Match.exhaustive
+)
+
+console.log(result)
+// Output: "string: some input"
+```
+
+
+# nonEmptyString
+
+Matches non-empty strings.
+
+To import and use `nonEmptyString` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.nonEmptyString
+```
+
+**Signature**
+
+```ts
+export declare const nonEmptyString: SafeRefinement<string, never>
+```
+
+
+# not
+
+Excludes a specific value from matching while allowing all others.
+
+**Details**
+
+This function is useful when you need to **handle all values except one or
+more specific cases**. Instead of listing all possible matches manually, this
+function simplifies the logic by allowing you to specify values to exclude.
+Any excluded value will bypass the provided function and continue matching
+through other cases.
+
+To import and use `not` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.not
+```
+
+**Example**
+
+```ts
+// Title: Ignoring a Specific Value
+import { Match } from "effect"
+
+// Create a matcher for string or number values
+const match = Match.type<string | number>().pipe(
+  // Match any value except "hi", returning "ok"
+  Match.not("hi", () => "ok"),
+  // Fallback case for when the value is "hi"
+  Match.orElse(() => "fallback")
+)
+
+console.log(match("hello"))
+// Output: "ok"
+
+console.log(match("hi"))
+// Output: "fallback"
+```
+
+**Signature**
+
+```ts
+export declare const not: <
+  R,
+  const P extends Types.PatternPrimitive<R> | Types.PatternBase<R>,
+  Ret,
+  Fn extends (_: Exclude<R, Types.ExtractMatch<R, Types.PForExclude<P>>>) => Ret
+>(
+  pattern: P,
+  f: Fn
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => Matcher<
+  I,
+  Types.AddOnly<F, Types.WhenMatch<R, P>>,
+  Types.ApplyFilters<I, Types.AddOnly<F, Types.WhenMatch<R, P>>>,
+  A | ReturnType<Fn>,
+  Pr,
+  Ret
+>
+```
+
+
+# null
+
+Matches the value `null`.
+
+To import and use `null` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.null
+```
+
+
+# number
+
+Matches values of type `number`.
+
+To import and use `number` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.number
+```
+
+**Signature**
+
+```ts
+export declare const number: Predicate.Refinement<unknown, number>
+```
+
+
+# option
+
+Wraps the match result in an `Option`, representing an optional match.
+
+**Details**
+
+This function ensures that the result of a matcher is wrapped in an `Option`,
+making it easy to handle cases where no pattern matches. If a match is found,
+it returns `Some(value)`, otherwise, it returns `None`.
+
+This is useful in cases where a missing match is expected and should be
+handled explicitly rather than throwing an error or returning a default
+value.
+
+To import and use `option` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.option
+```
+
+**Example**
+
+```ts
+// Title: Extracting a User Role with Option
+import { Match } from "effect"
+
+type User = { readonly role: "admin" | "editor" | "viewer" }
+
+// Create a matcher to extract user roles
+const getRole = Match.type<User>().pipe(
+  Match.when({ role: "admin" }, () => "Has full access"),
+  Match.when({ role: "editor" }, () => "Can edit content"),
+  Match.option // Wrap the result in an Option
+)
+
+console.log(getRole({ role: "admin" }))
+// Output: { _id: 'Option', _tag: 'Some', value: 'Has full access' }
+
+console.log(getRole({ role: "viewer" }))
+// Output: { _id: 'Option', _tag: 'None' }
+```
+
+**Signature**
+
+```ts
+export declare const option: <I, F, R, A, Pr, Ret>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => [Pr] extends [never] ? (input: I) => Option.Option<Unify<A>> : Option.Option<Unify<A>>
+```
+
+
+# orElse
+
+Provides a fallback value when no patterns match.
+
+**Details**
+
+This function ensures that a matcher always returns a valid result, even if
+no defined patterns match. It acts as a default case, similar to the
+`default` clause in a `switch` statement or the final `else` in an `if-else`
+chain.
+
+To import and use `orElse` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.orElse
+```
+
+**Example**
+
+```ts
+// Title: Providing a Default Value When No Patterns Match
+import { Match } from "effect"
+
+// Create a matcher for string or number values
+const match = Match.type<string | number>().pipe(
+  // Match when the value is "a"
+  Match.when("a", () => "ok"),
+  // Fallback when no patterns match
+  Match.orElse(() => "fallback")
+)
+
+console.log(match("a"))
+// Output: "ok"
+
+console.log(match("b"))
+// Output: "fallback"
+```
+
+**Signature**
+
+```ts
+export declare const orElse: <RA, Ret, F extends (_: RA) => Ret>(
+  f: F
+) => <I, R, A, Pr>(
+  self: Matcher<I, R, RA, A, Pr, Ret>
+) => [Pr] extends [never] ? (input: I) => Unify<ReturnType<F> | A> : Unify<ReturnType<F> | A>
+```
+
+
+# orElseAbsurd
+
+Throws an error if no pattern matches.
+
+**Details**
+
+This function finalizes a matcher by ensuring that if no patterns match, an
+error is thrown. It is useful when all cases should be covered, and any
+unexpected input should trigger an error instead of returning a default
+value.
+
+When used, this function removes the need for an explicit fallback case and
+ensures that an unmatched value is never silently ignored.
+
+To import and use `orElseAbsurd` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.orElseAbsurd
+```
+
+**Signature**
+
+```ts
+export declare const orElseAbsurd: <I, R, RA, A, Pr, Ret>(
+  self: Matcher<I, R, RA, A, Pr, Ret>
+) => [Pr] extends [never] ? (input: I) => Unify<A> : Unify<A>
+```
+
+
+# record
+
+Matches objects where keys are `string` or `symbol` and values are `unknown`.
+
+To import and use `record` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.record
+```
+
+**Signature**
+
+```ts
+export declare const record: Predicate.Refinement<unknown, { [x: string]: unknown; [x: symbol]: unknown }>
+```
+
+
+# string
+
+Matches values of type `string`.
+
+To import and use `string` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.string
+```
+
+**Signature**
+
+```ts
+export declare const string: Predicate.Refinement<unknown, string>
+```
+
+
+# symbol
+
+Matches values of type `symbol`.
+
+To import and use `symbol` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.symbol
+```
+
+**Signature**
+
+```ts
+export declare const symbol: Predicate.Refinement<unknown, symbol>
+```
+
+
+# tag
+
+The `Match.tag` function allows pattern matching based on the `_tag` field in
+a [Discriminated Union](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes-func.html#discriminated-unions).
+You can specify multiple tags to match within a single pattern.
+
+**Note**
+
+The `Match.tag` function relies on the convention within the Effect ecosystem
+of naming the tag field as `"_tag"`. Ensure that your discriminated unions
+follow this naming convention for proper functionality.
+
+To import and use `tag` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.tag
+```
+
+**Example**
+
+```ts
+// Title: Matching a Discriminated Union by Tag
+import { Match } from "effect"
+
+type Event =
+  | { readonly _tag: "fetch" }
+  | { readonly _tag: "success"; readonly data: string }
+  | { readonly _tag: "error"; readonly error: Error }
+  | { readonly _tag: "cancel" }
+
+// Create a Matcher for Either<number, string>
+const match = Match.type<Event>().pipe(
+  // Match either "fetch" or "success"
+  Match.tag("fetch", "success", () => `Ok!`),
+  // Match "error" and extract the error message
+  Match.tag("error", (event) => `Error: ${event.error.message}`),
+  // Match "cancel"
+  Match.tag("cancel", () => "Cancelled"),
+  Match.exhaustive
+)
+
+console.log(match({ _tag: "success", data: "Hello" }))
+// Output: "Ok!"
+
+console.log(match({ _tag: "error", error: new Error("Oops!") }))
+// Output: "Error: Oops!"
+```
+
+**Signature**
+
+```ts
+export declare const tag: <R, P extends Types.Tags<"_tag", R> & string, Ret, B extends Ret>(
+  ...pattern: [first: P, ...values: Array<P>, f: (_: Extract<T.NoInfer<R>, Record<"_tag", P>>) => B]
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => Matcher<
+  I,
+  Types.AddWithout<F, Extract<R, Record<"_tag", P>>>,
+  Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<"_tag", P>>>>,
+  B | A,
+  Pr,
+  Ret
+>
+```
+
+
+# tags
+
+Matches values based on their `_tag` field, mapping each tag to a
+corresponding handler.
+
+**Details**
+
+This function provides a way to handle discriminated unions by mapping `_tag`
+values to specific functions. Each handler receives the matched value and
+returns a transformed result. If all possible tags are handled, you can
+enforce exhaustiveness using `Match.exhaustive` to ensure no case is missed.
+
+To import and use `tags` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.tags
+```
+
+**Example**
+
+```ts
+import { Match, pipe } from "effect"
+
+const match = pipe(
+  Match.type<{ _tag: "A"; a: string } | { _tag: "B"; b: number } | { _tag: "C"; c: boolean }>(),
+  Match.tags({
+    A: (a) => a.a,
+    B: (b) => b.b,
+    C: (c) => c.c
+  }),
+  Match.exhaustive
+)
+```
+
+**Signature**
+
+```ts
+export declare const tags: <
+  R,
+  Ret,
+  P extends {
+    readonly [Tag in Types.Tags<"_tag", R> & string]?: ((_: Extract<R, Record<"_tag", Tag>>) => Ret) | undefined
+  } & { readonly [Tag in Exclude<keyof P, Types.Tags<"_tag", R>>]: never }
+>(
+  fields: P
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => Matcher<
+  I,
+  Types.AddWithout<F, Extract<R, Record<"_tag", keyof P>>>,
+  Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<"_tag", keyof P>>>>,
+  A | ReturnType<P[keyof P] & {}>,
+  Pr,
+  Ret
+>
+```
+
+
+# tagsExhaustive
+
+Matches values based on their `_tag` field and requires handling of all
+possible cases.
+
+**Details**
+
+This function is designed for **discriminated unions** where every possible
+`_tag` value must have a corresponding handler. Unlike {@link tags}, this
+function ensures **exhaustiveness**, meaning all cases must be explicitly
+handled. If a `_tag` value is missing from the mapping, TypeScript will
+report an error.
+
+To import and use `tagsExhaustive` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.tagsExhaustive
+```
+
+**Example**
+
+```ts
+import { Match, pipe } from "effect"
+
+const match = pipe(
+  Match.type<{ _tag: "A"; a: string } | { _tag: "B"; b: number } | { _tag: "C"; c: boolean }>(),
+  Match.tagsExhaustive({
+    A: (a) => a.a,
+    B: (b) => b.b,
+    C: (c) => c.c
+  })
+)
+```
+
+**Signature**
+
+```ts
+export declare const tagsExhaustive: <
+  R,
+  Ret,
+  P extends { readonly [Tag in Types.Tags<"_tag", R> & string]: (_: Extract<R, Record<"_tag", Tag>>) => Ret } & {
+    readonly [Tag in Exclude<keyof P, Types.Tags<"_tag", R>>]: never
+  }
+>(
+  fields: P
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => [Pr] extends [never] ? (u: I) => Unify<A | ReturnType<P[keyof P]>> : Unify<A | ReturnType<P[keyof P]>>
+```
+
+
+# tagStartsWith
+
+Matches values where the `_tag` field starts with a given prefix.
+
+**Details**
+
+This function allows you to match on values in a **discriminated union**
+based on whether the `_tag` field starts with a specified prefix. It is
+useful for handling hierarchical or namespaced tags, where multiple related
+cases share a common prefix.
+
+To import and use `tagStartsWith` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.tagStartsWith
+```
+
+**Example**
+
+```ts
+import { Match, pipe } from "effect"
+
+const match = pipe(
+  Match.type<{ _tag: "A" } | { _tag: "B" } | { _tag: "A.A" } | {}>(),
+  Match.tagStartsWith("A", (_) => 1 as const),
+  Match.tagStartsWith("B", (_) => 2 as const),
+  Match.orElse((_) => 3 as const)
+)
+
+console.log(match({ _tag: "A" })) // 1
+console.log(match({ _tag: "B" })) // 2
+console.log(match({ _tag: "A.A" })) // 1
+```
+
+**Signature**
+
+```ts
+export declare const tagStartsWith: <R, P extends string, Ret, B extends Ret>(
+  pattern: P,
+  f: (_: Extract<T.NoInfer<R>, Record<"_tag", `${P}${string}`>>) => B
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => Matcher<
+  I,
+  Types.AddWithout<F, Extract<R, Record<"_tag", `${P}${string}`>>>,
+  Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<"_tag", `${P}${string}`>>>>,
+  B | A,
+  Pr,
+  Ret
+>
+```
+
+
+# type
+
+Creates a matcher for a specific type.
+
+**Details**
+
+This function defines a `Matcher` that operates on a given type, allowing you
+to specify conditions for handling different cases. Once the matcher is
+created, you can use pattern-matching functions like {@link when} to define
+how different values should be processed.
+
+To import and use `type` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.type
+```
+
+**Example**
+
+```ts
+// Title: Matching Numbers and Strings
+import { Match } from "effect"
+
+// Create a matcher for values that are either strings or numbers
+//
+//      ┌─── (u: string | number) => string
+//      ▼
+const match = Match.type<string | number>().pipe(
+  // Match when the value is a number
+  Match.when(Match.number, (n) => `number: ${n}`),
+  // Match when the value is a string
+  Match.when(Match.string, (s) => `string: ${s}`),
+  // Ensure all possible cases are handled
+  Match.exhaustive
+)
+
+console.log(match(0))
+// Output: "number: 0"
+
+console.log(match("hello"))
+// Output: "string: hello"
+```
+
+**Signature**
+
+```ts
+export declare const type: <I>() => Matcher<I, Types.Without<never>, I, never, never>
+```
+
+
+# undefined
+
+Matches the value `undefined`.
+
+To import and use `undefined` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.undefined
+```
+
+
+# value
+
+Creates a matcher from a specific value.
+
+**Details**
+
+This function allows you to define a `Matcher` directly from a given value,
+rather than from a type. This is useful when working with known values,
+enabling structured pattern matching on objects, primitives, or any data
+structure.
+
+Once the matcher is created, you can use pattern-matching functions like
+{@link when} to define how different cases should be handled.
+
+To import and use `value` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.value
+```
+
+**Example**
+
+```ts
+// Title: Matching an Object by Property
+import { Match } from "effect"
+
+const input = { name: "John", age: 30 }
+
+// Create a matcher for the specific object
+const result = Match.value(input).pipe(
+  // Match when the 'name' property is "John"
+  Match.when({ name: "John" }, (user) => `${user.name} is ${user.age} years old`),
+  // Provide a fallback if no match is found
+  Match.orElse(() => "Oh, not John")
+)
+
+console.log(result)
+// Output: "John is 30 years old"
+```
+
+**Signature**
+
+```ts
+export declare const value: <const I>(i: I) => Matcher<I, Types.Without<never>, I, never, I>
+```
+
+
+# when
+
+Defines a condition for matching values.
+
+**Details**
+
+This function enables pattern matching by checking whether a given value
+satisfies a condition. It supports both direct value comparisons and
+predicate functions. If the condition is met, the associated function is
+executed.
+
+This function is useful when defining matchers that need to check for
+specific values or apply logical conditions to determine a match. It works
+well with structured objects and primitive types.
+
+To import and use `when` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.when
+```
+
+**Example**
+
+```ts
+// Title: Matching with Values and Predicates
+import { Match } from "effect"
+
+// Create a matcher for objects with an "age" property
+const match = Match.type<{ age: number }>().pipe(
+  // Match when age is greater than 18
+  Match.when({ age: (age) => age > 18 }, (user) => `Age: ${user.age}`),
+  // Match when age is exactly 18
+  Match.when({ age: 18 }, () => "You can vote"),
+  // Fallback case for all other ages
+  Match.orElse((user) => `${user.age} is too young`)
+)
+
+console.log(match({ age: 20 }))
+// Output: "Age: 20"
+
+console.log(match({ age: 18 }))
+// Output: "You can vote"
+
+console.log(match({ age: 4 }))
+// Output: "4 is too young"
+```
+
+**Signature**
+
+```ts
+export declare const when: <
+  R,
+  const P extends Types.PatternPrimitive<R> | Types.PatternBase<R>,
+  Ret,
+  Fn extends (_: Types.WhenMatch<R, P>) => Ret
+>(
+  pattern: P,
+  f: Fn
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => Matcher<
+  I,
+  Types.AddWithout<F, Types.PForExclude<P>>,
+  Types.ApplyFilters<I, Types.AddWithout<F, Types.PForExclude<P>>>,
+  A | ReturnType<Fn>,
+  Pr,
+  Ret
+>
+```
+
+
+# whenAnd
+
+Matches a value that satisfies all provided patterns.
+
+**Details**
+
+This function allows defining a condition where a value must match all the
+given patterns simultaneously. If the value satisfies every pattern, the
+associated function is executed.
+
+Unlike {@link when}, which matches a single pattern at a time, this function
+ensures that multiple conditions are met before executing the callback. It is
+useful when checking for values that need to fulfill multiple criteria at
+once.
+
+To import and use `whenAnd` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.whenAnd
+```
+
+**Example**
+
+```ts
+import { Match } from "effect"
+
+type User = { readonly age: number; readonly role: "admin" | "user" }
+
+const checkUser = Match.type<User>().pipe(
+  Match.whenAnd({ age: (n) => n >= 18 }, { role: "admin" }, () => "Admin access granted"),
+  Match.orElse(() => "Access denied")
+)
+
+console.log(checkUser({ age: 20, role: "admin" }))
+// Output: "Admin access granted"
+
+console.log(checkUser({ age: 20, role: "user" }))
+// Output: "Access denied"
+```
+
+**Signature**
+
+```ts
+export declare const whenAnd: <
+  R,
+  const P extends ReadonlyArray<Types.PatternPrimitive<R> | Types.PatternBase<R>>,
+  Ret,
+  Fn extends (_: Types.WhenMatch<R, T.UnionToIntersection<P[number]>>) => Ret
+>(
+  ...args: [...patterns: P, f: Fn]
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => Matcher<
+  I,
+  Types.AddWithout<F, Types.PForExclude<T.UnionToIntersection<P[number]>>>,
+  Types.ApplyFilters<I, Types.AddWithout<F, Types.PForExclude<T.UnionToIntersection<P[number]>>>>,
+  A | ReturnType<Fn>,
+  Pr
+>
+```
+
+
+# whenOr
+
+Matches one of multiple patterns in a single condition.
+
+**Details**
+
+This function allows defining a condition where a value matches any of the
+provided patterns. If a match is found, the associated function is executed.
+It simplifies cases where multiple patterns share the same handling logic.
+
+Unlike {@link when}, which requires separate conditions for each pattern,
+this function enables combining them into a single statement, making the
+matcher more concise.
+
+To import and use `whenOr` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.whenOr
+```
+
+**Example**
+
+```ts
+import { Match } from "effect"
+
+type ErrorType =
+  | { readonly _tag: "NetworkError"; readonly message: string }
+  | { readonly _tag: "TimeoutError"; readonly duration: number }
+  | { readonly _tag: "ValidationError"; readonly field: string }
+
+const handleError = Match.type<ErrorType>().pipe(
+  Match.whenOr({ _tag: "NetworkError" }, { _tag: "TimeoutError" }, () => "Retry the request"),
+  Match.when({ _tag: "ValidationError" }, (_) => `Invalid field: ${_.field}`),
+  Match.exhaustive
+)
+
+console.log(handleError({ _tag: "NetworkError", message: "No connection" }))
+// Output: "Retry the request"
+
+console.log(handleError({ _tag: "ValidationError", field: "email" }))
+// Output: "Invalid field: email"
+```
+
+**Signature**
+
+```ts
+export declare const whenOr: <
+  R,
+  const P extends ReadonlyArray<Types.PatternPrimitive<R> | Types.PatternBase<R>>,
+  Ret,
+  Fn extends (_: Types.WhenMatch<R, P[number]>) => Ret
+>(
+  ...args: [...patterns: P, f: Fn]
+) => <I, F, A, Pr>(
+  self: Matcher<I, F, R, A, Pr, Ret>
+) => Matcher<
+  I,
+  Types.AddWithout<F, Types.PForExclude<P[number]>>,
+  Types.ApplyFilters<I, Types.AddWithout<F, Types.PForExclude<P[number]>>>,
+  A | ReturnType<Fn>,
+  Pr,
+  Ret
+>
+```
+
+
+# withReturnType
+
+Ensures that all branches of a matcher return a specific type.
+
+**Details**
+
+This function enforces a consistent return type across all pattern-matching
+branches. By specifying a return type, TypeScript will check that every
+matching condition produces a value of the expected type.
+
+**Important:** This function must be the first step in the matcher pipeline.
+If used later, TypeScript will not enforce type consistency correctly.
+
+To import and use `withReturnType` from the "Match" module:
+
+```ts
+import * as Match from "effect/Match"
+// Can be accessed like this
+Match.withReturnType
+```
+
+**Example**
+
+```ts
+// Title: Validating Return Type Consistency
+import { Match } from "effect"
+
+const match = Match.type<{ a: number } | { b: string }>().pipe(
+  // Ensure all branches return a string
+  Match.withReturnType<string>(),
+  // ❌ Type error: 'number' is not assignable to type 'string'
+  // @ts-expect-error
+  Match.when({ a: Match.number }, (_) => _.a),
+  // ✅ Correct: returns a string
+  Match.when({ b: Match.string }, (_) => _.b),
+  Match.exhaustive
+)
+```
+
+**Signature**
+
+```ts
+export declare const withReturnType: <Ret>() => <I, F, R, A, Pr, _>(
+  self: Matcher<I, F, R, A, Pr, _>
+) => [Ret] extends [[A] extends [never] ? any : A]
+  ? Matcher<I, F, R, A, Pr, Ret>
+  : "withReturnType constraint does not extend Result type"
 ```
 
 
@@ -61451,7 +63531,7 @@ import { Option } from "effect"
 
 // Transform and filter numbers
 const transformEven = (n: Option.Option<number>): Option.Option<string> =>
-  Option.flatMap(n, (n) => (n % 2 === 0 ? Option.some(`Even: ${n}`) : Option.none()))
+  Option.filterMap(n, (n) => (n % 2 === 0 ? Option.some(`Even: ${n}`) : Option.none()))
 
 console.log(transformEven(Option.none()))
 // Output: { _id: 'Option', _tag: 'None' }
@@ -70385,13 +72465,10 @@ Reloadable.auto
 **Signature**
 
 ```ts
-export declare const auto: <Out extends Context.Tag<any, any>, E, In, R>(
-  tag: Out,
-  options: {
-    readonly layer: Layer.Layer<Context.Tag.Identifier<Out>, E, In>
-    readonly schedule: Schedule.Schedule<unknown, unknown, R>
-  }
-) => Layer.Layer<Reloadable<Context.Tag.Identifier<Out>>, E, In | R>
+export declare const auto: <I, S, E, In, R>(
+  tag: Context.Tag<I, S>,
+  options: { readonly layer: Layer.Layer<I, E, In>; readonly schedule: Schedule.Schedule<unknown, unknown, R> }
+) => Layer.Layer<Reloadable<I>, E, R | In>
 ```
 
 
@@ -70412,13 +72489,13 @@ Reloadable.autoFromConfig
 **Signature**
 
 ```ts
-export declare const autoFromConfig: <Out extends Context.Tag<any, any>, E, In, R>(
-  tag: Out,
+export declare const autoFromConfig: <I, S, E, In, R>(
+  tag: Context.Tag<I, S>,
   options: {
-    readonly layer: Layer.Layer<Context.Tag.Identifier<Out>, E, In>
+    readonly layer: Layer.Layer<I, E, In>
     readonly scheduleFromConfig: (context: Context.Context<In>) => Schedule.Schedule<unknown, unknown, R>
   }
-) => Layer.Layer<Reloadable<Context.Tag.Identifier<Out>>, E, In | R>
+) => Layer.Layer<Reloadable<I>, E, R | In>
 ```
 
 
@@ -70437,9 +72514,7 @@ Reloadable.get
 **Signature**
 
 ```ts
-export declare const get: <T extends Context.Tag<any, any>>(
-  tag: T
-) => Effect.Effect<Context.Tag.Service<T>, never, Reloadable<Context.Tag.Identifier<T>>>
+export declare const get: <I, S>(tag: Context.Tag<I, S>) => Effect.Effect<S, never, Reloadable<I>>
 ```
 
 
@@ -70459,10 +72534,10 @@ Reloadable.manual
 **Signature**
 
 ```ts
-export declare const manual: <Out extends Context.Tag<any, any>, In, E>(
-  tag: Out,
-  options: { readonly layer: Layer.Layer<Context.Tag.Identifier<Out>, E, In> }
-) => Layer.Layer<Reloadable<Context.Tag.Identifier<Out>>, E, In>
+export declare const manual: <I, S, In, E>(
+  tag: Context.Tag<I, S>,
+  options: { readonly layer: Layer.Layer<I, E, In> }
+) => Layer.Layer<Reloadable<I>, E, In>
 ```
 
 
@@ -70481,9 +72556,7 @@ Reloadable.reload
 **Signature**
 
 ```ts
-export declare const reload: <T extends Context.Tag<any, any>>(
-  tag: T
-) => Effect.Effect<void, unknown, Reloadable<Context.Tag.Identifier<T>>>
+export declare const reload: <I, S>(tag: Context.Tag<I, S>) => Effect.Effect<void, unknown, Reloadable<I>>
 ```
 
 
@@ -70516,9 +72589,7 @@ Reloadable.reloadFork
 **Signature**
 
 ```ts
-export declare const reloadFork: <T extends Context.Tag<any, any>>(
-  tag: T
-) => Effect.Effect<void, unknown, Reloadable<Context.Tag.Identifier<T>>>
+export declare const reloadFork: <I, S>(tag: Context.Tag<I, S>) => Effect.Effect<void, unknown, Reloadable<I>>
 ```
 
 
@@ -72432,8 +74503,13 @@ export declare const render: (self: RuntimeFlagsPatch) => string
 
 # addDelay
 
-Returns a new schedule with the given delay added to every interval defined
-by this schedule.
+Adds a delay to every interval in a schedule.
+
+**Details**
+
+This function modifies a given schedule by applying an additional delay to
+every interval it defines. The delay is determined by the provided function,
+which takes the schedule's output and returns a delay duration.
 
 To import and use `addDelay` from the "Schedule" module:
 
@@ -72455,8 +74531,14 @@ export declare const addDelay: {
 
 # addDelayEffect
 
-Returns a new schedule with the given effectfully computed delay added to
-every interval defined by this schedule.
+Adds an effectfully computed delay to every interval in a schedule.
+
+**Details**
+
+This function modifies a given schedule by applying an additional delay to
+each interval, where the delay is determined by an effectful function. The
+function takes the schedule’s output and returns an effect that produces a
+delay duration.
 
 To import and use `addDelayEffect` from the "Schedule" module:
 
@@ -72483,7 +74565,18 @@ export declare const addDelayEffect: {
 
 # andThen
 
-The same as `andThenEither`, but merges the output.
+Runs two schedules sequentially, merging their outputs.
+
+**Details**
+
+This function executes two schedules one after the other. The first schedule
+runs to completion, and then the second schedule begins execution. Unlike
+{@link andThenEither}, this function merges the outputs instead of wrapping
+them in `Either`, allowing both schedules to contribute their results
+directly.
+
+This is useful when a workflow consists of two phases where the second phase
+should start only after the first one has fully completed.
 
 To import and use `andThen` from the "Schedule" module:
 
@@ -72510,8 +74603,20 @@ export declare const andThen: {
 
 # andThenEither
 
-Returns a new schedule that first executes this schedule to completion, and
-then executes the specified schedule to completion.
+Runs two schedules sequentially, collecting results in an `Either`.
+
+**Details**
+
+This function combines two schedules in sequence. The first schedule runs to
+completion, and then the second schedule starts and runs to completion as
+well. The outputs of both schedules are collected into an `Either` structure:
+
+- `Either.Left` contains the output of the second schedule.
+- `Either.Right` contains the output of the first schedule.
+
+This is useful when you need to switch from one schedule to another after the
+first one finishes, while still keeping track of which schedule produced each
+result.
 
 To import and use `andThenEither` from the "Schedule" module:
 
@@ -72538,7 +74643,16 @@ export declare const andThenEither: {
 
 # as
 
-Returns a new schedule that maps this schedule to a constant output.
+Transforms a schedule to always produce a constant output.
+
+**Details**
+
+This function modifies a given schedule so that instead of returning its
+computed outputs, it always returns a constant value.
+
+This is useful when you need a schedule for timing but don’t care about its
+actual output, or when you want to standardize results across different
+scheduling strategies.
 
 To import and use `as` from the "Schedule" module:
 
@@ -72560,7 +74674,17 @@ export declare const as: {
 
 # asVoid
 
-Returns a new schedule that maps the output of this schedule to unit.
+Transforms a schedule to always return `void` instead of its output.
+
+**Details**
+
+This function modifies a given schedule so that it no longer returns
+meaningful output—each execution produces `void`. This is useful when the
+schedule is used only for timing purposes and the actual output of the
+schedule is irrelevant.
+
+The schedule still determines when executions should occur, but the results
+are discarded.
 
 To import and use `asVoid` from the "Schedule" module:
 
@@ -72579,8 +74703,18 @@ export declare const asVoid: <Out, In, R>(self: Schedule<Out, In, R>) => Schedul
 
 # bothInOut
 
-Returns a new schedule that has both the inputs and outputs of this and the
-specified schedule.
+Combines two schedules, preserving both their inputs and outputs.
+
+**Details**
+
+This function merges two schedules so that both their input types and output
+types are retained. When executed, the resulting schedule will take inputs
+from both original schedules and produce a tuple containing both outputs.
+
+It recurs if either schedule wants to continue, using the shorter delay.
+
+This is useful when you want to track multiple schedules simultaneously,
+ensuring that both receive the same inputs and produce combined results.
 
 To import and use `bothInOut` from the "Schedule" module:
 
@@ -72607,9 +74741,17 @@ export declare const bothInOut: {
 
 # check
 
-Returns a new schedule that passes each input and output of this schedule
-to the specified function, and then determines whether or not to continue
-based on the return value of the function.
+Filters schedule executions based on a custom condition.
+
+**Details**
+
+This function modifies a schedule by applying a custom test function to each
+input-output pair. The test function determines whether the schedule should
+continue or stop. If the function returns `true`, the schedule proceeds as
+usual; if it returns `false`, the schedule terminates.
+
+This is useful for conditional retries, custom stop conditions, or
+dynamically controlling execution based on observed inputs and outputs.
 
 To import and use `check` from the "Schedule" module:
 
@@ -72631,9 +74773,16 @@ export declare const check: {
 
 # checkEffect
 
-Returns a new schedule that passes each input and output of this schedule
-to the specified function, and then determines whether or not to continue
-based on the return value of the function.
+Conditionally filters schedule executions using an effectful function.
+
+**Details**
+
+This function modifies a schedule by applying a custom effectful test
+function to each input-output pair. The test function determines whether the
+schedule should continue (`true`) or stop (`false`).
+
+This is useful when the decision to continue depends on external factors such
+as database lookups, API calls, or other asynchronous computations.
 
 To import and use `checkEffect` from the "Schedule" module:
 
@@ -72660,7 +74809,17 @@ export declare const checkEffect: {
 
 # collectAllInputs
 
-A schedule that recurs anywhere, collecting all inputs into a `Chunk`.
+A schedule that collects all inputs into a `Chunk`.
+
+**Details**
+
+This function creates a schedule that never terminates and continuously
+collects every input it receives into a `Chunk`. Each time the schedule runs,
+it appends the new input to the collected list.
+
+This is useful when you need to track all received inputs over time, such as
+logging user actions, recording retry attempts, or accumulating data for
+later processing.
 
 To import and use `collectAllInputs` from the "Schedule" module:
 
@@ -72679,7 +74838,16 @@ export declare const collectAllInputs: <A>() => Schedule<Chunk.Chunk<A>, A>
 
 # collectAllOutputs
 
-Returns a new schedule that collects the outputs of this one into a chunk.
+Collects all outputs of a schedule into a `Chunk`.
+
+**Details**
+
+This function modifies a given schedule so that instead of returning
+individual outputs, it accumulates them into a `Chunk`. The schedule
+continues to run, appending each output to the collected list.
+
+This is useful when you need to track all results over time, such as logging
+outputs, aggregating data, or keeping a history of previous values.
 
 To import and use `collectAllOutputs` from the "Schedule" module:
 
@@ -72698,8 +74866,13 @@ export declare const collectAllOutputs: <Out, In, R>(self: Schedule<Out, In, R>)
 
 # collectUntil
 
-A schedule that recurs until the condition f fails, collecting all inputs
-into a list.
+Collects all inputs into a `Chunk` until a condition fails.
+
+**Details**
+
+This function creates a schedule that continuously collects inputs into a
+`Chunk` until the given predicate function `f` evaluates to `false`. Once the
+condition fails, the schedule stops.
 
 To import and use `collectUntil` from the "Schedule" module:
 
@@ -72718,8 +74891,14 @@ export declare const collectUntil: <A>(f: Predicate<A>) => Schedule<Chunk.Chunk<
 
 # collectUntilEffect
 
-A schedule that recurs until the effectful condition f fails, collecting
-all inputs into a list.
+Collects all inputs into a `Chunk` until an effectful condition fails.
+
+**Details**
+
+This function creates a schedule that continuously collects inputs into a
+`Chunk` until the given effectful predicate `f` returns `false`. The
+predicate runs as an effect, meaning it can involve asynchronous computations
+like API calls, database lookups, or randomness.
 
 To import and use `collectUntilEffect` from the "Schedule" module:
 
@@ -72740,8 +74919,13 @@ export declare const collectUntilEffect: <A, R>(
 
 # collectWhile
 
-A schedule that recurs as long as the condition f holds, collecting all
-inputs into a list.
+Collects all inputs into a `Chunk` while a condition holds.
+
+**Details**
+
+This function creates a schedule that continuously collects inputs into a
+`Chunk` while the given predicate function `f` evaluates to `true`. As soon
+as the condition fails, the schedule stops.
 
 To import and use `collectWhile` from the "Schedule" module:
 
@@ -72760,8 +74944,18 @@ export declare const collectWhile: <A>(f: Predicate<A>) => Schedule<Chunk.Chunk<
 
 # collectWhileEffect
 
-A schedule that recurs as long as the effectful condition holds, collecting
-all inputs into a list.
+Collects all inputs into a `Chunk` while an effectful condition holds.
+
+**Details**
+
+This function creates a schedule that continuously collects inputs into a
+`Chunk` while the given effectful predicate `f` returns `true`. The predicate
+returns an effect, meaning it can depend on external state, such as database
+queries, API responses, or real-time user conditions.
+
+As soon as the effectful condition returns `false`, the schedule stops. This
+is useful for dynamically controlled data collection, where stopping depends
+on an external or asynchronous factor.
 
 To import and use `collectWhileEffect` from the "Schedule" module:
 
@@ -72782,10 +74976,18 @@ export declare const collectWhileEffect: <A, R>(
 
 # compose
 
-Returns the composition of this schedule and the specified schedule, by
-piping the output of this one into the input of the other. Effects
-described by this schedule will always be executed before the effects
-described by the second schedule.
+Chains two schedules, passing the output of the first as the input to the
+second, while selecting the shorter delay between them.
+
+**Details**
+
+This function composes two schedules so that the output of the first schedule
+becomes the input of the second schedule. The first schedule executes first,
+and once it produces a result, the second schedule receives that result and
+continues execution based on it.
+
+This is useful for building complex scheduling workflows where one schedule's
+behavior determines how the next schedule behaves.
 
 To import and use `compose` from the "Schedule" module:
 
@@ -72807,7 +75009,15 @@ export declare const compose: {
 
 # count
 
-A schedule that always recurs, which counts the number of recurrences.
+A schedule that recurs indefinitely, counting the number of recurrences.
+
+**Details**
+
+This schedule never stops and simply counts how many times it has executed.
+Each recurrence increases the count, starting from `0`.
+
+This is useful when tracking the number of attempts in retry policies,
+measuring execution loops, or implementing infinite polling scenarios.
 
 To import and use `count` from the "Schedule" module:
 
@@ -72826,11 +75036,16 @@ export declare const count: Schedule<number, unknown, never>
 
 # cron
 
-Cron schedule that recurs every interval that matches the schedule.
+Creates a schedule that recurs based on a cron expression.
 
-It triggers at the beginning of each cron interval, producing the timestamps of the cron window.
+**Details**
 
-NOTE: `expression` parameter is validated lazily. Must be a valid cron expression.
+This schedule automatically executes at intervals defined by a cron
+expression. It triggers at the beginning of each matched interval and
+produces timestamps representing the start and end of the cron window.
+
+The cron `expression` is validated lazily, meaning errors may only be
+detected when the schedule is executed.
 
 To import and use `cron` from the "Schedule" module:
 
@@ -72852,12 +75067,20 @@ export declare const cron: {
 
 # dayOfMonth
 
-Cron-like schedule that recurs every specified `day` of month. Won't recur
-on months containing less days than specified in `day` param.
+Creates a schedule that recurs on a specific day of the month.
 
-It triggers at zero hour of the day. Producing a count of repeats: 0, 1, 2.
+**Details**
 
-NOTE: `day` parameter is validated lazily. Must be in range 1...31.
+This schedule triggers at midnight on the specified day of each month. It
+will not execute in months that have fewer days than the given day. For
+example, if the schedule is set to run on the 31st, it will not execute in
+months with only 30 days.
+
+The schedule produces a count of executions, starting at 0 and incrementing
+with each recurrence.
+
+The `day` parameter is validated lazily, meaning errors may only be detected
+when the schedule is executed.
 
 To import and use `dayOfMonth` from the "Schedule" module:
 
@@ -72876,11 +75099,17 @@ export declare const dayOfMonth: (day: number) => Schedule<number>
 
 # dayOfWeek
 
-Cron-like schedule that recurs every specified `day` of each week. It
-triggers at zero hour of the week. Producing a count of repeats: 0, 1, 2.
+Creates a schedule that recurs on a specific day of the week.
 
-NOTE: `day` parameter is validated lazily. Must be in range 1 (Monday)...7
-(Sunday).
+**Details**
+
+This schedule triggers at midnight on the specified day of the week. The
+`day` parameter follows the standard convention where `Monday = 1` and
+`Sunday = 7`. The schedule produces a count of executions, starting at 0 and
+incrementing with each recurrence.
+
+The `day` parameter is validated lazily, meaning errors may only be detected
+when the schedule is executed.
 
 To import and use `dayOfWeek` from the "Schedule" module:
 
@@ -72899,8 +75128,17 @@ export declare const dayOfWeek: (day: number) => Schedule<number>
 
 # delayed
 
-Returns a new schedule with the specified effectfully computed delay added
-before the start of each interval produced by this schedule.
+Modifies a schedule by adding a computed delay before each execution.
+
+**Details**
+
+This function adjusts an existing schedule by applying a transformation to
+its delays. Instead of using the default interval, each delay is modified
+using the provided function `f`, which takes the current delay and returns a
+new delay.
+
+This is useful for dynamically adjusting wait times between executions, such
+as introducing jitter, exponential backoff, or custom delay logic.
 
 To import and use `delayed` from the "Schedule" module:
 
@@ -72927,8 +75165,18 @@ export declare const delayed: {
 
 # delayedEffect
 
-Returns a new schedule with the specified effectfully computed delay added
-before the start of each interval produced by this schedule.
+Modifies a schedule by adding an effectfully computed delay before each
+execution.
+
+**Details**
+
+This function adjusts an existing schedule by introducing a delay that is
+computed via an effect. Instead of using a fixed delay, each interval is
+dynamically adjusted based on an effectful function `f`, which takes the
+current delay and returns a new delay wrapped in an `Effect`.
+
+This is useful for adaptive scheduling where delays depend on external
+factors, such as API calls, database queries, or dynamic system conditions.
 
 To import and use `delayedEffect` from the "Schedule" module:
 
@@ -72955,8 +75203,13 @@ export declare const delayedEffect: {
 
 # delayedSchedule
 
-Takes a schedule that produces a delay, and returns a new schedule that
-uses this delay to further delay intervals in the resulting schedule.
+Uses the delays produced by a schedule to further delay its intervals.
+
+**Details**
+
+This function modifies a schedule by using its own output delays to control
+its execution timing. Instead of executing immediately at each interval, the
+schedule will be delayed by the duration it produces.
 
 To import and use `delayedSchedule` from the "Schedule" module:
 
@@ -72977,7 +75230,12 @@ export declare const delayedSchedule: <In, R>(
 
 # delays
 
-Returns a new schedule that outputs the delay between each occurence.
+Transforms a schedule to output the delay between each occurrence.
+
+**Details**
+
+This function modifies an existing schedule so that instead of producing its
+original output, it now returns the delay between each scheduled execution.
 
 To import and use `delays` from the "Schedule" module:
 
@@ -72996,8 +75254,17 @@ export declare const delays: <Out, In, R>(self: Schedule<Out, In, R>) => Schedul
 
 # driver
 
-Returns a driver that can be used to step the schedule, appropriately
-handling sleeping.
+Creates a driver to manually control the execution of a schedule.
+
+**Details**
+
+This function returns a `ScheduleDriver`, which allows stepping through a
+schedule manually while handling delays and sleeping appropriately. A driver
+is useful when you need fine-grained control over how a schedule progresses,
+rather than relying on automatic execution.
+
+The returned driver exposes methods for retrieving the current state,
+executing the next step, and resetting the schedule when needed.
 
 To import and use `driver` from the "Schedule" module:
 
@@ -73016,8 +75283,7 @@ export declare const driver: <Out, In, R>(self: Schedule<Out, In, R>) => Effect.
 
 # duration
 
-A schedule that can recur one time, the specified amount of time into the
-future.
+Alias of {@link fromDelay}.
 
 To import and use `duration` from the "Schedule" module:
 
@@ -73036,8 +75302,7 @@ export declare const duration: (duration: Duration.DurationInput) => Schedule<Du
 
 # either
 
-Returns a new schedule that performs a geometric union on the intervals
-defined by both schedules.
+Alias of {@link union}.
 
 To import and use `either` from the "Schedule" module:
 
@@ -73064,7 +75329,7 @@ export declare const either: {
 
 # eitherWith
 
-The same as `either` followed by `map`.
+Alias of {@link unionWith}.
 
 To import and use `eitherWith` from the "Schedule" module:
 
@@ -73093,8 +75358,16 @@ export declare const eitherWith: {
 
 # elapsed
 
-A schedule that occurs everywhere, which returns the total elapsed duration
-since the first step.
+Creates a schedule that tracks the total elapsed duration since it started.
+
+**Details**
+
+This schedule executes continuously and returns the total time that has
+passed since the first execution. The duration keeps increasing with each
+step, providing a way to measure elapsed time.
+
+This is useful for tracking execution time, monitoring delays, or
+implementing logic based on how long a process has been running.
 
 To import and use `elapsed` from the "Schedule" module:
 
@@ -73113,11 +75386,19 @@ export declare const elapsed: Schedule<Duration.Duration, unknown, never>
 
 # ensuring
 
-Returns a new schedule that will run the specified finalizer as soon as the
-schedule is complete. Note that unlike `Effect.ensuring`, this method does not
-guarantee the finalizer will be run. The `Schedule` may not initialize or
-the driver of the schedule may not run to completion. However, if the
-`Schedule` ever decides not to continue, then the finalizer will be run.
+Attaches a finalizer to a schedule that runs when the schedule completes.
+
+**Details**
+
+This function returns a new schedule that executes a given finalizer when the
+schedule reaches completion. Unlike `Effect.ensuring`, this method does not
+guarantee the finalizer will run in all cases. If the schedule never
+initializes or is not driven to completion, the finalizer may not execute.
+However, if the schedule decides not to continue, the finalizer will be
+invoked.
+
+This is useful for cleaning up resources, logging, or executing other side
+effects when a schedule completes.
 
 To import and use `ensuring` from the "Schedule" module:
 
@@ -73139,9 +75420,16 @@ export declare const ensuring: {
 
 # exponential
 
-A schedule that always recurs, but will wait a certain amount between
-repetitions, given by `base * factor.pow(n)`, where `n` is the number of
-repetitions so far. Returns the current duration between recurrences.
+Creates a schedule that recurs indefinitely with exponentially increasing
+delays.
+
+**Details**
+
+This schedule starts with an initial delay of `base` and increases the delay
+exponentially on each repetition using the formula `base * factor^n`, where
+`n` is the number of times the schedule has executed so far. If no `factor`
+is provided, it defaults to `2`, causing the delay to double after each
+execution.
 
 To import and use `exponential` from the "Schedule" module:
 
@@ -73160,9 +75448,19 @@ export declare const exponential: (base: Duration.DurationInput, factor?: number
 
 # fibonacci
 
-A schedule that always recurs, increasing delays by summing the preceding
-two delays (similar to the fibonacci sequence). Returns the current
-duration between recurrences.
+Creates a schedule that recurs indefinitely with Fibonacci-based increasing
+delays.
+
+**Details**
+
+This schedule starts with an initial delay of `one` and increases subsequent
+delays by summing the two previous delays, following the Fibonacci sequence.
+The delay pattern follows: `one, one, one + one, (one + one) + one, ...`,
+resulting in `1s, 1s, 2s, 3s, 5s, 8s, 13s, ...` if `one = 1s`.
+
+This is useful for progressive backoff strategies, where delays grow
+naturally over time without increasing as aggressively as an exponential
+schedule.
 
 To import and use `fibonacci` from the "Schedule" module:
 
@@ -73181,11 +75479,15 @@ export declare const fibonacci: (one: Duration.DurationInput) => Schedule<Durati
 
 # fixed
 
-A schedule that recurs on a fixed interval. Returns the number of
-repetitions of the schedule so far.
+Creates a schedule that recurs at a fixed interval.
 
-If the action run between updates takes longer than the interval, then the
-action will be run immediately, but re-runs will not "pile up".
+**Details**
+
+This schedule executes at regular, evenly spaced intervals, returning the
+number of times it has run so far. If the action being executed takes longer
+than the interval, the next execution will happen immediately to prevent
+"pile-ups," ensuring that the schedule remains consistent without overlapping
+executions.
 
 ```
 |-----interval-----|-----interval-----|-----interval-----|
@@ -73209,7 +75511,14 @@ export declare const fixed: (interval: Duration.DurationInput) => Schedule<numbe
 
 # forever
 
-A schedule that always recurs, producing a count of repeats: 0, 1, 2.
+Creates a schedule that recurs indefinitely, producing a count of
+repetitions.
+
+**Details**
+
+This schedule runs indefinitely, returning an increasing count of executions
+(`0, 1, 2, 3, ...`). Each step increments the count by one, allowing tracking
+of how many times it has executed.
 
 To import and use `forever` from the "Schedule" module:
 
@@ -73228,7 +75537,12 @@ export declare const forever: Schedule<number, unknown, never>
 
 # fromDelay
 
-A schedule that recurs once with the specified delay.
+Creates a schedule that recurs once after a specified duration.
+
+**Details**
+
+This schedule executes a single time after waiting for the given duration.
+Once it has executed, it does not repeat.
 
 To import and use `fromDelay` from the "Schedule" module:
 
@@ -73247,9 +75561,18 @@ export declare const fromDelay: (delay: Duration.DurationInput) => Schedule<Dura
 
 # fromDelays
 
-A schedule that recurs once for each of the specified durations, delaying
-each time for the length of the specified duration. Returns the length of
-the current duration between recurrences.
+Creates a schedule that recurs once for each specified duration, applying the
+given delays sequentially.
+
+**Details**
+
+This schedule executes multiple times, each time waiting for the
+corresponding duration from the provided list of delays. The first execution
+waits for `delay`, the next for the second value in `delays`, and so on. Once
+all delays have been used, the schedule stops executing.
+
+This is useful for defining a custom delay sequence that does not follow a
+fixed pattern like exponential or Fibonacci backoff.
 
 To import and use `fromDelays` from the "Schedule" module:
 
@@ -73271,8 +75594,18 @@ export declare const fromDelays: (
 
 # fromFunction
 
-A schedule that always recurs, mapping input values through the specified
-function.
+Creates a schedule that always recurs, transforming input values using the
+specified function.
+
+**Details**
+
+This schedule continuously executes and applies the given function `f` to
+each input value, producing a transformed output. The schedule itself does
+not control delays or stopping conditions; it simply transforms the input
+values as they are processed.
+
+This is useful when defining schedules that map inputs to outputs, allowing
+dynamic transformations of incoming data.
 
 To import and use `fromFunction` from the "Schedule" module:
 
@@ -73291,10 +75624,20 @@ export declare const fromFunction: <A, B>(f: (a: A) => B) => Schedule<B, A>
 
 # hourOfDay
 
-Cron-like schedule that recurs every specified `hour` of each day. It
-triggers at zero minute of the hour. Producing a count of repeats: 0, 1, 2.
+Creates a schedule that recurs at a specific hour of each day.
 
-NOTE: `hour` parameter is validated lazily. Must be in range 0...23.
+**Details**
+
+This schedule triggers once per day at the specified `hour`, starting at zero
+minutes of that hour. The schedule produces a count of executions (`0, 1, 2,
+...`), indicating how many times it has been triggered.
+
+The `hour` parameter must be between `0` (midnight) and `23` (11 PM). It is
+validated lazily, meaning an invalid value will cause errors only when the
+schedule is executed.
+
+This is useful for scheduling daily recurring tasks at a fixed time, such as
+running batch jobs or refreshing data.
 
 To import and use `hourOfDay` from the "Schedule" module:
 
@@ -73313,7 +75656,13 @@ export declare const hourOfDay: (hour: number) => Schedule<number>
 
 # identity
 
-A schedule that always recurs, which returns inputs as outputs.
+Creates a schedule that always recurs, passing inputs directly as outputs.
+
+**Details**
+
+This schedule runs indefinitely, returning each input value as its output
+without modification. It effectively acts as a pass-through that simply
+echoes its input values at each step.
 
 To import and use `identity` from the "Schedule" module:
 
@@ -73332,8 +75681,21 @@ export declare const identity: <A>() => Schedule<A, A>
 
 # intersect
 
-Returns a new schedule that performs a geometric intersection on the
-intervals defined by both schedules.
+Combines two schedules, continuing only if both schedules want to continue,
+using the longer delay.
+
+**Details**
+
+This function takes two schedules and creates a new schedule that only
+continues execution if both schedules allow it. The interval between
+recurrences is determined by the longer delay between the two schedules.
+
+The output of the resulting schedule is a tuple containing the outputs of
+both schedules. The input type is the intersection of both schedules' input
+types.
+
+This is useful when coordinating multiple scheduling conditions where
+execution should proceed only when both schedules permit it.
 
 To import and use `intersect` from the "Schedule" module:
 
@@ -73360,9 +75722,20 @@ export declare const intersect: {
 
 # intersectWith
 
-Returns a new schedule that combines this schedule with the specified
-schedule, continuing as long as both schedules want to continue and merging
-the next intervals according to the specified merge function.
+Combines two schedules, continuing only if both want to continue, merging
+intervals using a custom function.
+
+**Details**
+
+This function takes two schedules and creates a new schedule that only
+continues execution if both schedules allow it. Instead of automatically
+using the longer delay (like {@link intersect}), this function applies a
+user-provided merge function `f` to determine the next interval between
+executions.
+
+The output of the resulting schedule is a tuple containing the outputs of
+both schedules, and the input type is the intersection of both schedules'
+input types.
 
 To import and use `intersectWith` from the "Schedule" module:
 
@@ -73391,7 +75764,7 @@ export declare const intersectWith: {
 
 # isSchedule
 
-Returns `true` if the specified value is a `Schedule`, `false` otherwise.
+Checks whether a given value is a `Schedule`.
 
 To import and use `isSchedule` from the "Schedule" module:
 
@@ -73410,13 +75783,19 @@ export declare const isSchedule: (u: unknown) => u is Schedule<unknown, never, u
 
 # jittered
 
-Returns a new schedule that randomly modifies the size of the intervals of
-this schedule.
+Returns a new schedule that randomly adjusts the interval size within a
+range.
 
-Defaults `min` to `0.8` and `max` to `1.2`.
+**Details**
 
-The new interval size is between `min * old interval size` and `max * old
-interval size`.
+This function modifies a schedule so that its delay between executions is
+randomly varied within a range. By default, the delay is adjusted between
+`80%` (`0.8 * interval`) and `120%` (`1.2 * interval`) of the original
+interval size.
+
+This is useful for adding randomness to repeated executions, reducing
+contention in distributed systems, and avoiding synchronized execution
+patterns that can cause bottlenecks.
 
 To import and use `jittered` from the "Schedule" module:
 
@@ -73435,11 +75814,22 @@ export declare const jittered: <Out, In, R>(self: Schedule<Out, In, R>) => Sched
 
 # jitteredWith
 
-Returns a new schedule that randomly modifies the size of the intervals of
-this schedule.
+Returns a new schedule that randomly adjusts the interval size within a
+user-defined range.
 
-The new interval size is between `min * old interval size` and `max * old
-interval size`.
+**Details**
+
+This function modifies a schedule so that its delay between executions is
+randomly varied within a specified range. Instead of using the default `0.8 -
+1.2` range like {@link jittered}, this function allows customizing the `min`
+and `max` multipliers.
+
+The delay for each step will be adjusted within `min * original_interval` and
+`max * original_interval`. If `min` and `max` are not provided, the defaults
+are `0.8` and `1.2`, respectively.
+
+This is useful for introducing randomness into scheduling behavior while
+having precise control over the jitter range.
 
 To import and use `jitteredWith` from the "Schedule" module:
 
@@ -73467,9 +75857,20 @@ export declare const jitteredWith: {
 
 # linear
 
-A schedule that always recurs, but will repeat on a linear time interval,
-given by `base * n` where `n` is the number of repetitions so far. Returns
-the current duration between recurrences.
+Creates a schedule that recurs indefinitely, increasing the delay linearly.
+
+**Details**
+
+This schedule starts with an initial delay of `base` and increases the delay
+on each recurrence in a linear fashion, following the formula:
+
+`delay = base * n`
+
+where `n` is the number of times the schedule has executed so far. This
+results in increasing intervals between executions.
+
+This is useful for implementing linear backoff strategies where the wait time
+between retries increases at a steady rate.
 
 To import and use `linear` from the "Schedule" module:
 
@@ -73488,8 +75889,19 @@ export declare const linear: (base: Duration.DurationInput) => Schedule<Duration
 
 # makeWithState
 
-Constructs a new `Schedule` with the specified `initial` state and the
-specified `step` function.
+Creates a new schedule with a custom state and step function.
+
+**Details**
+
+This function constructs a `Schedule` by defining its initial state and a
+step function, which determines how the schedule progresses over time. The
+step function is called on each iteration with the current time, an input
+value, and the schedule's current state. It returns the next state, an output
+value, and a decision on whether the schedule should continue or stop.
+
+This function is useful for creating custom scheduling logic that goes beyond
+predefined schedules like fixed intervals or exponential backoff. It allows
+full control over how the schedule behaves at each step.
 
 To import and use `makeWithState` from the "Schedule" module:
 
@@ -73515,8 +75927,18 @@ export declare const makeWithState: <S, In, Out, R = never>(
 
 # map
 
-Returns a new schedule that maps the output of this schedule through the
-specified function.
+Returns a new schedule that transforms its output using the specified
+function.
+
+**Details**
+
+This function modifies an existing schedule so that its outputs are
+transformed by the provided function `f`. The timing and recurrence behavior
+of the schedule remain unchanged, but the values it produces are mapped to
+new values.
+
+This is useful when composing schedules where you need to adjust the output
+format or apply additional processing.
 
 To import and use `map` from the "Schedule" module:
 
@@ -73538,7 +75960,14 @@ export declare const map: {
 
 # mapBoth
 
-Returns a new schedule that maps both the input and output.
+Transforms both the input and output of a schedule.
+
+**Details**
+
+This function modifies an existing schedule by applying a transformation to
+both its input values and its output values. The provided transformation
+functions `onInput` and `onOutput` allow you to map the schedule to work with
+a different input type while modifying its outputs as well.
 
 To import and use `mapBoth` from the "Schedule" module:
 
@@ -73566,7 +75995,16 @@ export declare const mapBoth: {
 
 # mapBothEffect
 
-Returns a new schedule that maps both the input and output.
+Transforms both the input and output of a schedule using effectful
+computations.
+
+**Details**
+
+This function modifies an existing schedule by applying effectful
+transformations to both its input values and its output values. The provided
+effectful functions `onInput` and `onOutput` allow you to transform inputs
+and outputs using computations that may involve additional logic, resource
+access, or side effects.
 
 To import and use `mapBothEffect` from the "Schedule" module:
 
@@ -73597,8 +76035,18 @@ export declare const mapBothEffect: {
 
 # mapEffect
 
-Returns a new schedule that maps the output of this schedule through the
-specified effectful function.
+Returns a new schedule that applies an effectful transformation to its
+output.
+
+**Details**
+
+This function modifies an existing schedule by applying an effectful function
+`f` to its output values. The timing and recurrence behavior of the schedule
+remain unchanged, but each output is mapped to a new value within an
+`Effect`.
+
+This is useful when you need to perform side effects or asynchronous
+transformations before passing the output forward.
 
 To import and use `mapEffect` from the "Schedule" module:
 
@@ -73625,8 +76073,17 @@ export declare const mapEffect: {
 
 # mapInput
 
-Returns a new schedule that deals with a narrower class of inputs than this
-schedule.
+Transforms the input type of a schedule.
+
+**Details**
+
+This function modifies a given schedule by applying a transformation function
+to its inputs. Instead of directly receiving values of type `In`, the
+schedule will now accept values of type `In2`, which are converted to `In`
+using the provided mapping function `f`.
+
+This is useful when you have a schedule that expects a specific input type
+but you need to adapt it to work with a different type.
 
 To import and use `mapInput` from the "Schedule" module:
 
@@ -73648,8 +76105,15 @@ export declare const mapInput: {
 
 # mapInputContext
 
-Transforms the context being provided to this schedule with the
-specified function.
+Transforms the required context of a schedule.
+
+**Details**
+
+This function modifies a schedule by mapping its required context (`R`) into
+a new context (`R0`) using the provided function `f`.
+
+This is useful when you need to adapt a schedule to work with a different
+dependency environment without changing its core logic.
 
 To import and use `mapInputContext` from the "Schedule" module:
 
@@ -73676,8 +76140,17 @@ export declare const mapInputContext: {
 
 # mapInputEffect
 
-Returns a new schedule that deals with a narrower class of inputs than this
-schedule.
+Transforms the input type of a schedule using an effectful function.
+
+**Details**
+
+This function modifies a schedule by applying an effectful transformation to
+its inputs. Instead of directly receiving values of type `In`, the schedule
+will now accept values of type `In2`, which are converted to `In` via an
+effectful function `f`.
+
+This is useful when the input transformation involves external dependencies,
+such as API calls, database lookups, or other asynchronous computations.
 
 To import and use `mapInputEffect` from the "Schedule" module:
 
@@ -73704,10 +76177,17 @@ export declare const mapInputEffect: {
 
 # minuteOfHour
 
-Cron-like schedule that recurs every specified `minute` of each hour. It
-triggers at zero second of the minute. Producing a count of repeats: 0, 1, 2.
+Creates a schedule that recurs every specified minute of each hour.
 
-NOTE: `minute` parameter is validated lazily. Must be in range 0...59.
+**Details**
+
+This schedule triggers once per hour at the specified `minute`, starting
+exactly at `minute:00` (zero seconds). The schedule produces a count of
+executions (`0, 1, 2, ...`), representing how many times it has run.
+
+The `minute` parameter must be between `0` and `59`. It is validated lazily,
+meaning an invalid value will cause errors only when the schedule is
+executed.
 
 To import and use `minuteOfHour` from the "Schedule" module:
 
@@ -73726,8 +76206,15 @@ export declare const minuteOfHour: (minute: number) => Schedule<number>
 
 # modifyDelay
 
-Returns a new schedule that modifies the delay using the specified
-function.
+Returns a new schedule that modifies the delay between executions using a
+custom function.
+
+**Details**
+
+This function transforms an existing schedule by applying `f` to modify the
+delay before each execution. The function receives both the schedule's output
+(`out`) and the originally computed delay (`duration`), and returns a new
+adjusted delay.
 
 To import and use `modifyDelay` from the "Schedule" module:
 
@@ -73754,8 +76241,15 @@ export declare const modifyDelay: {
 
 # modifyDelayEffect
 
-Returns a new schedule that modifies the delay using the specified
-effectual function.
+Returns a new schedule that modifies the delay before execution using an
+effectful function.
+
+**Details**
+
+This function takes an existing schedule and applies an effectful function
+`f` to dynamically adjust the delay before each execution. The function
+receives both the schedule's output (`out`) and the originally computed delay
+(`duration`), returning a new adjusted delay wrapped in an `Effect`.
 
 To import and use `modifyDelayEffect` from the "Schedule" module:
 
@@ -73782,7 +76276,12 @@ export declare const modifyDelayEffect: {
 
 # once
 
-A schedule that recurs one time.
+A schedule that executes only once and then stops.
+
+**Details**
+
+This schedule triggers a single execution and then terminates. It does not
+repeat or apply any additional logic.
 
 To import and use `once` from the "Schedule" module:
 
@@ -73801,9 +76300,16 @@ export declare const once: Schedule<void, unknown, never>
 
 # onDecision
 
-Returns a new schedule that applies the current one but runs the specified
-effect for every decision of this schedule. This can be used to create
-schedules that log failures, decisions, or computed values.
+Returns a new schedule that executes an effect every time the schedule makes
+a decision.
+
+**Details**
+
+This function enhances an existing schedule by running an effectful function
+`f` whenever a scheduling decision is made. The function receives the current
+schedule output (`out`) and the decision (`ScheduleDecision`), allowing
+additional logic to be executed, such as logging, monitoring, or side
+effects.
 
 To import and use `onDecision` from the "Schedule" module:
 
@@ -73830,7 +76336,13 @@ export declare const onDecision: {
 
 # passthrough
 
-Returns a new schedule that passes through the inputs of this schedule.
+Transforms a schedule to pass through its inputs as outputs.
+
+**Details**
+
+This function modifies an existing schedule so that it returns its input
+values instead of its original output values. The schedule's timing remains
+unchanged, but its outputs are replaced with whatever inputs it receives.
 
 To import and use `passthrough` from the "Schedule" module:
 
@@ -73849,8 +76361,19 @@ export declare const passthrough: <Out, In, R>(self: Schedule<Out, In, R>) => Sc
 
 # provideContext
 
-Returns a new schedule with its context provided to it, so the
-resulting schedule does not require any context.
+Returns a new schedule with a provided context, eliminating the need for
+external dependencies.
+
+**Details**
+
+This function supplies a required `context` to a schedule, allowing it to run
+without requiring external dependencies. After calling this function, the
+schedule can be used freely without needing to pass a context at execution
+time.
+
+This is useful when working with schedules that rely on contextual
+information, such as logging services, database connections, or configuration
+settings.
 
 To import and use `provideContext` from the "Schedule" module:
 
@@ -73872,9 +76395,17 @@ export declare const provideContext: {
 
 # provideService
 
-Returns a new schedule with the single service it requires provided to it.
-If the schedule requires multiple services use `provideContext`
-instead.
+Returns a new schedule with a single required service provided, eliminating
+the need for external dependencies.
+
+**Details**
+
+This function supplies a single service dependency to a schedule, allowing it
+to run without requiring that service externally. If a schedule depends on
+multiple services, consider using `provideContext` instead.
+
+This is useful when working with schedules that require a specific service,
+such as logging, metrics, or configuration retrieval.
 
 To import and use `provideService` from the "Schedule" module:
 
@@ -73888,23 +76419,28 @@ Schedule.provideService
 
 ```ts
 export declare const provideService: {
-  <T extends Context.Tag<any, any>>(
-    tag: T,
-    service: Context.Tag.Service<T>
-  ): <Out, In, R>(self: Schedule<Out, In, R>) => Schedule<Out, In, Exclude<R, Context.Tag.Identifier<T>>>
-  <Out, In, R, T extends Context.Tag<any, any>>(
+  <I, S>(
+    tag: Context.Tag<I, S>,
+    service: Types.NoInfer<S>
+  ): <Out, In, R>(self: Schedule<Out, In, R>) => Schedule<Out, In, Exclude<R, I>>
+  <Out, In, R, I, S>(
     self: Schedule<Out, In, R>,
-    tag: T,
-    service: Context.Tag.Service<T>
-  ): Schedule<Out, In, Exclude<R, Context.Tag.Identifier<T>>>
+    tag: Context.Tag<I, S>,
+    service: Types.NoInfer<S>
+  ): Schedule<Out, In, Exclude<R, I>>
 }
 ```
 
 
 # recurs
 
-A schedule spanning all time, which can be stepped only the specified
-number of times before it terminates.
+A schedule that recurs a fixed number of times before terminating.
+
+**Details**
+
+This schedule will continue executing until it has been stepped `n` times,
+after which it will stop. The output of the schedule is the current count of
+recurrences.
 
 To import and use `recurs` from the "Schedule" module:
 
@@ -73923,7 +76459,17 @@ export declare const recurs: (n: number) => Schedule<number>
 
 # recurUntil
 
-A schedule that recurs for until the predicate evaluates to true.
+A schedule that recurs until the given predicate evaluates to true.
+
+**Details**
+
+This schedule will continue executing as long as the provided predicate `f`
+returns `false` for the input value. Once `f` evaluates to `true`, the
+schedule stops recurring.
+
+This is useful for defining schedules that should stop when a certain
+condition is met, such as detecting a success state, reaching a threshold, or
+avoiding unnecessary retries.
 
 To import and use `recurUntil` from the "Schedule" module:
 
@@ -73942,7 +76488,18 @@ export declare const recurUntil: <A>(f: Predicate<A>) => Schedule<A, A>
 
 # recurUntilEffect
 
-A schedule that recurs for until the predicate evaluates to true.
+A schedule that recurs until the given effectful predicate evaluates to true.
+
+**Details**
+
+This schedule continues executing as long as the provided effectful predicate
+`f` returns `false`. Once `f` evaluates to `true`, the schedule stops
+recurring. Unlike {@link recurUntil}, this function allows the stopping
+condition to be computed asynchronously or based on external dependencies.
+
+This is useful when the stopping condition depends on an effectful
+computation, such as checking a database, making an API call, or retrieving
+system state dynamically.
 
 To import and use `recurUntilEffect` from the "Schedule" module:
 
@@ -73961,8 +76518,17 @@ export declare const recurUntilEffect: <A, R>(f: (a: A) => Effect.Effect<boolean
 
 # recurUntilOption
 
-A schedule that recurs for until the input value becomes applicable to
-partial function and then map that value with given function.
+A schedule that recurs until the input value matches a partial function, then
+maps the value.
+
+**Details**
+
+This schedule continues executing until the provided partial function `pf`
+returns `Some(value)`. At that point, it stops and maps the resulting value
+to an `Option<B>`. If `pf` returns `None`, the schedule continues.
+
+This is useful when defining schedules that should stop once a certain
+condition is met and transform the final value before completion.
 
 To import and use `recurUntilOption` from the "Schedule" module:
 
@@ -73981,7 +76547,15 @@ export declare const recurUntilOption: <A, B>(pf: (a: A) => Option.Option<B>) =>
 
 # recurUpTo
 
-A schedule that recurs during the given duration.
+A schedule that recurs until the specified duration has elapsed.
+
+**Details**
+
+This schedule continues executing for the given `duration`, after which it
+stops. The schedule outputs the elapsed time on each recurrence.
+
+This is useful for limiting the duration of retries, enforcing time-based
+constraints, or ensuring that an operation does not run indefinitely.
 
 To import and use `recurUpTo` from the "Schedule" module:
 
@@ -74000,7 +76574,13 @@ export declare const recurUpTo: (duration: Duration.DurationInput) => Schedule<D
 
 # recurWhile
 
-A schedule that recurs for as long as the predicate evaluates to true.
+A schedule that recurs as long as the given predicate evaluates to true.
+
+\*_Details_
+
+This schedule continues executing as long as the provided predicate `f`
+returns `true` for the input value. Once `f` evaluates to `false`, the
+schedule stops recurring.
 
 To import and use `recurWhile` from the "Schedule" module:
 
@@ -74019,8 +76599,15 @@ export declare const recurWhile: <A>(f: Predicate<A>) => Schedule<A, A>
 
 # recurWhileEffect
 
-A schedule that recurs for as long as the effectful predicate evaluates to
+A schedule that recurs as long as the given effectful predicate evaluates to
 true.
+
+**Details**
+
+This schedule continues executing as long as the provided effectful predicate
+`f` returns `true`. Once `f` evaluates to `false`, the schedule stops
+recurring. Unlike {@link recurWhile}, this function allows the condition to
+be computed dynamically using an effectful computation.
 
 To import and use `recurWhileEffect` from the "Schedule" module:
 
@@ -74040,6 +76627,15 @@ export declare const recurWhileEffect: <A, R>(f: (a: A) => Effect.Effect<boolean
 # reduce
 
 Returns a new schedule that folds over the outputs of this one.
+
+**Details**
+
+This schedule transforms the output by accumulating values over time using a
+reducer function `f`. It starts with an initial value `zero` and updates it
+each time the schedule produces an output.
+
+This is useful for tracking statistics, aggregating results, or summarizing
+data across multiple executions.
 
 To import and use `reduce` from the "Schedule" module:
 
@@ -74062,6 +76658,16 @@ export declare const reduce: {
 # reduceEffect
 
 Returns a new schedule that effectfully folds over the outputs of this one.
+
+**Details**
+
+This schedule accumulates outputs over time using an effectful reducer
+function `f`. It starts with an initial value `zero` and updates it
+asynchronously or based on external dependencies.
+
+This is useful for asynchronous state tracking, logging, external metrics
+aggregation, or any scenario where accumulation needs to involve an effectful
+computation.
 
 To import and use `reduceEffect` from the "Schedule" module:
 
@@ -74090,8 +76696,7 @@ export declare const reduceEffect: {
 
 # repeatForever
 
-Returns a new schedule that loops this one continuously, resetting the
-state when this schedule is done.
+Alias of {@link forever}.
 
 To import and use `repeatForever` from the "Schedule" module:
 
@@ -74112,6 +76717,12 @@ export declare const repeatForever: Schedule<number, unknown, never>
 
 Returns a new schedule that outputs the number of repetitions of this one.
 
+**Details**
+
+This schedule tracks how many times the given schedule has executed and
+outputs the count instead of the original values. The first execution starts
+at `0`, and the count increases with each recurrence.
+
 To import and use `repetitions` from the "Schedule" module:
 
 ```ts
@@ -74129,8 +76740,13 @@ export declare const repetitions: <Out, In, R>(self: Schedule<Out, In, R>) => Sc
 
 # resetAfter
 
-Return a new schedule that automatically resets the schedule to its initial
-state after some time of inactivity defined by `duration`.
+Returns a new schedule that automatically resets to its initial state after a
+period of inactivity defined by `duration`.
+
+**Details**
+
+This function modifies a schedule so that if no inputs are received for the
+specified `duration`, the schedule resets as if it were new.
 
 To import and use `resetAfter` from the "Schedule" module:
 
@@ -74153,7 +76769,12 @@ export declare const resetAfter: {
 # resetWhen
 
 Resets the schedule when the specified predicate on the schedule output
-evaluates to true.
+evaluates to `true`.
+
+**Details**
+
+This function modifies a schedule so that it resets to its initial state
+whenever the provided predicate `f` returns `true` for an output value.
 
 To import and use `resetWhen` from the "Schedule" module:
 
@@ -74175,7 +76796,16 @@ export declare const resetWhen: {
 
 # run
 
-Runs a schedule using the provided inputs, and collects all outputs.
+Runs a schedule using the provided inputs and collects all outputs.
+
+**Details**
+
+This function executes a given schedule with a sequence of input values and
+accumulates all outputs into a `Chunk`. The schedule starts execution at the
+specified `now` timestamp and proceeds according to its defined behavior.
+
+This is useful for batch processing, simulating execution, or testing
+schedules with predefined input sequences.
 
 To import and use `run` from the "Schedule" module:
 
@@ -74200,8 +76830,26 @@ export declare const run: {
 
 # Schedule
 
-A `Schedule<Out, In, R>` defines a recurring schedule, which consumes
-values of type `In`, and which returns values of type `Out`.
+A `Schedule<Out, In, R>` defines a recurring schedule, which consumes values
+of type `In`, and which returns values of type `Out`.
+
+The `Schedule` type is structured as follows:
+
+```text
+          ┌─── The type of output produced by the schedule
+          │   ┌─── The type of input consumed by the schedule
+          │   │     ┌─── Additional requirements for the schedule
+          ▼   ▼     ▼
+Schedule<Out, In, Requirements>
+```
+
+A schedule operates by consuming values of type `In` (such as errors in the
+case of `Effect.retry`, or values in the case of `Effect.repeat`) and
+producing values of type `Out`. It determines when to halt or continue the
+execution based on input values and its internal state.
+
+The inclusion of a `Requirements` parameter allows the schedule to leverage
+additional services or resources as needed.
 
 Schedules are defined as a possibly infinite set of intervals spread out over
 time. Each interval defines a window in which recurrence is possible.
@@ -74210,11 +76858,14 @@ When schedules are used to repeat or retry effects, the starting boundary of
 each interval produced by a schedule is used as the moment when the effect
 will be executed again.
 
-Schedules compose in the following primary ways:
+Schedules can be composed in different ways:
 
-- Union: performs the union of the intervals of two schedules
-- Intersection: performs the intersection of the intervals of two schedules
-- Sequence: concatenates the intervals of one schedule onto another
+- Union: Combines two schedules and recurs if either schedule wants to
+  continue, using the shorter delay.
+- Intersection: Combines two schedules and recurs only if both schedules want
+  to continue, using the longer delay.
+- Sequencing: Combines two schedules by running the first one fully, then
+  switching to the second.
 
 In addition, schedule inputs and outputs can be transformed, filtered (to
 terminate a schedule early in response to some input or output), and so
@@ -74235,11 +76886,14 @@ Schedule.Schedule
 
 # secondOfMinute
 
-Cron-like schedule that recurs every specified `second` of each minute. It
-triggers at zero nanosecond of the second. Producing a count of repeats: 0,
-1, 2.
+Cron-like schedule that recurs at a specific second of each minute.
 
-NOTE: `second` parameter is validated lazily. Must be in range 0...59.
+**Details**
+
+This schedule triggers at the specified `second` of each minute,
+starting at zero nanoseconds. It produces a count of executions
+(0, 1, 2, ...). The `second` parameter is validated lazily, meaning
+invalid values will only be caught at runtime.
 
 To import and use `secondOfMinute` from the "Schedule" module:
 
@@ -74258,8 +76912,14 @@ export declare const secondOfMinute: (second: number) => Schedule<number>
 
 # spaced
 
-Returns a schedule that recurs continuously, each repetition spaced the
-specified duration from the last run.
+Returns a schedule that recurs continuously, with each repetition
+spaced by the specified `duration` from the last run.
+
+**Details**
+
+This schedule ensures that executions occur at a fixed interval,
+maintaining a consistent delay between repetitions. The delay starts
+from the end of the last execution, not from the schedule start time.
 
 To import and use `spaced` from the "Schedule" module:
 
@@ -74278,7 +76938,7 @@ export declare const spaced: (duration: Duration.DurationInput) => Schedule<numb
 
 # stop
 
-A schedule that does not recur, it just stops.
+A schedule that does not recur and stops immediately.
 
 To import and use `stop` from the "Schedule" module:
 
@@ -74297,8 +76957,8 @@ export declare const stop: Schedule<void, unknown, never>
 
 # succeed
 
-Returns a schedule that repeats one time, producing the specified constant
-value.
+Returns a schedule that recurs indefinitely, always producing the specified
+constant value.
 
 To import and use `succeed` from the "Schedule" module:
 
@@ -74317,8 +76977,8 @@ export declare const succeed: <A>(value: A) => Schedule<A>
 
 # sync
 
-Returns a schedule that repeats one time, producing the specified constant
-value.
+Returns a schedule that recurs indefinitely, evaluating the given function to
+produce a constant value.
 
 To import and use `sync` from the "Schedule" module:
 
@@ -74337,8 +76997,14 @@ export declare const sync: <A>(evaluate: LazyArg<A>) => Schedule<A>
 
 # tapInput
 
-Returns a new schedule that effectfully processes every input to this
-schedule.
+Returns a new schedule that runs the given effectful function for each input
+before continuing execution.
+
+**Details**
+
+This function allows side effects to be performed on each input processed by
+the schedule. It does not modify the schedule’s behavior but ensures that the
+provided function `f` runs before each step.
 
 To import and use `tapInput` from the "Schedule" module:
 
@@ -74365,8 +77031,14 @@ export declare const tapInput: {
 
 # tapOutput
 
-Returns a new schedule that effectfully processes every output from this
-schedule.
+Returns a new schedule that runs the given effectful function for each output
+before continuing execution.
+
+**Details**
+
+This function allows side effects to be performed on each output produced by
+the schedule. It does not modify the schedule’s behavior but ensures that the
+provided function `f` runs after each step.
 
 To import and use `tapOutput` from the "Schedule" module:
 
@@ -74380,12 +77052,12 @@ Schedule.tapOutput
 
 ```ts
 export declare const tapOutput: {
-  <XO extends Out, X, R2, Out>(
-    f: (out: XO) => Effect.Effect<X, never, R2>
+  <X, R2, Out>(
+    f: (out: Types.NoInfer<Out>) => Effect.Effect<X, never, R2>
   ): <In, R>(self: Schedule<Out, In, R>) => Schedule<Out, In, R2 | R>
-  <Out, In, R, XO extends Out, X, R2>(
+  <Out, In, R, X, R2>(
     self: Schedule<Out, In, R>,
-    f: (out: XO) => Effect.Effect<X, never, R2>
+    f: (out: Out) => Effect.Effect<X, never, R2>
   ): Schedule<Out, In, R | R2>
 }
 ```
@@ -74393,8 +77065,14 @@ export declare const tapOutput: {
 
 # unfold
 
-Unfolds a schedule that repeats one time from the specified state and
-iterator.
+Creates a schedule that repeatedly applies a function to transform a state
+value, producing a sequence of values.
+
+**Details**
+
+This function starts with an `initial` value and applies `f` recursively to
+generate the next state at each step. The schedule continues indefinitely,
+producing a stream of values by unfolding the state over time.
 
 To import and use `unfold` from the "Schedule" module:
 
@@ -74413,8 +77091,21 @@ export declare const unfold: <A>(initial: A, f: (a: A) => A) => Schedule<A>
 
 # union
 
-Returns a new schedule that performs a geometric union on the intervals
-defined by both schedules.
+Combines two schedules, continuing execution as long as at least one of them
+allows it, using the shorter delay.
+
+**Details**
+
+This function combines two schedules into a single schedule that executes in
+parallel. If either schedule allows continuation, the merged schedule
+continues. When both schedules produce delays, the schedule selects the
+shorter delay to determine the next step.
+
+The output of the new schedule is a tuple containing the outputs of both
+schedules. The input type is the intersection of both schedules' input types.
+
+This is useful for scenarios where multiple scheduling conditions should be
+considered, ensuring execution proceeds if at least one schedule permits it.
 
 To import and use `union` from the "Schedule" module:
 
@@ -74441,9 +77132,23 @@ export declare const union: {
 
 # unionWith
 
-Returns a new schedule that combines this schedule with the specified
-schedule, continuing as long as either schedule wants to continue and
-merging the next intervals according to the specified merge function.
+Combines two schedules, continuing execution as long as at least one of them
+wants to continue, merging their intervals using a custom merge function.
+
+**Details**
+
+This function allows you to combine two schedules while defining how their
+intervals should be merged. Unlike {@link union}, which simply selects the
+shorter delay, this function lets you specify a custom merging strategy for
+the schedules’ intervals.
+
+The merged schedule continues execution as long as at least one of the input
+schedules allows it. The next interval is determined by applying the provided
+merge function to the intervals of both schedules.
+
+The output of the resulting schedule is a tuple containing the outputs of
+both schedules. The input type is the intersection of both schedules' input
+types.
 
 To import and use `unionWith` from the "Schedule" module:
 
@@ -74472,8 +77177,14 @@ export declare const unionWith: {
 
 # untilInput
 
-Returns a new schedule that continues until the specified predicate on the
-input evaluates to true.
+Returns a new schedule that stops execution when the given predicate on the
+input evaluates to `true`.
+
+**Details**
+
+This function modifies an existing schedule so that it continues executing
+only while the provided predicate returns `false` for incoming inputs. Once
+an input satisfies the condition, the schedule terminates immediately.
 
 To import and use `untilInput` from the "Schedule" module:
 
@@ -74495,8 +77206,15 @@ export declare const untilInput: {
 
 # untilInputEffect
 
-Returns a new schedule that continues until the specified effectful
-predicate on the input evaluates to true.
+Returns a new schedule that stops execution when the given effectful
+predicate on the input evaluates to `true`.
+
+**Details**
+
+This function modifies an existing schedule so that it continues executing
+only while the provided effectful predicate returns `false` for incoming
+inputs. The predicate is an `Effect`, meaning it can involve asynchronous
+computations or dependency-based logic.
 
 To import and use `untilInputEffect` from the "Schedule" module:
 
@@ -74523,8 +77241,17 @@ export declare const untilInputEffect: {
 
 # untilOutput
 
-Returns a new schedule that continues until the specified predicate on the
-output evaluates to true.
+Returns a new schedule that stops execution when the given predicate on the
+output evaluates to `true`.
+
+**Details**
+
+This function modifies an existing schedule so that it only continues
+executing while the given predicate returns false for its output values. Once
+the predicate evaluates to `true`, execution stops.
+
+The output of the resulting schedule remains the same, but its duration is
+now constrained by a stopping condition based on its own output.
 
 To import and use `untilOutput` from the "Schedule" module:
 
@@ -74546,8 +77273,14 @@ export declare const untilOutput: {
 
 # untilOutputEffect
 
-Returns a new schedule that continues until the specified effectful
-predicate on the output evaluates to true.
+Returns a new schedule that stops execution when the given effectful
+predicate on the output evaluates to `true`.
+
+**Details**
+
+This function modifies an existing schedule so that it only continues
+executing while the provided effectful predicate returns `false` for its
+output values. Once the predicate returns `true`, execution stops.
 
 To import and use `untilOutputEffect` from the "Schedule" module:
 
@@ -74574,7 +77307,13 @@ export declare const untilOutputEffect: {
 
 # upTo
 
-A schedule that recurs during the given duration.
+Returns a new schedule that limits execution to a fixed duration.
+
+**Details**
+
+This function modifies an existing schedule to stop execution after a
+specified duration has passed. The schedule continues as normal until the
+duration is reached, at which point it stops automatically.
 
 To import and use `upTo` from the "Schedule" module:
 
@@ -74596,8 +77335,14 @@ export declare const upTo: {
 
 # whileInput
 
-Returns a new schedule that continues for as long as the specified predicate
-on the input evaluates to true.
+Returns a new schedule that continues execution as long as the given
+predicate on the input is true.
+
+**Details**
+
+This function modifies an existing schedule so that it only continues
+execution while a specified predicate holds true for its input. If the
+predicate evaluates to `false` at any step, the schedule stops.
 
 To import and use `whileInput` from the "Schedule" module:
 
@@ -74619,8 +77364,14 @@ export declare const whileInput: {
 
 # whileInputEffect
 
-Returns a new schedule that continues for as long as the specified effectful
-predicate on the input evaluates to true.
+Returns a new schedule that continues execution for as long as the given
+effectful predicate on the input evaluates to `true`.
+
+**Details**
+
+This function modifies an existing schedule so that it only continues
+execution while an effectful predicate holds true for its input. If the
+predicate evaluates to `false` at any step, the schedule stops.
 
 To import and use `whileInputEffect` from the "Schedule" module:
 
@@ -74647,8 +77398,14 @@ export declare const whileInputEffect: {
 
 # whileOutput
 
-Returns a new schedule that continues for as long the specified predicate
-on the output evaluates to true.
+Returns a new schedule that continues execution for as long as the given
+predicate on the output evaluates to `true`.
+
+**Details**
+
+This function modifies an existing schedule so that it only continues
+execution while a provided condition holds true for its output. If the
+predicate returns `false`, the schedule stops.
 
 To import and use `whileOutput` from the "Schedule" module:
 
@@ -74670,8 +77427,14 @@ export declare const whileOutput: {
 
 # whileOutputEffect
 
-Returns a new schedule that continues for as long the specified effectful
-predicate on the output evaluates to true.
+Returns a new schedule that continues execution for as long as the given
+effectful predicate on the output evaluates to `true`.
+
+**Details**
+
+This function modifies an existing schedule so that it only continues
+execution while an effectful condition holds true for its output. If the
+effectful predicate returns `false`, the schedule stops.
 
 To import and use `whileOutputEffect` from the "Schedule" module:
 
@@ -74698,8 +77461,15 @@ export declare const whileOutputEffect: {
 
 # windowed
 
-A schedule that divides the timeline to `interval`-long windows, and sleeps
-until the nearest window boundary every time it recurs.
+Creates a schedule that divides time into fixed `interval`-long windows,
+triggering execution at the start of each new window.
+
+**Details**
+
+This function produces a schedule that waits until the next time window
+boundary before executing. Each window spans a fixed duration specified by
+`interval`. If an action completes midway through a window, the schedule
+waits until the next full window starts before proceeding.
 
 For example, `windowed(Duration.seconds(10))` would produce a schedule as
 follows:
@@ -74727,7 +77497,7 @@ export declare const windowed: (interval: Duration.DurationInput) => Schedule<nu
 
 # zipLeft
 
-The same as `intersect` but ignores the right output.
+The same as {@link intersect} but ignores the right output.
 
 To import and use `zipLeft` from the "Schedule" module:
 
@@ -74754,7 +77524,7 @@ export declare const zipLeft: {
 
 # zipRight
 
-The same as `intersect` but ignores the left output.
+The same as {@link intersect} but ignores the left output.
 
 To import and use `zipRight` from the "Schedule" module:
 
@@ -74781,7 +77551,7 @@ export declare const zipRight: {
 
 # zipWith
 
-Equivalent to `intersect` followed by `map`.
+Equivalent to {@link intersect} followed by {@link map}.
 
 To import and use `zipWith` from the "Schedule" module:
 
@@ -76778,6 +79548,48 @@ Schema.split
 
 ```ts
 export declare const split: (separator: string) => transform<typeof String$, Array$<typeof String$>>
+```
+
+
+# standardSchemaV1
+
+Returns a "Standard Schema" object conforming to the [Standard Schema
+v1](https://standardschema.dev/) specification.
+
+This function creates a schema whose `validate` method attempts to decode and
+validate the provided input synchronously. If the underlying `Schema`
+includes any asynchronous components (e.g., asynchronous message resolutions
+or checks), then validation will necessarily return a `Promise` instead.
+
+Any detected defects will be reported via a single issue containing no
+`path`.
+
+To import and use `standardSchemaV1` from the "Schema" module:
+
+```ts
+import * as Schema from "effect/Schema"
+// Can be accessed like this
+Schema.standardSchemaV1
+```
+
+**Example**
+
+```ts
+import { Schema } from "effect"
+
+const schema = Schema.Struct({
+  name: Schema.String
+})
+
+//      ┌─── StandardSchemaV1<{ readonly name: string; }>
+//      ▼
+const standardSchema = Schema.standardSchemaV1(schema)
+```
+
+**Signature**
+
+```ts
+export declare const standardSchemaV1: <A, I>(schema: Schema<A, I, never>) => StandardSchemaV1<I, A>
 ```
 
 
@@ -83936,15 +86748,8 @@ STM.provideService
 
 ```ts
 export declare const provideService: {
-  <T extends Context.Tag<any, any>>(
-    tag: T,
-    resource: Context.Tag.Service<T>
-  ): <A, E, R>(self: STM<A, E, R>) => STM<A, E, Exclude<R, Context.Tag.Identifier<T>>>
-  <A, E, R, T extends Context.Tag<any, any>>(
-    self: STM<A, E, R>,
-    tag: T,
-    resource: Context.Tag.Service<T>
-  ): STM<A, E, Exclude<R, Context.Tag.Identifier<T>>>
+  <I, S>(tag: Context.Tag<I, S>, resource: NoInfer<S>): <A, E, R>(self: STM<A, E, R>) => STM<A, E, Exclude<R, I>>
+  <A, E, R, I, S>(self: STM<A, E, R>, tag: Context.Tag<I, S>, resource: NoInfer<S>): STM<A, E, Exclude<R, I>>
 }
 ```
 
@@ -83966,15 +86771,15 @@ STM.provideServiceSTM
 
 ```ts
 export declare const provideServiceSTM: {
-  <T extends Context.Tag<any, any>, E1, R1>(
-    tag: T,
-    stm: STM<Context.Tag.Service<T>, E1, R1>
-  ): <A, E, R>(self: STM<A, E, R>) => STM<A, E1 | E, R1 | Exclude<R, Context.Tag.Identifier<T>>>
-  <A, E, R, T extends Context.Tag<any, any>, E1, R1>(
+  <I, S, E1, R1>(
+    tag: Context.Tag<I, S>,
+    stm: STM<NoInfer<S>, E1, R1>
+  ): <A, E, R>(self: STM<A, E, R>) => STM<A, E1 | E, R1 | Exclude<R, I>>
+  <A, E, R, I, S, E1, R1>(
     self: STM<A, E, R>,
-    tag: T,
-    stm: STM<Context.Tag.Service<T>, E1, R1>
-  ): STM<A, E | E1, R1 | Exclude<R, Context.Tag.Identifier<T>>>
+    tag: Context.Tag<I, S>,
+    stm: STM<NoInfer<S>, E1, R1>
+  ): STM<A, E1 | E, R1 | Exclude<R, I>>
 }
 ```
 
@@ -90526,15 +93331,8 @@ Stream.provideService
 
 ```ts
 export declare const provideService: {
-  <T extends Context.Tag<any, any>>(
-    tag: T,
-    resource: Context.Tag.Service<T>
-  ): <A, E, R>(self: Stream<A, E, R>) => Stream<A, E, Exclude<R, Context.Tag.Identifier<T>>>
-  <A, E, R, T extends Context.Tag<any, any>>(
-    self: Stream<A, E, R>,
-    tag: T,
-    resource: Context.Tag.Service<T>
-  ): Stream<A, E, Exclude<R, Context.Tag.Identifier<T>>>
+  <I, S>(tag: Context.Tag<I, S>, resource: NoInfer<S>): <A, E, R>(self: Stream<A, E, R>) => Stream<A, E, Exclude<R, I>>
+  <A, E, R, I, S>(self: Stream<A, E, R>, tag: Context.Tag<I, S>, resource: NoInfer<S>): Stream<A, E, Exclude<R, I>>
 }
 ```
 
@@ -90556,15 +93354,15 @@ Stream.provideServiceEffect
 
 ```ts
 export declare const provideServiceEffect: {
-  <T extends Context.Tag<any, any>, E2, R2>(
-    tag: T,
-    effect: Effect.Effect<Context.Tag.Service<T>, E2, R2>
-  ): <A, E, R>(self: Stream<A, E, R>) => Stream<A, E2 | E, R2 | Exclude<R, Context.Tag.Identifier<T>>>
-  <A, E, R, T extends Context.Tag<any, any>, E2, R2>(
+  <I, S, E2, R2>(
+    tag: Context.Tag<I, S>,
+    effect: Effect.Effect<NoInfer<S>, E2, R2>
+  ): <A, E, R>(self: Stream<A, E, R>) => Stream<A, E2 | E, R2 | Exclude<R, I>>
+  <A, E, R, I, S, E2, R2>(
     self: Stream<A, E, R>,
-    tag: T,
-    effect: Effect.Effect<Context.Tag.Service<T>, E2, R2>
-  ): Stream<A, E | E2, R2 | Exclude<R, Context.Tag.Identifier<T>>>
+    tag: Context.Tag<I, S>,
+    effect: Effect.Effect<NoInfer<S>, E2, R2>
+  ): Stream<A, E2 | E, R2 | Exclude<R, I>>
 }
 ```
 
@@ -90586,15 +93384,15 @@ Stream.provideServiceStream
 
 ```ts
 export declare const provideServiceStream: {
-  <T extends Context.Tag<any, any>, E2, R2>(
-    tag: T,
-    stream: Stream<Context.Tag.Service<T>, E2, R2>
-  ): <A, E, R>(self: Stream<A, E, R>) => Stream<A, E2 | E, R2 | Exclude<R, Context.Tag.Identifier<T>>>
-  <A, E, R, T extends Context.Tag<any, any>, E2, R2>(
+  <I, S, E2, R2>(
+    tag: Context.Tag<I, S>,
+    stream: Stream<NoInfer<S>, E2, R2>
+  ): <A, E, R>(self: Stream<A, E, R>) => Stream<A, E2 | E, R2 | Exclude<R, I>>
+  <A, E, R, I, S, E2, R2>(
     self: Stream<A, E, R>,
-    tag: T,
-    stream: Stream<Context.Tag.Service<T>, E2, R2>
-  ): Stream<A, E | E2, R2 | Exclude<R, Context.Tag.Identifier<T>>>
+    tag: Context.Tag<I, S>,
+    stream: Stream<NoInfer<S>, E2, R2>
+  ): Stream<A, E2 | E, R2 | Exclude<R, I>>
 }
 ```
 
@@ -93494,15 +96292,15 @@ Stream.updateService
 
 ```ts
 export declare const updateService: {
-  <T extends Context.Tag<any, any>>(
-    tag: T,
-    f: (service: Context.Tag.Service<T>) => Context.Tag.Service<T>
-  ): <A, E, R>(self: Stream<A, E, R>) => Stream<A, E, T | R>
-  <A, E, R, T extends Context.Tag<any, any>>(
+  <I, S>(
+    tag: Context.Tag<I, S>,
+    f: (service: NoInfer<S>) => NoInfer<S>
+  ): <A, E, R>(self: Stream<A, E, R>) => Stream<A, E, I | R>
+  <A, E, R, I, S>(
     self: Stream<A, E, R>,
-    tag: T,
-    f: (service: Context.Tag.Service<T>) => Context.Tag.Service<T>
-  ): Stream<A, E, R | T>
+    tag: Context.Tag<I, S>,
+    f: (service: NoInfer<S>) => NoInfer<S>
+  ): Stream<A, E, I | R>
 }
 ```
 
@@ -100873,8 +103671,8 @@ assert.deepStrictEqual(Array.from(trie4), [
 
 ```ts
 export declare const insert: {
-  <V>(key: string, value: V): (self: Trie<V>) => Trie<V>
-  <V>(self: Trie<V>, key: string, value: V): Trie<V>
+  <V1>(key: string, value: V1): <V>(self: Trie<V>) => Trie<V | V1>
+  <V1, V>(self: Trie<V>, key: string, value: V1): Trie<V | V1>
 }
 ```
 
@@ -100913,8 +103711,8 @@ assert.equal(Equal.equals(trie, trieInsert), true)
 
 ```ts
 export declare const insertMany: {
-  <V>(iter: Iterable<[string, V]>): (self: Trie<V>) => Trie<V>
-  <V>(self: Trie<V>, iter: Iterable<[string, V]>): Trie<V>
+  <V1>(iter: Iterable<[string, V1]>): <V>(self: Trie<V>) => Trie<V | V1>
+  <V1, V>(self: Trie<V>, iter: Iterable<[string, V1]>): Trie<V | V1>
 }
 ```
 
@@ -101184,8 +103982,8 @@ assert.equal(Equal.equals(trie.pipe(Trie.modify("me", (v) => v)), trie), true)
 
 ```ts
 export declare const modify: {
-  <V>(key: string, f: (v: V) => V): (self: Trie<V>) => Trie<V>
-  <V>(self: Trie<V>, key: string, f: (v: V) => V): Trie<V>
+  <V1, V>(key: string, f: (v: V) => V1): (self: Trie<V>) => Trie<V1 | V>
+  <V1, V>(self: Trie<V>, key: string, f: (v: V) => V1): Trie<V | V1>
 }
 ```
 

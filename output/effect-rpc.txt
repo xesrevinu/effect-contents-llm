@@ -157,8 +157,8 @@ NodeRuntime.runMain(Layer.launch(HttpLive))
 Use this `curl` command to test if the API is operational:
 
 ```bash
-curl -X POST http://localhost:3000/rpc 
-     -H "Content-Type: application/json" 
+curl -X POST http://localhost:3000/rpc \
+     -H "Content-Type: application/json" \
      -d '[
            {
              "request": { "_tag": "UserList" },
