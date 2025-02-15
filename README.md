@@ -63,26 +63,26 @@ This will:
 ### Summary
 
 - Total Files: 14
-- Total Size: 9.35 MB
-- Total Tokens: 2,564,392
+- Total Size: 9.49 MB
+- Total Tokens: 2,600,237
 
 #### website-docs
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/website-docs.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/website-docs.txt) | 1.48 MB | 345,028 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/website-docs.txt) |
+| [output/website-docs.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/website-docs.txt) | 1.49 MB | 345,844 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/website-docs.txt) |
 
 #### effect-api
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/effect-api.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-api.txt) | 2.34 MB | 646,373 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-api.txt) |
+| [output/effect-api.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-api.txt) | 2.42 MB | 665,052 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-api.txt) |
 
 #### effect-modules
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/effect-modules.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-modules.txt) | 5.26 MB | 1,511,620 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-modules.txt) |
+| [output/effect-modules.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-modules.txt) | 5.32 MB | 1,527,942 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-modules.txt) |
 
 #### effect-core
 
@@ -94,7 +94,7 @@ This will:
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/effect-ai.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-ai.txt) | 17 B | 8 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-ai.txt) |
+| [output/effect-ai.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-ai.txt) | 135 B | 36 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-ai.txt) |
 
 #### effect-cli
 
