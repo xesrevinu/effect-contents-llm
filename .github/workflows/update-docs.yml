@@ -29,10 +29,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 23
+          node-version: 23.7.0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
 
       - name: Check for changes
         id: check-changes
@@ -71,10 +71,12 @@ jobs:
 
       - name: Create Pull Request
         if: steps.check-changes.outputs.changes == 'true'
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ github.token }}
           commit-message: "chore: update documentation [skip ci]"
+          committer: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
           title: "chore: update documentation"
           body: |
             🤖 Auto-generated PR to update documentation
@@ -95,6 +97,7 @@ jobs:
             documentation
             automated
           delete-branch: true
+          maintainer-can-modify: true
 
       - name: Enable Pull Request Auto-merge
         if: steps.check-changes.outputs.changes == 'true'
