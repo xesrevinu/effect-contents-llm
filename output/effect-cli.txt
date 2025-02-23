@@ -1,4 +1,4 @@
-
+README.md
 # Installation
 
 Installing `@effect/cli` is straightforward and can be done using any of the popular package managers. Follow the steps below to get started with setting up `@effect/cli` on your system.

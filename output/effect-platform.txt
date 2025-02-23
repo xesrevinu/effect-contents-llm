@@ -1,4 +1,4 @@
-
+README.md
 # `@effect/platform-browser`
 
 Provides browser-specific implementations for the abstractions defined in [`@effect/platform`](https://github.com/Effect-TS/effect/tree/main/packages/platform). This allows you to write platform-independent code that can seamlessly run in the browser, leveraging browser capabilities while keeping your application portable across multiple environments.
@@ -7,7 +7,7 @@ Provides browser-specific implementations for the abstractions defined in [`@eff
 
 - **API Reference**: [View the full documentation](https://effect-ts.github.io/effect/docs/platform-browser).
 
-
+README.md
 # `@effect/platform-bun`
 
 Provides Bun-specific implementations for the abstractions defined in [`@effect/platform`](https://github.com/Effect-TS/effect/tree/main/packages/platform), allowing you to write platform-independent code that runs smoothly in Bun environments.
@@ -16,7 +16,7 @@ Provides Bun-specific implementations for the abstractions defined in [`@effect/
 
 - **API Reference**: [View the full documentation](https://effect-ts.github.io/effect/docs/platform-bun).
 
-
+README.md
 # `@effect/platform-node-shared`
 
 Provides shared utilities and abstractions used by the [`@effect/platform-node`](https://github.com/Effect-TS/effect/tree/main/packages/platform-node) package.
@@ -25,7 +25,7 @@ Provides shared utilities and abstractions used by the [`@effect/platform-node`]
 
 - **API Reference**: [View the full documentation](https://effect-ts.github.io/effect/docs/platform-node-shared).
 
-
+README.md
 # `@effect/platform-node`
 
 Provides Node.js-specific implementations for the abstractions defined in [`@effect/platform`](https://github.com/Effect-TS/effect/tree/main/packages/platform), allowing you to write platform-independent code that integrates smoothly with Node.js.
@@ -34,7 +34,7 @@ Provides Node.js-specific implementations for the abstractions defined in [`@eff
 
 - **API Reference**: [View the full documentation](https://effect-ts.github.io/effect/docs/platform-node).
 
-
+README.md
 # Introduction
 
 Welcome to the documentation for `@effect/platform`, a library designed for creating platform-independent abstractions (Node.js, Bun, browsers).
