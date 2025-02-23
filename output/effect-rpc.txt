@@ -1,11 +1,11 @@
-
+README.md
 # `@effect/rpc-http`
 
 ## Documentation
 
 - **API Reference**: [View the full documentation](https://effect-ts.github.io/effect/docs/rpc-http).
 
-
+README.md
 # Introduction
 
 The `@effect/rpc` library facilitates the development of remote procedure call (RPC) systems in TypeScript, enhancing application scalability and maintainability. It provides a type-safe environment that reduces runtime errors by aligning with TypeScript's strong typing. This library simplifies the creation of network-exposed services, handling the intricacies of data serialization and network communication, allowing developers to concentrate on core business logic. Its features support custom serialization, error handling, and middleware, making it adaptable for diverse application needs.

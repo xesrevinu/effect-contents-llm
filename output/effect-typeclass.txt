@@ -1,4 +1,4 @@
-
+README.md
 # Introduction
 
 Welcome to the documentation for `@effect/typeclass`, **a collection of re-usable typeclasses for the Effect ecosystem**.
