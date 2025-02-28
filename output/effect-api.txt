@@ -1842,7 +1842,7 @@ Array.dedupe
 **Signature**
 
 ```ts
-export declare const dedupe: <S extends Iterable<any> | NonEmptyReadonlyArray<any>>(
+export declare const dedupe: <S extends Iterable<any>>(
   self: S
 ) => S extends NonEmptyReadonlyArray<infer A> ? NonEmptyArray<A> : S extends Iterable<infer A> ? Array<A> : never
 ```
@@ -4413,7 +4413,7 @@ assert.deepStrictEqual(result, [4, 3, 2, 1])
 **Signature**
 
 ```ts
-export declare const reverse: <S extends Iterable<any> | NonEmptyReadonlyArray<any>>(
+export declare const reverse: <S extends Iterable<any>>(
   self: S
 ) => S extends NonEmptyReadonlyArray<infer A> ? NonEmptyArray<A> : S extends Iterable<infer A> ? Array<A> : never
 ```
@@ -4649,9 +4649,7 @@ Array.sort
 
 ```ts
 export declare const sort: {
-  <B>(
-    O: Order.Order<B>
-  ): <A extends B, S extends ReadonlyArray<A> | Iterable<A>>(self: S) => ReadonlyArray.With<S, ReadonlyArray.Infer<S>>
+  <B>(O: Order.Order<B>): <A extends B, S extends Iterable<A>>(self: S) => ReadonlyArray.With<S, ReadonlyArray.Infer<S>>
   <A extends B, B>(self: NonEmptyReadonlyArray<A>, O: Order.Order<B>): NonEmptyArray<A>
   <A extends B, B>(self: Iterable<A>, O: Order.Order<B>): Array<A>
 }
@@ -4702,7 +4700,7 @@ assert.deepStrictEqual(result, [
 **Signature**
 
 ```ts
-export declare const sortBy: <S extends Iterable<any> | NonEmptyReadonlyArray<any>>(
+export declare const sortBy: <S extends Iterable<any>>(
   ...orders: ReadonlyArray<Order.Order<ReadonlyArray.Infer<S>>>
 ) => (
   self: S
@@ -4743,7 +4741,7 @@ assert.deepStrictEqual(result, ["b", "cc", "aaa"])
 
 ```ts
 export declare const sortWith: {
-  <S extends Iterable<any> | NonEmptyReadonlyArray<any>, B>(
+  <S extends Iterable<any>, B>(
     f: (a: ReadonlyArray.Infer<S>) => B,
     order: Order.Order<B>
   ): (self: S) => ReadonlyArray.With<S, ReadonlyArray.Infer<S>>
@@ -5281,7 +5279,7 @@ assert.deepStrictEqual(result, [
 **Signature**
 
 ```ts
-export declare const unzip: <S extends Iterable<readonly [any, any]> | NonEmptyReadonlyArray<readonly [any, any]>>(
+export declare const unzip: <S extends Iterable<readonly [any, any]>>(
   self: S
 ) => S extends NonEmptyReadonlyArray<readonly [infer A, infer B]>
   ? [NonEmptyArray<A>, NonEmptyArray<B>]
@@ -63499,20 +63497,7 @@ export declare const filter: {
 Option-filterMap.md
 # filterMap
 
-Maps over the value of an `Option` with a function that may return `None`,
-effectively filtering and transforming the value.
-
-**Details**
-
-This function allows you to both transform the value of a `Some` and filter
-it at the same time. The mapping function `f` can either return a new
-`Option` (to transform the value) or return `None` to filter it out. If the
-input `Option` is `None`, the function is not applied, and the result remains
-`None`.
-
-This utility is particularly useful when you want to apply a transformation
-to the value of an `Option` while conditionally removing invalid or unwanted
-results.
+Alias of {@link flatMap}.
 
 To import and use `filterMap` from the "Option" module:
 
@@ -78253,11 +78238,11 @@ Schema.between
 **Signature**
 
 ```ts
-export declare const between: <A extends number>(
+export declare const between: <S extends Schema.Any>(
   minimum: number,
   maximum: number,
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-brand.md
@@ -78311,9 +78296,9 @@ Schema.capitalized
 **Signature**
 
 ```ts
-export declare const capitalized: <A extends string>(
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+export declare const capitalized: <S extends Schema.Any>(
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-clamp.md
@@ -78335,7 +78320,9 @@ Schema.clamp
 export declare const clamp: (
   minimum: number,
   maximum: number
-) => <A extends number, I, R>(self: Schema<A, I, R>) => transform<Schema<A, I, R>, filter<Schema<A>>>
+) => <S extends Schema.Any, A extends number>(
+  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
+) => transform<S, filter<SchemaClass<A>>>
 ```
 
 Schema-clampBigDecimal.md
@@ -78357,7 +78344,9 @@ Schema.clampBigDecimal
 export declare const clampBigDecimal: (
   minimum: bigDecimal_.BigDecimal,
   maximum: bigDecimal_.BigDecimal
-) => <A extends bigDecimal_.BigDecimal, I, R>(self: Schema<A, I, R>) => transform<Schema<A, I, R>, filter<Schema<A>>>
+) => <S extends Schema.Any, A extends bigDecimal_.BigDecimal>(
+  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
+) => transform<S, filter<SchemaClass<A>>>
 ```
 
 Schema-clampBigInt.md
@@ -78379,7 +78368,61 @@ Schema.clampBigInt
 export declare const clampBigInt: (
   minimum: bigint,
   maximum: bigint
-) => <A extends bigint, I, R>(self: Schema<A, I, R>) => transform<Schema<A, I, R>, filter<Schema<A>>>
+) => <S extends Schema.Any, A extends bigint>(
+  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
+) => transform<S, filter<SchemaClass<A>>>
+```
+
+Schema-Data.md
+# Data
+
+Type and Encoded must extend `Readonly<Record<string, any>> |
+ReadonlyArray<any>` to be compatible with this API.
+
+To import and use `Data` from the "Schema" module:
+
+```ts
+import * as Schema from "effect/Schema"
+// Can be accessed like this
+Schema.Data
+```
+
+**Signature**
+
+```ts
+export declare const Data: <
+  S extends Schema.Any,
+  A extends Readonly<Record<string, unknown>> | ReadonlyArray<unknown>,
+  I extends Readonly<Record<string, unknown>> | ReadonlyArray<unknown>
+>(
+  value: S & Schema<A & Schema.Type<S>, I & Schema.Encoded<S>, Schema.Context<S>>
+) => Data<S>
+```
+
+Schema-DataFromSelf.md
+# DataFromSelf
+
+Type and Encoded must extend `Readonly<Record<string, any>> |
+ReadonlyArray<any>` to be compatible with this API.
+
+To import and use `DataFromSelf` from the "Schema" module:
+
+```ts
+import * as Schema from "effect/Schema"
+// Can be accessed like this
+Schema.DataFromSelf
+```
+
+**Signature**
+
+```ts
+export declare const DataFromSelf: <
+  S extends Schema.Any,
+  A extends Readonly<Record<string, unknown>> | ReadonlyArray<unknown>,
+  I extends Readonly<Record<string, unknown>> | ReadonlyArray<unknown>
+>(
+  value: S & Schema<A & Schema.Type<S>, I & Schema.Encoded<S>, Schema.Context<S>>
+) => DataFromSelf<S>
 ```
 
 Schema-Date.md
@@ -78543,12 +78586,6 @@ import * as Schema from "effect/Schema"
 Schema.Defect
 ```
 
-**Signature**
-
-```ts
-export declare const Defect: Defect
-```
-
 Schema-Duration.md
 # Duration
 
@@ -78671,7 +78708,7 @@ Schema.NonNegativeInt
 **Signature**
 
 ```ts
-export declare const NonNegativeInt: refine<number, Schema<number, number, never>>
+export declare const NonNegativeInt: refine<number, typeof NonNegative>
 ```
 
 Schema-NumberFromString.md
@@ -78716,19 +78753,11 @@ console.log(Schema.decodeSync(Schema.OptionFromNonEmptyTrimmedString)(" a ")) //
 console.log(Schema.decodeSync(Schema.OptionFromNonEmptyTrimmedString)("a")) // Option.some("a")
 ```
 
-**Signature**
-
-```ts
-export declare const OptionFromNonEmptyTrimmedString: transform<
-  typeof String$,
-  OptionFromSelf<typeof NonEmptyTrimmedString>
->
-```
-
 Schema-Redacted.md
 # Redacted
 
-A schema that transforms any type `A` into a `Redacted<A>`.
+A transformation that transform a `Schema<A, I, R>` into a
+`RedactedFromSelf<A>`.
 
 To import and use `Redacted` from the "Schema" module:
 
@@ -78741,21 +78770,7 @@ Schema.Redacted
 **Signature**
 
 ```ts
-export declare const Redacted: <Value extends Schema.Any>(value: Value) => Redacted<Value>
-```
-
-Schema-Serializable.md
-# Serializable
-
-The `Serializable` trait allows objects to define their own schema for
-serialization.
-
-To import and use `Serializable` from the "Schema" module:
-
-```ts
-import * as Schema from "effect/Schema"
-// Can be accessed like this
-Schema.Serializable
+export declare function Redacted<Value extends Schema.Any>(value: Value): Redacted<Value>
 ```
 
 Schema-clampDuration.md
@@ -78777,7 +78792,9 @@ Schema.clampDuration
 export declare const clampDuration: (
   minimum: duration_.DurationInput,
   maximum: duration_.DurationInput
-) => <A extends duration_.Duration, I, R>(self: Schema<A, I, R>) => transform<Schema<A, I, R>, filter<Schema<A>>>
+) => <S extends Schema.Any, A extends duration_.Duration>(
+  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
+) => transform<S, filter<SchemaClass<A>>>
 ```
 
 Schema-declare.md
@@ -78798,8 +78815,8 @@ Schema.declare
 
 ```ts
 export declare const declare: {
-  <A>(is: (input: unknown) => input is A, annotations?: Annotations.Schema<A>): SchemaClass<A>
-  <const P extends ReadonlyArray<Schema.All>, I, A>(
+  <A>(is: (input: unknown) => input is A, annotations?: Annotations.Schema<A>): declare<A>
+  <A, I, const P extends ReadonlyArray<Schema.All>>(
     typeParameters: P,
     options: {
       readonly decode: (
@@ -78818,7 +78835,7 @@ export declare const declare: {
       ) => Effect.Effect<I, ParseResult.ParseIssue, never>
     },
     annotations?: Annotations.Schema<A, { readonly [K in keyof P]: Schema.Type<P[K]> }>
-  ): SchemaClass<A, I, Schema.Context<P[number]>>
+  ): declare<A, I, P>
 }
 ```
 
@@ -78962,9 +78979,9 @@ Schema.finite
 **Signature**
 
 ```ts
-export declare const finite: <A extends number>(
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+export declare const finite: <S extends Schema.Any>(
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-fromKey.md
@@ -79027,10 +79044,10 @@ Schema.greaterThan
 **Signature**
 
 ```ts
-export declare const greaterThan: <A extends number>(
+export declare const greaterThan: <S extends Schema.Any>(
   exclusiveMinimum: number,
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-greaterThanOrEqualTo.md
@@ -79049,10 +79066,10 @@ Schema.greaterThanOrEqualTo
 **Signature**
 
 ```ts
-export declare const greaterThanOrEqualTo: <A extends number>(
+export declare const greaterThanOrEqualTo: <S extends Schema.Any>(
   minimum: number,
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-head.md
@@ -79071,7 +79088,9 @@ Schema.head
 **Signature**
 
 ```ts
-export declare const head: <A, I, R>(self: Schema<ReadonlyArray<A>, I, R>) => SchemaClass<option_.Option<A>, I, R>
+export declare function head<S extends Schema.Any, A extends ReadonlyArray<unknown>>(
+  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
+): transform<S, OptionFromSelf<SchemaClass<A[number]>>>
 ```
 
 Schema-headNonEmpty.md
@@ -79090,9 +79109,9 @@ Schema.headNonEmpty
 **Signature**
 
 ```ts
-export declare const headNonEmpty: <A, I, R>(
-  self: Schema<array_.NonEmptyReadonlyArray<A>, I, R>
-) => SchemaClass<A, I, R>
+export declare function headNonEmpty<S extends Schema.Any, A extends array_.NonEmptyReadonlyArray<unknown>>(
+  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
+): transform<S, SchemaClass<A[number]>>
 ```
 
 Schema-headOrElse.md
@@ -79114,8 +79133,13 @@ Schema.headOrElse
 
 ```ts
 export declare const headOrElse: {
-  <A>(fallback?: LazyArg<A>): <I, R>(self: Schema<ReadonlyArray<A>, I, R>) => SchemaClass<A, I, R>
-  <A, I, R>(self: Schema<ReadonlyArray<A>, I, R>, fallback?: LazyArg<A>): SchemaClass<A, I, R>
+  <S extends Schema.Any, A extends ReadonlyArray<unknown>>(
+    fallback?: LazyArg<A[number]>
+  ): (self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, SchemaClass<A[number]>>
+  <S extends Schema.Any, A extends ReadonlyArray<unknown>>(
+    self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>,
+    fallback?: LazyArg<A[number]>
+  ): transform<S, SchemaClass<A[number]>>
 }
 ```
 
@@ -79135,9 +79159,9 @@ Schema.int
 **Signature**
 
 ```ts
-export declare const int: <A extends number>(
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+export declare const int: <S extends Schema.Any>(
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-is.md
@@ -79188,10 +79212,10 @@ Schema.lessThan
 **Signature**
 
 ```ts
-export declare const lessThan: <A extends number>(
+export declare const lessThan: <S extends Schema.Any>(
   exclusiveMaximum: number,
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-lessThanOrEqualTo.md
@@ -79210,10 +79234,10 @@ Schema.lessThanOrEqualTo
 **Signature**
 
 ```ts
-export declare const lessThanOrEqualTo: <A extends number>(
+export declare const lessThanOrEqualTo: <S extends Schema.Any>(
   maximum: number,
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-lowercased.md
@@ -79232,9 +79256,9 @@ Schema.lowercased
 **Signature**
 
 ```ts
-export declare const lowercased: <A extends string>(
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+export declare const lowercased: <S extends Schema.Any>(
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-mutable.md
@@ -79349,7 +79373,7 @@ assert.deepStrictEqual(
 
 ```ts
 export declare const parseJson: {
-  <A, I, R>(schema: Schema<A, I, R>, options?: ParseJsonOptions): SchemaClass<A, string, R>
+  <S extends Schema.Any>(schema: S, options?: ParseJsonOptions): transform<SchemaClass<unknown, string>, S>
   (options?: ParseJsonOptions): SchemaClass<unknown, string>
 }
 ```
@@ -79357,11 +79381,14 @@ export declare const parseJson: {
 Schema-parseNumber.md
 # parseNumber
 
-Transforms a `string` into a `number` by parsing the string using the `parse` function of the `effect/Number` module.
+Transforms a `string` into a `number` by parsing the string using the `parse`
+function of the `effect/Number` module.
 
-It returns an error if the value can't be converted (for example when non-numeric characters are provided).
+It returns an error if the value can't be converted (for example when
+non-numeric characters are provided).
 
-The following special string values are supported: "NaN", "Infinity", "-Infinity".
+The following special string values are supported: "NaN", "Infinity",
+"-Infinity".
 
 To import and use `parseNumber` from the "Schema" module:
 
@@ -79374,9 +79401,9 @@ Schema.parseNumber
 **Signature**
 
 ```ts
-export declare const parseNumber: <A extends string, I, R>(
-  self: Schema<A, I, R>
-) => transformOrFail<Schema<A, I, R>, typeof Number$>
+export declare function parseNumber<S extends Schema.Any, A extends string>(
+  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
+): transformOrFail<S, typeof Number$>
 ```
 
 Schema-pickLiteral.md
@@ -79460,8 +79487,10 @@ console.log(
 
 ```ts
 export declare const pluck: {
-  <A, I, K extends keyof A & keyof I>(key: K): <R>(schema: Schema<A, I, R>) => Schema<A[K], Simplify<Pick<I, K>>, R>
-  <A, I, R, K extends keyof A & keyof I>(schema: Schema<A, I, R>, key: K): Schema<A[K], Simplify<Pick<I, K>>, R>
+  <A, I, K extends keyof A & keyof I>(
+    key: K
+  ): <R>(schema: Schema<A, I, R>) => SchemaClass<A[K], Simplify<Pick<I, K>>, R>
+  <A, I, R, K extends keyof A & keyof I>(schema: Schema<A, I, R>, key: K): SchemaClass<A[K], Simplify<Pick<I, K>>, R>
 }
 ```
 
@@ -79484,30 +79513,18 @@ Schema.propertySignature
 export declare const propertySignature: <S extends Schema.All>(self: S) => propertySignature<S>
 ```
 
-Schema-requiredToOptional.md
-# requiredToOptional
+Schema-Serializable.md
+# Serializable
 
-Converts an optional property to a required one through a transformation `Type -> Option`.
+The `Serializable` trait allows objects to define their own schema for
+serialization.
 
-- `decode`: `none` as return value means the value will be missing in the output.
-- `encode`: `none` as argument means the value is missing in the input.
-
-To import and use `requiredToOptional` from the "Schema" module:
+To import and use `Serializable` from the "Schema" module:
 
 ```ts
 import * as Schema from "effect/Schema"
 // Can be accessed like this
-Schema.requiredToOptional
-```
-
-**Signature**
-
-```ts
-export declare const requiredToOptional: <FA, FI, FR, TA, TI, TR>(
-  from: Schema<FA, FI, FR>,
-  to: Schema<TA, TI, TR>,
-  options: { readonly decode: (fa: FA) => option_.Option<TI>; readonly encode: (o: option_.Option<TI>) => FA }
-) => PropertySignature<"?:", TA, never, ":", FI, false, FR | TR>
+Schema.Serializable
 ```
 
 Schema-SerializableWithResult.md
@@ -79937,6 +79954,32 @@ import * as Schema from "effect/Schema"
 Schema.WithResult
 ```
 
+Schema-requiredToOptional.md
+# requiredToOptional
+
+Converts an optional property to a required one through a transformation `Type -> Option`.
+
+- `decode`: `none` as return value means the value will be missing in the output.
+- `encode`: `none` as argument means the value is missing in the input.
+
+To import and use `requiredToOptional` from the "Schema" module:
+
+```ts
+import * as Schema from "effect/Schema"
+// Can be accessed like this
+Schema.requiredToOptional
+```
+
+**Signature**
+
+```ts
+export declare const requiredToOptional: <FA, FI, FR, TA, TI, TR>(
+  from: Schema<FA, FI, FR>,
+  to: Schema<TA, TI, TR>,
+  options: { readonly decode: (fa: FA) => option_.Option<TI>; readonly encode: (o: option_.Option<TI>) => FA }
+) => PropertySignature<"?:", TA, never, ":", FI, false, FR | TR>
+```
+
 Schema-split.md
 # split
 
@@ -79953,7 +79996,7 @@ Schema.split
 **Signature**
 
 ```ts
-export declare const split: (separator: string) => transform<typeof String$, Array$<typeof String$>>
+export declare const split: (separator: string) => transform<SchemaClass<string>, Array$<typeof String$>>
 ```
 
 Schema-standardSchemaV1.md
@@ -80109,10 +80152,10 @@ assert.deepStrictEqual(S.decodeSync(schema)(0), "a")
 **Signature**
 
 ```ts
-export declare const transformLiteral: <Encoded extends AST.LiteralValue, Type extends AST.LiteralValue>(
+export declare function transformLiteral<Encoded extends AST.LiteralValue, Type extends AST.LiteralValue>(
   from: Encoded,
   to: Type
-) => transformLiteral<Type, Encoded>
+): transformLiteral<Type, Encoded>
 ```
 
 Schema-transformLiterals.md
@@ -80261,9 +80304,9 @@ Schema.trimmed
 **Signature**
 
 ```ts
-export declare const trimmed: <A extends string>(
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+export declare const trimmed: <S extends Schema.Any>(
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-typeSchema.md
@@ -80304,9 +80347,9 @@ Schema.uncapitalized
 **Signature**
 
 ```ts
-export declare const uncapitalized: <A extends string>(
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+export declare const uncapitalized: <S extends Schema.Any>(
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-uppercased.md
@@ -80325,9 +80368,9 @@ Schema.uppercased
 **Signature**
 
 ```ts
-export declare const uppercased: <A extends string>(
-  annotations?: Annotations.Filter<A>
-) => <I, R>(self: Schema<A, I, R>) => filter<Schema<A, I, R>>
+export declare const uppercased: <S extends Schema.Any>(
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-validDate.md
@@ -80349,9 +80392,9 @@ Schema.validDate
 **Signature**
 
 ```ts
-export declare const validDate: (
-  annotations?: Annotations.Filter<Date>
-) => <I, R>(self: Schema<Date, I, R>) => filter<Schema<Date, I, R>>
+export declare const validDate: <S extends Schema.Any>(
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends Date>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
 Schema-withConstructorDefault.md
@@ -80456,29 +80499,6 @@ export declare const withDefaults: {
     }
   ): PropertySignature<":", Exclude<Type, undefined>, Key, "?:", Encoded, true, R>
 }
-```
-
-SchemaAST-PropertySignatureTransformation.md
-# PropertySignatureTransformation
-
-Represents a `PropertySignature -> PropertySignature` transformation
-
-The semantic of `decode` is:
-
-- `none()` represents the absence of the key/value pair
-- `some(value)` represents the presence of the key/value pair
-
-The semantic of `encode` is:
-
-- `none()` you don't want to output the key/value pair
-- `some(value)` you want to output the key/value pair
-
-To import and use `PropertySignatureTransformation` from the "SchemaAST" module:
-
-```ts
-import * as SchemaAST from "effect/SchemaAST"
-// Can be accessed like this
-SchemaAST.PropertySignatureTransformation
 ```
 
 SchemaAST-annotations.md
@@ -80632,6 +80652,29 @@ SchemaAST.pick
 
 ```ts
 export declare const pick: (ast: AST, keys: ReadonlyArray<PropertyKey>) => TypeLiteral | Transformation
+```
+
+SchemaAST-PropertySignatureTransformation.md
+# PropertySignatureTransformation
+
+Represents a `PropertySignature -> PropertySignature` transformation
+
+The semantic of `decode` is:
+
+- `none()` represents the absence of the key/value pair
+- `some(value)` represents the presence of the key/value pair
+
+The semantic of `encode` is:
+
+- `none()` you don't want to output the key/value pair
+- `some(value)` you want to output the key/value pair
+
+To import and use `PropertySignatureTransformation` from the "SchemaAST" module:
+
+```ts
+import * as SchemaAST from "effect/SchemaAST"
+// Can be accessed like this
+SchemaAST.PropertySignatureTransformation
 ```
 
 SchemaAST-required.md
@@ -81644,6 +81687,19 @@ export declare const broadcaster: <Msg extends Message.Message.Any>(
 ) => Effect.Effect<Broadcaster<Msg>, never, Sharding>
 ```
 
+ShardManagerClient-ShardManagerClient.md
+# ShardManagerClient
+
+ShardManagerClient provides the methods exposed by the ShardManager and called by the Pod.
+
+To import and use `ShardManagerClient` from the "ShardManagerClient" module:
+
+```ts
+import * as ShardManagerClient from "@effect/cluster/ShardManagerClient"
+// Can be accessed like this
+ShardManagerClient.ShardManagerClient
+```
+
 Sharding-getAssignedShardIds.md
 # getAssignedShardIds
 
@@ -81680,19 +81736,6 @@ Sharding.getPods
 
 ```ts
 export declare const getPods: Effect.Effect<HashSet.HashSet<PodAddress.PodAddress>, never, Sharding>
-```
-
-ShardManagerClient-ShardManagerClient.md
-# ShardManagerClient
-
-ShardManagerClient provides the methods exposed by the ShardManager and called by the Pod.
-
-To import and use `ShardManagerClient` from the "ShardManagerClient" module:
-
-```ts
-import * as ShardManagerClient from "@effect/cluster/ShardManagerClient"
-// Can be accessed like this
-ShardManagerClient.ShardManagerClient
 ```
 
 Sharding-messenger.md
@@ -83857,50 +83900,6 @@ export declare const mapEffect: {
 }
 ```
 
-Sink-mapError.md
-# mapError
-
-Transforms the errors emitted by this sink using `f`.
-
-To import and use `mapError` from the "Sink" module:
-
-```ts
-import * as Sink from "effect/Sink"
-// Can be accessed like this
-Sink.mapError
-```
-
-**Signature**
-
-```ts
-export declare const mapError: {
-  <E, E2>(f: (error: E) => E2): <A, In, L, R>(self: Sink<A, In, L, E, R>) => Sink<A, In, L, E2, R>
-  <A, In, L, E, R, E2>(self: Sink<A, In, L, E, R>, f: (error: E) => E2): Sink<A, In, L, E2, R>
-}
-```
-
-Sink-mapInput.md
-# mapInput
-
-Transforms this sink's input elements.
-
-To import and use `mapInput` from the "Sink" module:
-
-```ts
-import * as Sink from "effect/Sink"
-// Can be accessed like this
-Sink.mapInput
-```
-
-**Signature**
-
-```ts
-export declare const mapInput: {
-  <In0, In>(f: (input: In0) => In): <A, L, E, R>(self: Sink<A, In, L, E, R>) => Sink<A, In0, L, E, R>
-  <A, In, L, E, R, In0>(self: Sink<A, In, L, E, R>, f: (input: In0) => In): Sink<A, In0, L, E, R>
-}
-```
-
 STM-acquireUseRelease.md
 # acquireUseRelease
 
@@ -84016,46 +84015,6 @@ STM.asSomeError
 export declare const asSomeError: <A, E, R>(self: STM<A, E, R>) => STM<A, Option.Option<E>, R>
 ```
 
-STM-asVoid.md
-# asVoid
-
-This function maps the success value of an `STM` to `void`. If the original
-`STM` succeeds, the returned `STM` will also succeed. If the original `STM`
-fails, the returned `STM` will fail with the same error.
-
-To import and use `asVoid` from the "STM" module:
-
-```ts
-import * as STM from "effect/STM"
-// Can be accessed like this
-STM.asVoid
-```
-
-**Signature**
-
-```ts
-export declare const asVoid: <A, E, R>(self: STM<A, E, R>) => STM<void, E, R>
-```
-
-STM-attempt.md
-# attempt
-
-Creates an `STM` value from a partial (but pure) function.
-
-To import and use `attempt` from the "STM" module:
-
-```ts
-import * as STM from "effect/STM"
-// Can be accessed like this
-STM.attempt
-```
-
-**Signature**
-
-```ts
-export declare const attempt: <A>(evaluate: LazyArg<A>) => STM<A, unknown>
-```
-
 Sink-Sink.md
 # Sink
 
@@ -84071,6 +84030,50 @@ To import and use `Sink` from the "Sink" module:
 import * as Sink from "effect/Sink"
 // Can be accessed like this
 Sink.Sink
+```
+
+Sink-mapError.md
+# mapError
+
+Transforms the errors emitted by this sink using `f`.
+
+To import and use `mapError` from the "Sink" module:
+
+```ts
+import * as Sink from "effect/Sink"
+// Can be accessed like this
+Sink.mapError
+```
+
+**Signature**
+
+```ts
+export declare const mapError: {
+  <E, E2>(f: (error: E) => E2): <A, In, L, R>(self: Sink<A, In, L, E, R>) => Sink<A, In, L, E2, R>
+  <A, In, L, E, R, E2>(self: Sink<A, In, L, E, R>, f: (error: E) => E2): Sink<A, In, L, E2, R>
+}
+```
+
+Sink-mapInput.md
+# mapInput
+
+Transforms this sink's input elements.
+
+To import and use `mapInput` from the "Sink" module:
+
+```ts
+import * as Sink from "effect/Sink"
+// Can be accessed like this
+Sink.mapInput
+```
+
+**Signature**
+
+```ts
+export declare const mapInput: {
+  <In0, In>(f: (input: In0) => In): <A, L, E, R>(self: Sink<A, In, L, E, R>) => Sink<A, In0, L, E, R>
+  <A, In, L, E, R, In0>(self: Sink<A, In, L, E, R>, f: (input: In0) => In): Sink<A, In0, L, E, R>
+}
 ```
 
 Sink-mapInputChunks.md
@@ -85092,6 +85095,46 @@ Sse.makeParser
 
 ```ts
 export declare function makeParser(onParse: (event: AnyEvent) => void): Parser
+```
+
+STM-asVoid.md
+# asVoid
+
+This function maps the success value of an `STM` to `void`. If the original
+`STM` succeeds, the returned `STM` will also succeed. If the original `STM`
+fails, the returned `STM` will fail with the same error.
+
+To import and use `asVoid` from the "STM" module:
+
+```ts
+import * as STM from "effect/STM"
+// Can be accessed like this
+STM.asVoid
+```
+
+**Signature**
+
+```ts
+export declare const asVoid: <A, E, R>(self: STM<A, E, R>) => STM<void, E, R>
+```
+
+STM-attempt.md
+# attempt
+
+Creates an `STM` value from a partial (but pure) function.
+
+To import and use `attempt` from the "STM" module:
+
+```ts
+import * as STM from "effect/STM"
+// Can be accessed like this
+STM.attempt
+```
+
+**Signature**
+
+```ts
+export declare const attempt: <A>(evaluate: LazyArg<A>) => STM<A, unknown>
 ```
 
 STM-catchAll.md
@@ -86213,6 +86256,50 @@ export declare const loop: {
 }
 ```
 
+STM-STM.md
+# STM
+
+`STM<A, E, R>` represents an effect that can be performed transactionally,
+resulting in a failure `E` or a value `A` that may require an environment
+`R` to execute.
+
+Software Transactional Memory is a technique which allows composition of
+arbitrary atomic operations. It is the software analog of transactions in
+database systems.
+
+The API is lifted directly from the Haskell package Control.Concurrent.STM
+although the implementation does not resemble the Haskell one at all.
+
+See http://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM.html
+
+STM in Haskell was introduced in:
+
+Composable memory transactions, by Tim Harris, Simon Marlow, Simon Peyton
+Jones, and Maurice Herlihy, in ACM Conference on Principles and Practice of
+Parallel Programming 2005.
+
+See https://www.microsoft.com/en-us/research/publication/composable-memory-transactions/
+
+See also:
+Lock Free Data Structures using STMs in Haskell, by Anthony Discolo, Tim
+Harris, Simon Marlow, Simon Peyton Jones, Satnam Singh) FLOPS 2006: Eighth
+International Symposium on Functional and Logic Programming, Fuji Susono,
+JAPAN, April 2006
+
+https://www.microsoft.com/en-us/research/publication/lock-free-data-structures-using-stms-in-haskell/
+
+The implemtation is based on the ZIO STM module, while JS environments have
+no race conditions from multiple threads STM provides greater benefits for
+synchronization of Fibers and transactional data-types can be quite useful.
+
+To import and use `STM` from the "STM" module:
+
+```ts
+import * as STM from "effect/STM"
+// Can be accessed like this
+STM.STM
+```
+
 STM-map.md
 # map
 
@@ -86257,50 +86344,6 @@ export declare const mapAttempt: {
   <A, B>(f: (a: A) => B): <E, R>(self: STM<A, E, R>) => STM<B, unknown, R>
   <A, E, R, B>(self: STM<A, E, R>, f: (a: A) => B): STM<B, unknown, R>
 }
-```
-
-STM-STM.md
-# STM
-
-`STM<A, E, R>` represents an effect that can be performed transactionally,
-resulting in a failure `E` or a value `A` that may require an environment
-`R` to execute.
-
-Software Transactional Memory is a technique which allows composition of
-arbitrary atomic operations. It is the software analog of transactions in
-database systems.
-
-The API is lifted directly from the Haskell package Control.Concurrent.STM
-although the implementation does not resemble the Haskell one at all.
-
-See http://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM.html
-
-STM in Haskell was introduced in:
-
-Composable memory transactions, by Tim Harris, Simon Marlow, Simon Peyton
-Jones, and Maurice Herlihy, in ACM Conference on Principles and Practice of
-Parallel Programming 2005.
-
-See https://www.microsoft.com/en-us/research/publication/composable-memory-transactions/
-
-See also:
-Lock Free Data Structures using STMs in Haskell, by Anthony Discolo, Tim
-Harris, Simon Marlow, Simon Peyton Jones, Satnam Singh) FLOPS 2006: Eighth
-International Symposium on Functional and Logic Programming, Fuji Susono,
-JAPAN, April 2006
-
-https://www.microsoft.com/en-us/research/publication/lock-free-data-structures-using-stms-in-haskell/
-
-The implemtation is based on the ZIO STM module, while JS environments have
-no race conditions from multiple threads STM provides greater benefits for
-synchronization of Fibers and transactional data-types can be quite useful.
-
-To import and use `STM` from the "STM" module:
-
-```ts
-import * as STM from "effect/STM"
-// Can be accessed like this
-STM.STM
 ```
 
 STM-mapBoth.md
@@ -89045,6 +89088,66 @@ export declare const combine: {
 }
 ```
 
+Stream-DefaultChunkSize.md
+# DefaultChunkSize
+
+The default chunk size used by the various combinators and constructors of
+`Stream`.
+
+To import and use `DefaultChunkSize` from the "Stream" module:
+
+```ts
+import * as Stream from "effect/Stream"
+// Can be accessed like this
+Stream.DefaultChunkSize
+```
+
+**Signature**
+
+```ts
+export declare const DefaultChunkSize: number
+```
+
+Stream-Do.md
+# Do
+
+The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
+
+Here's how the do simulation works:
+
+1. Start the do simulation using the `Do` value
+2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Stream` values
+3. You can accumulate multiple `bind` statements to define multiple variables within the scope
+4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
+
+To import and use `Do` from the "Stream" module:
+
+```ts
+import * as Stream from "effect/Stream"
+// Can be accessed like this
+Stream.Do
+```
+
+**Example**
+
+```ts
+import { Chunk, Effect, pipe, Stream } from "effect"
+
+const result = pipe(
+  Stream.Do,
+  Stream.bind("x", () => Stream.succeed(2)),
+  Stream.bind("y", () => Stream.succeed(3)),
+  Stream.let("sum", ({ x, y }) => x + y)
+)
+assert.deepStrictEqual(Effect.runSync(Stream.runCollect(result)), Chunk.of({ x: 2, y: 3, sum: 5 }))
+```
+
+**Signature**
+
+```ts
+export declare const Do: Stream<{}, never, never>
+```
+
 Stream-combineChunks.md
 # combineChunks
 
@@ -89124,66 +89227,6 @@ export declare const concat: {
   <A2, E2, R2>(that: Stream<A2, E2, R2>): <A, E, R>(self: Stream<A, E, R>) => Stream<A2 | A, E2 | E, R2 | R>
   <A, E, R, A2, E2, R2>(self: Stream<A, E, R>, that: Stream<A2, E2, R2>): Stream<A | A2, E | E2, R | R2>
 }
-```
-
-Stream-DefaultChunkSize.md
-# DefaultChunkSize
-
-The default chunk size used by the various combinators and constructors of
-`Stream`.
-
-To import and use `DefaultChunkSize` from the "Stream" module:
-
-```ts
-import * as Stream from "effect/Stream"
-// Can be accessed like this
-Stream.DefaultChunkSize
-```
-
-**Signature**
-
-```ts
-export declare const DefaultChunkSize: number
-```
-
-Stream-Do.md
-# Do
-
-The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
-
-Here's how the do simulation works:
-
-1. Start the do simulation using the `Do` value
-2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Stream` values
-3. You can accumulate multiple `bind` statements to define multiple variables within the scope
-4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
-
-To import and use `Do` from the "Stream" module:
-
-```ts
-import * as Stream from "effect/Stream"
-// Can be accessed like this
-Stream.Do
-```
-
-**Example**
-
-```ts
-import { Chunk, Effect, pipe, Stream } from "effect"
-
-const result = pipe(
-  Stream.Do,
-  Stream.bind("x", () => Stream.succeed(2)),
-  Stream.bind("y", () => Stream.succeed(3)),
-  Stream.let("sum", ({ x, y }) => x + y)
-)
-assert.deepStrictEqual(Effect.runSync(Stream.runCollect(result)), Chunk.of({ x: 2, y: 3, sum: 5 }))
-```
-
-**Signature**
-
-```ts
-export declare const Do: Stream<{}, never, never>
 ```
 
 Stream-concatAll.md
@@ -94912,6 +94955,33 @@ export declare const share: {
 }
 ```
 
+Stream-Stream.md
+# Stream
+
+A `Stream<A, E, R>` is a description of a program that, when evaluated, may
+emit zero or more values of type `A`, may fail with errors of type `E`, and
+uses an context of type `R`. One way to think of `Stream` is as a
+`Effect` program that could emit multiple values.
+
+`Stream` is a purely functional _pull_ based stream. Pull based streams offer
+inherent laziness and backpressure, relieving users of the need to manage
+buffers between operators. As an optimization, `Stream` does not emit
+single values, but rather an array of values. This allows the cost of effect
+evaluation to be amortized.
+
+`Stream` forms a monad on its `A` type parameter, and has error management
+facilities for its `E` type parameter, modeled similarly to `Effect` (with
+some adjustments for the multiple-valued nature of `Stream`). These aspects
+allow for rich and expressive composition of streams.
+
+To import and use `Stream` from the "Stream" module:
+
+```ts
+import * as Stream from "effect/Stream"
+// Can be accessed like this
+Stream.Stream
+```
+
 Stream-sliding.md
 # sliding
 
@@ -94962,33 +95032,6 @@ export declare const slidingSize: {
   (chunkSize: number, stepSize: number): <A, E, R>(self: Stream<A, E, R>) => Stream<Chunk.Chunk<A>, E, R>
   <A, E, R>(self: Stream<A, E, R>, chunkSize: number, stepSize: number): Stream<Chunk.Chunk<A>, E, R>
 }
-```
-
-Stream-Stream.md
-# Stream
-
-A `Stream<A, E, R>` is a description of a program that, when evaluated, may
-emit zero or more values of type `A`, may fail with errors of type `E`, and
-uses an context of type `R`. One way to think of `Stream` is as a
-`Effect` program that could emit multiple values.
-
-`Stream` is a purely functional _pull_ based stream. Pull based streams offer
-inherent laziness and backpressure, relieving users of the need to manage
-buffers between operators. As an optimization, `Stream` does not emit
-single values, but rather an array of values. This allows the cost of effect
-evaluation to be amortized.
-
-`Stream` forms a monad on its `A` type parameter, and has error management
-facilities for its `E` type parameter, modeled similarly to `Effect` (with
-some adjustments for the multiple-valued nature of `Stream`). These aspects
-allow for rich and expressive composition of streams.
-
-To import and use `Stream` from the "Stream" module:
-
-```ts
-import * as Stream from "effect/Stream"
-// Can be accessed like this
-Stream.Stream
 ```
 
 Stream-some.md
@@ -98621,46 +98664,6 @@ TArray.headOption
 export declare const headOption: <A>(self: TArray<A>) => STM.STM<Option.Option<A>>
 ```
 
-TArray-lastOption.md
-# lastOption
-
-The last entry in the array, if it exists.
-
-To import and use `lastOption` from the "TArray" module:
-
-```ts
-import * as TArray from "effect/TArray"
-// Can be accessed like this
-TArray.lastOption
-```
-
-**Signature**
-
-```ts
-export declare const lastOption: <A>(self: TArray<A>) => STM.STM<Option.Option<A>>
-```
-
-TArray-make.md
-# make
-
-Makes a new `TArray` that is initialized with specified values.
-
-To import and use `make` from the "TArray" module:
-
-```ts
-import * as TArray from "effect/TArray"
-// Can be accessed like this
-TArray.make
-```
-
-**Signature**
-
-```ts
-export declare const make: <Elements extends [any, ...Array<any>]>(
-  ...elements: Elements
-) => STM.STM<TArray<Elements[number]>>
-```
-
 Take-Take.md
 # Take
 
@@ -99084,6 +99087,46 @@ export declare const tap: {
     f: (chunk: Chunk.Chunk<A>) => Effect.Effect<X, E2, R>
   ): Effect.Effect<void, E | E2, R>
 }
+```
+
+TArray-lastOption.md
+# lastOption
+
+The last entry in the array, if it exists.
+
+To import and use `lastOption` from the "TArray" module:
+
+```ts
+import * as TArray from "effect/TArray"
+// Can be accessed like this
+TArray.lastOption
+```
+
+**Signature**
+
+```ts
+export declare const lastOption: <A>(self: TArray<A>) => STM.STM<Option.Option<A>>
+```
+
+TArray-make.md
+# make
+
+Makes a new `TArray` that is initialized with specified values.
+
+To import and use `make` from the "TArray" module:
+
+```ts
+import * as TArray from "effect/TArray"
+// Can be accessed like this
+TArray.make
+```
+
+**Signature**
+
+```ts
+export declare const make: <Elements extends [any, ...Array<any>]>(
+  ...elements: Elements
+) => STM.STM<TArray<Elements[number]>>
 ```
 
 TArray-maxOption.md
@@ -100062,44 +100105,6 @@ TestServices.repeats
 export declare const repeats: Effect.Effect<number, never, never>
 ```
 
-TestServices-retries.md
-# retries
-
-The number of times to retry flaky tests.
-
-To import and use `retries` from the "TestServices" module:
-
-```ts
-import * as TestServices from "effect/TestServices"
-// Can be accessed like this
-TestServices.retries
-```
-
-**Signature**
-
-```ts
-export declare const retries: Effect.Effect<number, never, never>
-```
-
-TestServices-samples.md
-# samples
-
-The number of sufficient samples to check for a random variable.
-
-To import and use `samples` from the "TestServices" module:
-
-```ts
-import * as TestServices from "effect/TestServices"
-// Can be accessed like this
-TestServices.samples
-```
-
-**Signature**
-
-```ts
-export declare const samples: Effect.Effect<number, never, never>
-```
-
 TMap-TMap.md
 # TMap
 
@@ -100833,48 +100838,42 @@ export declare const transform: {
 }
 ```
 
-TMap-transformSTM.md
-# transformSTM
+TestServices-retries.md
+# retries
 
-Atomically updates all bindings using a transactional function.
+The number of times to retry flaky tests.
 
-To import and use `transformSTM` from the "TMap" module:
+To import and use `retries` from the "TestServices" module:
 
 ```ts
-import * as TMap from "effect/TMap"
+import * as TestServices from "effect/TestServices"
 // Can be accessed like this
-TMap.transformSTM
+TestServices.retries
 ```
 
 **Signature**
 
 ```ts
-export declare const transformSTM: {
-  <K, V, R, E>(f: (key: K, value: V) => STM.STM<readonly [K, V], E, R>): (self: TMap<K, V>) => STM.STM<void, E, R>
-  <K, V, R, E>(self: TMap<K, V>, f: (key: K, value: V) => STM.STM<readonly [K, V], E, R>): STM.STM<void, E, R>
-}
+export declare const retries: Effect.Effect<number, never, never>
 ```
 
-TMap-transformValues.md
-# transformValues
+TestServices-samples.md
+# samples
 
-Atomically updates all values using a pure function.
+The number of sufficient samples to check for a random variable.
 
-To import and use `transformValues` from the "TMap" module:
+To import and use `samples` from the "TestServices" module:
 
 ```ts
-import * as TMap from "effect/TMap"
+import * as TestServices from "effect/TestServices"
 // Can be accessed like this
-TMap.transformValues
+TestServices.samples
 ```
 
 **Signature**
 
 ```ts
-export declare const transformValues: {
-  <V>(f: (value: V) => V): <K>(self: TMap<K, V>) => STM.STM<void>
-  <K, V>(self: TMap<K, V>, f: (value: V) => V): STM.STM<void>
-}
+export declare const samples: Effect.Effect<number, never, never>
 ```
 
 TestServices-shrinks.md
@@ -101193,6 +101192,50 @@ TestServices.withTestConfigScoped
 
 ```ts
 export declare const withTestConfigScoped: (config: TestConfig.TestConfig) => Effect.Effect<void, never, Scope.Scope>
+```
+
+TMap-transformSTM.md
+# transformSTM
+
+Atomically updates all bindings using a transactional function.
+
+To import and use `transformSTM` from the "TMap" module:
+
+```ts
+import * as TMap from "effect/TMap"
+// Can be accessed like this
+TMap.transformSTM
+```
+
+**Signature**
+
+```ts
+export declare const transformSTM: {
+  <K, V, R, E>(f: (key: K, value: V) => STM.STM<readonly [K, V], E, R>): (self: TMap<K, V>) => STM.STM<void, E, R>
+  <K, V, R, E>(self: TMap<K, V>, f: (key: K, value: V) => STM.STM<readonly [K, V], E, R>): STM.STM<void, E, R>
+}
+```
+
+TMap-transformValues.md
+# transformValues
+
+Atomically updates all values using a pure function.
+
+To import and use `transformValues` from the "TMap" module:
+
+```ts
+import * as TMap from "effect/TMap"
+// Can be accessed like this
+TMap.transformValues
+```
+
+**Signature**
+
+```ts
+export declare const transformValues: {
+  <V>(f: (value: V) => V): <K>(self: TMap<K, V>) => STM.STM<void>
+  <K, V>(self: TMap<K, V>, f: (value: V) => V): STM.STM<void>
+}
 ```
 
 TMap-transformValuesSTM.md
@@ -103251,71 +103294,6 @@ assert.equal(Equal.equals(Trie.compact(trie), trieMapV), true)
 export declare const compact: <A>(self: Trie<Option<A>>) => Trie<A>
 ```
 
-Trie-empty.md
-# empty
-
-Creates an empty `Trie`.
-
-To import and use `empty` from the "Trie" module:
-
-```ts
-import * as Trie from "effect/Trie"
-// Can be accessed like this
-Trie.empty
-```
-
-**Example**
-
-```ts
-import { Trie, Equal } from "effect"
-
-const trie = Trie.empty<string>()
-
-assert.equal(Trie.size(trie), 0)
-assert.deepStrictEqual(Array.from(trie), [])
-```
-
-**Signature**
-
-```ts
-export declare const empty: <V = never>() => Trie<V>
-```
-
-Trie-entries.md
-# entries
-
-Returns an `IterableIterator` of the entries within the `Trie`.
-
-The entries are returned by keys in alphabetical order, regardless of insertion order.
-
-To import and use `entries` from the "Trie" module:
-
-```ts
-import * as Trie from "effect/Trie"
-// Can be accessed like this
-Trie.entries
-```
-
-**Example**
-
-```ts
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(Trie.insert("call", 0), Trie.insert("me", 1))
-
-const result = Array.from(Trie.entries(trie))
-assert.deepStrictEqual(result, [
-  ["call", 0],
-  ["me", 1]
-])
-```
-
-**Signature**
-
-```ts
-export declare const entries: <V>(self: Trie<V>) => IterableIterator<[string, V]>
-```
-
 TSet-add.md
 # add
 
@@ -103806,45 +103784,69 @@ TSet.toHashSet
 export declare const toHashSet: <A>(self: TSet<A>) => STM.STM<HashSet.HashSet<A>>
 ```
 
-TSet-toReadonlySet.md
-# toReadonlySet
+Trie-empty.md
+# empty
 
-Collects all elements into a `ReadonlySet`.
+Creates an empty `Trie`.
 
-To import and use `toReadonlySet` from the "TSet" module:
+To import and use `empty` from the "Trie" module:
 
 ```ts
-import * as TSet from "effect/TSet"
+import * as Trie from "effect/Trie"
 // Can be accessed like this
-TSet.toReadonlySet
+Trie.empty
+```
+
+**Example**
+
+```ts
+import { Trie, Equal } from "effect"
+
+const trie = Trie.empty<string>()
+
+assert.equal(Trie.size(trie), 0)
+assert.deepStrictEqual(Array.from(trie), [])
 ```
 
 **Signature**
 
 ```ts
-export declare const toReadonlySet: <A>(self: TSet<A>) => STM.STM<ReadonlySet<A>>
+export declare const empty: <V = never>() => Trie<V>
 ```
 
-TSet-transform.md
-# transform
+Trie-entries.md
+# entries
 
-Atomically updates all elements using a pure function.
+Returns an `IterableIterator` of the entries within the `Trie`.
 
-To import and use `transform` from the "TSet" module:
+The entries are returned by keys in alphabetical order, regardless of insertion order.
+
+To import and use `entries` from the "Trie" module:
 
 ```ts
-import * as TSet from "effect/TSet"
+import * as Trie from "effect/Trie"
 // Can be accessed like this
-TSet.transform
+Trie.entries
+```
+
+**Example**
+
+```ts
+import { Trie } from "effect"
+
+const trie = Trie.empty<number>().pipe(Trie.insert("call", 0), Trie.insert("me", 1))
+
+const result = Array.from(Trie.entries(trie))
+assert.deepStrictEqual(result, [
+  ["call", 0],
+  ["me", 1]
+])
 ```
 
 **Signature**
 
 ```ts
-export declare const transform: {
-  <A>(f: (a: A) => A): (self: TSet<A>) => STM.STM<void>
-  <A>(self: TSet<A>, f: (a: A) => A): STM.STM<void>
-}
+export declare const entries: <V>(self: Trie<V>) => IterableIterator<[string, V]>
 ```
 
 Trie-entriesWithPrefix.md
@@ -104846,6 +104848,47 @@ To import and use `TSet` from the "TSet" module:
 import * as TSet from "effect/TSet"
 // Can be accessed like this
 TSet.TSet
+```
+
+TSet-toReadonlySet.md
+# toReadonlySet
+
+Collects all elements into a `ReadonlySet`.
+
+To import and use `toReadonlySet` from the "TSet" module:
+
+```ts
+import * as TSet from "effect/TSet"
+// Can be accessed like this
+TSet.toReadonlySet
+```
+
+**Signature**
+
+```ts
+export declare const toReadonlySet: <A>(self: TSet<A>) => STM.STM<ReadonlySet<A>>
+```
+
+TSet-transform.md
+# transform
+
+Atomically updates all elements using a pure function.
+
+To import and use `transform` from the "TSet" module:
+
+```ts
+import * as TSet from "effect/TSet"
+// Can be accessed like this
+TSet.transform
+```
+
+**Signature**
+
+```ts
+export declare const transform: {
+  <A>(f: (a: A) => A): (self: TSet<A>) => STM.STM<void>
+  <A>(self: TSet<A>, f: (a: A) => A): STM.STM<void>
+}
 ```
 
 TSet-transformSTM.md
