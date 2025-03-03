@@ -64,13 +64,13 @@ This will:
 
 - Total Files: 14
 - Total Size: 9.59 MB
-- Total Tokens: 2,627,156
+- Total Tokens: 2,628,196
 
 #### website-docs
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/website-docs.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/website-docs.txt) | 1.5 MB | 349,922 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/website-docs.txt) |
+| [output/website-docs.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/website-docs.txt) | 1.51 MB | 350,932 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/website-docs.txt) |
 
 #### effect-api
 
@@ -106,7 +106,7 @@ This will:
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/printer.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/printer.txt) | 11 kB | 2,281 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/printer.txt) |
+| [output/printer.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/printer.txt) | 11 kB | 2,311 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/printer.txt) |
 
 #### effect-experimental
 
