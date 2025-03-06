@@ -4436,35 +4436,58 @@ Additionally, there are three special combinators for specific use cases:
 | `fail`     | Constructs a config that fails with the specified error message.         |
 | `all`      | Combines multiple configurations into a tuple, struct, or argument list. |
 
-**Example** (Using `array` Constructor)
+**Example** (Using the `array` combinator)
 
 The following example demonstrates how to load an environment variable as an array of strings using the `Config.array` constructor.
 
-```ts twoslash title="array.ts"
-import { Effect, Config } from "effect"
+```ts twoslash title="index.ts"
+import { Config, Effect } from "effect"
 
 const program = Effect.gen(function* () {
-  // Load array from env var MY_ARRAY
-  const config = yield* Config.array(Config.string(), "MY_ARRAY")
+  const config = yield* Config.array(Config.string(), "MYARRAY")
   console.log(config)
 })
 
 Effect.runPromise(program)
+// Run:
+// MYARRAY=a,b,c,a npx tsx index.ts
+// Output:
+// [ 'a', 'b c', 'd', 'a' ]
 ```
 
-If we run this program with the following environment variable:
+**Example** (Using the `hashSet` combinator)
 
-```sh showLineNumbers=false
-MY_ARRAY=a,b,c npx tsx array.ts
+```ts twoslash title="index.ts"
+import { Config, Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  const config = yield* Config.hashSet(Config.string(), "MYSET")
+  console.log(config)
+})
+
+Effect.runPromise(program)
+// Run:
+// MYSET=a,"b c",d,a npx tsx index.ts
+// Output:
+// { _id: 'HashSet', values: [ 'd', 'a', 'b c' ] }
 ```
 
-The output will be:
+**Example** (Using the `hashMap` combinator)
 
-```ansi showLineNumbers=false
-[ 'a', 'b', 'c' ]
+```ts twoslash title="index.ts"
+import { Config, Effect } from "effect"
+
+const program = Effect.gen(function* () {
+  const config = yield* Config.hashMap(Config.string(), "MYMAP")
+  console.log(config)
+})
+
+Effect.runPromise(program)
+// Run:
+// MYMAP_A=a MYMAP_B=b npx tsx index.ts
+// Output:
+// { _id: 'HashMap', values: [ [ 'A', 'a' ], [ 'B', 'b' ] ] }
 ```
-
-This shows how the `array` constructor converts a comma-separated string from an environment variable into an array of values, making configuration handling more flexible.
 
 ## Operators
 
@@ -11463,6 +11486,147 @@ and the corresponding value is the error handler function to be executed when th
   The error type must have a readonly `_tag` field to use `catchTag`. This
   field is used to identify and match errors.
 </Aside>
+
+## Effect.fn
+
+The `Effect.fn` function allows you to create traced functions that return an effect. It provides two key features:
+
+- **Stack traces with location details** if an error occurs.
+- **Automatic span creation** for [tracing](/docs/observability/tracing/) when a span name is provided.
+
+If a span name is passed as the first argument, the function's execution is tracked using that name.
+If no name is provided, stack tracing still works, but spans are not created.
+
+A function can be defined using either:
+
+- A generator function, allowing the use of `yield*` for effect composition.
+- A regular function that returns an `Effect`.
+
+**Example** (Creating a Traced Function with a Span Name)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const myfunc = Effect.fn("myspan")(function* <N extends number>(n: N) {
+  yield* Effect.annotateCurrentSpan("n", n) // Attach metadata to the span
+  console.log(`got: ${n}`)
+  yield* Effect.fail(new Error("Boom!")) // Simulate failure
+})
+
+Effect.runFork(myfunc(100).pipe(Effect.catchAllCause(Effect.logError)))
+/*
+Output:
+got: 100
+timestamp=... level=ERROR fiber=#0 cause="Error: Boom!
+    at <anonymous> (/.../index.ts:6:22) <= Raise location
+    at myspan (/.../index.ts:3:23)  <= Definition location
+    at myspan (/.../index.ts:9:16)" <= Call location
+*/
+```
+
+### Exporting Spans for Tracing
+
+`Effect.fn` automatically creates [spans](/docs/observability/tracing/). The spans capture information about the function execution, including metadata and error details.
+
+**Example** (Exporting Spans to the Console)
+
+```ts twoslash
+import { Effect } from "effect"
+import { NodeSdk } from "@effect/opentelemetry"
+import {
+  ConsoleSpanExporter,
+  BatchSpanProcessor
+} from "@opentelemetry/sdk-trace-base"
+
+const myfunc = Effect.fn("myspan")(function* <N extends number>(n: N) {
+  yield* Effect.annotateCurrentSpan("n", n)
+  console.log(`got: ${n}`)
+  yield* Effect.fail(new Error("Boom!"))
+})
+
+const program = myfunc(100)
+
+const NodeSdkLive = NodeSdk.layer(() => ({
+  resource: { serviceName: "example" },
+  // Export span data to the console
+  spanProcessor: new BatchSpanProcessor(new ConsoleSpanExporter())
+}))
+
+Effect.runFork(program.pipe(Effect.provide(NodeSdkLive)))
+/*
+Output:
+got: 100
+{
+  resource: {
+    attributes: {
+      'service.name': 'example',
+      'telemetry.sdk.language': 'nodejs',
+      'telemetry.sdk.name': '@effect/opentelemetry',
+      'telemetry.sdk.version': '1.30.1'
+    }
+  },
+  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
+  traceId: '22801570119e57a6e2aacda3dec9665b',
+  parentId: undefined,
+  traceState: undefined,
+  name: 'myspan',
+  id: '7af530c1e01bc0cb',
+  kind: 0,
+  timestamp: 1741182277518402.2,
+  duration: 4300.416,
+  attributes: {
+    n: 100,
+    'code.stacktrace': 'at <anonymous> (/.../index.ts:8:23)\n' +
+      'at <anonymous> (/.../index.ts:14:17)'
+  },
+  status: { code: 2, message: 'Boom!' },
+  events: [
+    {
+      name: 'exception',
+      attributes: {
+        'exception.type': 'Error',
+        'exception.message': 'Boom!',
+        'exception.stacktrace': 'Error: Boom!\n' +
+          '    at <anonymous> (/.../index.ts:11:22)\n' +
+          '    at myspan (/.../index.ts:8:23)\n' +
+          '    at myspan (/.../index.ts:14:17)'
+      },
+      time: [ 1741182277, 522702583 ],
+      droppedAttributesCount: 0
+    }
+  ],
+  links: []
+}
+*/
+```
+
+### Using Effect.fn as a pipe Function
+
+`Effect.fn` also acts as a pipe function, allowing you to create a pipeline after
+the function definition using the effect returned by the generator function as
+the starting value of the pipeline.
+
+**Example** (Creating a Traced Function with a Delay)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const myfunc = Effect.fn(
+  function* (n: number) {
+    console.log(`got: ${n}`)
+    yield* Effect.fail(new Error("Boom!"))
+  },
+  // You can access both the created effect and the original arguments
+  (effect, n) => Effect.delay(effect, `${n / 100} seconds`)
+)
+
+Effect.runFork(myfunc(100).pipe(Effect.catchAllCause(Effect.logError)))
+/*
+Output:
+got: 100
+timestamp=... level=ERROR fiber=#0 cause="Error: Boom! (<= after 1 second)
+*/
+```
 
 fallback.mdx
 ---
@@ -23007,8 +23171,38 @@ When working with data structures, it can be helpful to create values that confo
 For this purpose, the Schema module provides default constructors for various schema types, including `Structs`, `Records`, `filters`, and `brands`.
 
 <Aside type="note" title="Constructor Scope">
-  Default constructors tied to a schema `Schema<A, I, R>` specifically operate on the `A` type, not the `I` type.
+  Default constructors associated with a schema of type `Schema<A, I, R>` operate specifically on the **decoded type** (`A`), not the encoded type (`I`).
+
+- **`A` (Decoded Type)**: This is the type produced after decoding and validation. The constructor creates values of this type.
+- `I` (Encoded Type): This is the type expected when decoding raw input. The constructor does not accept this type directly.
+
+This distinction is important when working with schemas that transform data. For example, if a schema **decodes a string into a number**, the default constructor will only accept **numbers**, not strings.
+
 </Aside>
+
+Default constructors are **unsafe**, meaning they **throw an error** if the input does not conform to the schema.
+If you need a safer alternative, consider using [Schema.validateEither](#error-handling-in-constructors), which returns a result indicating success or failure instead of throwing an error.
+
+**Example** (Using a Refinement Default Constructor)
+
+```ts twoslash
+import { Schema } from "effect"
+
+const schema = Schema.NumberFromString.pipe(Schema.between(1, 10))
+
+// The constructor only accepts numbers
+console.log(schema.make(5))
+// Output: 5
+
+// This will throw an error because the number is outside the valid range
+console.log(schema.make(20))
+/*
+throws:
+ParseError: between(1, 10)
+└─ Predicate refinement failure
+   └─ Expected a number between 1 and 10, actual 20
+*/
+```
 
 ## Structs
 
@@ -23162,20 +23356,20 @@ If you need a "safe" constructor that does not throw errors but instead returns 
 ```ts twoslash
 import { Schema } from "effect"
 
-const MyNumber = Schema.Number.pipe(Schema.between(1, 10))
+const schema = Schema.NumberFromString.pipe(Schema.between(1, 10))
 
-// Create a safe constructor that validates the input
-const makeMyNumber = Schema.validateEither(MyNumber)
+// Create a safe constructor that validates an unknown input
+const safeMake = Schema.validateEither(schema)
 
 // Valid input returns a Right value
-console.log(makeMyNumber(5))
+console.log(safeMake(5))
 /*
 Output:
 { _id: 'Either', _tag: 'Right', right: 5 }
 */
 
 // Invalid input returns a Left value with detailed error information
-console.log(makeMyNumber(20))
+console.log(safeMake(20))
 /*
 Output:
 {
@@ -23183,11 +23377,20 @@ Output:
   _tag: 'Left',
   left: {
     _id: 'ParseError',
-    message: 'a number between 1 and 10\n' +
+    message: 'between(1, 10)\n' +
       '└─ Predicate refinement failure\n' +
       '   └─ Expected a number between 1 and 10, actual 20'
   }
 }
+*/
+
+// This will throw an error because it's unsafe
+schema.make(20)
+/*
+throws:
+ParseError: between(1, 10)
+└─ Predicate refinement failure
+   └─ Expected a number between 1 and 10, actual 20
 */
 ```
 

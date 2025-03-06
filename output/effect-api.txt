@@ -1,3 +1,43 @@
+AiTelemetry-GenAITelemetryAttributes.md
+# GenAITelemetryAttributes
+
+The attributes used to describe telemetry in the context of Generative
+Artificial Intelligence (GenAI) Models requests and responses.
+
+{@see https://opentelemetry.io/docs/specs/semconv/attributes-registry/gen-ai/}
+
+To import and use `GenAITelemetryAttributes` from the "AiTelemetry" module:
+
+```ts
+import * as AiTelemetry from "@effect/ai/AiTelemetry"
+// Can be accessed like this
+AiTelemetry.GenAITelemetryAttributes
+```
+
+AiTelemetry-addGenAIAnnotations.md
+# addGenAIAnnotations
+
+Applies the specified GenAI telemetry attributes to the provided `Span`.
+
+**NOTE**: This method will mutate the `Span` **in-place**.
+
+To import and use `addGenAIAnnotations` from the "AiTelemetry" module:
+
+```ts
+import * as AiTelemetry from "@effect/ai/AiTelemetry"
+// Can be accessed like this
+AiTelemetry.addGenAIAnnotations
+```
+
+**Signature**
+
+```ts
+export declare const addGenAIAnnotations: {
+  (options: GenAITelemetryAttributeOptions): (span: Span) => void
+  (span: Span, options: GenAITelemetryAttributeOptions): void
+}
+```
+
 Ansi-beep.md
 # beep
 
@@ -8527,55 +8567,6 @@ Cause.die
 export declare const die: (defect: unknown) => Cause<never>
 ```
 
-Cause-dieOption.md
-# dieOption
-
-Retrieves the first `Die` defect in a `Cause`, if present.
-
-**Details**
-
-This function returns an `Option` containing the first unexpected failure
-(`Die`) discovered. It's helpful for diagnosing the primary defect in a chain
-of errors.
-
-To import and use `dieOption` from the "Cause" module:
-
-```ts
-import * as Cause from "effect/Cause"
-// Can be accessed like this
-Cause.dieOption
-```
-
-**Signature**
-
-```ts
-export declare const dieOption: <E>(self: Cause<E>) => Option.Option<unknown>
-```
-
-Cause-empty.md
-# empty
-
-Creates an `Empty` cause.
-
-**Details**
-
-This function returns a cause that signifies "no error." It's commonly used
-to represent an absence of failure conditions.
-
-To import and use `empty` from the "Cause" module:
-
-```ts
-import * as Cause from "effect/Cause"
-// Can be accessed like this
-Cause.empty
-```
-
-**Signature**
-
-```ts
-export declare const empty: Cause<never>
-```
-
 Cause-Empty.md
 # Empty
 
@@ -8836,23 +8827,53 @@ Cause.NoSuchElementExceptionTypeId
 export declare const NoSuchElementExceptionTypeId: typeof NoSuchElementExceptionTypeId
 ```
 
-Cause-Parallel.md
-# Parallel
+Cause-dieOption.md
+# dieOption
 
-Represents parallel composition of two `Cause`s.
+Retrieves the first `Die` defect in a `Cause`, if present.
 
 **Details**
 
-This interface captures failures that happen simultaneously. In scenarios
-with concurrency, more than one operation can fail in parallel. Instead of
-losing information, this structure stores both errors together.
+This function returns an `Option` containing the first unexpected failure
+(`Die`) discovered. It's helpful for diagnosing the primary defect in a chain
+of errors.
 
-To import and use `Parallel` from the "Cause" module:
+To import and use `dieOption` from the "Cause" module:
 
 ```ts
 import * as Cause from "effect/Cause"
 // Can be accessed like this
-Cause.Parallel
+Cause.dieOption
+```
+
+**Signature**
+
+```ts
+export declare const dieOption: <E>(self: Cause<E>) => Option.Option<unknown>
+```
+
+Cause-empty.md
+# empty
+
+Creates an `Empty` cause.
+
+**Details**
+
+This function returns a cause that signifies "no error." It's commonly used
+to represent an absence of failure conditions.
+
+To import and use `empty` from the "Cause" module:
+
+```ts
+import * as Cause from "effect/Cause"
+// Can be accessed like this
+Cause.empty
+```
+
+**Signature**
+
+```ts
+export declare const empty: Cause<never>
 ```
 
 Cause-fail.md
@@ -9725,29 +9746,23 @@ Cause.originalError
 export declare const originalError: <E>(obj: E) => E
 ```
 
-Cause-parallel.md
-# parallel
+Cause-Parallel.md
+# Parallel
 
-Combines two `Cause`s in parallel.
+Represents parallel composition of two `Cause`s.
 
 **Details**
 
-This function merges two errors that occurred simultaneously. Instead of
-discarding one error, both are retained, allowing for richer error reporting
-and debugging.
+This interface captures failures that happen simultaneously. In scenarios
+with concurrency, more than one operation can fail in parallel. Instead of
+losing information, this structure stores both errors together.
 
-To import and use `parallel` from the "Cause" module:
+To import and use `Parallel` from the "Cause" module:
 
 ```ts
 import * as Cause from "effect/Cause"
 // Can be accessed like this
-Cause.parallel
-```
-
-**Signature**
-
-```ts
-export declare const parallel: <E, E2>(left: Cause<E>, right: Cause<E2>) => Cause<E | E2>
+Cause.Parallel
 ```
 
 Cause-PrettyError.md
@@ -9918,6 +9933,31 @@ To import and use `YieldableError` from the "Cause" module:
 import * as Cause from "effect/Cause"
 // Can be accessed like this
 Cause.YieldableError
+```
+
+Cause-parallel.md
+# parallel
+
+Combines two `Cause`s in parallel.
+
+**Details**
+
+This function merges two errors that occurred simultaneously. Instead of
+discarding one error, both are retained, allowing for richer error reporting
+and debugging.
+
+To import and use `parallel` from the "Cause" module:
+
+```ts
+import * as Cause from "effect/Cause"
+// Can be accessed like this
+Cause.parallel
+```
+
+**Signature**
+
+```ts
+export declare const parallel: <E, E2>(left: Cause<E>, right: Cause<E2>) => Cause<E | E2>
 ```
 
 Cause-pretty.md
@@ -17213,6 +17253,72 @@ assert.strictEqual(Context.isTag(Context.GenericTag("Tag")), true)
 export declare const isTag: (input: unknown) => input is Tag<any, any>
 ```
 
+Context-Reference.md
+# Reference
+
+Creates a context tag with a default value.
+
+**Details**
+
+`Context.Reference` allows you to create a tag that can hold a value. You can
+provide a default value for the service, which will automatically be used
+when the context is accessed, or override it with a custom implementation
+when needed.
+
+To import and use `Reference` from the "Context" module:
+
+```ts
+import * as Context from "effect/Context"
+// Can be accessed like this
+Context.Reference
+```
+
+**Example**
+
+```ts
+// Title: Declaring a Tag with a default value
+import { Context, Effect } from "effect"
+
+class SpecialNumber extends Context.Reference<SpecialNumber>()("SpecialNumber", { defaultValue: () => 2048 }) {}
+
+//      ┌─── Effect<void, never, never>
+//      ▼
+const program = Effect.gen(function* () {
+  const specialNumber = yield* SpecialNumber
+  console.log(`The special number is ${specialNumber}`)
+})
+
+// No need to provide the SpecialNumber implementation
+Effect.runPromise(program)
+// Output: The special number is 2048
+```
+
+**Example**
+
+```ts
+// Title: Overriding the default value
+import { Context, Effect } from "effect"
+
+class SpecialNumber extends Context.Reference<SpecialNumber>()("SpecialNumber", { defaultValue: () => 2048 }) {}
+
+const program = Effect.gen(function* () {
+  const specialNumber = yield* SpecialNumber
+  console.log(`The special number is ${specialNumber}`)
+})
+
+Effect.runPromise(program.pipe(Effect.provideService(SpecialNumber, -1)))
+// Output: The special number is -1
+```
+
+**Signature**
+
+```ts
+export declare const Reference: <Self>() => <const Id extends string, Service>(
+  id: Id,
+  options: { readonly defaultValue: () => Service }
+) => ReferenceClass<Self, Id, Service>
+```
+
 Context-make.md
 # make
 
@@ -17281,72 +17387,6 @@ export declare const merge: {
   <R1>(that: Context<R1>): <Services>(self: Context<Services>) => Context<R1 | Services>
   <Services, R1>(self: Context<Services>, that: Context<R1>): Context<Services | R1>
 }
-```
-
-Context-Reference.md
-# Reference
-
-Creates a context tag with a default value.
-
-**Details**
-
-`Context.Reference` allows you to create a tag that can hold a value. You can
-provide a default value for the service, which will automatically be used
-when the context is accessed, or override it with a custom implementation
-when needed.
-
-To import and use `Reference` from the "Context" module:
-
-```ts
-import * as Context from "effect/Context"
-// Can be accessed like this
-Context.Reference
-```
-
-**Example**
-
-```ts
-// Title: Declaring a Tag with a default value
-import { Context, Effect } from "effect"
-
-class SpecialNumber extends Context.Reference<SpecialNumber>()("SpecialNumber", { defaultValue: () => 2048 }) {}
-
-//      ┌─── Effect<void, never, never>
-//      ▼
-const program = Effect.gen(function* () {
-  const specialNumber = yield* SpecialNumber
-  console.log(`The special number is ${specialNumber}`)
-})
-
-// No need to provide the SpecialNumber implementation
-Effect.runPromise(program)
-// Output: The special number is 2048
-```
-
-**Example**
-
-```ts
-// Title: Overriding the default value
-import { Context, Effect } from "effect"
-
-class SpecialNumber extends Context.Reference<SpecialNumber>()("SpecialNumber", { defaultValue: () => 2048 }) {}
-
-const program = Effect.gen(function* () {
-  const specialNumber = yield* SpecialNumber
-  console.log(`The special number is ${specialNumber}`)
-})
-
-Effect.runPromise(program.pipe(Effect.provideService(SpecialNumber, -1)))
-// Output: The special number is -1
-```
-
-**Signature**
-
-```ts
-export declare const Reference: <Self>() => <const Id extends string, Service>(
-  id: Id,
-  options: { readonly defaultValue: () => Service }
-) => ReferenceClass<Self, Id, Service>
 ```
 
 Context-mergeAll.md
@@ -18489,57 +18529,6 @@ Boolean.MonoidSome
 export declare const MonoidSome: monoid.Monoid<boolean>
 ```
 
-data-Boolean-MonoidXor.md
-# MonoidXor
-
-`boolean` monoid under exclusive disjunction, see also {@link SemigroupXor}.
-
-The `empty` value is `false`.
-
-To import and use `MonoidXor` from the "Boolean" module:
-
-```ts
-import * as Boolean from "@effect/typeclass/data/Boolean"
-// Can be accessed like this
-Boolean.MonoidXor
-```
-
-**Signature**
-
-```ts
-export declare const MonoidXor: monoid.Monoid<boolean>
-```
-
-data-Boolean-SemigroupEqv.md
-# SemigroupEqv
-
-`boolean` semigroup under equivalence.
-
-To import and use `SemigroupEqv` from the "Boolean" module:
-
-```ts
-import * as Boolean from "@effect/typeclass/data/Boolean"
-// Can be accessed like this
-Boolean.SemigroupEqv
-```
-
-**Example**
-
-```ts
-import { SemigroupEqv } from "@effect/typeclass/data/Boolean"
-
-assert.deepStrictEqual(SemigroupEqv.combine(true, true), true)
-assert.deepStrictEqual(SemigroupEqv.combine(true, false), false)
-assert.deepStrictEqual(SemigroupEqv.combine(false, true), false)
-assert.deepStrictEqual(SemigroupEqv.combine(false, false), true)
-```
-
-**Signature**
-
-```ts
-export declare const SemigroupEqv: semigroup.Semigroup<boolean>
-```
-
 Data-Class.md
 # Class
 
@@ -19472,62 +19461,55 @@ DateTime.make("2024-01-01")
 export declare const make: <A extends DateTime.Input>(input: A) => Option.Option<DateTime.PreserveZone<A>>
 ```
 
-DateTime-makeZoned.md
-# makeZoned
+data-Boolean-MonoidXor.md
+# MonoidXor
 
-Create a `DateTime.Zoned` using `DateTime.make` and a time zone.
+`boolean` monoid under exclusive disjunction, see also {@link SemigroupXor}.
 
-The input is treated as UTC and then the time zone is attached.
+The `empty` value is `false`.
 
-If the date time input or time zone is invalid, `None` will be returned.
-
-To import and use `makeZoned` from the "DateTime" module:
+To import and use `MonoidXor` from the "Boolean" module:
 
 ```ts
-import * as DateTime from "effect/DateTime"
+import * as Boolean from "@effect/typeclass/data/Boolean"
 // Can be accessed like this
-DateTime.makeZoned
+Boolean.MonoidXor
+```
+
+**Signature**
+
+```ts
+export declare const MonoidXor: monoid.Monoid<boolean>
+```
+
+data-Boolean-SemigroupEqv.md
+# SemigroupEqv
+
+`boolean` semigroup under equivalence.
+
+To import and use `SemigroupEqv` from the "Boolean" module:
+
+```ts
+import * as Boolean from "@effect/typeclass/data/Boolean"
+// Can be accessed like this
+Boolean.SemigroupEqv
 ```
 
 **Example**
 
 ```ts
-import { DateTime } from "effect"
+import { SemigroupEqv } from "@effect/typeclass/data/Boolean"
 
-DateTime.makeZoned(new Date(), { timeZone: "Europe/London" })
+assert.deepStrictEqual(SemigroupEqv.combine(true, true), true)
+assert.deepStrictEqual(SemigroupEqv.combine(true, false), false)
+assert.deepStrictEqual(SemigroupEqv.combine(false, true), false)
+assert.deepStrictEqual(SemigroupEqv.combine(false, false), true)
 ```
 
 **Signature**
 
 ```ts
-export declare const makeZoned: (
-  input: DateTime.Input,
-  options?: {
-    readonly timeZone?: number | string | TimeZone | undefined
-    readonly adjustForTimeZone?: boolean | undefined
-  }
-) => Option.Option<Zoned>
-```
-
-DateTime-makeZonedFromString.md
-# makeZonedFromString
-
-Create a `DateTime.Zoned` from a string.
-
-It uses the format: `YYYY-MM-DDTHH:mm:ss.sss+HH:MM[Time/Zone]`.
-
-To import and use `makeZonedFromString` from the "DateTime" module:
-
-```ts
-import * as DateTime from "effect/DateTime"
-// Can be accessed like this
-DateTime.makeZonedFromString
-```
-
-**Signature**
-
-```ts
-export declare const makeZonedFromString: (input: string) => Option.Option<Zoned>
+export declare const SemigroupEqv: semigroup.Semigroup<boolean>
 ```
 
 data-Boolean-SemigroupEvery.md
@@ -20051,6 +20033,64 @@ String.Semigroup
 
 ```ts
 export declare const Semigroup: semigroup.Semigroup<string>
+```
+
+DateTime-makeZoned.md
+# makeZoned
+
+Create a `DateTime.Zoned` using `DateTime.make` and a time zone.
+
+The input is treated as UTC and then the time zone is attached.
+
+If the date time input or time zone is invalid, `None` will be returned.
+
+To import and use `makeZoned` from the "DateTime" module:
+
+```ts
+import * as DateTime from "effect/DateTime"
+// Can be accessed like this
+DateTime.makeZoned
+```
+
+**Example**
+
+```ts
+import { DateTime } from "effect"
+
+DateTime.makeZoned(new Date(), { timeZone: "Europe/London" })
+```
+
+**Signature**
+
+```ts
+export declare const makeZoned: (
+  input: DateTime.Input,
+  options?: {
+    readonly timeZone?: number | string | TimeZone | undefined
+    readonly adjustForTimeZone?: boolean | undefined
+  }
+) => Option.Option<Zoned>
+```
+
+DateTime-makeZonedFromString.md
+# makeZonedFromString
+
+Create a `DateTime.Zoned` from a string.
+
+It uses the format: `YYYY-MM-DDTHH:mm:ss.sss+HH:MM[Time/Zone]`.
+
+To import and use `makeZonedFromString` from the "DateTime" module:
+
+```ts
+import * as DateTime from "effect/DateTime"
+// Can be accessed like this
+DateTime.makeZonedFromString
+```
+
+**Signature**
+
+```ts
+export declare const makeZonedFromString: (input: string) => Option.Option<Zoned>
 ```
 
 DateTime-mapEpochMillis.md
@@ -22638,62 +22678,6 @@ assert.strictEqual(
 export declare const column: <A>(react: (position: number) => Doc<A>) => Doc<A>
 ```
 
-Doc-comma.md
-# comma
-
-A document containing a single `,` character.
-
-To import and use `comma` from the "Doc" module:
-
-```ts
-import * as Doc from "@effect/printer/Doc"
-// Can be accessed like this
-Doc.comma
-```
-
-**Signature**
-
-```ts
-export declare const comma: Doc<never>
-```
-
-Doc-concatWith.md
-# concatWith
-
-The `concatWith` combinator concatenates all documents in a collection
-element-wise with the specified binary function.
-
-To import and use `concatWith` from the "Doc" module:
-
-```ts
-import * as Doc from "@effect/printer/Doc"
-// Can be accessed like this
-Doc.concatWith
-```
-
-**Example**
-
-```ts
-import * as Doc from "@effect/printer/Doc"
-import { pipe } from "effect/Function"
-
-const doc: Doc.Doc<never> = pipe(
-  [Doc.char("a"), Doc.char("b")],
-  Doc.concatWith((x, y) => Doc.catWithSpace(y)(x))
-)
-
-assert.strictEqual(Doc.render(doc, { style: "pretty" }), "a b")
-```
-
-**Signature**
-
-```ts
-export declare const concatWith: {
-  <A>(f: (left: Doc<A>, right: Doc<A>) => Doc<A>): (docs: Iterable<Doc<A>>) => Doc<A>
-  <A>(docs: Iterable<Doc<A>>, f: (left: Doc<A>, right: Doc<A>) => Doc<A>): Doc<A>
-}
-```
-
 Doc-Doc.md
 # Doc
 
@@ -22782,17 +22766,60 @@ import * as Doc from "@effect/printer/Doc"
 Doc.Nest
 ```
 
-Doc-Nesting.md
-# Nesting
+Doc-comma.md
+# comma
 
-Represents a document that reacts to the current nesting level.
+A document containing a single `,` character.
 
-To import and use `Nesting` from the "Doc" module:
+To import and use `comma` from the "Doc" module:
 
 ```ts
 import * as Doc from "@effect/printer/Doc"
 // Can be accessed like this
-Doc.Nesting
+Doc.comma
+```
+
+**Signature**
+
+```ts
+export declare const comma: Doc<never>
+```
+
+Doc-concatWith.md
+# concatWith
+
+The `concatWith` combinator concatenates all documents in a collection
+element-wise with the specified binary function.
+
+To import and use `concatWith` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.concatWith
+```
+
+**Example**
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+import { pipe } from "effect/Function"
+
+const doc: Doc.Doc<never> = pipe(
+  [Doc.char("a"), Doc.char("b")],
+  Doc.concatWith((x, y) => Doc.catWithSpace(y)(x))
+)
+
+assert.strictEqual(Doc.render(doc, { style: "pretty" }), "a b")
+```
+
+**Signature**
+
+```ts
+export declare const concatWith: {
+  <A>(f: (left: Doc<A>, right: Doc<A>) => Doc<A>): (docs: Iterable<Doc<A>>) => Doc<A>
+  <A>(docs: Iterable<Doc<A>>, f: (left: Doc<A>, right: Doc<A>) => Doc<A>): Doc<A>
+}
 ```
 
 Doc-curlyBraced.md
@@ -24012,44 +24039,17 @@ assert.strictEqual(
 export declare const nest: { (indent: number): <A>(self: Doc<A>) => Doc<A>; <A>(self: Doc<A>, indent: number): Doc<A> }
 ```
 
-Doc-nesting.md
-# nesting
+Doc-Nesting.md
+# Nesting
 
-Lays out a document depending upon the current nesting level (i.e., the
-current indentation of the document).
+Represents a document that reacts to the current nesting level.
 
-To import and use `nesting` from the "Doc" module:
+To import and use `Nesting` from the "Doc" module:
 
 ```ts
 import * as Doc from "@effect/printer/Doc"
 // Can be accessed like this
-Doc.nesting
-```
-
-**Example**
-
-```ts
-import * as Doc from "@effect/printer/Doc"
-import * as String from "effect/String"
-
-const doc = Doc.hsep([Doc.text("prefix"), Doc.nesting((l) => Doc.squareBracketed(Doc.text(`Nested: ${l}`)))])
-
-const example = Doc.vsep([0, 4, 8].map((n) => Doc.indent(n)(doc)))
-
-assert.strictEqual(
-  Doc.render(example, { style: "pretty" }),
-  String.stripMargin(
-    `|prefix [Nested: 0]
-     |    prefix [Nested: 4]
-     |        prefix [Nested: 8]`
-  )
-)
-```
-
-**Signature**
-
-```ts
-export declare const nesting: <A>(react: (level: number) => Doc<A>) => Doc<A>
+Doc.Nesting
 ```
 
 Doc-Text.md
@@ -24101,6 +24101,46 @@ To import and use `WithPageWidth` from the "Doc" module:
 import * as Doc from "@effect/printer/Doc"
 // Can be accessed like this
 Doc.WithPageWidth
+```
+
+Doc-nesting.md
+# nesting
+
+Lays out a document depending upon the current nesting level (i.e., the
+current indentation of the document).
+
+To import and use `nesting` from the "Doc" module:
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+// Can be accessed like this
+Doc.nesting
+```
+
+**Example**
+
+```ts
+import * as Doc from "@effect/printer/Doc"
+import * as String from "effect/String"
+
+const doc = Doc.hsep([Doc.text("prefix"), Doc.nesting((l) => Doc.squareBracketed(Doc.text(`Nested: ${l}`)))])
+
+const example = Doc.vsep([0, 4, 8].map((n) => Doc.indent(n)(doc)))
+
+assert.strictEqual(
+  Doc.render(example, { style: "pretty" }),
+  String.stripMargin(
+    `|prefix [Nested: 0]
+     |    prefix [Nested: 4]
+     |        prefix [Nested: 8]`
+  )
+)
+```
+
+**Signature**
+
+```ts
+export declare const nesting: <A>(react: (level: number) => Doc<A>) => Doc<A>
 ```
 
 Doc-pageWidth.md
@@ -25110,19 +25150,6 @@ import * as DocStream from "@effect/printer/DocStream"
 DocStream.PushAnnotationStream
 ```
 
-DocStream-TextStream.md
-# TextStream
-
-Represents a `Doc` containing a string of text.
-
-To import and use `TextStream` from the "DocStream" module:
-
-```ts
-import * as DocStream from "@effect/printer/DocStream"
-// Can be accessed like this
-DocStream.TextStream
-```
-
 DocStream-alterAnnotations.md
 # alterAnnotations
 
@@ -25296,6 +25323,19 @@ DocStream.isTextStream
 
 ```ts
 export declare const isTextStream: <A>(self: DocStream<A>) => self is TextStream<A>
+```
+
+DocStream-TextStream.md
+# TextStream
+
+Represents a `Doc` containing a string of text.
+
+To import and use `TextStream` from the "DocStream" module:
+
+```ts
+import * as DocStream from "@effect/printer/DocStream"
+// Can be accessed like this
+DocStream.TextStream
 ```
 
 DocStream-reAnnotate.md
@@ -27452,6 +27492,75 @@ export declare const bindTo: {
 }
 ```
 
+Effect-Do.md
+# Do
+
+The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
+
+Here's how the do simulation works:
+
+1. Start the do simulation using the `Do` value
+2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Effect` values
+3. You can accumulate multiple `bind` statements to define multiple variables within the scope
+4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
+
+To import and use `Do` from the "Effect" module:
+
+```ts
+import * as Effect from "effect/Effect"
+// Can be accessed like this
+Effect.Do
+```
+
+**Example**
+
+```ts
+import { Effect, pipe } from "effect"
+
+const result = pipe(
+  Effect.Do,
+  Effect.bind("x", () => Effect.succeed(2)),
+  Effect.bind("y", () => Effect.succeed(3)),
+  Effect.let("sum", ({ x, y }) => x + y)
+)
+assert.deepStrictEqual(Effect.runSync(result), { x: 2, y: 3, sum: 5 })
+```
+
+**Signature**
+
+```ts
+export declare const Do: Effect<{}, never, never>
+```
+
+Effect-Effect.md
+# Effect
+
+The `Effect` interface defines a value that describes a workflow or job,
+which can succeed or fail.
+
+**Details**
+
+The `Effect` interface represents a computation that can model a workflow
+involving various types of operations, such as synchronous, asynchronous,
+concurrent, and parallel interactions. It operates within a context of type
+`R`, and the result can either be a success with a value of type `A` or a
+failure with an error of type `E`. The `Effect` is designed to handle complex
+interactions with external resources, offering advanced features such as
+fiber-based concurrency, scheduling, interruption handling, and scalability.
+This makes it suitable for tasks that require fine-grained control over
+concurrency and error management.
+
+To execute an `Effect` value, you need a `Runtime`, which provides the
+environment necessary to run and manage the computation.
+
+To import and use `Effect` from the "Effect" module:
+
+```ts
+import * as Effect from "effect/Effect"
+// Can be accessed like this
+Effect.Effect
+```
+
 Effect-cached.md
 # cached
 
@@ -27594,75 +27703,6 @@ export declare const cachedFunction: <A, B, E, R>(
   f: (a: A) => Effect<B, E, R>,
   eq?: Equivalence<A>
 ) => Effect<(a: A) => Effect<B, E, R>>
-```
-
-Effect-Do.md
-# Do
-
-The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
-
-Here's how the do simulation works:
-
-1. Start the do simulation using the `Do` value
-2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Effect` values
-3. You can accumulate multiple `bind` statements to define multiple variables within the scope
-4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
-
-To import and use `Do` from the "Effect" module:
-
-```ts
-import * as Effect from "effect/Effect"
-// Can be accessed like this
-Effect.Do
-```
-
-**Example**
-
-```ts
-import { Effect, pipe } from "effect"
-
-const result = pipe(
-  Effect.Do,
-  Effect.bind("x", () => Effect.succeed(2)),
-  Effect.bind("y", () => Effect.succeed(3)),
-  Effect.let("sum", ({ x, y }) => x + y)
-)
-assert.deepStrictEqual(Effect.runSync(result), { x: 2, y: 3, sum: 5 })
-```
-
-**Signature**
-
-```ts
-export declare const Do: Effect<{}, never, never>
-```
-
-Effect-Effect.md
-# Effect
-
-The `Effect` interface defines a value that describes a workflow or job,
-which can succeed or fail.
-
-**Details**
-
-The `Effect` interface represents a computation that can model a workflow
-involving various types of operations, such as synchronous, asynchronous,
-concurrent, and parallel interactions. It operates within a context of type
-`R`, and the result can either be a success with a value of type `A` or a
-failure with an error of type `E`. The `Effect` is designed to handle complex
-interactions with external resources, offering advanced features such as
-fiber-based concurrency, scheduling, interruption handling, and scalability.
-This makes it suitable for tasks that require fine-grained control over
-concurrency and error management.
-
-To execute an `Effect` value, you need a `Runtime`, which provides the
-environment necessary to run and manage the computation.
-
-To import and use `Effect` from the "Effect" module:
-
-```ts
-import * as Effect from "effect/Effect"
-// Can be accessed like this
-Effect.Effect
 ```
 
 Effect-cachedInvalidateWithTTL.md
@@ -29921,6 +29961,46 @@ Effect.failSync
 export declare const failSync: <E>(evaluate: LazyArg<E>) => Effect<never, E>
 ```
 
+Effect-FunctionWithSpanOptions.md
+# FunctionWithSpanOptions
+
+Wraps a function that returns an effect with a new span for tracing.
+
+To import and use `FunctionWithSpanOptions` from the "Effect" module:
+
+```ts
+import * as Effect from "effect/Effect"
+// Can be accessed like this
+Effect.FunctionWithSpanOptions
+```
+
+Effect-Latch.md
+# Latch
+
+A `Latch` is a synchronization primitive that allows you to control the
+execution of fibers based on an open or closed state. It acts as a gate,
+where fibers can wait for the latch to open before proceeding.
+
+**Details**
+
+A `Latch` can be in one of two states: open or closed. Fibers can:
+
+- Wait for the latch to open using `await`.
+- Proceed only when the latch is open using `whenOpen`.
+- Open the latch to release all waiting fibers using `open`.
+- Close the latch to block fibers using `close`.
+
+Additionally, fibers can be released without changing the state of the latch
+using `release`.
+
+To import and use `Latch` from the "Effect" module:
+
+```ts
+import * as Effect from "effect/Effect"
+// Can be accessed like this
+Effect.Latch
+```
+
 Effect-filter.md
 # filter
 
@@ -30059,46 +30139,6 @@ export declare const filterEffectOrElse: {
     options: { readonly predicate: (a: A) => Effect<boolean, E2, R2>; readonly orElse: (a: A) => Effect<A2, E3, R3> }
   ): Effect<A | A2, E | E2 | E3, R | R2 | R3>
 }
-```
-
-Effect-FunctionWithSpanOptions.md
-# FunctionWithSpanOptions
-
-Wraps a function that returns an effect with a new span for tracing.
-
-To import and use `FunctionWithSpanOptions` from the "Effect" module:
-
-```ts
-import * as Effect from "effect/Effect"
-// Can be accessed like this
-Effect.FunctionWithSpanOptions
-```
-
-Effect-Latch.md
-# Latch
-
-A `Latch` is a synchronization primitive that allows you to control the
-execution of fibers based on an open or closed state. It acts as a gate,
-where fibers can wait for the latch to open before proceeding.
-
-**Details**
-
-A `Latch` can be in one of two states: open or closed. Fibers can:
-
-- Wait for the latch to open using `await`.
-- Proceed only when the latch is open using `whenOpen`.
-- Open the latch to release all waiting fibers using `open`.
-- Close the latch to block fibers using `close`.
-
-Additionally, fibers can be released without changing the state of the latch
-using `release`.
-
-To import and use `Latch` from the "Effect" module:
-
-```ts
-import * as Effect from "effect/Effect"
-// Can be accessed like this
-Effect.Latch
 ```
 
 Effect-filterEffectOrFail.md
@@ -34802,6 +34842,231 @@ export declare const provideServiceEffect: {
 }
 ```
 
+Effect-Semaphore.md
+# Semaphore
+
+A semaphore is a synchronization mechanism used to manage access to a shared
+resource. In Effect, semaphores help control resource access or coordinate
+tasks within asynchronous, concurrent operations.
+
+A semaphore acts as a generalized mutex, allowing a set number of permits to
+be held and released concurrently. Permits act like tickets, giving tasks or
+fibers controlled access to a shared resource. When no permits are available,
+tasks trying to acquire one will wait until a permit is released.
+
+To import and use `Semaphore` from the "Effect" module:
+
+```ts
+import * as Effect from "effect/Effect"
+// Can be accessed like this
+Effect.Semaphore
+```
+
+Effect-Service.md
+# Service
+
+Simplifies the creation and management of services in Effect by defining both
+a `Tag` and a `Layer`.
+
+**Details**
+
+This function allows you to streamline the creation of services by combining
+the definition of a `Context.Tag` and a `Layer` in a single step. It supports
+various ways of providing the service implementation:
+
+- Using an `effect` to define the service dynamically.
+- Using `sync` or `succeed` to define the service statically.
+- Using `scoped` to create services with lifecycle management.
+
+It also allows you to specify dependencies for the service, which will be
+provided automatically when the service is used. Accessors can be optionally
+generated for the service, making it more convenient to use.
+
+To import and use `Service` from the "Effect" module:
+
+```ts
+import * as Effect from "effect/Effect"
+// Can be accessed like this
+Effect.Service
+```
+
+**Example**
+
+```ts
+import { Effect } from "effect"
+
+class Prefix extends Effect.Service<Prefix>()("Prefix", {
+  sync: () => ({ prefix: "PRE" })
+}) {}
+
+class Logger extends Effect.Service<Logger>()("Logger", {
+  accessors: true,
+  effect: Effect.gen(function* () {
+    const { prefix } = yield* Prefix
+    return {
+      info: (message: string) =>
+        Effect.sync(() => {
+          console.log(`[${prefix}][${message}]`)
+        })
+    }
+  }),
+  dependencies: [Prefix.Default]
+}) {}
+```
+
+**Signature**
+
+```ts
+export declare const Service: <Self = never>() => [Self] extends [never]
+  ? MissingSelfGeneric
+  : {
+      <
+        const Key extends string,
+        const Make extends
+          | {
+              readonly scoped: Effect<Service.AllowedType<Key, Make>, any, any>
+              readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
+              readonly accessors?: boolean
+              readonly ಠ_ಠ: never
+            }
+          | {
+              readonly effect: Effect<Service.AllowedType<Key, Make>, any, any>
+              readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
+              readonly accessors?: boolean
+              readonly ಠ_ಠ: never
+            }
+          | {
+              readonly sync: LazyArg<Service.AllowedType<Key, Make>>
+              readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
+              readonly accessors?: boolean
+              readonly ಠ_ಠ: never
+            }
+          | {
+              readonly succeed: Service.AllowedType<Key, Make>
+              readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
+              readonly accessors?: boolean
+              readonly ಠ_ಠ: never
+            }
+      >(
+        key: Key,
+        make: Make
+      ): Service.Class<Self, Key, Make>
+      <
+        const Key extends string,
+        const Make extends NoExcessProperties<
+          {
+            readonly scoped: Effect<Service.AllowedType<Key, Make>, any, any>
+            readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
+            readonly accessors?: boolean
+          },
+          Make
+        >
+      >(
+        key: Key,
+        make: Make
+      ): Service.Class<Self, Key, Make>
+      <
+        const Key extends string,
+        const Make extends NoExcessProperties<
+          {
+            readonly effect: Effect<Service.AllowedType<Key, Make>, any, any>
+            readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
+            readonly accessors?: boolean
+          },
+          Make
+        >
+      >(
+        key: Key,
+        make: Make
+      ): Service.Class<Self, Key, Make>
+      <
+        const Key extends string,
+        const Make extends NoExcessProperties<
+          {
+            readonly sync: LazyArg<Service.AllowedType<Key, Make>>
+            readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
+            readonly accessors?: boolean
+          },
+          Make
+        >
+      >(
+        key: Key,
+        make: Make
+      ): Service.Class<Self, Key, Make>
+      <
+        const Key extends string,
+        const Make extends NoExcessProperties<
+          {
+            readonly succeed: Service.AllowedType<Key, Make>
+            readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
+            readonly accessors?: boolean
+          },
+          Make
+        >
+      >(
+        key: Key,
+        make: Make
+      ): Service.Class<Self, Key, Make>
+    }
+```
+
+Effect-Tag.md
+# Tag
+
+Creates a unique tag for a dependency, embedding the service's methods as
+static properties.
+
+**Details**
+
+This function allows you to define a `Tag` for a service or dependency in
+your application. The `Tag` not only acts as an identifier but also provides
+direct access to the service's methods via static properties. This makes it
+easier to access and use the service in your code without manually managing
+contexts.
+
+In the example below, the fields of the service (in this case, the `notify`
+method) are turned into static properties of the Notifications class, making
+it easier to access them.
+
+To import and use `Tag` from the "Effect" module:
+
+```ts
+import * as Effect from "effect/Effect"
+// Can be accessed like this
+Effect.Tag
+```
+
+**Example**
+
+```ts
+import { Effect } from "effect"
+
+class Notifications extends Effect.Tag("Notifications")<
+  Notifications,
+  { readonly notify: (message: string) => Effect.Effect<void> }
+>() {}
+
+// Create an effect that depends on the Notifications service
+const action = Notifications.notify("Hello, world!")
+```
+
+**Signature**
+
+```ts
+export declare const Tag: <const Id extends string>(
+  id: Id
+) => <Self, Type extends Tag.AllowedType>() => Context.TagClass<Self, Id, Type> &
+  (Type extends Record<PropertyKey, any> ? Tag.Proxy<Self, Type> : {}) & {
+    use: <X>(
+      body: (_: Type) => X
+    ) => [X] extends [Effect<infer A, infer E, infer R>]
+      ? Effect<A, E, R | Self>
+      : [X] extends [PromiseLike<infer A>]
+        ? Effect<A, Cause.UnknownException, Self>
+        : Effect<X, never, Self>
+  }
+```
+
 Effect-race.md
 # race
 
@@ -35088,231 +35353,6 @@ const program = Effect.raceAll([task1, task2, task3])
 export declare const raceAll: <Eff extends Effect<any, any, any>>(
   all: Iterable<Eff>
 ) => Effect<Effect.Success<Eff>, Effect.Error<Eff>, Effect.Context<Eff>>
-```
-
-Effect-Semaphore.md
-# Semaphore
-
-A semaphore is a synchronization mechanism used to manage access to a shared
-resource. In Effect, semaphores help control resource access or coordinate
-tasks within asynchronous, concurrent operations.
-
-A semaphore acts as a generalized mutex, allowing a set number of permits to
-be held and released concurrently. Permits act like tickets, giving tasks or
-fibers controlled access to a shared resource. When no permits are available,
-tasks trying to acquire one will wait until a permit is released.
-
-To import and use `Semaphore` from the "Effect" module:
-
-```ts
-import * as Effect from "effect/Effect"
-// Can be accessed like this
-Effect.Semaphore
-```
-
-Effect-Service.md
-# Service
-
-Simplifies the creation and management of services in Effect by defining both
-a `Tag` and a `Layer`.
-
-**Details**
-
-This function allows you to streamline the creation of services by combining
-the definition of a `Context.Tag` and a `Layer` in a single step. It supports
-various ways of providing the service implementation:
-
-- Using an `effect` to define the service dynamically.
-- Using `sync` or `succeed` to define the service statically.
-- Using `scoped` to create services with lifecycle management.
-
-It also allows you to specify dependencies for the service, which will be
-provided automatically when the service is used. Accessors can be optionally
-generated for the service, making it more convenient to use.
-
-To import and use `Service` from the "Effect" module:
-
-```ts
-import * as Effect from "effect/Effect"
-// Can be accessed like this
-Effect.Service
-```
-
-**Example**
-
-```ts
-import { Effect } from "effect"
-
-class Prefix extends Effect.Service<Prefix>()("Prefix", {
-  sync: () => ({ prefix: "PRE" })
-}) {}
-
-class Logger extends Effect.Service<Logger>()("Logger", {
-  accessors: true,
-  effect: Effect.gen(function* () {
-    const { prefix } = yield* Prefix
-    return {
-      info: (message: string) =>
-        Effect.sync(() => {
-          console.log(`[${prefix}][${message}]`)
-        })
-    }
-  }),
-  dependencies: [Prefix.Default]
-}) {}
-```
-
-**Signature**
-
-```ts
-export declare const Service: <Self = never>() => [Self] extends [never]
-  ? MissingSelfGeneric
-  : {
-      <
-        const Key extends string,
-        const Make extends
-          | {
-              readonly scoped: Effect<Service.AllowedType<Key, Make>, any, any>
-              readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
-              readonly accessors?: boolean
-              readonly ಠ_ಠ: never
-            }
-          | {
-              readonly effect: Effect<Service.AllowedType<Key, Make>, any, any>
-              readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
-              readonly accessors?: boolean
-              readonly ಠ_ಠ: never
-            }
-          | {
-              readonly sync: LazyArg<Service.AllowedType<Key, Make>>
-              readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
-              readonly accessors?: boolean
-              readonly ಠ_ಠ: never
-            }
-          | {
-              readonly succeed: Service.AllowedType<Key, Make>
-              readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
-              readonly accessors?: boolean
-              readonly ಠ_ಠ: never
-            }
-      >(
-        key: Key,
-        make: Make
-      ): Service.Class<Self, Key, Make>
-      <
-        const Key extends string,
-        const Make extends NoExcessProperties<
-          {
-            readonly scoped: Effect<Service.AllowedType<Key, Make>, any, any>
-            readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
-            readonly accessors?: boolean
-          },
-          Make
-        >
-      >(
-        key: Key,
-        make: Make
-      ): Service.Class<Self, Key, Make>
-      <
-        const Key extends string,
-        const Make extends NoExcessProperties<
-          {
-            readonly effect: Effect<Service.AllowedType<Key, Make>, any, any>
-            readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
-            readonly accessors?: boolean
-          },
-          Make
-        >
-      >(
-        key: Key,
-        make: Make
-      ): Service.Class<Self, Key, Make>
-      <
-        const Key extends string,
-        const Make extends NoExcessProperties<
-          {
-            readonly sync: LazyArg<Service.AllowedType<Key, Make>>
-            readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
-            readonly accessors?: boolean
-          },
-          Make
-        >
-      >(
-        key: Key,
-        make: Make
-      ): Service.Class<Self, Key, Make>
-      <
-        const Key extends string,
-        const Make extends NoExcessProperties<
-          {
-            readonly succeed: Service.AllowedType<Key, Make>
-            readonly dependencies?: ReadonlyArray<Layer.Layer.Any>
-            readonly accessors?: boolean
-          },
-          Make
-        >
-      >(
-        key: Key,
-        make: Make
-      ): Service.Class<Self, Key, Make>
-    }
-```
-
-Effect-Tag.md
-# Tag
-
-Creates a unique tag for a dependency, embedding the service's methods as
-static properties.
-
-**Details**
-
-This function allows you to define a `Tag` for a service or dependency in
-your application. The `Tag` not only acts as an identifier but also provides
-direct access to the service's methods via static properties. This makes it
-easier to access and use the service in your code without manually managing
-contexts.
-
-In the example below, the fields of the service (in this case, the `notify`
-method) are turned into static properties of the Notifications class, making
-it easier to access them.
-
-To import and use `Tag` from the "Effect" module:
-
-```ts
-import * as Effect from "effect/Effect"
-// Can be accessed like this
-Effect.Tag
-```
-
-**Example**
-
-```ts
-import { Effect } from "effect"
-
-class Notifications extends Effect.Tag("Notifications")<
-  Notifications,
-  { readonly notify: (message: string) => Effect.Effect<void> }
->() {}
-
-// Create an effect that depends on the Notifications service
-const action = Notifications.notify("Hello, world!")
-```
-
-**Signature**
-
-```ts
-export declare const Tag: <const Id extends string>(
-  id: Id
-) => <Self, Type extends Tag.AllowedType>() => Context.TagClass<Self, Id, Type> &
-  (Type extends Record<PropertyKey, any> ? Tag.Proxy<Self, Type> : {}) & {
-    use: <X>(
-      body: (_: Type) => X
-    ) => [X] extends [Effect<infer A, infer E, infer R>]
-      ? Effect<A, E, R | Self>
-      : [X] extends [PromiseLike<infer A>]
-        ? Effect<A, Cause.UnknownException, Self>
-        : Effect<X, never, Self>
-  }
 ```
 
 Effect-raceFirst.md
@@ -41643,6 +41683,31 @@ import * as Either from "effect/Either"
 Either.try
 ```
 
+Embeddings-makeDataLoader.md
+# makeDataLoader
+
+Creates an `Embeddings` service which will aggregate all `embed` requests
+received during the specified `window` (up to a maximum of `maxBatchSize`
+requests, if specified) and execute them as a single batch.
+
+To import and use `makeDataLoader` from the "Embeddings" module:
+
+```ts
+import * as Embeddings from "@effect/ai/Embeddings"
+// Can be accessed like this
+Embeddings.makeDataLoader
+```
+
+**Signature**
+
+```ts
+export declare const makeDataLoader: (options: {
+  readonly embedMany: (input: ReadonlyArray<string>) => Effect.Effect<Array<Embeddings.Result>, AiError>
+  readonly window: Duration.DurationInput
+  readonly maxBatchSize?: number
+}) => Effect.Effect<Embeddings.Service, never, Scope>
+```
+
 Encoding-DecodeException.md
 # DecodeException
 
@@ -41654,19 +41719,6 @@ To import and use `DecodeException` from the "Encoding" module:
 import * as Encoding from "effect/Encoding"
 // Can be accessed like this
 Encoding.DecodeException
-```
-
-Encoding-EncodeException.md
-# EncodeException
-
-Represents a checked exception which occurs when encoding fails.
-
-To import and use `EncodeException` from the "Encoding" module:
-
-```ts
-import * as Encoding from "effect/Encoding"
-// Can be accessed like this
-Encoding.EncodeException
 ```
 
 Encoding-decodeBase64.md
@@ -41800,6 +41852,19 @@ Encoding.decodeUriComponent
 
 ```ts
 export declare const decodeUriComponent: (str: string) => Either.Either<string, DecodeException>
+```
+
+Encoding-EncodeException.md
+# EncodeException
+
+Represents a checked exception which occurs when encoding fails.
+
+To import and use `EncodeException` from the "Encoding" module:
+
+```ts
+import * as Encoding from "effect/Encoding"
+// Can be accessed like this
+Encoding.EncodeException
 ```
 
 Encoding-encodeBase64.md
@@ -46485,6 +46550,57 @@ export declare function flow<
 ): (...a: A) => J
 ```
 
+Function-LazyArg.md
+# LazyArg
+
+A lazy argument.
+
+To import and use `LazyArg` from the "Function" module:
+
+```ts
+import * as Function from "effect/Function"
+// Can be accessed like this
+Function.LazyArg
+```
+
+**Example**
+
+```ts
+import { LazyArg, constant } from "effect/Function"
+
+const constNull: LazyArg<null> = constant(null)
+```
+
+Function-SK.md
+# SK
+
+The SK combinator, also known as the "S-K combinator" or "S-combinator", is a fundamental combinator in the
+lambda calculus and the SKI combinator calculus.
+
+This function is useful for discarding the first argument passed to it and returning the second argument.
+
+To import and use `SK` from the "Function" module:
+
+```ts
+import * as Function from "effect/Function"
+// Can be accessed like this
+Function.SK
+```
+
+**Example**
+
+```ts
+import { SK } from "effect/Function"
+
+assert.deepStrictEqual(SK(0, "hello"), "hello")
+```
+
+**Signature**
+
+```ts
+export declare const SK: <A, B>(_: A, b: B) => B
+```
+
 Function-hole.md
 # hole
 
@@ -46557,57 +46673,6 @@ assert.deepStrictEqual(isFunction("function"), false)
 
 ```ts
 export declare const isFunction: (input: unknown) => input is Function
-```
-
-Function-LazyArg.md
-# LazyArg
-
-A lazy argument.
-
-To import and use `LazyArg` from the "Function" module:
-
-```ts
-import * as Function from "effect/Function"
-// Can be accessed like this
-Function.LazyArg
-```
-
-**Example**
-
-```ts
-import { LazyArg, constant } from "effect/Function"
-
-const constNull: LazyArg<null> = constant(null)
-```
-
-Function-SK.md
-# SK
-
-The SK combinator, also known as the "S-K combinator" or "S-combinator", is a fundamental combinator in the
-lambda calculus and the SKI combinator calculus.
-
-This function is useful for discarding the first argument passed to it and returning the second argument.
-
-To import and use `SK` from the "Function" module:
-
-```ts
-import * as Function from "effect/Function"
-// Can be accessed like this
-Function.SK
-```
-
-**Example**
-
-```ts
-import { SK } from "effect/Function"
-
-assert.deepStrictEqual(SK(0, "hello"), "hello")
-```
-
-**Signature**
-
-```ts
-export declare const SK: <A, B>(_: A, b: B) => B
 ```
 
 Function-pipe.md
@@ -50491,6 +50556,32 @@ assert.deepStrictEqual(Array.from(makeBy((n) => n * 2, { length: 5 })), [0, 2, 4
 export declare const makeBy: <A>(f: (i: number) => A, options?: { readonly length?: number }) => Iterable<A>
 ```
 
+index-layer.md
+# layer
+
+Share a `Layer` between multiple tests, optionally wrapping
+the tests in a `describe` block if a name is provided.
+
+To import and use `layer` from the "index" module:
+
+```ts
+import * as index from "@effect/vitest/index"
+// Can be accessed like this
+index.layer
+```
+
+**Signature**
+
+```ts
+export declare const layer: <R, E>(
+  layer_: Layer.Layer<R, E>,
+  options?: { readonly memoMap?: Layer.MemoMap; readonly timeout?: Duration.DurationInput }
+) => {
+  (f: (it: Vitest.MethodsNonLive<R>) => void): void
+  (name: string, f: (it: Vitest.MethodsNonLive<R>) => void): void
+}
+```
+
 Iterable-of.md
 # of
 
@@ -50559,32 +50650,6 @@ assert.deepStrictEqual(Array.from(Iterable.prependAll([1, 2], ["a", "b"])), ["a"
 export declare const prependAll: {
   <B>(that: Iterable<B>): <A>(self: Iterable<A>) => Iterable<A | B>
   <A, B>(self: Iterable<A>, that: Iterable<B>): Iterable<A | B>
-}
-```
-
-index-layer.md
-# layer
-
-Share a `Layer` between multiple tests, optionally wrapping
-the tests in a `describe` block if a name is provided.
-
-To import and use `layer` from the "index" module:
-
-```ts
-import * as index from "@effect/vitest/index"
-// Can be accessed like this
-index.layer
-```
-
-**Signature**
-
-```ts
-export declare const layer: <R, E>(
-  layer_: Layer.Layer<R, E>,
-  options?: { readonly memoMap?: Layer.MemoMap; readonly timeout?: Duration.DurationInput }
-) => {
-  (f: (it: Vitest.MethodsNonLive<R>) => void): void
-  (name: string, f: (it: Vitest.MethodsNonLive<R>) => void): void
 }
 ```
 
@@ -52994,6 +53059,23 @@ export declare const forEach: {
 }
 ```
 
+List-List.md
+# List
+
+Represents an immutable linked list of elements of type `A`.
+
+A `List` is optimal for last-in-first-out (LIFO), stack-like access patterns.
+If you need another access pattern, for example, random access or FIFO,
+consider using a collection more suited for that other than `List`.
+
+To import and use `List` from the "List" module:
+
+```ts
+import * as List from "effect/List"
+// Can be accessed like this
+List.List
+```
+
 List-fromIterable.md
 # fromIterable
 
@@ -53050,23 +53132,6 @@ List.isCons
 
 ```ts
 export declare const isCons: <A>(self: List<A>) => self is Cons<A>
-```
-
-List-List.md
-# List
-
-Represents an immutable linked list of elements of type `A`.
-
-A `List` is optimal for last-in-first-out (LIFO), stack-like access patterns.
-If you need another access pattern, for example, random access or FIFO,
-consider using a collection more suited for that other than `List`.
-
-To import and use `List` from the "List" module:
-
-```ts
-import * as List from "effect/List"
-// Can be accessed like this
-List.List
 ```
 
 List-isList.md
@@ -54308,19 +54373,6 @@ export declare const zip: {
 }
 ```
 
-Mailbox-Mailbox.md
-# Mailbox
-
-A `Mailbox` is a queue that can be signaled to be done or failed.
-
-To import and use `Mailbox` from the "Mailbox" module:
-
-```ts
-import * as Mailbox from "effect/Mailbox"
-// Can be accessed like this
-Mailbox.Mailbox
-```
-
 Mailbox-fromStream.md
 # fromStream
 
@@ -54350,6 +54402,32 @@ export declare const fromStream: {
     }
   ): Effect<ReadonlyMailbox<A, E>, never, R | Scope>
 }
+```
+
+Mailbox-Mailbox.md
+# Mailbox
+
+A `Mailbox` is a queue that can be signaled to be done or failed.
+
+To import and use `Mailbox` from the "Mailbox" module:
+
+```ts
+import * as Mailbox from "effect/Mailbox"
+// Can be accessed like this
+Mailbox.Mailbox
+```
+
+Mailbox-ReadonlyMailbox.md
+# ReadonlyMailbox
+
+A `ReadonlyMailbox` represents a mailbox that can only be read from.
+
+To import and use `ReadonlyMailbox` from the "Mailbox" module:
+
+```ts
+import * as Mailbox from "effect/Mailbox"
+// Can be accessed like this
+Mailbox.ReadonlyMailbox
 ```
 
 Mailbox-into.md
@@ -54423,19 +54501,6 @@ Effect.gen(function* () {
 export declare const make: <A, E = never>(
   capacity?: number | { readonly capacity?: number; readonly strategy?: "suspend" | "dropping" | "sliding" } | undefined
 ) => Effect<Mailbox<A, E>>
-```
-
-Mailbox-ReadonlyMailbox.md
-# ReadonlyMailbox
-
-A `ReadonlyMailbox` represents a mailbox that can only be read from.
-
-To import and use `ReadonlyMailbox` from the "Mailbox" module:
-
-```ts
-import * as Mailbox from "effect/Mailbox"
-// Can be accessed like this
-Mailbox.ReadonlyMailbox
 ```
 
 Mailbox-toChannel.md
@@ -57326,6 +57391,23 @@ export declare const linear: (options: {
 }) => MetricBoundaries
 ```
 
+MetricKey-MetricKey.md
+# MetricKey
+
+A `MetricKey` is a unique key associated with each metric. The key is based
+on a combination of the metric type, the name and tags associated with the
+metric, an optional description of the key, and any other information to
+describe a metric, such as the boundaries of a histogram. In this way, it is
+impossible to ever create different metrics with conflicting keys.
+
+To import and use `MetricKey` from the "MetricKey" module:
+
+```ts
+import * as MetricKey from "effect/MetricKey"
+// Can be accessed like this
+MetricKey.MetricKey
+```
+
 MetricKey-counter.md
 # counter
 
@@ -57410,23 +57492,6 @@ export declare const gauge: {
   ): MetricKey.Gauge<number>
   (name: string, options: { readonly description?: string | undefined; readonly bigint: true }): MetricKey.Gauge<bigint>
 }
-```
-
-MetricKey-MetricKey.md
-# MetricKey
-
-A `MetricKey` is a unique key associated with each metric. The key is based
-on a combination of the metric type, the name and tags associated with the
-metric, an optional description of the key, and any other information to
-describe a metric, such as the boundaries of a histogram. In this way, it is
-impossible to ever create different metrics with conflicting keys.
-
-To import and use `MetricKey` from the "MetricKey" module:
-
-```ts
-import * as MetricKey from "effect/MetricKey"
-// Can be accessed like this
-MetricKey.MetricKey
 ```
 
 MetricKey-histogram.md
@@ -58566,67 +58631,6 @@ export declare const filterOrFailCause: {
 }
 ```
 
-Micro-flatMap.md
-# flatMap
-
-Map the success value of this `Micro` effect to another `Micro` effect, then
-flatten the result.
-
-To import and use `flatMap` from the "Micro" module:
-
-```ts
-import * as Micro from "effect/Micro"
-// Can be accessed like this
-Micro.flatMap
-```
-
-**Signature**
-
-```ts
-export declare const flatMap: {
-  <A, B, E2, R2>(f: (a: A) => Micro<B, E2, R2>): <E, R>(self: Micro<A, E, R>) => Micro<B, E | E2, R | R2>
-  <A, E, R, B, E2, R2>(self: Micro<A, E, R>, f: (a: A) => Micro<B, E2, R2>): Micro<B, E | E2, R | R2>
-}
-```
-
-Micro-flatten.md
-# flatten
-
-Flattens any nested `Micro` effects, merging the error and requirement types.
-
-To import and use `flatten` from the "Micro" module:
-
-```ts
-import * as Micro from "effect/Micro"
-// Can be accessed like this
-Micro.flatten
-```
-
-**Signature**
-
-```ts
-export declare const flatten: <A, E, R, E2, R2>(self: Micro<Micro<A, E, R>, E2, R2>) => Micro<A, E | E2, R | R2>
-```
-
-Micro-flip.md
-# flip
-
-Swap the error and success types of the `Micro` effect.
-
-To import and use `flip` from the "Micro" module:
-
-```ts
-import * as Micro from "effect/Micro"
-// Can be accessed like this
-Micro.flip
-```
-
-**Signature**
-
-```ts
-export declare const flip: <A, E, R>(self: Micro<A, E, R>) => Micro<E, A, R>
-```
-
 Micro-Micro.md
 # Micro
 
@@ -58706,6 +58710,67 @@ To import and use `NoSuchElementException` from the "Micro" module:
 import * as Micro from "effect/Micro"
 // Can be accessed like this
 Micro.NoSuchElementException
+```
+
+Micro-flatMap.md
+# flatMap
+
+Map the success value of this `Micro` effect to another `Micro` effect, then
+flatten the result.
+
+To import and use `flatMap` from the "Micro" module:
+
+```ts
+import * as Micro from "effect/Micro"
+// Can be accessed like this
+Micro.flatMap
+```
+
+**Signature**
+
+```ts
+export declare const flatMap: {
+  <A, B, E2, R2>(f: (a: A) => Micro<B, E2, R2>): <E, R>(self: Micro<A, E, R>) => Micro<B, E | E2, R | R2>
+  <A, E, R, B, E2, R2>(self: Micro<A, E, R>, f: (a: A) => Micro<B, E2, R2>): Micro<B, E | E2, R | R2>
+}
+```
+
+Micro-flatten.md
+# flatten
+
+Flattens any nested `Micro` effects, merging the error and requirement types.
+
+To import and use `flatten` from the "Micro" module:
+
+```ts
+import * as Micro from "effect/Micro"
+// Can be accessed like this
+Micro.flatten
+```
+
+**Signature**
+
+```ts
+export declare const flatten: <A, E, R, E2, R2>(self: Micro<Micro<A, E, R>, E2, R2>) => Micro<A, E | E2, R | R2>
+```
+
+Micro-flip.md
+# flip
+
+Swap the error and success types of the `Micro` effect.
+
+To import and use `flip` from the "Micro" module:
+
+```ts
+import * as Micro from "effect/Micro"
+// Can be accessed like this
+Micro.flip
+```
+
+**Signature**
+
+```ts
+export declare const flip: <A, E, R>(self: Micro<A, E, R>) => Micro<E, A, R>
 ```
 
 Micro-forEach.md
@@ -59721,6 +59786,19 @@ Micro.runSync
 export declare const runSync: <A, E>(effect: Micro<A, E>) => A
 ```
 
+Micro-TimeoutException.md
+# TimeoutException
+
+Represents a checked exception which occurs when a timeout occurs.
+
+To import and use `TimeoutException` from the "Micro" module:
+
+```ts
+import * as Micro from "effect/Micro"
+// Can be accessed like this
+Micro.TimeoutException
+```
+
 Micro-runSyncExit.md
 # runSyncExit
 
@@ -59783,19 +59861,6 @@ export declare const scheduleAddDelay: {
   (f: () => number): (self: MicroSchedule) => MicroSchedule
   (self: MicroSchedule, f: () => number): MicroSchedule
 }
-```
-
-Micro-TimeoutException.md
-# TimeoutException
-
-Represents a checked exception which occurs when a timeout occurs.
-
-To import and use `TimeoutException` from the "Micro" module:
-
-```ts
-import * as Micro from "effect/Micro"
-// Can be accessed like this
-Micro.TimeoutException
 ```
 
 Micro-scheduleExponential.md
@@ -62696,6 +62761,45 @@ export declare const ofComposition: <F extends TypeLambda, G extends TypeLambda>
 ) => <A>(a: A) => Kind<F, unknown, never, never, Kind<G, unknown, never, never, A>>
 ```
 
+OpenAiTelemetry-OpenAiTelemetryAttributes.md
+# OpenAiTelemetryAttributes
+
+The attributes used to describe telemetry in the context of Generative
+Artificial Intelligence (GenAI) Models requests and responses.
+
+{@see https://opentelemetry.io/docs/specs/semconv/attributes-registry/gen-ai/}
+
+To import and use `OpenAiTelemetryAttributes` from the "OpenAiTelemetry" module:
+
+```ts
+import * as OpenAiTelemetry from "@effect/ai-openai/OpenAiTelemetry"
+// Can be accessed like this
+OpenAiTelemetry.OpenAiTelemetryAttributes
+```
+
+OpenAiTelemetry-addGenAIAnnotations.md
+# addGenAIAnnotations
+
+Applies the specified OpenAi GenAI telemetry attributes to the provided
+`Span`.
+
+**NOTE**: This method will mutate the `Span` **in-place**.
+
+To import and use `addGenAIAnnotations` from the "OpenAiTelemetry" module:
+
+```ts
+import * as OpenAiTelemetry from "@effect/ai-openai/OpenAiTelemetry"
+// Can be accessed like this
+OpenAiTelemetry.addGenAIAnnotations
+```
+
+**Signature**
+
+```ts
+export declare const addGenAIAnnotations: ((options: OpenAiTelemetryAttributeOptions) => (span: Span) => void) &
+  ((span: Span, options: OpenAiTelemetryAttributeOptions) => void)
+```
+
 OpenApi-OpenAPISpec.md
 # OpenAPISpec
 
@@ -63655,6 +63759,31 @@ export declare const flatMap: {
 }
 ```
 
+Option-Option.md
+# Option
+
+The `Option` data type represents optional values. An `Option<A>` can either
+be `Some<A>`, containing a value of type `A`, or `None`, representing the
+absence of a value.
+
+**When to Use**
+
+You can use `Option` in scenarios like:
+
+- Using it for initial values
+- Returning values from functions that are not defined for all possible
+  inputs (referred to as “partial functions”)
+- Managing optional fields in data structures
+- Handling optional function arguments
+
+To import and use `Option` from the "Option" module:
+
+```ts
+import * as Option from "effect/Option"
+// Can be accessed like this
+Option.Option
+```
+
 Option-flatMapNullable.md
 # flatMapNullable
 
@@ -63868,31 +63997,6 @@ console.log(person)
 
 ```ts
 export declare const gen: Gen.Gen<OptionTypeLambda, Gen.Adapter<OptionTypeLambda>>
-```
-
-Option-Option.md
-# Option
-
-The `Option` data type represents optional values. An `Option<A>` can either
-be `Some<A>`, containing a value of type `A`, or `None`, representing the
-absence of a value.
-
-**When to Use**
-
-You can use `Option` in scenarios like:
-
-- Using it for initial values
-- Returning values from functions that are not defined for all possible
-  inputs (referred to as “partial functions”)
-- Managing optional fields in data structures
-- Handling optional function arguments
-
-To import and use `Option` from the "Option" module:
-
-```ts
-import * as Option from "effect/Option"
-// Can be accessed like this
-Option.Option
 ```
 
 Option-getEquivalence.md
@@ -66601,21 +66705,6 @@ PodAddress.schema
 export declare const schema: Schema.Schema<PodAddress, PodAddress.Encoded, never>
 ```
 
-Pods-Pods.md
-# Pods
-
-An interface to communicate with remote pods.
-This is used by the Shard Manager for assigning and unassigning shards.
-This is also used by pods for internal communication (forward messages to each other).
-
-To import and use `Pods` from the "Pods" module:
-
-```ts
-import * as Pods from "@effect/cluster/Pods"
-// Can be accessed like this
-Pods.Pods
-```
-
 Pods-make.md
 # make
 
@@ -66633,6 +66722,21 @@ Pods.make
 
 ```ts
 export declare const make: (args: Omit<Pods, typeof PodsTypeId>) => Pods
+```
+
+Pods-Pods.md
+# Pods
+
+An interface to communicate with remote pods.
+This is used by the Shard Manager for assigning and unassigning shards.
+This is also used by pods for internal communication (forward messages to each other).
+
+To import and use `Pods` from the "Pods" module:
+
+```ts
+import * as Pods from "@effect/cluster/Pods"
+// Can be accessed like this
+Pods.Pods
 ```
 
 Pods-noop.md
@@ -66653,6 +66757,23 @@ Pods.noop
 
 ```ts
 export declare const noop: Layer.Layer<Pods, never, never>
+```
+
+PodsHealth-PodsHealth.md
+# PodsHealth
+
+An interface to check a pod's health.
+This is used when a pod is unresponsive, to check if it should be unassigned all its shards or not.
+If the pod is alive, shards will not be unassigned because the pods might still be processing messages and might be responsive again.
+If the pod is not alive, shards can be safely reassigned somewhere else.
+A typical implementation for this is using k8s to check if the pod still exists.
+
+To import and use `PodsHealth` from the "PodsHealth" module:
+
+```ts
+import * as PodsHealth from "@effect/cluster/PodsHealth"
+// Can be accessed like this
+PodsHealth.PodsHealth
 ```
 
 PodsHealth-local.md
@@ -66712,23 +66833,6 @@ PodsHealth.noop
 
 ```ts
 export declare const noop: Layer.Layer<PodsHealth, never, never>
-```
-
-PodsHealth-PodsHealth.md
-# PodsHealth
-
-An interface to check a pod's health.
-This is used when a pod is unresponsive, to check if it should be unassigned all its shards or not.
-If the pod is alive, shards will not be unassigned because the pods might still be processing messages and might be responsive again.
-If the pod is not alive, shards can be safely reassigned somewhere else.
-A typical implementation for this is using k8s to check if the pod still exists.
-
-To import and use `PodsHealth` from the "PodsHealth" module:
-
-```ts
-import * as PodsHealth from "@effect/cluster/PodsHealth"
-// Can be accessed like this
-PodsHealth.PodsHealth
 ```
 
 PodsRpc-podsRpc.md
@@ -71771,117 +71875,6 @@ export declare const fromIterable: {
 }
 ```
 
-RedBlackTree-getAt.md
-# getAt
-
-Returns the element at the specified index within the tree or `None` if the
-specified index does not exist.
-
-To import and use `getAt` from the "RedBlackTree" module:
-
-```ts
-import * as RedBlackTree from "effect/RedBlackTree"
-// Can be accessed like this
-RedBlackTree.getAt
-```
-
-**Signature**
-
-```ts
-export declare const getAt: {
-  (index: number): <K, V>(self: RedBlackTree<K, V>) => Option<[K, V]>
-  <K, V>(self: RedBlackTree<K, V>, index: number): Option<[K, V]>
-}
-```
-
-RedBlackTree-getOrder.md
-# getOrder
-
-Gets the `Order<K>` that the `RedBlackTree<K, V>` is using.
-
-To import and use `getOrder` from the "RedBlackTree" module:
-
-```ts
-import * as RedBlackTree from "effect/RedBlackTree"
-// Can be accessed like this
-RedBlackTree.getOrder
-```
-
-**Signature**
-
-```ts
-export declare const getOrder: <K, V>(self: RedBlackTree<K, V>) => Order<K>
-```
-
-RedBlackTree-greaterThan.md
-# greaterThan
-
-Returns an iterator that traverse entries in order with keys greater than the
-specified key.
-
-To import and use `greaterThan` from the "RedBlackTree" module:
-
-```ts
-import * as RedBlackTree from "effect/RedBlackTree"
-// Can be accessed like this
-RedBlackTree.greaterThan
-```
-
-**Signature**
-
-```ts
-export declare const greaterThan: {
-  <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable<[K, V]>
-  <K, V>(self: RedBlackTree<K, V>, key: K): Iterable<[K, V]>
-}
-```
-
-RedBlackTree-greaterThanEqual.md
-# greaterThanEqual
-
-Returns an iterator that traverse entries in order with keys greater than or
-equal to the specified key.
-
-To import and use `greaterThanEqual` from the "RedBlackTree" module:
-
-```ts
-import * as RedBlackTree from "effect/RedBlackTree"
-// Can be accessed like this
-RedBlackTree.greaterThanEqual
-```
-
-**Signature**
-
-```ts
-export declare const greaterThanEqual: {
-  <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable<[K, V]>
-  <K, V>(self: RedBlackTree<K, V>, key: K): Iterable<[K, V]>
-}
-```
-
-RedBlackTree-greaterThanEqualReversed.md
-# greaterThanEqualReversed
-
-Returns an iterator that traverse entries in reverse order with keys greater
-than or equal to the specified key.
-
-To import and use `greaterThanEqualReversed` from the "RedBlackTree" module:
-
-```ts
-import * as RedBlackTree from "effect/RedBlackTree"
-// Can be accessed like this
-RedBlackTree.greaterThanEqualReversed
-```
-
-**Signature**
-
-```ts
-export declare const greaterThanEqualReversed: {
-  <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable<[K, V]>
-  <K, V>(self: RedBlackTree<K, V>, key: K): Iterable<[K, V]>
-}
-```
-
 Redacted-getEquivalence.md
 # getEquivalence
 
@@ -72024,6 +72017,117 @@ To import and use `RedBlackTree` from the "RedBlackTree" module:
 import * as RedBlackTree from "effect/RedBlackTree"
 // Can be accessed like this
 RedBlackTree.RedBlackTree
+```
+
+RedBlackTree-getAt.md
+# getAt
+
+Returns the element at the specified index within the tree or `None` if the
+specified index does not exist.
+
+To import and use `getAt` from the "RedBlackTree" module:
+
+```ts
+import * as RedBlackTree from "effect/RedBlackTree"
+// Can be accessed like this
+RedBlackTree.getAt
+```
+
+**Signature**
+
+```ts
+export declare const getAt: {
+  (index: number): <K, V>(self: RedBlackTree<K, V>) => Option<[K, V]>
+  <K, V>(self: RedBlackTree<K, V>, index: number): Option<[K, V]>
+}
+```
+
+RedBlackTree-getOrder.md
+# getOrder
+
+Gets the `Order<K>` that the `RedBlackTree<K, V>` is using.
+
+To import and use `getOrder` from the "RedBlackTree" module:
+
+```ts
+import * as RedBlackTree from "effect/RedBlackTree"
+// Can be accessed like this
+RedBlackTree.getOrder
+```
+
+**Signature**
+
+```ts
+export declare const getOrder: <K, V>(self: RedBlackTree<K, V>) => Order<K>
+```
+
+RedBlackTree-greaterThan.md
+# greaterThan
+
+Returns an iterator that traverse entries in order with keys greater than the
+specified key.
+
+To import and use `greaterThan` from the "RedBlackTree" module:
+
+```ts
+import * as RedBlackTree from "effect/RedBlackTree"
+// Can be accessed like this
+RedBlackTree.greaterThan
+```
+
+**Signature**
+
+```ts
+export declare const greaterThan: {
+  <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable<[K, V]>
+  <K, V>(self: RedBlackTree<K, V>, key: K): Iterable<[K, V]>
+}
+```
+
+RedBlackTree-greaterThanEqual.md
+# greaterThanEqual
+
+Returns an iterator that traverse entries in order with keys greater than or
+equal to the specified key.
+
+To import and use `greaterThanEqual` from the "RedBlackTree" module:
+
+```ts
+import * as RedBlackTree from "effect/RedBlackTree"
+// Can be accessed like this
+RedBlackTree.greaterThanEqual
+```
+
+**Signature**
+
+```ts
+export declare const greaterThanEqual: {
+  <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable<[K, V]>
+  <K, V>(self: RedBlackTree<K, V>, key: K): Iterable<[K, V]>
+}
+```
+
+RedBlackTree-greaterThanEqualReversed.md
+# greaterThanEqualReversed
+
+Returns an iterator that traverse entries in reverse order with keys greater
+than or equal to the specified key.
+
+To import and use `greaterThanEqualReversed` from the "RedBlackTree" module:
+
+```ts
+import * as RedBlackTree from "effect/RedBlackTree"
+// Can be accessed like this
+RedBlackTree.greaterThanEqualReversed
+```
+
+**Signature**
+
+```ts
+export declare const greaterThanEqualReversed: {
+  <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable<[K, V]>
+  <K, V>(self: RedBlackTree<K, V>, key: K): Iterable<[K, V]>
+}
 ```
 
 RedBlackTree-greaterThanReversed.md
@@ -73052,6 +73156,36 @@ export declare const eitherWith: {
 }
 ```
 
+RequestResolver-RequestResolver.md
+# RequestResolver
+
+The `RequestResolver<A, R>` interface requires an environment `R` and handles
+the execution of requests of type `A`.
+
+Implementations must provide a `runAll` method, which processes a collection
+of requests and produces an effect that fulfills these requests. Requests are
+organized into a `Array<Array<A>>`, where the outer `Array` groups requests
+into batches that are executed sequentially, and each inner `Array` contains
+requests that can be executed in parallel. This structure allows
+implementations to analyze all incoming requests collectively and optimize
+query execution accordingly.
+
+Implementations are typically specialized for a subtype of `Request<A, E>`.
+However, they are not strictly limited to these subtypes as long as they can
+map any given request type to `Request<A, E>`. Implementations should inspect
+the collection of requests to identify the needed information and execute the
+corresponding queries. It is imperative that implementations resolve all the
+requests they receive. Failing to do so will lead to a `QueryFailure` error
+during query execution.
+
+To import and use `RequestResolver` from the "RequestResolver" module:
+
+```ts
+import * as RequestResolver from "effect/RequestResolver"
+// Can be accessed like this
+RequestResolver.RequestResolver
+```
+
 RequestResolver-fromEffect.md
 # fromEffect
 
@@ -73166,36 +73300,6 @@ RequestResolver.isRequestResolver
 
 ```ts
 export declare const isRequestResolver: (u: unknown) => u is RequestResolver<unknown, unknown>
-```
-
-RequestResolver-RequestResolver.md
-# RequestResolver
-
-The `RequestResolver<A, R>` interface requires an environment `R` and handles
-the execution of requests of type `A`.
-
-Implementations must provide a `runAll` method, which processes a collection
-of requests and produces an effect that fulfills these requests. Requests are
-organized into a `Array<Array<A>>`, where the outer `Array` groups requests
-into batches that are executed sequentially, and each inner `Array` contains
-requests that can be executed in parallel. This structure allows
-implementations to analyze all incoming requests collectively and optimize
-query execution accordingly.
-
-Implementations are typically specialized for a subtype of `Request<A, E>`.
-However, they are not strictly limited to these subtypes as long as they can
-map any given request type to `Request<A, E>`. Implementations should inspect
-the collection of requests to identify the needed information and execute the
-corresponding queries. It is imperative that implementations resolve all the
-requests they receive. Failing to do so will lead to a `QueryFailure` error
-during query execution.
-
-To import and use `RequestResolver` from the "RequestResolver" module:
-
-```ts
-import * as RequestResolver from "effect/RequestResolver"
-// Can be accessed like this
-RequestResolver.RequestResolver
 ```
 
 RequestResolver-locally.md
@@ -75527,6 +75631,62 @@ Schedule.forever
 export declare const forever: Schedule<number, unknown, never>
 ```
 
+Schedule-Schedule.md
+# Schedule
+
+A `Schedule<Out, In, R>` defines a recurring schedule, which consumes values
+of type `In`, and which returns values of type `Out`.
+
+The `Schedule` type is structured as follows:
+
+```text
+          ┌─── The type of output produced by the schedule
+          │   ┌─── The type of input consumed by the schedule
+          │   │     ┌─── Additional requirements for the schedule
+          ▼   ▼     ▼
+Schedule<Out, In, Requirements>
+```
+
+A schedule operates by consuming values of type `In` (such as errors in the
+case of `Effect.retry`, or values in the case of `Effect.repeat`) and
+producing values of type `Out`. It determines when to halt or continue the
+execution based on input values and its internal state.
+
+The inclusion of a `Requirements` parameter allows the schedule to leverage
+additional services or resources as needed.
+
+Schedules are defined as a possibly infinite set of intervals spread out over
+time. Each interval defines a window in which recurrence is possible.
+
+When schedules are used to repeat or retry effects, the starting boundary of
+each interval produced by a schedule is used as the moment when the effect
+will be executed again.
+
+Schedules can be composed in different ways:
+
+- Union: Combines two schedules and recurs if either schedule wants to
+  continue, using the shorter delay.
+- Intersection: Combines two schedules and recurs only if both schedules want
+  to continue, using the longer delay.
+- Sequencing: Combines two schedules by running the first one fully, then
+  switching to the second.
+
+In addition, schedule inputs and outputs can be transformed, filtered (to
+terminate a schedule early in response to some input or output), and so
+forth.
+
+A variety of other operators exist for transforming and combining schedules,
+and the companion object for `Schedule` contains all common types of
+schedules, both for performing retrying, as well as performing repetition.
+
+To import and use `Schedule` from the "Schedule" module:
+
+```ts
+import * as Schedule from "effect/Schedule"
+// Can be accessed like this
+Schedule.Schedule
+```
+
 Schedule-fromDelay.md
 # fromDelay
 
@@ -75669,62 +75829,6 @@ Schedule.identity
 
 ```ts
 export declare const identity: <A>() => Schedule<A, A>
-```
-
-Schedule-Schedule.md
-# Schedule
-
-A `Schedule<Out, In, R>` defines a recurring schedule, which consumes values
-of type `In`, and which returns values of type `Out`.
-
-The `Schedule` type is structured as follows:
-
-```text
-          ┌─── The type of output produced by the schedule
-          │   ┌─── The type of input consumed by the schedule
-          │   │     ┌─── Additional requirements for the schedule
-          ▼   ▼     ▼
-Schedule<Out, In, Requirements>
-```
-
-A schedule operates by consuming values of type `In` (such as errors in the
-case of `Effect.retry`, or values in the case of `Effect.repeat`) and
-producing values of type `Out`. It determines when to halt or continue the
-execution based on input values and its internal state.
-
-The inclusion of a `Requirements` parameter allows the schedule to leverage
-additional services or resources as needed.
-
-Schedules are defined as a possibly infinite set of intervals spread out over
-time. Each interval defines a window in which recurrence is possible.
-
-When schedules are used to repeat or retry effects, the starting boundary of
-each interval produced by a schedule is used as the moment when the effect
-will be executed again.
-
-Schedules can be composed in different ways:
-
-- Union: Combines two schedules and recurs if either schedule wants to
-  continue, using the shorter delay.
-- Intersection: Combines two schedules and recurs only if both schedules want
-  to continue, using the longer delay.
-- Sequencing: Combines two schedules by running the first one fully, then
-  switching to the second.
-
-In addition, schedule inputs and outputs can be transformed, filtered (to
-terminate a schedule early in response to some input or output), and so
-forth.
-
-A variety of other operators exist for transforming and combining schedules,
-and the companion object for `Schedule` contains all common types of
-schedules, both for performing retrying, as well as performing repetition.
-
-To import and use `Schedule` from the "Schedule" module:
-
-```ts
-import * as Schedule from "effect/Schedule"
-// Can be accessed like this
-Schedule.Schedule
 ```
 
 Schedule-intersect.md
@@ -78131,19 +78235,6 @@ import * as Schema from "effect/Schema"
 Schema.Capitalize
 ```
 
-Schema-Char.md
-# Char
-
-A schema representing a single character.
-
-To import and use `Char` from the "Schema" module:
-
-```ts
-import * as Schema from "effect/Schema"
-// Can be accessed like this
-Schema.Char
-```
-
 Schema-annotations.md
 # annotations
 
@@ -78290,97 +78381,17 @@ export declare const brand: <S extends Schema.AnyNoContext, B extends string | s
 ) => (self: S) => brand<S, B>
 ```
 
-Schema-capitalized.md
-# capitalized
+Schema-Char.md
+# Char
 
-Verifies that a string is capitalized.
+A schema representing a single character.
 
-To import and use `capitalized` from the "Schema" module:
-
-```ts
-import * as Schema from "effect/Schema"
-// Can be accessed like this
-Schema.capitalized
-```
-
-**Signature**
-
-```ts
-export declare const capitalized: <S extends Schema.Any>(
-  annotations?: Annotations.Filter<Schema.Type<S>>
-) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
-```
-
-Schema-clamp.md
-# clamp
-
-Clamps a number between a minimum and a maximum value.
-
-To import and use `clamp` from the "Schema" module:
+To import and use `Char` from the "Schema" module:
 
 ```ts
 import * as Schema from "effect/Schema"
 // Can be accessed like this
-Schema.clamp
-```
-
-**Signature**
-
-```ts
-export declare const clamp: (
-  minimum: number,
-  maximum: number
-) => <S extends Schema.Any, A extends number>(
-  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
-) => transform<S, filter<SchemaClass<A>>>
-```
-
-Schema-clampBigDecimal.md
-# clampBigDecimal
-
-Clamps a `BigDecimal` between a minimum and a maximum value.
-
-To import and use `clampBigDecimal` from the "Schema" module:
-
-```ts
-import * as Schema from "effect/Schema"
-// Can be accessed like this
-Schema.clampBigDecimal
-```
-
-**Signature**
-
-```ts
-export declare const clampBigDecimal: (
-  minimum: bigDecimal_.BigDecimal,
-  maximum: bigDecimal_.BigDecimal
-) => <S extends Schema.Any, A extends bigDecimal_.BigDecimal>(
-  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
-) => transform<S, filter<SchemaClass<A>>>
-```
-
-Schema-clampBigInt.md
-# clampBigInt
-
-Clamps a bigint between a minimum and a maximum value.
-
-To import and use `clampBigInt` from the "Schema" module:
-
-```ts
-import * as Schema from "effect/Schema"
-// Can be accessed like this
-Schema.clampBigInt
-```
-
-**Signature**
-
-```ts
-export declare const clampBigInt: (
-  minimum: bigint,
-  maximum: bigint
-) => <S extends Schema.Any, A extends bigint>(
-  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
-) => transform<S, filter<SchemaClass<A>>>
+Schema.Char
 ```
 
 Schema-Data.md
@@ -78763,24 +78774,97 @@ console.log(Schema.decodeSync(Schema.OptionFromNonEmptyTrimmedString)(" a ")) //
 console.log(Schema.decodeSync(Schema.OptionFromNonEmptyTrimmedString)("a")) // Option.some("a")
 ```
 
-Schema-Redacted.md
-# Redacted
+Schema-capitalized.md
+# capitalized
 
-A transformation that transform a `Schema<A, I, R>` into a
-`RedactedFromSelf<A>`.
+Verifies that a string is capitalized.
 
-To import and use `Redacted` from the "Schema" module:
+To import and use `capitalized` from the "Schema" module:
 
 ```ts
 import * as Schema from "effect/Schema"
 // Can be accessed like this
-Schema.Redacted
+Schema.capitalized
 ```
 
 **Signature**
 
 ```ts
-export declare function Redacted<Value extends Schema.Any>(value: Value): Redacted<Value>
+export declare const capitalized: <S extends Schema.Any>(
+  annotations?: Annotations.Filter<Schema.Type<S>>
+) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
+```
+
+Schema-clamp.md
+# clamp
+
+Clamps a number between a minimum and a maximum value.
+
+To import and use `clamp` from the "Schema" module:
+
+```ts
+import * as Schema from "effect/Schema"
+// Can be accessed like this
+Schema.clamp
+```
+
+**Signature**
+
+```ts
+export declare const clamp: (
+  minimum: number,
+  maximum: number
+) => <S extends Schema.Any, A extends number>(
+  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
+) => transform<S, filter<SchemaClass<A>>>
+```
+
+Schema-clampBigDecimal.md
+# clampBigDecimal
+
+Clamps a `BigDecimal` between a minimum and a maximum value.
+
+To import and use `clampBigDecimal` from the "Schema" module:
+
+```ts
+import * as Schema from "effect/Schema"
+// Can be accessed like this
+Schema.clampBigDecimal
+```
+
+**Signature**
+
+```ts
+export declare const clampBigDecimal: (
+  minimum: bigDecimal_.BigDecimal,
+  maximum: bigDecimal_.BigDecimal
+) => <S extends Schema.Any, A extends bigDecimal_.BigDecimal>(
+  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
+) => transform<S, filter<SchemaClass<A>>>
+```
+
+Schema-clampBigInt.md
+# clampBigInt
+
+Clamps a bigint between a minimum and a maximum value.
+
+To import and use `clampBigInt` from the "Schema" module:
+
+```ts
+import * as Schema from "effect/Schema"
+// Can be accessed like this
+Schema.clampBigInt
+```
+
+**Signature**
+
+```ts
+export declare const clampBigInt: (
+  minimum: bigint,
+  maximum: bigint
+) => <S extends Schema.Any, A extends bigint>(
+  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
+) => transform<S, filter<SchemaClass<A>>>
 ```
 
 Schema-clampDuration.md
@@ -79388,139 +79472,24 @@ export declare const parseJson: {
 }
 ```
 
-Schema-parseNumber.md
-# parseNumber
+Schema-Redacted.md
+# Redacted
 
-Transforms a `string` into a `number` by parsing the string using the `parse`
-function of the `effect/Number` module.
+A transformation that transform a `Schema<A, I, R>` into a
+`RedactedFromSelf<A>`.
 
-It returns an error if the value can't be converted (for example when
-non-numeric characters are provided).
-
-The following special string values are supported: "NaN", "Infinity",
-"-Infinity".
-
-To import and use `parseNumber` from the "Schema" module:
+To import and use `Redacted` from the "Schema" module:
 
 ```ts
 import * as Schema from "effect/Schema"
 // Can be accessed like this
-Schema.parseNumber
+Schema.Redacted
 ```
 
 **Signature**
 
 ```ts
-export declare function parseNumber<S extends Schema.Any, A extends string>(
-  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
-): transformOrFail<S, typeof Number$>
-```
-
-Schema-pickLiteral.md
-# pickLiteral
-
-Creates a new `Schema` from a literal schema.
-
-To import and use `pickLiteral` from the "Schema" module:
-
-```ts
-import * as Schema from "effect/Schema"
-// Can be accessed like this
-Schema.pickLiteral
-```
-
-**Example**
-
-```ts
-import * as Schema from "effect/Schema"
-import { Either } from "effect"
-
-const schema = Schema.Literal("a", "b", "c").pipe(Schema.pickLiteral("a", "b"))
-
-assert.deepStrictEqual(Schema.decodeSync(schema)("a"), "a")
-assert.deepStrictEqual(Schema.decodeSync(schema)("b"), "b")
-assert.strictEqual(Either.isLeft(Schema.decodeUnknownEither(schema)("c")), true)
-```
-
-**Signature**
-
-```ts
-export declare const pickLiteral: <A extends AST.LiteralValue, L extends array_.NonEmptyReadonlyArray<A>>(
-  ...literals: L
-) => <I, R>(_schema: Schema<A, I, R>) => Literal<[...L]>
-```
-
-Schema-pluck.md
-# pluck
-
-Given a schema `Schema<A, I, R>` and a key `key: K`, this function extracts a specific field from the `A` type,
-producing a new schema that represents a transformation from the `{ readonly [key]: I[K] }` type to `A[K]`.
-
-To import and use `pluck` from the "Schema" module:
-
-```ts
-import * as Schema from "effect/Schema"
-// Can be accessed like this
-Schema.pluck
-```
-
-**Example**
-
-```ts
-import * as Schema from "effect/Schema"
-
-// ---------------------------------------------
-// use case: pull out a single field from a
-// struct through a transformation
-// ---------------------------------------------
-
-const mytable = Schema.Struct({
-  column1: Schema.NumberFromString,
-  column2: Schema.Number
-})
-
-// const pullOutColumn: S.Schema<number, {
-//     readonly column1: string;
-// }, never>
-const pullOutColumn = mytable.pipe(Schema.pluck("column1"))
-
-console.log(
-  Schema.decodeUnknownEither(Schema.Array(pullOutColumn))([
-    { column1: "1", column2: 100 },
-    { column1: "2", column2: 300 }
-  ])
-)
-// Output: { _id: 'Either', _tag: 'Right', right: [ 1, 2 ] }
-```
-
-**Signature**
-
-```ts
-export declare const pluck: {
-  <A, I, K extends keyof A & keyof I>(
-    key: K
-  ): <R>(schema: Schema<A, I, R>) => SchemaClass<A[K], Simplify<Pick<I, K>>, R>
-  <A, I, R, K extends keyof A & keyof I>(schema: Schema<A, I, R>, key: K): SchemaClass<A[K], Simplify<Pick<I, K>>, R>
-}
-```
-
-Schema-propertySignature.md
-# propertySignature
-
-Lifts a `Schema` into a `PropertySignature`.
-
-To import and use `propertySignature` from the "Schema" module:
-
-```ts
-import * as Schema from "effect/Schema"
-// Can be accessed like this
-Schema.propertySignature
-```
-
-**Signature**
-
-```ts
-export declare const propertySignature: <S extends Schema.All>(self: S) => propertySignature<S>
+export declare function Redacted<Value extends Schema.Any>(value: Value): Redacted<Value>
 ```
 
 Schema-Serializable.md
@@ -79962,6 +79931,141 @@ To import and use `WithResult` from the "Schema" module:
 import * as Schema from "effect/Schema"
 // Can be accessed like this
 Schema.WithResult
+```
+
+Schema-parseNumber.md
+# parseNumber
+
+Transforms a `string` into a `number` by parsing the string using the `parse`
+function of the `effect/Number` module.
+
+It returns an error if the value can't be converted (for example when
+non-numeric characters are provided).
+
+The following special string values are supported: "NaN", "Infinity",
+"-Infinity".
+
+To import and use `parseNumber` from the "Schema" module:
+
+```ts
+import * as Schema from "effect/Schema"
+// Can be accessed like this
+Schema.parseNumber
+```
+
+**Signature**
+
+```ts
+export declare function parseNumber<S extends Schema.Any, A extends string>(
+  self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>
+): transformOrFail<S, typeof Number$>
+```
+
+Schema-pickLiteral.md
+# pickLiteral
+
+Creates a new `Schema` from a literal schema.
+
+To import and use `pickLiteral` from the "Schema" module:
+
+```ts
+import * as Schema from "effect/Schema"
+// Can be accessed like this
+Schema.pickLiteral
+```
+
+**Example**
+
+```ts
+import * as Schema from "effect/Schema"
+import { Either } from "effect"
+
+const schema = Schema.Literal("a", "b", "c").pipe(Schema.pickLiteral("a", "b"))
+
+assert.deepStrictEqual(Schema.decodeSync(schema)("a"), "a")
+assert.deepStrictEqual(Schema.decodeSync(schema)("b"), "b")
+assert.strictEqual(Either.isLeft(Schema.decodeUnknownEither(schema)("c")), true)
+```
+
+**Signature**
+
+```ts
+export declare const pickLiteral: <A extends AST.LiteralValue, L extends array_.NonEmptyReadonlyArray<A>>(
+  ...literals: L
+) => <I, R>(_schema: Schema<A, I, R>) => Literal<[...L]>
+```
+
+Schema-pluck.md
+# pluck
+
+Given a schema `Schema<A, I, R>` and a key `key: K`, this function extracts a specific field from the `A` type,
+producing a new schema that represents a transformation from the `{ readonly [key]: I[K] }` type to `A[K]`.
+
+To import and use `pluck` from the "Schema" module:
+
+```ts
+import * as Schema from "effect/Schema"
+// Can be accessed like this
+Schema.pluck
+```
+
+**Example**
+
+```ts
+import * as Schema from "effect/Schema"
+
+// ---------------------------------------------
+// use case: pull out a single field from a
+// struct through a transformation
+// ---------------------------------------------
+
+const mytable = Schema.Struct({
+  column1: Schema.NumberFromString,
+  column2: Schema.Number
+})
+
+// const pullOutColumn: S.Schema<number, {
+//     readonly column1: string;
+// }, never>
+const pullOutColumn = mytable.pipe(Schema.pluck("column1"))
+
+console.log(
+  Schema.decodeUnknownEither(Schema.Array(pullOutColumn))([
+    { column1: "1", column2: 100 },
+    { column1: "2", column2: 300 }
+  ])
+)
+// Output: { _id: 'Either', _tag: 'Right', right: [ 1, 2 ] }
+```
+
+**Signature**
+
+```ts
+export declare const pluck: {
+  <A, I, K extends keyof A & keyof I>(
+    key: K
+  ): <R>(schema: Schema<A, I, R>) => SchemaClass<A[K], Simplify<Pick<I, K>>, R>
+  <A, I, R, K extends keyof A & keyof I>(schema: Schema<A, I, R>, key: K): SchemaClass<A[K], Simplify<Pick<I, K>>, R>
+}
+```
+
+Schema-propertySignature.md
+# propertySignature
+
+Lifts a `Schema` into a `PropertySignature`.
+
+To import and use `propertySignature` from the "Schema" module:
+
+```ts
+import * as Schema from "effect/Schema"
+// Can be accessed like this
+Schema.propertySignature
+```
+
+**Signature**
+
+```ts
+export declare const propertySignature: <S extends Schema.All>(self: S) => propertySignature<S>
 ```
 
 Schema-requiredToOptional.md
@@ -80569,6 +80673,29 @@ SchemaAST.getTemplateLiteralRegExp
 export declare const getTemplateLiteralRegExp: (ast: TemplateLiteral) => RegExp
 ```
 
+SchemaAST-PropertySignatureTransformation.md
+# PropertySignatureTransformation
+
+Represents a `PropertySignature -> PropertySignature` transformation
+
+The semantic of `decode` is:
+
+- `none()` represents the absence of the key/value pair
+- `some(value)` represents the presence of the key/value pair
+
+The semantic of `encode` is:
+
+- `none()` you don't want to output the key/value pair
+- `some(value)` you want to output the key/value pair
+
+To import and use `PropertySignatureTransformation` from the "SchemaAST" module:
+
+```ts
+import * as SchemaAST from "effect/SchemaAST"
+// Can be accessed like this
+SchemaAST.PropertySignatureTransformation
+```
+
 SchemaAST-keyof.md
 # keyof
 
@@ -80662,29 +80789,6 @@ SchemaAST.pick
 
 ```ts
 export declare const pick: (ast: AST, keys: ReadonlyArray<PropertyKey>) => TypeLiteral | Transformation
-```
-
-SchemaAST-PropertySignatureTransformation.md
-# PropertySignatureTransformation
-
-Represents a `PropertySignature -> PropertySignature` transformation
-
-The semantic of `decode` is:
-
-- `none()` represents the absence of the key/value pair
-- `some(value)` represents the presence of the key/value pair
-
-The semantic of `encode` is:
-
-- `none()` you don't want to output the key/value pair
-- `some(value)` you want to output the key/value pair
-
-To import and use `PropertySignatureTransformation` from the "SchemaAST" module:
-
-```ts
-import * as SchemaAST from "effect/SchemaAST"
-// Can be accessed like this
-SchemaAST.PropertySignatureTransformation
 ```
 
 SchemaAST-required.md
@@ -81570,19 +81674,6 @@ SerializedEnvelope.schema
 export declare const schema: Schema.Schema<SerializedEnvelope, SerializedEnvelope.Encoded, never>
 ```
 
-SerializedMessage-SerializedMessage.md
-# SerializedMessage
-
-Represents a Message that has been serialized.
-
-To import and use `SerializedMessage` from the "SerializedMessage" module:
-
-```ts
-import * as SerializedMessage from "@effect/cluster/SerializedMessage"
-// Can be accessed like this
-SerializedMessage.SerializedMessage
-```
-
 SerializedMessage-make.md
 # make
 
@@ -81619,6 +81710,19 @@ SerializedMessage.schema
 
 ```ts
 export declare const schema: Schema.Schema<SerializedMessage, SerializedMessage.Encoded, never>
+```
+
+SerializedMessage-SerializedMessage.md
+# SerializedMessage
+
+Represents a Message that has been serialized.
+
+To import and use `SerializedMessage` from the "SerializedMessage" module:
+
+```ts
+import * as SerializedMessage from "@effect/cluster/SerializedMessage"
+// Can be accessed like this
+SerializedMessage.SerializedMessage
 ```
 
 ShardId-ShardId.md
@@ -81675,6 +81779,19 @@ ShardId.schema
 export declare const schema: Schema.Schema<ShardId, ShardId.Encoded, never>
 ```
 
+ShardManagerClient-ShardManagerClient.md
+# ShardManagerClient
+
+ShardManagerClient provides the methods exposed by the ShardManager and called by the Pod.
+
+To import and use `ShardManagerClient` from the "ShardManagerClient" module:
+
+```ts
+import * as ShardManagerClient from "@effect/cluster/ShardManagerClient"
+// Can be accessed like this
+ShardManagerClient.ShardManagerClient
+```
+
 Sharding-broadcaster.md
 # broadcaster
 
@@ -81695,19 +81812,6 @@ Sharding.broadcaster
 export declare const broadcaster: <Msg extends Message.Message.Any>(
   topicType: RecipentType.TopicType<Msg>
 ) => Effect.Effect<Broadcaster<Msg>, never, Sharding>
-```
-
-ShardManagerClient-ShardManagerClient.md
-# ShardManagerClient
-
-ShardManagerClient provides the methods exposed by the ShardManager and called by the Pod.
-
-To import and use `ShardManagerClient` from the "ShardManagerClient" module:
-
-```ts
-import * as ShardManagerClient from "@effect/cluster/ShardManagerClient"
-// Can be accessed like this
-ShardManagerClient.ShardManagerClient
 ```
 
 Sharding-getAssignedShardIds.md
@@ -83803,6 +83907,23 @@ Sink.head
 export declare const head: <In>() => Sink<Option.Option<In>, In, In>
 ```
 
+Sink-Sink.md
+# Sink
+
+A `Sink<A, In, L, E, R>` is used to consume elements produced by a `Stream`.
+You can think of a sink as a function that will consume a variable amount of
+`In` elements (could be 0, 1, or many), might fail with an error of type `E`,
+and will eventually yield a value of type `A` together with a remainder of
+type `L` (i.e. any leftovers).
+
+To import and use `Sink` from the "Sink" module:
+
+```ts
+import * as Sink from "effect/Sink"
+// Can be accessed like this
+Sink.Sink
+```
+
 Sink-ignoreLeftover.md
 # ignoreLeftover
 
@@ -83908,138 +84029,6 @@ export declare const mapEffect: {
     f: (a: A) => Effect.Effect<A2, E2, R2>
   ): Sink<A2, In, L, E | E2, R | R2>
 }
-```
-
-STM-acquireUseRelease.md
-# acquireUseRelease
-
-Treats the specified `acquire` transaction as the acquisition of a
-resource. The `acquire` transaction will be executed interruptibly. If it
-is a success and is committed the specified `release` workflow will be
-executed uninterruptibly as soon as the `use` workflow completes execution.
-
-To import and use `acquireUseRelease` from the "STM" module:
-
-```ts
-import * as STM from "effect/STM"
-// Can be accessed like this
-STM.acquireUseRelease
-```
-
-**Signature**
-
-```ts
-export declare const acquireUseRelease: {
-  <A, A2, E2, R2, A3, E3, R3>(
-    use: (resource: A) => STM<A2, E2, R2>,
-    release: (resource: A) => STM<A3, E3, R3>
-  ): <E, R>(acquire: STM<A, E, R>) => Effect.Effect<A2, E2 | E3 | E, R2 | R3 | R>
-  <A, E, R, A2, E2, R2, A3, E3, R3>(
-    acquire: STM<A, E, R>,
-    use: (resource: A) => STM<A2, E2, R2>,
-    release: (resource: A) => STM<A3, E3, R3>
-  ): Effect.Effect<A2, E | E2 | E3, R | R2 | R3>
-}
-```
-
-STM-all.md
-# all
-
-Runs all the provided transactional effects in sequence respecting the
-structure provided in input.
-
-Supports multiple arguments, a single argument tuple / array or record /
-struct.
-
-To import and use `all` from the "STM" module:
-
-```ts
-import * as STM from "effect/STM"
-// Can be accessed like this
-STM.all
-```
-
-**Signature**
-
-```ts
-export declare const all: All.Signature
-```
-
-STM-as.md
-# as
-
-Maps the success value of this effect to the specified constant value.
-
-To import and use `as` from the "STM" module:
-
-```ts
-import * as STM from "effect/STM"
-// Can be accessed like this
-STM.as
-```
-
-**Signature**
-
-```ts
-export declare const as: {
-  <A2>(value: A2): <A, E, R>(self: STM<A, E, R>) => STM<A2, E, R>
-  <A, E, R, A2>(self: STM<A, E, R>, value: A2): STM<A2, E, R>
-}
-```
-
-STM-asSome.md
-# asSome
-
-Maps the success value of this effect to an optional value.
-
-To import and use `asSome` from the "STM" module:
-
-```ts
-import * as STM from "effect/STM"
-// Can be accessed like this
-STM.asSome
-```
-
-**Signature**
-
-```ts
-export declare const asSome: <A, E, R>(self: STM<A, E, R>) => STM<Option.Option<A>, E, R>
-```
-
-STM-asSomeError.md
-# asSomeError
-
-Maps the error value of this effect to an optional value.
-
-To import and use `asSomeError` from the "STM" module:
-
-```ts
-import * as STM from "effect/STM"
-// Can be accessed like this
-STM.asSomeError
-```
-
-**Signature**
-
-```ts
-export declare const asSomeError: <A, E, R>(self: STM<A, E, R>) => STM<A, Option.Option<E>, R>
-```
-
-Sink-Sink.md
-# Sink
-
-A `Sink<A, In, L, E, R>` is used to consume elements produced by a `Stream`.
-You can think of a sink as a function that will consume a variable amount of
-`In` elements (could be 0, 1, or many), might fail with an error of type `E`,
-and will eventually yield a value of type `A` together with a remainder of
-type `L` (i.e. any leftovers).
-
-To import and use `Sink` from the "Sink" module:
-
-```ts
-import * as Sink from "effect/Sink"
-// Can be accessed like this
-Sink.Sink
 ```
 
 Sink-mapError.md
@@ -85107,6 +85096,121 @@ Sse.makeParser
 export declare function makeParser(onParse: (event: AnyEvent) => void): Parser
 ```
 
+STM-acquireUseRelease.md
+# acquireUseRelease
+
+Treats the specified `acquire` transaction as the acquisition of a
+resource. The `acquire` transaction will be executed interruptibly. If it
+is a success and is committed the specified `release` workflow will be
+executed uninterruptibly as soon as the `use` workflow completes execution.
+
+To import and use `acquireUseRelease` from the "STM" module:
+
+```ts
+import * as STM from "effect/STM"
+// Can be accessed like this
+STM.acquireUseRelease
+```
+
+**Signature**
+
+```ts
+export declare const acquireUseRelease: {
+  <A, A2, E2, R2, A3, E3, R3>(
+    use: (resource: A) => STM<A2, E2, R2>,
+    release: (resource: A) => STM<A3, E3, R3>
+  ): <E, R>(acquire: STM<A, E, R>) => Effect.Effect<A2, E2 | E3 | E, R2 | R3 | R>
+  <A, E, R, A2, E2, R2, A3, E3, R3>(
+    acquire: STM<A, E, R>,
+    use: (resource: A) => STM<A2, E2, R2>,
+    release: (resource: A) => STM<A3, E3, R3>
+  ): Effect.Effect<A2, E | E2 | E3, R | R2 | R3>
+}
+```
+
+STM-all.md
+# all
+
+Runs all the provided transactional effects in sequence respecting the
+structure provided in input.
+
+Supports multiple arguments, a single argument tuple / array or record /
+struct.
+
+To import and use `all` from the "STM" module:
+
+```ts
+import * as STM from "effect/STM"
+// Can be accessed like this
+STM.all
+```
+
+**Signature**
+
+```ts
+export declare const all: All.Signature
+```
+
+STM-as.md
+# as
+
+Maps the success value of this effect to the specified constant value.
+
+To import and use `as` from the "STM" module:
+
+```ts
+import * as STM from "effect/STM"
+// Can be accessed like this
+STM.as
+```
+
+**Signature**
+
+```ts
+export declare const as: {
+  <A2>(value: A2): <A, E, R>(self: STM<A, E, R>) => STM<A2, E, R>
+  <A, E, R, A2>(self: STM<A, E, R>, value: A2): STM<A2, E, R>
+}
+```
+
+STM-asSome.md
+# asSome
+
+Maps the success value of this effect to an optional value.
+
+To import and use `asSome` from the "STM" module:
+
+```ts
+import * as STM from "effect/STM"
+// Can be accessed like this
+STM.asSome
+```
+
+**Signature**
+
+```ts
+export declare const asSome: <A, E, R>(self: STM<A, E, R>) => STM<Option.Option<A>, E, R>
+```
+
+STM-asSomeError.md
+# asSomeError
+
+Maps the error value of this effect to an optional value.
+
+To import and use `asSomeError` from the "STM" module:
+
+```ts
+import * as STM from "effect/STM"
+// Can be accessed like this
+STM.asSomeError
+```
+
+**Signature**
+
+```ts
+export declare const asSomeError: <A, E, R>(self: STM<A, E, R>) => STM<A, Option.Option<E>, R>
+```
+
 STM-asVoid.md
 # asVoid
 
@@ -86125,6 +86229,50 @@ STM.interruptAs
 export declare const interruptAs: (fiberId: FiberId.FiberId) => STM<never>
 ```
 
+STM-STM.md
+# STM
+
+`STM<A, E, R>` represents an effect that can be performed transactionally,
+resulting in a failure `E` or a value `A` that may require an environment
+`R` to execute.
+
+Software Transactional Memory is a technique which allows composition of
+arbitrary atomic operations. It is the software analog of transactions in
+database systems.
+
+The API is lifted directly from the Haskell package Control.Concurrent.STM
+although the implementation does not resemble the Haskell one at all.
+
+See http://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM.html
+
+STM in Haskell was introduced in:
+
+Composable memory transactions, by Tim Harris, Simon Marlow, Simon Peyton
+Jones, and Maurice Herlihy, in ACM Conference on Principles and Practice of
+Parallel Programming 2005.
+
+See https://www.microsoft.com/en-us/research/publication/composable-memory-transactions/
+
+See also:
+Lock Free Data Structures using STMs in Haskell, by Anthony Discolo, Tim
+Harris, Simon Marlow, Simon Peyton Jones, Satnam Singh) FLOPS 2006: Eighth
+International Symposium on Functional and Logic Programming, Fuji Susono,
+JAPAN, April 2006
+
+https://www.microsoft.com/en-us/research/publication/lock-free-data-structures-using-stms-in-haskell/
+
+The implemtation is based on the ZIO STM module, while JS environments have
+no race conditions from multiple threads STM provides greater benefits for
+synchronization of Fibers and transactional data-types can be quite useful.
+
+To import and use `STM` from the "STM" module:
+
+```ts
+import * as STM from "effect/STM"
+// Can be accessed like this
+STM.STM
+```
+
 STM-isFailure.md
 # isFailure
 
@@ -86264,50 +86412,6 @@ export declare const loop: {
     }
   ): STM<void, E, R>
 }
-```
-
-STM-STM.md
-# STM
-
-`STM<A, E, R>` represents an effect that can be performed transactionally,
-resulting in a failure `E` or a value `A` that may require an environment
-`R` to execute.
-
-Software Transactional Memory is a technique which allows composition of
-arbitrary atomic operations. It is the software analog of transactions in
-database systems.
-
-The API is lifted directly from the Haskell package Control.Concurrent.STM
-although the implementation does not resemble the Haskell one at all.
-
-See http://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM.html
-
-STM in Haskell was introduced in:
-
-Composable memory transactions, by Tim Harris, Simon Marlow, Simon Peyton
-Jones, and Maurice Herlihy, in ACM Conference on Principles and Practice of
-Parallel Programming 2005.
-
-See https://www.microsoft.com/en-us/research/publication/composable-memory-transactions/
-
-See also:
-Lock Free Data Structures using STMs in Haskell, by Anthony Discolo, Tim
-Harris, Simon Marlow, Simon Peyton Jones, Satnam Singh) FLOPS 2006: Eighth
-International Symposium on Functional and Logic Programming, Fuji Susono,
-JAPAN, April 2006
-
-https://www.microsoft.com/en-us/research/publication/lock-free-data-structures-using-stms-in-haskell/
-
-The implemtation is based on the ZIO STM module, while JS environments have
-no race conditions from multiple threads STM provides greater benefits for
-synchronization of Fibers and transactional data-types can be quite useful.
-
-To import and use `STM` from the "STM" module:
-
-```ts
-import * as STM from "effect/STM"
-// Can be accessed like this
-STM.STM
 ```
 
 STM-map.md
@@ -88954,6 +89058,66 @@ const stream = Stream.make(1, 1, 1, 2, 2, 3, 4).pipe(Stream.changes)
 export declare const changes: <A, E, R>(self: Stream<A, E, R>) => Stream<A, E, R>
 ```
 
+Stream-DefaultChunkSize.md
+# DefaultChunkSize
+
+The default chunk size used by the various combinators and constructors of
+`Stream`.
+
+To import and use `DefaultChunkSize` from the "Stream" module:
+
+```ts
+import * as Stream from "effect/Stream"
+// Can be accessed like this
+Stream.DefaultChunkSize
+```
+
+**Signature**
+
+```ts
+export declare const DefaultChunkSize: number
+```
+
+Stream-Do.md
+# Do
+
+The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
+
+Here's how the do simulation works:
+
+1. Start the do simulation using the `Do` value
+2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Stream` values
+3. You can accumulate multiple `bind` statements to define multiple variables within the scope
+4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
+
+To import and use `Do` from the "Stream" module:
+
+```ts
+import * as Stream from "effect/Stream"
+// Can be accessed like this
+Stream.Do
+```
+
+**Example**
+
+```ts
+import { Chunk, Effect, pipe, Stream } from "effect"
+
+const result = pipe(
+  Stream.Do,
+  Stream.bind("x", () => Stream.succeed(2)),
+  Stream.bind("y", () => Stream.succeed(3)),
+  Stream.let("sum", ({ x, y }) => x + y)
+)
+assert.deepStrictEqual(Effect.runSync(Stream.runCollect(result)), Chunk.of({ x: 2, y: 3, sum: 5 }))
+```
+
+**Signature**
+
+```ts
+export declare const Do: Stream<{}, never, never>
+```
+
 Stream-changesWith.md
 # changesWith
 
@@ -89096,66 +89260,6 @@ export declare const combine: {
     ) => Effect.Effect<Exit.Exit<readonly [A3, S], Option.Option<E2 | E>>, never, R5>
   ): Stream<A3, E2 | E, R | R2 | R3 | R4 | R5>
 }
-```
-
-Stream-DefaultChunkSize.md
-# DefaultChunkSize
-
-The default chunk size used by the various combinators and constructors of
-`Stream`.
-
-To import and use `DefaultChunkSize` from the "Stream" module:
-
-```ts
-import * as Stream from "effect/Stream"
-// Can be accessed like this
-Stream.DefaultChunkSize
-```
-
-**Signature**
-
-```ts
-export declare const DefaultChunkSize: number
-```
-
-Stream-Do.md
-# Do
-
-The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
-
-Here's how the do simulation works:
-
-1. Start the do simulation using the `Do` value
-2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Stream` values
-3. You can accumulate multiple `bind` statements to define multiple variables within the scope
-4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
-
-To import and use `Do` from the "Stream" module:
-
-```ts
-import * as Stream from "effect/Stream"
-// Can be accessed like this
-Stream.Do
-```
-
-**Example**
-
-```ts
-import { Chunk, Effect, pipe, Stream } from "effect"
-
-const result = pipe(
-  Stream.Do,
-  Stream.bind("x", () => Stream.succeed(2)),
-  Stream.bind("y", () => Stream.succeed(3)),
-  Stream.let("sum", ({ x, y }) => x + y)
-)
-assert.deepStrictEqual(Effect.runSync(Stream.runCollect(result)), Chunk.of({ x: 2, y: 3, sum: 5 }))
-```
-
-**Signature**
-
-```ts
-export declare const Do: Stream<{}, never, never>
 ```
 
 Stream-combineChunks.md
@@ -94802,6 +94906,33 @@ export declare const scanReduceEffect: {
 }
 ```
 
+Stream-Stream.md
+# Stream
+
+A `Stream<A, E, R>` is a description of a program that, when evaluated, may
+emit zero or more values of type `A`, may fail with errors of type `E`, and
+uses an context of type `R`. One way to think of `Stream` is as a
+`Effect` program that could emit multiple values.
+
+`Stream` is a purely functional _pull_ based stream. Pull based streams offer
+inherent laziness and backpressure, relieving users of the need to manage
+buffers between operators. As an optimization, `Stream` does not emit
+single values, but rather an array of values. This allows the cost of effect
+evaluation to be amortized.
+
+`Stream` forms a monad on its `A` type parameter, and has error management
+facilities for its `E` type parameter, modeled similarly to `Effect` (with
+some adjustments for the multiple-valued nature of `Stream`). These aspects
+allow for rich and expressive composition of streams.
+
+To import and use `Stream` from the "Stream" module:
+
+```ts
+import * as Stream from "effect/Stream"
+// Can be accessed like this
+Stream.Stream
+```
+
 Stream-schedule.md
 # schedule
 
@@ -94963,33 +95094,6 @@ export declare const share: {
         }
   ): Effect.Effect<Stream<A, E>, never, R | Scope.Scope>
 }
-```
-
-Stream-Stream.md
-# Stream
-
-A `Stream<A, E, R>` is a description of a program that, when evaluated, may
-emit zero or more values of type `A`, may fail with errors of type `E`, and
-uses an context of type `R`. One way to think of `Stream` is as a
-`Effect` program that could emit multiple values.
-
-`Stream` is a purely functional _pull_ based stream. Pull based streams offer
-inherent laziness and backpressure, relieving users of the need to manage
-buffers between operators. As an optimization, `Stream` does not emit
-single values, but rather an array of values. This allows the cost of effect
-evaluation to be amortized.
-
-`Stream` forms a monad on its `A` type parameter, and has error management
-facilities for its `E` type parameter, modeled similarly to `Effect` (with
-some adjustments for the multiple-valued nature of `Stream`). These aspects
-allow for rich and expressive composition of streams.
-
-To import and use `Stream` from the "Stream" module:
-
-```ts
-import * as Stream from "effect/Stream"
-// Can be accessed like this
-Stream.Stream
 ```
 
 Stream-sliding.md
@@ -98570,110 +98674,6 @@ export declare const findLastIndexFrom: {
 }
 ```
 
-TArray-findLastSTM.md
-# findLastSTM
-
-Find the last element in the array matching a transactional predicate.
-
-To import and use `findLastSTM` from the "TArray" module:
-
-```ts
-import * as TArray from "effect/TArray"
-// Can be accessed like this
-TArray.findLastSTM
-```
-
-**Signature**
-
-```ts
-export declare const findLastSTM: {
-  <A, R, E>(predicate: (value: A) => STM.STM<boolean, E, R>): (self: TArray<A>) => STM.STM<Option.Option<A>, E, R>
-  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<boolean, E, R>): STM.STM<Option.Option<A>, E, R>
-}
-```
-
-TArray-forEach.md
-# forEach
-
-Atomically performs transactional effect for each item in array.
-
-To import and use `forEach` from the "TArray" module:
-
-```ts
-import * as TArray from "effect/TArray"
-// Can be accessed like this
-TArray.forEach
-```
-
-**Signature**
-
-```ts
-export declare const forEach: {
-  <A, R, E>(f: (value: A) => STM.STM<void, E, R>): (self: TArray<A>) => STM.STM<void, E, R>
-  <A, R, E>(self: TArray<A>, f: (value: A) => STM.STM<void, E, R>): STM.STM<void, E, R>
-}
-```
-
-TArray-fromIterable.md
-# fromIterable
-
-Creates a new `TArray` from an iterable collection of values.
-
-To import and use `fromIterable` from the "TArray" module:
-
-```ts
-import * as TArray from "effect/TArray"
-// Can be accessed like this
-TArray.fromIterable
-```
-
-**Signature**
-
-```ts
-export declare const fromIterable: <A>(iterable: Iterable<A>) => STM.STM<TArray<A>>
-```
-
-TArray-get.md
-# get
-
-Extracts value from ref in array.
-
-To import and use `get` from the "TArray" module:
-
-```ts
-import * as TArray from "effect/TArray"
-// Can be accessed like this
-TArray.get
-```
-
-**Signature**
-
-```ts
-export declare const get: {
-  (index: number): <A>(self: TArray<A>) => STM.STM<A>
-  <A>(self: TArray<A>, index: number): STM.STM<A>
-}
-```
-
-TArray-headOption.md
-# headOption
-
-The first entry of the array, if it exists.
-
-To import and use `headOption` from the "TArray" module:
-
-```ts
-import * as TArray from "effect/TArray"
-// Can be accessed like this
-TArray.headOption
-```
-
-**Signature**
-
-```ts
-export declare const headOption: <A>(self: TArray<A>) => STM.STM<Option.Option<A>>
-```
-
 Take-Take.md
 # Take
 
@@ -99097,6 +99097,110 @@ export declare const tap: {
     f: (chunk: Chunk.Chunk<A>) => Effect.Effect<X, E2, R>
   ): Effect.Effect<void, E | E2, R>
 }
+```
+
+TArray-findLastSTM.md
+# findLastSTM
+
+Find the last element in the array matching a transactional predicate.
+
+To import and use `findLastSTM` from the "TArray" module:
+
+```ts
+import * as TArray from "effect/TArray"
+// Can be accessed like this
+TArray.findLastSTM
+```
+
+**Signature**
+
+```ts
+export declare const findLastSTM: {
+  <A, R, E>(predicate: (value: A) => STM.STM<boolean, E, R>): (self: TArray<A>) => STM.STM<Option.Option<A>, E, R>
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<boolean, E, R>): STM.STM<Option.Option<A>, E, R>
+}
+```
+
+TArray-forEach.md
+# forEach
+
+Atomically performs transactional effect for each item in array.
+
+To import and use `forEach` from the "TArray" module:
+
+```ts
+import * as TArray from "effect/TArray"
+// Can be accessed like this
+TArray.forEach
+```
+
+**Signature**
+
+```ts
+export declare const forEach: {
+  <A, R, E>(f: (value: A) => STM.STM<void, E, R>): (self: TArray<A>) => STM.STM<void, E, R>
+  <A, R, E>(self: TArray<A>, f: (value: A) => STM.STM<void, E, R>): STM.STM<void, E, R>
+}
+```
+
+TArray-fromIterable.md
+# fromIterable
+
+Creates a new `TArray` from an iterable collection of values.
+
+To import and use `fromIterable` from the "TArray" module:
+
+```ts
+import * as TArray from "effect/TArray"
+// Can be accessed like this
+TArray.fromIterable
+```
+
+**Signature**
+
+```ts
+export declare const fromIterable: <A>(iterable: Iterable<A>) => STM.STM<TArray<A>>
+```
+
+TArray-get.md
+# get
+
+Extracts value from ref in array.
+
+To import and use `get` from the "TArray" module:
+
+```ts
+import * as TArray from "effect/TArray"
+// Can be accessed like this
+TArray.get
+```
+
+**Signature**
+
+```ts
+export declare const get: {
+  (index: number): <A>(self: TArray<A>) => STM.STM<A>
+  <A>(self: TArray<A>, index: number): STM.STM<A>
+}
+```
+
+TArray-headOption.md
+# headOption
+
+The first entry of the array, if it exists.
+
+To import and use `headOption` from the "TArray" module:
+
+```ts
+import * as TArray from "effect/TArray"
+// Can be accessed like this
+TArray.headOption
+```
+
+**Signature**
+
+```ts
+export declare const headOption: <A>(self: TArray<A>) => STM.STM<Option.Option<A>>
 ```
 
 TArray-lastOption.md
@@ -100012,109 +100116,6 @@ TestServices.liveLayer
 export declare const liveLayer: () => Layer.Layer<Live.TestLive, never, DefaultServices.DefaultServices>
 ```
 
-TestServices-liveServices.md
-# liveServices
-
-The default Effect test services.
-
-To import and use `liveServices` from the "TestServices" module:
-
-```ts
-import * as TestServices from "effect/TestServices"
-// Can be accessed like this
-TestServices.liveServices
-```
-
-**Signature**
-
-```ts
-export declare const liveServices: Context.Context<TestServices>
-```
-
-TestServices-liveWith.md
-# liveWith
-
-Retrieves the `Live` service for this test and uses it to run the specified
-workflow.
-
-To import and use `liveWith` from the "TestServices" module:
-
-```ts
-import * as TestServices from "effect/TestServices"
-// Can be accessed like this
-TestServices.liveWith
-```
-
-**Signature**
-
-```ts
-export declare const liveWith: <A, E, R>(f: (live: Live.TestLive) => Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>
-```
-
-TestServices-provideLive.md
-# provideLive
-
-Provides a workflow with the "live" default Effect services.
-
-To import and use `provideLive` from the "TestServices" module:
-
-```ts
-import * as TestServices from "effect/TestServices"
-// Can be accessed like this
-TestServices.provideLive
-```
-
-**Signature**
-
-```ts
-export declare const provideLive: <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>
-```
-
-TestServices-provideWithLive.md
-# provideWithLive
-
-Runs a transformation function with the live default Effect services while
-ensuring that the workflow itself is run with the test services.
-
-To import and use `provideWithLive` from the "TestServices" module:
-
-```ts
-import * as TestServices from "effect/TestServices"
-// Can be accessed like this
-TestServices.provideWithLive
-```
-
-**Signature**
-
-```ts
-export declare const provideWithLive: (<A, E, R, A2, E2, R2>(
-  f: (effect: Effect.Effect<A, E, R>) => Effect.Effect<A2, E2, R2>
-) => (self: Effect.Effect<A, E, R>) => Effect.Effect<A2, E | E2, R | R2>) &
-  (<A, E, R, A2, E2, R2>(
-    self: Effect.Effect<A, E, R>,
-    f: (effect: Effect.Effect<A, E, R>) => Effect.Effect<A2, E2, R2>
-  ) => Effect.Effect<A2, E | E2, R | R2>)
-```
-
-TestServices-repeats.md
-# repeats
-
-The number of times to repeat tests to ensure they are stable.
-
-To import and use `repeats` from the "TestServices" module:
-
-```ts
-import * as TestServices from "effect/TestServices"
-// Can be accessed like this
-TestServices.repeats
-```
-
-**Signature**
-
-```ts
-export declare const repeats: Effect.Effect<number, never, never>
-```
-
 TMap-TMap.md
 # TMap
 
@@ -100750,102 +100751,107 @@ export declare const takeSomeSTM: {
 }
 ```
 
-TMap-toArray.md
-# toArray
+TestServices-liveServices.md
+# liveServices
 
-Collects all bindings into an `Array`.
+The default Effect test services.
 
-To import and use `toArray` from the "TMap" module:
+To import and use `liveServices` from the "TestServices" module:
 
 ```ts
-import * as TMap from "effect/TMap"
+import * as TestServices from "effect/TestServices"
 // Can be accessed like this
-TMap.toArray
+TestServices.liveServices
 ```
 
 **Signature**
 
 ```ts
-export declare const toArray: <K, V>(self: TMap<K, V>) => STM.STM<Array<[K, V]>>
+export declare const liveServices: Context.Context<TestServices>
 ```
 
-TMap-toChunk.md
-# toChunk
+TestServices-liveWith.md
+# liveWith
 
-Collects all bindings into a `Chunk`.
+Retrieves the `Live` service for this test and uses it to run the specified
+workflow.
 
-To import and use `toChunk` from the "TMap" module:
+To import and use `liveWith` from the "TestServices" module:
 
 ```ts
-import * as TMap from "effect/TMap"
+import * as TestServices from "effect/TestServices"
 // Can be accessed like this
-TMap.toChunk
+TestServices.liveWith
 ```
 
 **Signature**
 
 ```ts
-export declare const toChunk: <K, V>(self: TMap<K, V>) => STM.STM<Chunk.Chunk<[K, V]>>
+export declare const liveWith: <A, E, R>(f: (live: Live.TestLive) => Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>
 ```
 
-TMap-toHashMap.md
-# toHashMap
+TestServices-provideLive.md
+# provideLive
 
-Collects all bindings into a `HashMap`.
+Provides a workflow with the "live" default Effect services.
 
-To import and use `toHashMap` from the "TMap" module:
+To import and use `provideLive` from the "TestServices" module:
 
 ```ts
-import * as TMap from "effect/TMap"
+import * as TestServices from "effect/TestServices"
 // Can be accessed like this
-TMap.toHashMap
+TestServices.provideLive
 ```
 
 **Signature**
 
 ```ts
-export declare const toHashMap: <K, V>(self: TMap<K, V>) => STM.STM<HashMap.HashMap<K, V>>
+export declare const provideLive: <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>
 ```
 
-TMap-toMap.md
-# toMap
+TestServices-provideWithLive.md
+# provideWithLive
 
-Collects all bindings into a `Map`.
+Runs a transformation function with the live default Effect services while
+ensuring that the workflow itself is run with the test services.
 
-To import and use `toMap` from the "TMap" module:
+To import and use `provideWithLive` from the "TestServices" module:
 
 ```ts
-import * as TMap from "effect/TMap"
+import * as TestServices from "effect/TestServices"
 // Can be accessed like this
-TMap.toMap
+TestServices.provideWithLive
 ```
 
 **Signature**
 
 ```ts
-export declare const toMap: <K, V>(self: TMap<K, V>) => STM.STM<ReadonlyMap<K, V>>
+export declare const provideWithLive: (<A, E, R, A2, E2, R2>(
+  f: (effect: Effect.Effect<A, E, R>) => Effect.Effect<A2, E2, R2>
+) => (self: Effect.Effect<A, E, R>) => Effect.Effect<A2, E | E2, R | R2>) &
+  (<A, E, R, A2, E2, R2>(
+    self: Effect.Effect<A, E, R>,
+    f: (effect: Effect.Effect<A, E, R>) => Effect.Effect<A2, E2, R2>
+  ) => Effect.Effect<A2, E | E2, R | R2>)
 ```
 
-TMap-transform.md
-# transform
+TestServices-repeats.md
+# repeats
 
-Atomically updates all bindings using a pure function.
+The number of times to repeat tests to ensure they are stable.
 
-To import and use `transform` from the "TMap" module:
+To import and use `repeats` from the "TestServices" module:
 
 ```ts
-import * as TMap from "effect/TMap"
+import * as TestServices from "effect/TestServices"
 // Can be accessed like this
-TMap.transform
+TestServices.repeats
 ```
 
 **Signature**
 
 ```ts
-export declare const transform: {
-  <K, V>(f: (key: K, value: V) => readonly [K, V]): (self: TMap<K, V>) => STM.STM<void>
-  <K, V>(self: TMap<K, V>, f: (key: K, value: V) => readonly [K, V]): STM.STM<void>
-}
+export declare const repeats: Effect.Effect<number, never, never>
 ```
 
 TestServices-retries.md
@@ -101202,6 +101208,104 @@ TestServices.withTestConfigScoped
 
 ```ts
 export declare const withTestConfigScoped: (config: TestConfig.TestConfig) => Effect.Effect<void, never, Scope.Scope>
+```
+
+TMap-toArray.md
+# toArray
+
+Collects all bindings into an `Array`.
+
+To import and use `toArray` from the "TMap" module:
+
+```ts
+import * as TMap from "effect/TMap"
+// Can be accessed like this
+TMap.toArray
+```
+
+**Signature**
+
+```ts
+export declare const toArray: <K, V>(self: TMap<K, V>) => STM.STM<Array<[K, V]>>
+```
+
+TMap-toChunk.md
+# toChunk
+
+Collects all bindings into a `Chunk`.
+
+To import and use `toChunk` from the "TMap" module:
+
+```ts
+import * as TMap from "effect/TMap"
+// Can be accessed like this
+TMap.toChunk
+```
+
+**Signature**
+
+```ts
+export declare const toChunk: <K, V>(self: TMap<K, V>) => STM.STM<Chunk.Chunk<[K, V]>>
+```
+
+TMap-toHashMap.md
+# toHashMap
+
+Collects all bindings into a `HashMap`.
+
+To import and use `toHashMap` from the "TMap" module:
+
+```ts
+import * as TMap from "effect/TMap"
+// Can be accessed like this
+TMap.toHashMap
+```
+
+**Signature**
+
+```ts
+export declare const toHashMap: <K, V>(self: TMap<K, V>) => STM.STM<HashMap.HashMap<K, V>>
+```
+
+TMap-toMap.md
+# toMap
+
+Collects all bindings into a `Map`.
+
+To import and use `toMap` from the "TMap" module:
+
+```ts
+import * as TMap from "effect/TMap"
+// Can be accessed like this
+TMap.toMap
+```
+
+**Signature**
+
+```ts
+export declare const toMap: <K, V>(self: TMap<K, V>) => STM.STM<ReadonlyMap<K, V>>
+```
+
+TMap-transform.md
+# transform
+
+Atomically updates all bindings using a pure function.
+
+To import and use `transform` from the "TMap" module:
+
+```ts
+import * as TMap from "effect/TMap"
+// Can be accessed like this
+TMap.transform
+```
+
+**Signature**
+
+```ts
+export declare const transform: {
+  <K, V>(f: (key: K, value: V) => readonly [K, V]): (self: TMap<K, V>) => STM.STM<void>
+  <K, V>(self: TMap<K, V>, f: (key: K, value: V) => readonly [K, V]): STM.STM<void>
+}
 ```
 
 TMap-transformSTM.md
@@ -103030,82 +103134,6 @@ export declare const withWriteLock: {
 }
 ```
 
-TReentrantLock-writeLock.md
-# writeLock
-
-Obtains a write lock in a scoped context.
-
-To import and use `writeLock` from the "TReentrantLock" module:
-
-```ts
-import * as TReentrantLock from "effect/TReentrantLock"
-// Can be accessed like this
-TReentrantLock.writeLock
-```
-
-**Signature**
-
-```ts
-export declare const writeLock: (self: TReentrantLock) => Effect.Effect<number, never, Scope.Scope>
-```
-
-TReentrantLock-writeLocked.md
-# writeLocked
-
-Determines if a write lock is held by some fiber.
-
-To import and use `writeLocked` from the "TReentrantLock" module:
-
-```ts
-import * as TReentrantLock from "effect/TReentrantLock"
-// Can be accessed like this
-TReentrantLock.writeLocked
-```
-
-**Signature**
-
-```ts
-export declare const writeLocked: (self: TReentrantLock) => STM.STM<boolean>
-```
-
-TReentrantLock-writeLocks.md
-# writeLocks
-
-Computes the number of write locks held by fibers.
-
-To import and use `writeLocks` from the "TReentrantLock" module:
-
-```ts
-import * as TReentrantLock from "effect/TReentrantLock"
-// Can be accessed like this
-TReentrantLock.writeLocks
-```
-
-**Signature**
-
-```ts
-export declare const writeLocks: (self: TReentrantLock) => STM.STM<number>
-```
-
-TRef-TRef.md
-# TRef
-
-A `TRef<A>` is a purely functional description of a mutable reference that can
-be modified as part of a transactional effect. The fundamental operations of
-a `TRef` are `set` and `get`. `set` transactionally sets the reference to a
-new value. `get` gets the current value of the reference.
-
-NOTE: While `TRef<A>` provides the transactional equivalent of a mutable
-reference, the value inside the `TRef` should be immutable.
-
-To import and use `TRef` from the "TRef" module:
-
-```ts
-import * as TRef from "effect/TRef"
-// Can be accessed like this
-TRef.TRef
-```
-
 Tracer-withSpanContext.md
 # withSpanContext
 
@@ -103269,39 +103297,80 @@ export declare const traversePartitionMap: <T extends TypeLambda>(
 ) => Kind<F, R, O, E, [Kind<T, TR, TO, TE, B>, Kind<T, TR, TO, TE, C>]>
 ```
 
-Trie-compact.md
-# compact
+TReentrantLock-writeLock.md
+# writeLock
 
-Filters out `None` values from a `Trie` of `Options`s.
+Obtains a write lock in a scoped context.
 
-To import and use `compact` from the "Trie" module:
+To import and use `writeLock` from the "TReentrantLock" module:
 
 ```ts
-import * as Trie from "effect/Trie"
+import * as TReentrantLock from "effect/TReentrantLock"
 // Can be accessed like this
-Trie.compact
-```
-
-**Example**
-
-```ts
-import { Trie, Equal, Option } from "effect"
-
-const trie = Trie.empty<Option.Option<number>>().pipe(
-  Trie.insert("shells", Option.some(0)),
-  Trie.insert("sells", Option.none()),
-  Trie.insert("she", Option.some(2))
-)
-
-const trieMapV = Trie.empty<number>().pipe(Trie.insert("shells", 0), Trie.insert("she", 2))
-
-assert.equal(Equal.equals(Trie.compact(trie), trieMapV), true)
+TReentrantLock.writeLock
 ```
 
 **Signature**
 
 ```ts
-export declare const compact: <A>(self: Trie<Option<A>>) => Trie<A>
+export declare const writeLock: (self: TReentrantLock) => Effect.Effect<number, never, Scope.Scope>
+```
+
+TReentrantLock-writeLocked.md
+# writeLocked
+
+Determines if a write lock is held by some fiber.
+
+To import and use `writeLocked` from the "TReentrantLock" module:
+
+```ts
+import * as TReentrantLock from "effect/TReentrantLock"
+// Can be accessed like this
+TReentrantLock.writeLocked
+```
+
+**Signature**
+
+```ts
+export declare const writeLocked: (self: TReentrantLock) => STM.STM<boolean>
+```
+
+TReentrantLock-writeLocks.md
+# writeLocks
+
+Computes the number of write locks held by fibers.
+
+To import and use `writeLocks` from the "TReentrantLock" module:
+
+```ts
+import * as TReentrantLock from "effect/TReentrantLock"
+// Can be accessed like this
+TReentrantLock.writeLocks
+```
+
+**Signature**
+
+```ts
+export declare const writeLocks: (self: TReentrantLock) => STM.STM<number>
+```
+
+TRef-TRef.md
+# TRef
+
+A `TRef<A>` is a purely functional description of a mutable reference that can
+be modified as part of a transactional effect. The fundamental operations of
+a `TRef` are `set` and `get`. `set` transactionally sets the reference to a
+new value. `get` gets the current value of the reference.
+
+NOTE: While `TRef<A>` provides the transactional equivalent of a mutable
+reference, the value inside the `TRef` should be immutable.
+
+To import and use `TRef` from the "TRef" module:
+
+```ts
+import * as TRef from "effect/TRef"
+// Can be accessed like this
+TRef.TRef
 ```
 
 TSet-add.md
@@ -103693,105 +103762,39 @@ export declare const takeFirstSTM: {
 }
 ```
 
-TSet-takeSome.md
-# takeSome
+Trie-compact.md
+# compact
 
-Takes all matching values, or retries until there is at least one.
+Filters out `None` values from a `Trie` of `Options`s.
 
-To import and use `takeSome` from the "TSet" module:
+To import and use `compact` from the "Trie" module:
 
 ```ts
-import * as TSet from "effect/TSet"
+import * as Trie from "effect/Trie"
 // Can be accessed like this
-TSet.takeSome
+Trie.compact
+```
+
+**Example**
+
+```ts
+import { Trie, Equal, Option } from "effect"
+
+const trie = Trie.empty<Option.Option<number>>().pipe(
+  Trie.insert("shells", Option.some(0)),
+  Trie.insert("sells", Option.none()),
+  Trie.insert("she", Option.some(2))
+)
+
+const trieMapV = Trie.empty<number>().pipe(Trie.insert("shells", 0), Trie.insert("she", 2))
+
+assert.equal(Equal.equals(Trie.compact(trie), trieMapV), true)
 ```
 
 **Signature**
 
 ```ts
-export declare const takeSome: {
-  <A, B>(pf: (a: A) => Option.Option<B>): (self: TSet<A>) => STM.STM<[B, ...Array<B>]>
-  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<[B, ...Array<B>]>
-}
-```
-
-TSet-takeSomeSTM.md
-# takeSomeSTM
-
-Takes all matching values, or retries until there is at least one.
-
-To import and use `takeSomeSTM` from the "TSet" module:
-
-```ts
-import * as TSet from "effect/TSet"
-// Can be accessed like this
-TSet.takeSomeSTM
-```
-
-**Signature**
-
-```ts
-export declare const takeSomeSTM: {
-  <A, B, E, R>(pf: (a: A) => STM.STM<B, Option.Option<E>, R>): (self: TSet<A>) => STM.STM<[B, ...Array<B>], E, R>
-  <A, B, E, R>(self: TSet<A>, pf: (a: A) => STM.STM<B, Option.Option<E>, R>): STM.STM<[B, ...Array<B>], E, R>
-}
-```
-
-TSet-toArray.md
-# toArray
-
-Collects all elements into a `Array`.
-
-To import and use `toArray` from the "TSet" module:
-
-```ts
-import * as TSet from "effect/TSet"
-// Can be accessed like this
-TSet.toArray
-```
-
-**Signature**
-
-```ts
-export declare const toArray: <A>(self: TSet<A>) => STM.STM<Array<A>>
-```
-
-TSet-toChunk.md
-# toChunk
-
-Collects all elements into a `Chunk`.
-
-To import and use `toChunk` from the "TSet" module:
-
-```ts
-import * as TSet from "effect/TSet"
-// Can be accessed like this
-TSet.toChunk
-```
-
-**Signature**
-
-```ts
-export declare const toChunk: <A>(self: TSet<A>) => STM.STM<Chunk.Chunk<A>>
-```
-
-TSet-toHashSet.md
-# toHashSet
-
-Collects all elements into a `HashSet`.
-
-To import and use `toHashSet` from the "TSet" module:
-
-```ts
-import * as TSet from "effect/TSet"
-// Can be accessed like this
-TSet.toHashSet
-```
-
-**Signature**
-
-```ts
-export declare const toHashSet: <A>(self: TSet<A>) => STM.STM<HashSet.HashSet<A>>
+export declare const compact: <A>(self: Trie<Option<A>>) => Trie<A>
 ```
 
 Trie-empty.md
@@ -104858,6 +104861,107 @@ To import and use `TSet` from the "TSet" module:
 import * as TSet from "effect/TSet"
 // Can be accessed like this
 TSet.TSet
+```
+
+TSet-takeSome.md
+# takeSome
+
+Takes all matching values, or retries until there is at least one.
+
+To import and use `takeSome` from the "TSet" module:
+
+```ts
+import * as TSet from "effect/TSet"
+// Can be accessed like this
+TSet.takeSome
+```
+
+**Signature**
+
+```ts
+export declare const takeSome: {
+  <A, B>(pf: (a: A) => Option.Option<B>): (self: TSet<A>) => STM.STM<[B, ...Array<B>]>
+  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<[B, ...Array<B>]>
+}
+```
+
+TSet-takeSomeSTM.md
+# takeSomeSTM
+
+Takes all matching values, or retries until there is at least one.
+
+To import and use `takeSomeSTM` from the "TSet" module:
+
+```ts
+import * as TSet from "effect/TSet"
+// Can be accessed like this
+TSet.takeSomeSTM
+```
+
+**Signature**
+
+```ts
+export declare const takeSomeSTM: {
+  <A, B, E, R>(pf: (a: A) => STM.STM<B, Option.Option<E>, R>): (self: TSet<A>) => STM.STM<[B, ...Array<B>], E, R>
+  <A, B, E, R>(self: TSet<A>, pf: (a: A) => STM.STM<B, Option.Option<E>, R>): STM.STM<[B, ...Array<B>], E, R>
+}
+```
+
+TSet-toArray.md
+# toArray
+
+Collects all elements into a `Array`.
+
+To import and use `toArray` from the "TSet" module:
+
+```ts
+import * as TSet from "effect/TSet"
+// Can be accessed like this
+TSet.toArray
+```
+
+**Signature**
+
+```ts
+export declare const toArray: <A>(self: TSet<A>) => STM.STM<Array<A>>
+```
+
+TSet-toChunk.md
+# toChunk
+
+Collects all elements into a `Chunk`.
+
+To import and use `toChunk` from the "TSet" module:
+
+```ts
+import * as TSet from "effect/TSet"
+// Can be accessed like this
+TSet.toChunk
+```
+
+**Signature**
+
+```ts
+export declare const toChunk: <A>(self: TSet<A>) => STM.STM<Chunk.Chunk<A>>
+```
+
+TSet-toHashSet.md
+# toHashSet
+
+Collects all elements into a `HashSet`.
+
+To import and use `toHashSet` from the "TSet" module:
+
+```ts
+import * as TSet from "effect/TSet"
+// Can be accessed like this
+TSet.toHashSet
+```
+
+**Signature**
+
+```ts
+export declare const toHashSet: <A>(self: TSet<A>) => STM.STM<HashSet.HashSet<A>>
 ```
 
 TSet-toReadonlySet.md
