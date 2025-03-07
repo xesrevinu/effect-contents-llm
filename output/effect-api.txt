@@ -16630,8 +16630,12 @@ export declare const constantCase: (self: ConfigProvider) => ConfigProvider
 ConfigProvider-fromEnv.md
 # fromEnv
 
-A config provider that loads configuration from context variables,
-using the default System service.
+A config provider that loads configuration from context variables
+
+**Options**:
+
+- `pathDelim`: The delimiter for the path segments (default: `"_"`).
+- `seqDelim`: The delimiter for the sequence of values (default: `","`).
 
 To import and use `fromEnv` from the "ConfigProvider" module:
 
@@ -16644,7 +16648,7 @@ ConfigProvider.fromEnv
 **Signature**
 
 ```ts
-export declare const fromEnv: (config?: ConfigProvider.FromEnvConfig) => ConfigProvider
+export declare const fromEnv: (options?: Partial<ConfigProvider.FromEnvConfig>) => ConfigProvider
 ```
 
 ConfigProvider-fromFlat.md
@@ -26523,13 +26527,16 @@ const program = Effect.all(effects, { mode: "validate" })
 ```ts
 export declare const all: <
   const Arg extends Iterable<Effect<any, any, any>> | Record<string, Effect<any, any, any>>,
-  O extends {
-    readonly concurrency?: Concurrency | undefined
-    readonly batching?: boolean | "inherit" | undefined
-    readonly discard?: boolean | undefined
-    readonly mode?: "default" | "validate" | "either" | undefined
-    readonly concurrentFinalizers?: boolean | undefined
-  }
+  O extends NoExcessProperties<
+    {
+      readonly concurrency?: Concurrency | undefined
+      readonly batching?: boolean | "inherit" | undefined
+      readonly discard?: boolean | undefined
+      readonly mode?: "default" | "validate" | "either" | undefined
+      readonly concurrentFinalizers?: boolean | undefined
+    },
+    O
+  >
 >(
   arg: Arg,
   options?: O
@@ -26639,13 +26646,16 @@ const program = pipe(
 
 ```ts
 export declare const allWith: <
-  O extends {
-    readonly concurrency?: Concurrency | undefined
-    readonly batching?: boolean | "inherit" | undefined
-    readonly discard?: boolean | undefined
-    readonly mode?: "default" | "validate" | "either" | undefined
-    readonly concurrentFinalizers?: boolean | undefined
-  }
+  O extends NoExcessProperties<
+    {
+      readonly concurrency?: Concurrency | undefined
+      readonly batching?: boolean | "inherit" | undefined
+      readonly discard?: boolean | undefined
+      readonly mode?: "default" | "validate" | "either" | undefined
+      readonly concurrentFinalizers?: boolean | undefined
+    },
+    O
+  >
 >(
   options?: O
 ) => <const Arg extends Iterable<Effect<any, any, any>> | Record<string, Effect<any, any, any>>>(
@@ -27399,12 +27409,15 @@ export declare const bindAll: {
   <
     A extends object,
     X extends Record<string, Effect<any, any, any>>,
-    O extends {
-      readonly concurrency?: Concurrency | undefined
-      readonly batching?: boolean | "inherit" | undefined
-      readonly mode?: "default" | "validate" | "either" | undefined
-      readonly concurrentFinalizers?: boolean | undefined
-    }
+    O extends NoExcessProperties<
+      {
+        readonly concurrency?: Concurrency | undefined
+        readonly batching?: boolean | "inherit" | undefined
+        readonly mode?: "default" | "validate" | "either" | undefined
+        readonly concurrentFinalizers?: boolean | undefined
+      },
+      O
+    >
   >(
     f: (a: NoInfer<A>) => [Extract<keyof X, keyof A>] extends [never] ? X : `Duplicate keys`,
     options?: undefined | O
@@ -27420,12 +27433,15 @@ export declare const bindAll: {
   <
     A extends object,
     X extends Record<string, Effect<any, any, any>>,
-    O extends {
-      readonly concurrency?: Concurrency | undefined
-      readonly batching?: boolean | "inherit" | undefined
-      readonly mode?: "default" | "validate" | "either" | undefined
-      readonly concurrentFinalizers?: boolean | undefined
-    },
+    O extends NoExcessProperties<
+      {
+        readonly concurrency?: Concurrency | undefined
+        readonly batching?: boolean | "inherit" | undefined
+        readonly mode?: "default" | "validate" | "either" | undefined
+        readonly concurrentFinalizers?: boolean | undefined
+      },
+      O
+    >,
     E1,
     R1
   >(
@@ -35969,9 +35985,14 @@ const program = Effect.repeat(action, policy)
 
 ```ts
 export declare const repeat: {
-  <O extends Repeat.Options<A>, A>(options: O): <E, R>(self: Effect<A, E, R>) => Repeat.Return<R, E, A, O>
+  <O extends NoExcessProperties<Repeat.Options<A>, O>, A>(
+    options: O
+  ): <E, R>(self: Effect<A, E, R>) => Repeat.Return<R, E, A, O>
   <B, A, R1>(schedule: Schedule.Schedule<B, A, R1>): <E, R>(self: Effect<A, E, R>) => Effect<B, E, R1 | R>
-  <A, E, R, O extends Repeat.Options<A>>(self: Effect<A, E, R>, options: O): Repeat.Return<R, E, A, O>
+  <A, E, R, O extends NoExcessProperties<Repeat.Options<A>, O>>(
+    self: Effect<A, E, R>,
+    options: O
+  ): Repeat.Return<R, E, A, O>
   <A, E, R, B, R1>(self: Effect<A, E, R>, schedule: Schedule.Schedule<B, A, R1>): Effect<B, E, R | R1>
 }
 ```
@@ -36379,9 +36400,14 @@ const program = Effect.retry(action, {
 
 ```ts
 export declare const retry: {
-  <E, O extends Retry.Options<E>>(options: O): <A, R>(self: Effect<A, E, R>) => Retry.Return<R, E, A, O>
+  <E, O extends NoExcessProperties<Retry.Options<E>, O>>(
+    options: O
+  ): <A, R>(self: Effect<A, E, R>) => Retry.Return<R, E, A, O>
   <B, E, R1>(policy: Schedule.Schedule<B, NoInfer<E>, R1>): <A, R>(self: Effect<A, E, R>) => Effect<A, E, R1 | R>
-  <A, E, R, O extends Retry.Options<E>>(self: Effect<A, E, R>, options: O): Retry.Return<R, E, A, O>
+  <A, E, R, O extends NoExcessProperties<Retry.Options<E>, O>>(
+    self: Effect<A, E, R>,
+    options: O
+  ): Retry.Return<R, E, A, O>
   <A, E, R, B, R1>(self: Effect<A, E, R>, policy: Schedule.Schedule<B, E, R1>): Effect<A, E, R1 | R>
 }
 ```
@@ -49115,7 +49141,12 @@ HttpApiBuilder.middlewareOpenApi
 
 ```ts
 export declare const middlewareOpenApi: (
-  options?: { readonly path?: HttpApiEndpoint.PathSegment | undefined } | undefined
+  options?:
+    | {
+        readonly path?: HttpApiEndpoint.PathSegment | undefined
+        readonly additionalPropertiesStrategy?: OpenApi.AdditionalPropertiesStrategy | undefined
+      }
+    | undefined
 ) => Layer.Layer<never, never, HttpApi.Api>
 ```
 
@@ -49597,11 +49628,16 @@ HttpClient.retry
 
 ```ts
 export declare const retry: {
-  <E, O extends Effect.Retry.Options<E>>(options: O): <R>(self: HttpClient.With<E, R>) => Retry.Return<R, E, O>
+  <E, O extends NoExcessProperties<Effect.Retry.Options<E>, O>>(
+    options: O
+  ): <R>(self: HttpClient.With<E, R>) => Retry.Return<R, E, O>
   <B, E, R1>(
     policy: Schedule.Schedule<B, NoInfer<E>, R1>
   ): <R>(self: HttpClient.With<E, R>) => HttpClient.With<E, R1 | R>
-  <E, R, O extends Effect.Retry.Options<E>>(self: HttpClient.With<E, R>, options: O): Retry.Return<R, E, O>
+  <E, R, O extends NoExcessProperties<Effect.Retry.Options<E>, O>>(
+    self: HttpClient.With<E, R>,
+    options: O
+  ): Retry.Return<R, E, O>
   <E, R, B, R1>(self: HttpClient.With<E, R>, policy: Schedule.Schedule<B, E, R1>): HttpClient.With<E, R1 | R>
 }
 ```
@@ -50895,7 +50931,7 @@ Returns a JSON Schema with additional options and definitions.
 
 This function is experimental and subject to change.
 
-**Details**
+**Options**
 
 - `definitions`: A record of definitions that are included in the schema.
 - `definitionPath`: The path to the definitions within the schema (defaults
@@ -50908,6 +50944,9 @@ This function is experimental and subject to change.
   reference. Possible values are:
   - `"keep"`: Keep the top-level reference (default behavior).
   - `"skip"`: Skip the top-level reference.
+- `additionalPropertiesStrategy`: Controls the handling of additional properties. Possible values are:
+  - `"strict"`: Disallow additional properties (default behavior).
+  - `"allow"`: Allow additional properties.
 
 To import and use `fromAST` from the "JSONSchema" module:
 
@@ -50924,9 +50963,10 @@ export declare const fromAST: (
   ast: AST.AST,
   options: {
     readonly definitions: Record<string, JsonSchema7>
-    readonly definitionPath?: string
-    readonly target?: Target
-    readonly topLevelReferenceStrategy?: TopLevelReferenceStrategy
+    readonly definitionPath?: string | undefined
+    readonly target?: Target | undefined
+    readonly topLevelReferenceStrategy?: TopLevelReferenceStrategy | undefined
+    readonly additionalPropertiesStrategy?: AdditionalPropertiesStrategy | undefined
   }
 ) => JsonSchema7
 ```
@@ -57925,7 +57965,10 @@ Micro.all
 ```ts
 export declare const all: <
   const Arg extends Iterable<Micro<any, any, any>> | Record<string, Micro<any, any, any>>,
-  O extends { readonly concurrency?: Concurrency | undefined; readonly discard?: boolean | undefined }
+  O extends NoExcessProperties<
+    { readonly concurrency?: Concurrency | undefined; readonly discard?: boolean | undefined },
+    O
+  >
 >(
   arg: Arg,
   options?: O
@@ -62847,6 +62890,12 @@ integrates annotations like descriptions, summaries, external documentation,
 and overrides. Cached results are used for better performance when the same
 `HttpApi` instance is processed multiple times.
 
+**Options**
+
+- `additionalPropertiesStrategy`: Controls the handling of additional properties. Possible values are:
+  - `"strict"`: Disallow additional properties (default behavior).
+  - `"allow"`: Allow additional properties.
+
 To import and use `fromApi` from the "OpenApi" module:
 
 ```ts
@@ -62875,7 +62924,8 @@ const spec = OpenApi.fromApi(api)
 
 ```ts
 export declare const fromApi: <Id extends string, Groups extends HttpApiGroup.Any, E, R>(
-  api: HttpApi.HttpApi<Id, Groups, E, R>
+  api: HttpApi.HttpApi<Id, Groups, E, R>,
+  options?: { readonly additionalPropertiesStrategy?: AdditionalPropertiesStrategy | undefined } | undefined
 ) => OpenAPISpec
 ```
 
@@ -62884,11 +62934,16 @@ OpenApiJsonSchema-makeWithDefs.md
 
 Creates a schema with additional options and definitions.
 
+**Options**
+
 - `defs`: A record of definitions that are included in the schema.
 - `defsPath`: The path to the definitions within the schema (defaults to "#/$defs/").
 - `topLevelReferenceStrategy`: Controls the handling of the top-level reference. Possible values are:
   - `"keep"`: Keep the top-level reference (default behavior).
   - `"skip"`: Skip the top-level reference.
+- `additionalPropertiesStrategy`: Controls the handling of additional properties. Possible values are:
+  - `"strict"`: Disallow additional properties (default behavior).
+  - `"allow"`: Allow additional properties.
 
 To import and use `makeWithDefs` from the "OpenApiJsonSchema" module:
 
@@ -62905,8 +62960,9 @@ export declare const makeWithDefs: <A, I, R>(
   schema: Schema.Schema<A, I, R>,
   options: {
     readonly defs: Record<string, any>
-    readonly defsPath?: string
-    readonly topLevelReferenceStrategy?: "skip" | "keep"
+    readonly defsPath?: string | undefined
+    readonly topLevelReferenceStrategy?: TopLevelReferenceStrategy | undefined
+    readonly additionalPropertiesStrategy?: AdditionalPropertiesStrategy | undefined
   }
 ) => JsonSchema
 ```
