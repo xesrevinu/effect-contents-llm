@@ -17046,7 +17046,7 @@ age: PropertySignature<
 | `ToToken`    | Indicates field requirement: `"?:"` for optional, `":"` for required                                                |
 | `ToType`     | Type of the "To" field                                                                                              |
 | `FromKey`    | (Optional, default = `never`) Indicates the source field key, typically the same as "To" field key unless specified |
-| `FormToken`  | Indicates source field requirement: `"?:"` for optional, `":"` for required                                         |
+| `FromToken`  | Indicates source field requirement: `"?:"` for optional, `":"` for required                                         |
 | `FromType`   | Type of the "From" field                                                                                            |
 | `HasDefault` | Indicates if there is a constructor default value (Boolean)                                                         |
 
@@ -17064,7 +17064,7 @@ This means:
 | `ToToken`    | `":"` indicates that the `age` field is required                           |
 | `ToType`     | Type of the `age` field is `number`                                        |
 | `FromKey`    | `never` indicates that the decoding occurs from the same field named `age` |
-| `FormToken`  | `":"` indicates that the decoding occurs from a required `age` field       |
+| `FromToken`  | `":"` indicates that the decoding occurs from a required `age` field       |
 | `FromType`   | Type of the "From" field is `string`                                       |
 | `HasDefault` | `false`: indicates there is no default value                               |
 
@@ -18404,13 +18404,13 @@ Structs provide access to their fields through the `fields` property, which allo
 ```ts twoslash
 import { Schema } from "effect"
 
-const Orginal = Schema.Struct({
+const Original = Schema.Struct({
   a: Schema.String,
   b: Schema.String
 })
 
 const Extended = Schema.Struct({
-  ...Orginal.fields,
+  ...Original.fields,
   // Adding new fields
   c: Schema.String,
   d: Schema.String
@@ -30178,7 +30178,7 @@ The `Schema` type has three type parameters with the following meanings:
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Type**         | Represents the type of value that a schema can succeed with during decoding.                                                                                                                                                                                                                                       |
 | **Encoded**      | Represents the type of value that a schema can succeed with during encoding. By default, it's equal to `Type` if not explicitly provided.                                                                                                                                                                          |
-| **Requirements** | Similar to the [`Effect`](https://effect.website/docs/docs/getting-started/the-effect-type) type, it represents the contextual data required by the schema to execute both decoding and encoding. If this type parameter is `never` (default if not explicitly provided), it means the schema has no requirements. |
+| **Requirements** | Similar to the [`Effect`](https://effect.website/docs/getting-started/the-effect-type) type, it represents the contextual data required by the schema to execute both decoding and encoding. If this type parameter is `never` (default if not explicitly provided), it means the schema has no requirements. |
 
 **Examples**
 
