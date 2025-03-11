@@ -64,7 +64,7 @@ This will:
 
 - Total Files: 14
 - Total Size: 9.69 MB
-- Total Tokens: 2,655,428
+- Total Tokens: 2,655,095
 
 #### website-docs
 
@@ -124,7 +124,7 @@ This will:
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/effect-platform.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-platform.txt) | 151 kB | 34,430 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-platform.txt) |
+| [output/effect-platform.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-platform.txt) | 150 kB | 34,097 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-platform.txt) |
 
 #### effect-rpc
 
