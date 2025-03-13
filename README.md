@@ -64,13 +64,13 @@ This will:
 
 - Total Files: 14
 - Total Size: 9.42 MB
-- Total Tokens: 2,638,261
+- Total Tokens: 2,638,343
 
 #### website-docs
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/website-docs.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/website-docs.txt) | 1.52 MB | 355,371 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/website-docs.txt) |
+| [output/website-docs.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/website-docs.txt) | 1.53 MB | 355,451 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/website-docs.txt) |
 
 #### effect-api
 
@@ -130,7 +130,7 @@ This will:
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/effect-rpc.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-rpc.txt) | 10.9 kB | 2,539 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-rpc.txt) |
+| [output/effect-rpc.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-rpc.txt) | 10.9 kB | 2,541 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-rpc.txt) |
 
 #### effect-sql
 
