@@ -43169,9 +43169,7 @@ Time complexity: **`O(1)`** average
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 // with data-last, a.k.a. pipeable API
@@ -43183,11 +43181,10 @@ HashSet.empty().pipe(HashSet.add(0))
 // or with data-first API
 HashSet.add(HashSet.empty(), 0)
 ```
-```
 
 **See**
 
-- Other `HashSet` mutations are `remove` `toggle` `beginMutation` `endMutation` `mutate`
+- Other `HashSet` mutations are `module:HashSet.remove` `module:HashSet.toggle` `module:HashSet.beginMutation` `module:HashSet.endMutation` `module:HashSet.mutate`
 
 **Signature**
 
@@ -43195,7 +43192,7 @@ HashSet.add(HashSet.empty(), 0)
 declare const add: { <A>(value: A): (self: HashSet<A>) => HashSet<A>; <A>(self: HashSet<A>, value: A): HashSet<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1243)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1261)
 
 Since v2.0.0
 HashSet-beginMutation.md
@@ -43247,7 +43244,7 @@ console.log(HashSet.toValues(mutableSet).sort((a, b) => a - b)) // [0, 1, 2, 3, 
 
 **See**
 
-- Other `HashSet` mutations are `add` `remove` `toggle` `endMutation` `mutate`
+- Other `HashSet` mutations are `module:HashSet.add` `module:HashSet.remove` `module:HashSet.toggle` `module:HashSet.endMutation` `module:HashSet.mutate`
 
 **Signature**
 
@@ -43255,7 +43252,7 @@ console.log(HashSet.toValues(mutableSet).sort((a, b) => a - b)) // [0, 1, 2, 3, 
 declare const beginMutation: <A>(self: HashSet<A>) => HashSet<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1054)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1068)
 
 Since v2.0.0
 HashSet-difference.md
@@ -43277,9 +43274,7 @@ won't implement the Equal trait in the same way.
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 // with data-last, a.k.a. pipeable API
@@ -43291,11 +43286,10 @@ HashSet.make(1, 2, 3).pipe(HashSet.difference(HashSet.make(3, 4, 5)))
 // or with data-first API
 HashSet.difference(HashSet.make(1, 2, 3), HashSet.make(3, 4, 5))
 ```
-```
 
 **See**
 
-- Other `HashSet` operations are `intersection` `union`
+- Other `HashSet` operations are `module:HashSet.intersection` `module:HashSet.union`
 
 **Signature**
 
@@ -43303,7 +43297,7 @@ HashSet.difference(HashSet.make(1, 2, 3), HashSet.make(3, 4, 5))
 declare const difference: { <A>(that: Iterable<A>): (self: HashSet<A>) => HashSet<A>; <A>(self: HashSet<A>, that: Iterable<A>): HashSet<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1377)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1401)
 
 Since v2.0.0
 HashSet-empty.md
@@ -43335,7 +43329,7 @@ console.log(
 
 **See**
 
-- Other `HashSet` constructors are `make` `fromIterable`
+- Other `HashSet` constructors are `module:HashSet.make` `module:HashSet.fromIterable`
 
 **Signature**
 
@@ -43343,7 +43337,7 @@ console.log(
 declare const empty: <A = never>() => HashSet<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L374)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L375)
 
 Since v2.0.0
 HashSet-endMutation.md
@@ -43395,7 +43389,7 @@ assert.deepStrictEqual(HashSet.toValues(newSet).sort(), [1, 2, 3, 4])
 
 **See**
 
-- Other `HashSet` mutations are {@linkcode HashSet.add} {@linkcode HashSet.remove} {@linkcode HashSet.toggle} {@linkcode HashSet.beginMutation} {@linkcode HashSet.mutate}
+- Other `HashSet` mutations are `module:HashSet.add` `module:HashSet.remove` `module:HashSet.toggle` `module:HashSet.beginMutation` `module:HashSet.mutate`
 
 **Signature**
 
@@ -43403,7 +43397,7 @@ assert.deepStrictEqual(HashSet.toValues(newSet).sort(), [1, 2, 3, 4])
 declare const endMutation: <A>(self: HashSet<A>) => HashSet<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1102)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1116)
 
 Since v2.0.0
 HashSet-every.md
@@ -43420,9 +43414,7 @@ collection
 **Example**
 
 ```ts
-**syntax** with {@link Refinement}
-
-```ts
+// Syntax with Refinement
 import { HashSet, pipe, Predicate } from "effect"
 
 const numberOrString = HashSet.make(1, "1", "one", "uno")
@@ -43443,14 +43435,11 @@ HashSet.every(
   Predicate.isString
 ) // HashSet.HashSet<string>
 ```
-```
 
 **Example**
 
 ```ts
-**syntax** with {@link Predicate}
-
-```ts
+// Syntax with Predicate
 import { HashSet, pipe } from "effect"
 
 const set = HashSet.make(1, 2, 3)
@@ -43467,11 +43456,10 @@ set.pipe(HashSet.every((n) => n >= 0)) // true
 // or with `data-first` API
 HashSet.every(set, (n) => n >= 0) // true
 ```
-```
 
 **See**
 
-- Other `HashSet` elements are `has` `some` `isSubset`
+- Other `HashSet` elements are `module:HashSet.has` `module:HashSet.some` `module:HashSet.isSubset`
 
 **Signature**
 
@@ -43479,7 +43467,7 @@ HashSet.every(set, (n) => n >= 0) // true
 declare const every: { <A, B extends A>(refinement: Refinement<NoInfer<A>, B>): (self: HashSet<A>) => self is HashSet<B>; <A>(predicate: Predicate<A>): (self: HashSet<A>) => boolean; <A, B extends A>(self: HashSet<A>, refinement: Refinement<A, B>): self is HashSet<B>; <A>(self: HashSet<A>, predicate: Predicate<A>): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L757)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L770)
 
 Since v2.0.0
 HashSet-filter.md
@@ -43495,9 +43483,7 @@ The time complexity is of **`O(n)`**.
 **Example**
 
 ```ts
-**Syntax** with {@link Predicate}
-
-```ts
+// Syntax with  Predicate
 import { HashSet, type Predicate, pipe } from "effect"
 
 const filterPositiveNumbers: Predicate.Predicate<number> = (n) => n > 0
@@ -43514,14 +43500,11 @@ HashSet.make(-2, -1, 0, 1, 2).pipe(HashSet.filter(filterPositiveNumbers))
 // or with `data-first` API
 HashSet.filter(HashSet.make(-2, -1, 0, 1, 2), filterPositiveNumbers)
 ```
-```
 
 **Example**
 
 ```ts
-**Syntax** with {@link Refinement}
-
-```ts
+/// Syntax with Refinement
 import { HashSet, pipe } from "effect"
 
 const stringRefinement = (value: unknown): value is string =>
@@ -43543,7 +43526,6 @@ HashSet.filter(
   stringRefinement
 ) // HashSet.HashSet<string>
 ```
-```
 
 **Signature**
 
@@ -43551,7 +43533,7 @@ HashSet.filter(
 declare const filter: { <A, B extends A>(refinement: Refinement<NoInfer<A>, B>): (self: HashSet<A>) => HashSet<B>; <A>(predicate: Predicate<NoInfer<A>>): (self: HashSet<A>) => HashSet<A>; <A, B extends A>(self: HashSet<A>, refinement: Refinement<A, B>): HashSet<B>; <A>(self: HashSet<A>, predicate: Predicate<A>): HashSet<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L2035)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L2076)
 
 Since v2.0.0
 HashSet-flatMap.md
@@ -43567,9 +43549,7 @@ The time complexity is of **`O(n)`**.
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 // with `data-last`, a.k.a. `pipeable` API
@@ -43587,7 +43567,6 @@ HashSet.make(0, 1, 2) // HashSet.HashSet<number>
 // or with `data-first` API
 HashSet.flatMap(HashSet.make(0, 1, 2), (n) => Array.of(String(n)))
 ```
-```
 
 **Signature**
 
@@ -43595,7 +43574,7 @@ HashSet.flatMap(HashSet.make(0, 1, 2), (n) => Array.of(String(n)))
 declare const flatMap: { <A, B>(f: (a: A) => Iterable<B>): (self: HashSet<A>) => HashSet<B>; <A, B>(self: HashSet<A>, f: (a: A) => Iterable<B>): HashSet<B>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1817)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1854)
 
 Since v2.0.0
 HashSet-forEach.md
@@ -43611,9 +43590,7 @@ The time complexity is of **`O(n)`**.
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 // with `data-last`, a.k.a. `pipeable` API
@@ -43625,7 +43602,6 @@ HashSet.make(0, 1, 2).pipe(HashSet.forEach(console.log)) // logs: 0 1 2
 // or with `data-first` API
 HashSet.forEach(HashSet.make(0, 1, 2), console.log) // logs: 0 1 2
 ```
-```
 
 **Signature**
 
@@ -43633,7 +43609,7 @@ HashSet.forEach(HashSet.make(0, 1, 2), console.log) // logs: 0 1 2
 declare const forEach: { <A>(f: (value: A) => void): (self: HashSet<A>) => void; <A>(self: HashSet<A>, f: (value: A) => void): void; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1877)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1915)
 
 Since v2.0.0
 HashSet-fromIterable.md
@@ -43649,9 +43625,7 @@ Time complexity: **`O(n)`** where n is the number of elements in the iterable
 **Example**
 
 ```ts
-Creating a HashSet from an {@link Array}
-
-```ts
+// Creating a HashSet from an Array
 import { HashSet, pipe } from "effect"
 
 console.log(
@@ -43662,14 +43636,11 @@ console.log(
   )
 ) // Output: [1, 2, 3, 4, 5]
 ```
-```
 
 **Example**
 
 ```ts
-Creating a HashSet from a {@link Set}
-
-```ts
+// Creating a HashSet from a Set
 import { HashSet, pipe } from "effect"
 
 console.log(
@@ -43680,14 +43651,11 @@ console.log(
   )
 ) // Output: ["apple", "banana", "orange"]
 ```
-```
 
 **Example**
 
 ```ts
-Creating a HashSet from a {@link Generator}
-
-```ts
+// Creating a HashSet from a Generator
 import { HashSet } from "effect"
 
 // Generator functions return iterables
@@ -43705,14 +43673,11 @@ const fibonacciSet = HashSet.fromIterable(fibonacci(10))
 console.log(HashSet.toValues(fibonacciSet))
 // Outputs: [0, 1, 2, 3, 5, 8, 13, 21, 34] but in unsorted order
 ```
-```
 
 **Example**
 
 ```ts
-Creating a HashSet from another {@link HashSet}
-
-```ts
+//  Creating a HashSet from another HashSet
 import { HashSet, pipe } from "effect"
 
 console.log(
@@ -43724,15 +43689,11 @@ console.log(
   )
 ) // Output: [1, 2, 3, 4]
 ```
-```
 
 **Example**
 
 ```ts
-Creating a HashSet from other Effect's data structures like
-{@link Chunk}
-
-```ts
+// Creating a HashSet from other Effect's data structures like Chunk
 import { Chunk, HashSet, pipe } from "effect"
 
 console.log(
@@ -43743,11 +43704,10 @@ console.log(
   )
 ) // Outputs: [1, 2, 3, 4]
 ```
-```
 
 **See**
 
-- Other `HashSet` constructors are `empty` `make`
+- Other `HashSet` constructors are `module:HashSet.empty` `module:HashSet.make`
 
 **Signature**
 
@@ -43755,7 +43715,7 @@ console.log(
 declare const fromIterable: <A>(elements: Iterable<A>) => HashSet<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L465)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L470)
 
 Since v2.0.0
 HashSet-has.md
@@ -43771,9 +43731,7 @@ Time complexity: **`O(1)`** average
 **Example**
 
 ```ts
-**syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 // with `data-last`, a.k.a. `pipeable` API
@@ -43785,11 +43743,10 @@ HashSet.make(0, 1, 2).pipe(HashSet.has(3)) // false
 // or with `data-first` API
 HashSet.has(HashSet.make(0, 1, 2), 3) // false
 ```
-```
 
 **See**
 
-- Other `HashSet` elements are `some` `every` `isSubset`
+- Other `HashSet` elements are `module:HashSet.some` `module:HashSet.every` `module:HashSet.isSubset`
 
 **Signature**
 
@@ -43797,7 +43754,7 @@ HashSet.has(HashSet.make(0, 1, 2), 3) // false
 declare const has: { <A>(value: A): (self: HashSet<A>) => boolean; <A>(self: HashSet<A>, value: A): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L582)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L588)
 
 Since v2.0.0
 HashSet-intersection.md
@@ -43818,9 +43775,7 @@ must be the same.
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 // with data-last, a.k.a. pipeable API
@@ -43832,11 +43787,10 @@ HashSet.make(1, 2, 3).pipe(HashSet.intersection(HashSet.make(2, 3, 4)))
 // or with data-first API
 HashSet.intersection(HashSet.make(1, 2, 3), HashSet.make(2, 3, 4))
 ```
-```
 
 **See**
 
-- Other `HashSet` operations are `difference` `union`
+- Other `HashSet` operations are `module:HashSet.difference` `module:HashSet.union`
 
 **Signature**
 
@@ -43844,7 +43798,7 @@ HashSet.intersection(HashSet.make(1, 2, 3), HashSet.make(2, 3, 4))
 declare const intersection: { <A>(that: Iterable<A>): (self: HashSet<A>) => HashSet<A>; <A>(self: HashSet<A>, that: Iterable<A>): HashSet<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1470)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1497)
 
 Since v2.0.0
 HashSet-isSubset.md
@@ -43863,9 +43817,7 @@ Time complexity analysis is of **`O(n)`**
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 const set1 = HashSet.make(0, 1)
@@ -43884,11 +43836,10 @@ set1.pipe(HashSet.isSubset(set3)) // true
 HashSet.isSubset(set1, set2) // false
 HashSet.isSubset(set1, set3) // true)
 ```
-```
 
 **See**
 
-- Other `HashSet` elements are `has` `some` `every`
+- Other `HashSet` elements are `module:HashSet.has` `module:HashSet.some` `module:HashSet.every`
 
 **Signature**
 
@@ -43896,7 +43847,7 @@ HashSet.isSubset(set1, set3) // true)
 declare const isSubset: { <A>(that: HashSet<A>): (self: HashSet<A>) => boolean; <A>(self: HashSet<A>, that: HashSet<A>): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L886)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L900)
 
 Since v2.0.0
 HashSet-make.md
@@ -43988,7 +43939,7 @@ assert.strictEqual(
 
 **See**
 
-- Other `HashSet` constructors are {@linkcode fromIterable} {@linkcode empty}
+- Other `HashSet` constructors are `module:HashSet.fromIterable` `module:HashSet.empty`
 
 **Signature**
 
@@ -43996,7 +43947,7 @@ assert.strictEqual(
 declare const make: <As extends ReadonlyArray<any>>(...elements: As) => HashSet<As[number]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L554)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L559)
 
 Since v2.0.0
 HashSet-map.md
@@ -44012,9 +43963,7 @@ The time complexity is of **`O(n)`**.
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 // with `data-last`, a.k.a. `pipeable` API
@@ -44029,7 +43978,6 @@ HashSet.make(0, 1, 2).pipe(HashSet.map(String))
 // or with `data-first` API
 HashSet.map(HashSet.make(0, 1, 2), String)
 ```
-```
 
 **Signature**
 
@@ -44037,7 +43985,7 @@ HashSet.map(HashSet.make(0, 1, 2), String)
 declare const map: { <A, B>(f: (a: A) => B): (self: HashSet<A>) => HashSet<B>; <A, B>(self: HashSet<A>, f: (a: A) => B): HashSet<B>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1750)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1786)
 
 Since v2.0.0
 HashSet-mutate.md
@@ -44049,15 +43997,13 @@ Module: `HashSet`<br />
 Mutates the `HashSet` within the context of the provided function.
 
 You can consider it a functional abstraction on top of the lower-level
-mutation primitives of {@linkcode HashSet.beginMutation} `->` `mutable
-context` `->` {@linkcode HashSet.endMutation}.
+mutation primitives of `module:HashSet.beginMutation` `->` `mutable
+context` `->` `HashSet.endMutation`.
 
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 // with data-last, a.k.a. pipeable API
@@ -44083,11 +44029,10 @@ HashSet.mutate(HashSet.make(1, 2, 3), (set) => {
   HashSet.remove(set, 1)
 })
 ```
-```
 
 **See**
 
-- Other `HashSet` mutations are {@linkcode HashSet.add} {@linkcode HashSet.remove} {@linkcode HashSet.toggle} {@linkcode HashSet.beginMutation} {@linkcode HashSet.endMutation}
+- Other `HashSet` mutations are `module:HashSet.add` `module:HashSet.remove` `module:HashSet.toggle` `module:HashSet.beginMutation` `module:HashSet.endMutation`
 
 **Signature**
 
@@ -44095,7 +44040,7 @@ HashSet.mutate(HashSet.make(1, 2, 3), (set) => {
 declare const mutate: { <A>(f: (set: HashSet<A>) => void): (self: HashSet<A>) => HashSet<A>; <A>(self: HashSet<A>, f: (set: HashSet<A>) => void): HashSet<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1144)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1159)
 
 Since v2.0.0
 HashSet-partition.md
@@ -44115,9 +44060,7 @@ Time complexity is of **`O(n)`**.
 **Example**
 
 ```ts
-**Syntax** with {@link Predicate}
-
-```ts
+// Syntax with Predicate
 import { HashSet, pipe, Predicate } from "effect"
 
 // with `data-last`, a.k.a. `pipeable` API
@@ -44134,14 +44077,11 @@ HashSet.make(0, 1, 2, 3, 4, 5).pipe(
 // or with `data-first` API
 HashSet.partition(HashSet.make(0, 1, 2, 3, 4, 5), (n) => n % 2 === 0)
 ```
-```
 
 **Example**
 
 ```ts
-**Syntax** with {@link Refinement}
-
-```ts
+// Syntax with Refinement
 import { HashSet, pipe, Predicate } from "effect"
 
 const stringRefinement: Predicate.Refinement<string | number, string> = (
@@ -44165,7 +44105,6 @@ HashSet.partition(
   stringRefinement
 )
 ```
-```
 
 **Signature**
 
@@ -44173,7 +44112,7 @@ HashSet.partition(
 declare const partition: { <A, B extends A>(refinement: Refinement<NoInfer<A>, B>): (self: HashSet<A>) => [excluded: HashSet<Exclude<A, B>>, satisfying: HashSet<B>]; <A>(predicate: Predicate<NoInfer<A>>): (self: HashSet<A>) => [excluded: HashSet<A>, satisfying: HashSet<A>]; <A, B extends A>(self: HashSet<A>, refinement: Refinement<A, B>): [excluded: HashSet<Exclude<A, B>>, satisfying: HashSet<B>]; <A>(self: HashSet<A>, predicate: Predicate<A>): [excluded: HashSet<A>, satisfying: HashSet<A>]; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L2191)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L2234)
 
 Since v2.0.0
 HashSet-reduce.md
@@ -44189,9 +44128,7 @@ The time complexity is of **`O(n)`**.
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 const sum = (a: number, b: number): number => a + b
@@ -44205,7 +44142,6 @@ HashSet.make(0, 1, 2).pipe(HashSet.reduce(0, sum))
 // or with `data-first` API
 HashSet.reduce(HashSet.make(0, 1, 2), 0, sum)
 ```
-```
 
 **Signature**
 
@@ -44213,7 +44149,7 @@ HashSet.reduce(HashSet.make(0, 1, 2), 0, sum)
 declare const reduce: { <A, Z>(zero: Z, f: (accumulator: Z, value: A) => Z): (self: HashSet<A>) => Z; <A, Z>(self: HashSet<A>, zero: Z, f: (accumulator: Z, value: A) => Z): Z; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1943)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1982)
 
 Since v2.0.0
 HashSet-remove.md
@@ -44229,9 +44165,7 @@ Time complexity: **`O(1)`** average
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 // with `data-last`, a.k.a. `pipeable` API
@@ -44243,11 +44177,10 @@ HashSet.make(0, 1, 2).pipe(HashSet.remove(0))
 // or with `data-first` API
 HashSet.remove(HashSet.make(0, 1, 2), 0)
 ```
-```
 
 **See**
 
-- Other `HashSet` mutations are `add` `toggle` `beginMutation` `endMutation` `mutate`
+- Other `HashSet` mutations are `module:HashSet.add` `module:HashSet.toggle` `module:HashSet.beginMutation` `module:HashSet.endMutation` `module:HashSet.mutate`
 
 **Signature**
 
@@ -44255,7 +44188,7 @@ HashSet.remove(HashSet.make(0, 1, 2), 0)
 declare const remove: { <A>(value: A): (self: HashSet<A>) => HashSet<A>; <A>(self: HashSet<A>, value: A): HashSet<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1309)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1330)
 
 Since v2.0.0
 HashSet-size.md
@@ -44284,7 +44217,7 @@ assert.deepStrictEqual(
 
 **See**
 
-- Other `HashSet` getters are `values` `toValues`
+- Other `HashSet` getters are `module:HashSet.values` `module:HashSet.toValues`
 
 **Signature**
 
@@ -44292,7 +44225,7 @@ assert.deepStrictEqual(
 declare const size: <A>(self: HashSet<A>) => number
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1006)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1020)
 
 Since v2.0.0
 HashSet-some.md
@@ -44308,9 +44241,7 @@ Time complexity: **`O(n)`** where n is the number of elements in the set
 **Example**
 
 ```ts
-**syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 const set: HashSet.HashSet<number> = HashSet.make(0, 1, 2)
@@ -44327,11 +44258,10 @@ set.pipe(HashSet.some((n) => n > 0)) // true
 // or with `data-first` API
 HashSet.some(set, (n) => n > 0) // true
 ```
-```
 
 **See**
 
-- Other `HashSet` elements are `has` `every` `isSubset`
+- Other `HashSet` elements are `module:HashSet.has` `module:HashSet.every` `module:HashSet.isSubset`
 
 **Signature**
 
@@ -44339,7 +44269,7 @@ HashSet.some(set, (n) => n > 0) // true
 declare const some: { <A>(f: Predicate<A>): (self: HashSet<A>) => boolean; <A>(self: HashSet<A>, f: Predicate<A>): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L648)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L657)
 
 Since v2.0.0
 HashSet-toggle.md
@@ -44357,9 +44287,7 @@ Time complexity: **`O(1)`** average
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 // with `data-last`, a.k.a. `pipeable` API
@@ -44371,11 +44299,10 @@ HashSet.make(0, 1, 2).pipe(HashSet.toggle(0))
 // or with `data-first` API
 HashSet.toggle(HashSet.make(0, 1, 2), 0)
 ```
-```
 
 **See**
 
-- Other `HashSet` mutations are `add` `remove` `beginMutation` `endMutation` `mutate`
+- Other `HashSet` mutations are `module:HashSet.add` `module:HashSet.remove` `module:HashSet.beginMutation` `module:HashSet.endMutation` `module:HashSet.mutate`
 
 **Signature**
 
@@ -44383,7 +44310,7 @@ HashSet.toggle(HashSet.make(0, 1, 2), 0)
 declare const toggle: { <A>(value: A): (self: HashSet<A>) => HashSet<A>; <A>(self: HashSet<A>, value: A): HashSet<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1666)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1699)
 
 Since v2.0.0
 HashSet-toValues.md
@@ -44413,7 +44340,7 @@ deepStrictEqual(
 
 **See**
 
-- Other `HashSet` getters are `values` `size`
+- Other `HashSet` getters are `module:HashSet.values` `module:HashSet.size`
 
 **Signature**
 
@@ -44421,7 +44348,7 @@ deepStrictEqual(
 declare const toValues: <A>(self: HashSet<A>) => Array<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L980)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L994)
 
 Since v3.13.0
 HashSet-union.md
@@ -44441,9 +44368,7 @@ must be the same.
 **Example**
 
 ```ts
-**Syntax**
-
-```ts
+// Syntax
 import { HashSet, pipe } from "effect"
 
 // with data-last, a.k.a. pipeable API
@@ -44455,11 +44380,10 @@ HashSet.make(1, 2, 3).pipe(HashSet.union(HashSet.make(3, 4, 5)))
 // or with data-first API
 HashSet.union(HashSet.make(1, 2, 3), HashSet.make(3, 4, 5))
 ```
-```
 
 **See**
 
-- Other `HashSet` operations are `difference` `intersection`
+- Other `HashSet` operations are `module:HashSet.difference` `module:HashSet.intersection`
 
 **Signature**
 
@@ -44467,7 +44391,7 @@ HashSet.union(HashSet.make(1, 2, 3), HashSet.make(3, 4, 5))
 declare const union: { <A>(that: Iterable<A>): (self: HashSet<A>) => HashSet<A>; <A>(self: HashSet<A>, that: Iterable<A>): HashSet<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1562)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L1592)
 
 Since v2.0.0
 HashSet-values.md
@@ -44497,7 +44421,7 @@ for (const number of numberIterable) {
 
 **See**
 
-- Other `HashSet` getters are `toValues` `size`
+- Other `HashSet` getters are `module:HashSet.toValues` `module:HashSet.size`
 
 **Signature**
 
@@ -44505,7 +44429,7 @@ for (const number of numberIterable) {
 declare const values: <A>(self: HashSet<A>) => IterableIterator<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L953)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashSet.ts#L967)
 
 Since v2.0.0
 HelpDoc-HelpDoc.md

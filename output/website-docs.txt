@@ -5046,805 +5046,6 @@ Console output: Secret(<redacted>)
 Actual value: my-api-key
 ```
 
-control-flow.mdx
----
-title: Control Flow Operators
-description: Learn to control execution flow in Effect programs using advanced constructs for conditional branching, iteration, and combining effects seamlessly.
-sidebar:
-  order: 10
----
-
-Even though JavaScript provides built-in control flow structures, Effect offers additional control flow functions that are useful in Effect applications. In this section, we will introduce different ways to control the flow of execution.
-
-## if Expression
-
-When working with Effect values, we can use standard JavaScript if-then-else statements:
-
-**Example** (Returning None for Invalid Weight)
-
-Here we are using the [Option](/docs/data-types/option/) data type to represent the absence of a valid value.
-
-```ts twoslash
-import { Effect, Option } from "effect"
-
-// Function to validate weight and return an Option
-const validateWeightOption = (
-  weight: number
-): Effect.Effect<Option.Option<number>> => {
-  if (weight >= 0) {
-    // Return Some if the weight is valid
-    return Effect.succeed(Option.some(weight))
-  } else {
-    // Return None if the weight is invalid
-    return Effect.succeed(Option.none())
-  }
-}
-```
-
-**Example** (Returning Error for Invalid Weight)
-
-You can also handle invalid inputs by using the error channel, which allows you to return an error when the input is invalid:
-
-```ts twoslash
-import { Effect } from "effect"
-
-// Function to validate weight or fail with an error
-const validateWeightOrFail = (
-  weight: number
-): Effect.Effect<number, string> => {
-  if (weight >= 0) {
-    // Return the weight if valid
-    return Effect.succeed(weight)
-  } else {
-    // Fail with an error if invalid
-    return Effect.fail(`negative input: ${weight}`)
-  }
-}
-```
-
-## Conditional Operators
-
-### if
-
-Executes one of two effects based on a condition evaluated by an effectful predicate.
-
-Use `Effect.if` to run one of two effects depending on whether the predicate effect
-evaluates to `true` or `false`. If the predicate is `true`, the `onTrue` effect
-is executed. If it is `false`, the `onFalse` effect is executed instead.
-
-**Example** (Simulating a Coin Flip)
-
-In this example, we simulate a virtual coin flip using `Random.nextBoolean` to generate a random boolean value. If the value is `true`, the `onTrue` effect logs "Head". If the value is `false`, the `onFalse` effect logs "Tail".
-
-```ts twoslash
-import { Effect, Random, Console } from "effect"
-
-const flipTheCoin = Effect.if(Random.nextBoolean, {
-  onTrue: () => Console.log("Head"), // Runs if the predicate is true
-  onFalse: () => Console.log("Tail") // Runs if the predicate is false
-})
-
-Effect.runFork(flipTheCoin)
-```
-
-### when
-
-Conditionally executes an effect based on a boolean condition.
-
-`Effect.when` allows you to conditionally execute an effect, similar to using
-an `if (condition)` expression, but with the added benefit of handling
-effects. If the condition is `true`, the effect is executed; otherwise, it
-does nothing.
-
-The result of the effect is wrapped in an `Option<A>` to indicate whether the
-effect was executed. If the condition is `true`, the result of the effect is
-wrapped in a `Some`. If the condition is `false`, the result is `None`,
-representing that the effect was skipped.
-
-**Example** (Conditional Effect Execution)
-
-```ts twoslash
-import { Effect, Option } from "effect"
-
-const validateWeightOption = (
-  weight: number
-): Effect.Effect<Option.Option<number>> =>
-  // Conditionally execute the effect if the weight is non-negative
-  Effect.succeed(weight).pipe(Effect.when(() => weight >= 0))
-
-// Run with a valid weight
-Effect.runPromise(validateWeightOption(100)).then(console.log)
-/*
-Output:
-{
-  _id: "Option",
-  _tag: "Some",
-  value: 100
-}
-*/
-
-// Run with an invalid weight
-Effect.runPromise(validateWeightOption(-5)).then(console.log)
-/*
-Output:
-{
-  _id: "Option",
-  _tag: "None"
-}
-*/
-```
-
-In this example, the [Option](/docs/data-types/option/) data type is used to represent the presence or absence of a valid value. If the condition evaluates to `true` (in this case, if the weight is non-negative), the effect is executed and wrapped in a `Some`. Otherwise, the result is `None`.
-
-### whenEffect
-
-Executes an effect conditionally, based on the result of another effect.
-
-Use `Effect.whenEffect` when the condition to determine whether to execute the effect
-depends on the outcome of another effect that produces a boolean value.
-If the condition effect evaluates to `true`, the specified effect is executed.
-If it evaluates to `false`, no effect is executed.
-
-The result of the effect is wrapped in an `Option<A>` to indicate whether the
-effect was executed. If the condition is `true`, the result of the effect is
-wrapped in a `Some`. If the condition is `false`, the result is `None`,
-representing that the effect was skipped.
-
-**Example** (Using an Effect as a Condition)
-
-The following function creates a random integer, but only if a randomly generated boolean is `true`.
-
-```ts twoslash
-import { Effect, Random } from "effect"
-
-const randomIntOption = Random.nextInt.pipe(
-  Effect.whenEffect(Random.nextBoolean)
-)
-
-console.log(Effect.runSync(randomIntOption))
-/*
-Example Output:
-{ _id: 'Option', _tag: 'Some', value: 8609104974198840 }
-*/
-```
-
-### unless / unlessEffect
-
-The `Effect.unless` and `Effect.unlessEffect` functions are similar to the `when*` functions, but they are equivalent to the `if (!condition) expression` construct.
-
-## Zipping
-
-### zip
-
-Combines two effects into a single effect, producing a tuple with the results of both effects.
-
-The `Effect.zip` function executes the first effect (left) and then the second effect (right).
-Once both effects succeed, their results are combined into a tuple.
-
-**Example** (Combining Two Effects Sequentially)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const task1 = Effect.succeed(1).pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Effect.log("task1 done"))
-)
-
-const task2 = Effect.succeed("hello").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Effect.log("task2 done"))
-)
-
-// Combine the two effects together
-//
-//      ┌─── Effect<[number, string], never, never>
-//      ▼
-const program = Effect.zip(task1, task2)
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-timestamp=... level=INFO fiber=#0 message="task1 done"
-timestamp=... level=INFO fiber=#0 message="task2 done"
-[ 1, 'hello' ]
-*/
-```
-
-By default, the effects are run sequentially. To run them concurrently, use the `{ concurrent: true }` option.
-
-**Example** (Combining Two Effects Concurrently)
-
-```ts collapse={3-11} "{ concurrent: true }" "task2 done"
-import { Effect } from "effect"
-
-const task1 = Effect.succeed(1).pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Effect.log("task1 done"))
-)
-
-const task2 = Effect.succeed("hello").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Effect.log("task2 done"))
-)
-
-// Run both effects concurrently using the concurrent option
-const program = Effect.zip(task1, task2, { concurrent: true })
-
-Effect.runPromise(program).then(console.log)
-/*
-Output:
-timestamp=... level=INFO fiber=#3 message="task2 done"
-timestamp=... level=INFO fiber=#2 message="task1 done"
-[ 1, 'hello' ]
-*/
-```
-
-In this concurrent version, both effects run in parallel. `task2` completes first, but both tasks can be logged and processed as soon as they're done.
-
-### zipWith
-
-Combines two effects sequentially and applies a function to their results to produce a single value.
-
-The `Effect.zipWith` function is similar to [Effect.zip](#zip), but instead of returning a tuple of results,
-it applies a provided function to the results of the two effects, combining them into a single value.
-
-By default, the effects are run sequentially. To run them concurrently, use the `{ concurrent: true }` option.
-
-**Example** (Combining Effects with a Custom Function)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const task1 = Effect.succeed(1).pipe(
-  Effect.delay("200 millis"),
-  Effect.tap(Effect.log("task1 done"))
-)
-const task2 = Effect.succeed("hello").pipe(
-  Effect.delay("100 millis"),
-  Effect.tap(Effect.log("task2 done"))
-)
-
-//      ┌─── Effect<number, never, never>
-//      ▼
-const task3 = Effect.zipWith(
-  task1,
-  task2,
-  // Combines results into a single value
-  (number, string) => number + string.length
-)
-
-Effect.runPromise(task3).then(console.log)
-/*
-Output:
-timestamp=... level=INFO fiber=#3 message="task1 done"
-timestamp=... level=INFO fiber=#2 message="task2 done"
-6
-*/
-```
-
-## Looping
-
-### loop
-
-The `Effect.loop` function allows you to repeatedly update a state using a `step` function until a condition defined by the `while` function becomes `false`. It collects the intermediate states in an array and returns them as the final result.
-
-**Syntax**
-
-```ts showLineNumbers=false
-Effect.loop(initial, {
-  while: (state) => boolean,
-  step: (state) => state,
-  body: (state) => Effect
-})
-```
-
-This function is similar to a `while` loop in JavaScript, with the addition of effectful computations:
-
-```ts showLineNumbers=false
-let state = initial
-const result = []
-
-while (options.while(state)) {
-  result.push(options.body(state)) // Perform the effectful operation
-  state = options.step(state) // Update the state
-}
-
-return result
-```
-
-**Example** (Looping with Collected Results)
-
-```ts twoslash
-import { Effect } from "effect"
-
-// A loop that runs 5 times, collecting each iteration's result
-const result = Effect.loop(
-  // Initial state
-  1,
-  {
-    // Condition to continue looping
-    while: (state) => state <= 5,
-    // State update function
-    step: (state) => state + 1,
-    // Effect to be performed on each iteration
-    body: (state) => Effect.succeed(state)
-  }
-)
-
-Effect.runPromise(result).then(console.log)
-// Output: [1, 2, 3, 4, 5]
-```
-
-In this example, the loop starts with the state `1` and continues until the state exceeds `5`. Each state is incremented by `1` and is collected into an array, which becomes the final result.
-
-#### Discarding Intermediate Results
-
-The `discard` option, when set to `true`, will discard the results of each effectful operation, returning `void` instead of an array.
-
-**Example** (Loop with Discarded Results)
-
-```ts twoslash "discard: true"
-import { Effect, Console } from "effect"
-
-const result = Effect.loop(
-  // Initial state
-  1,
-  {
-    // Condition to continue looping
-    while: (state) => state <= 5,
-    // State update function
-    step: (state) => state + 1,
-    // Effect to be performed on each iteration
-    body: (state) => Console.log(`Currently at state ${state}`),
-    // Discard intermediate results
-    discard: true
-  }
-)
-
-Effect.runPromise(result).then(console.log)
-/*
-Output:
-Currently at state 1
-Currently at state 2
-Currently at state 3
-Currently at state 4
-Currently at state 5
-undefined
-*/
-```
-
-In this example, the loop performs a side effect of logging the current index on each iteration, but it discards all intermediate results. The final result is `undefined`.
-
-### iterate
-
-The `Effect.iterate` function lets you repeatedly update a state through an effectful operation. It runs the `body` effect to update the state in each iteration and continues as long as the `while` condition evaluates to `true`.
-
-**Syntax**
-
-```ts showLineNumbers=false
-Effect.iterate(initial, {
-  while: (result) => boolean,
-  body: (result) => Effect
-})
-```
-
-This function is similar to a `while` loop in JavaScript, with the addition of effectful computations:
-
-```ts showLineNumbers=false
-let result = initial
-
-while (options.while(result)) {
-  result = options.body(result)
-}
-
-return result
-```
-
-**Example** (Effectful Iteration)
-
-```ts twoslash
-import { Effect } from "effect"
-
-const result = Effect.iterate(
-  // Initial result
-  1,
-  {
-    // Condition to continue iterating
-    while: (result) => result <= 5,
-    // Operation to change the result
-    body: (result) => Effect.succeed(result + 1)
-  }
-)
-
-Effect.runPromise(result).then(console.log)
-// Output: 6
-```
-
-### forEach
-
-Executes an effectful operation for each element in an `Iterable`.
-
-The `Effect.forEach` function applies a provided operation to each element in the
-iterable, producing a new effect that returns an array of results.
-If any effect fails, the iteration stops immediately (short-circuiting), and
-the error is propagated.
-
-The `concurrency` option controls how many operations are performed
-concurrently. By default, the operations are performed sequentially.
-
-**Example** (Applying Effects to Iterable Elements)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const result = Effect.forEach([1, 2, 3, 4, 5], (n, index) =>
-  Console.log(`Currently at index ${index}`).pipe(Effect.as(n * 2))
-)
-
-Effect.runPromise(result).then(console.log)
-/*
-Output:
-Currently at index 0
-Currently at index 1
-Currently at index 2
-Currently at index 3
-Currently at index 4
-[ 2, 4, 6, 8, 10 ]
-*/
-```
-
-In this example, we iterate over the array `[1, 2, 3, 4, 5]`, applying an effect that logs the current index. The `Effect.as(n * 2)` operation transforms each value, resulting in an array `[2, 4, 6, 8, 10]`. The final output is the result of collecting all the transformed values.
-
-#### Discarding Results
-
-The `discard` option, when set to `true`, will discard the results of each effectful operation, returning `void` instead of an array.
-
-**Example** (Using `discard` to Ignore Results)
-
-```ts twoslash "{ discard: true }"
-import { Effect, Console } from "effect"
-
-// Apply effects but discard the results
-const result = Effect.forEach(
-  [1, 2, 3, 4, 5],
-  (n, index) =>
-    Console.log(`Currently at index ${index}`).pipe(Effect.as(n * 2)),
-  { discard: true }
-)
-
-Effect.runPromise(result).then(console.log)
-/*
-Output:
-Currently at index 0
-Currently at index 1
-Currently at index 2
-Currently at index 3
-Currently at index 4
-undefined
-*/
-```
-
-In this case, the effects still run for each element, but the results are discarded, so the final output is `undefined`.
-
-## Collecting
-
-### all
-
-Combines multiple effects into one, returning results based on the input structure.
-
-Use `Effect.all` when you need to run multiple effects and combine their results into a single output. It supports tuples, iterables, structs, and records, making it flexible for different input types.
-
-If any effect fails, it stops execution (short-circuiting) and propagates the error. To change this behavior, you can use the [`mode`](#the-mode-option) option, which allows all effects to run and collect results as [Either](/docs/data-types/either/) or [Option](/docs/data-types/option/).
-
-You can control the execution order (e.g., sequential vs. concurrent) using the [Concurrency Options](/docs/concurrency/basic-concurrency/#concurrency-options).
-
-For instance, if the input is a tuple:
-
-```ts showLineNumbers=false
-//         ┌─── a tuple of effects
-//         ▼
-Effect.all([effect1, effect2, ...])
-```
-
-the effects are executed sequentially, and the result is a new effect containing the results as a tuple. The results in the tuple match the order of the effects passed to `Effect.all`.
-
-Let's explore examples for different types of structures: tuples, iterables, objects, and records.
-
-**Example** (Combining Effects in Tuples)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const tupleOfEffects = [
-  Effect.succeed(42).pipe(Effect.tap(Console.log)),
-  Effect.succeed("Hello").pipe(Effect.tap(Console.log))
-] as const
-
-//      ┌─── Effect<[number, string], never, never>
-//      ▼
-const resultsAsTuple = Effect.all(tupleOfEffects)
-
-Effect.runPromise(resultsAsTuple).then(console.log)
-/*
-Output:
-42
-Hello
-[ 42, 'Hello' ]
-*/
-```
-
-**Example** (Combining Effects in Iterables)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const iterableOfEffects: Iterable<Effect.Effect<number>> = [1, 2, 3].map(
-  (n) => Effect.succeed(n).pipe(Effect.tap(Console.log))
-)
-
-//      ┌─── Effect<number[], never, never>
-//      ▼
-const resultsAsArray = Effect.all(iterableOfEffects)
-
-Effect.runPromise(resultsAsArray).then(console.log)
-/*
-Output:
-1
-2
-3
-[ 1, 2, 3 ]
-*/
-```
-
-**Example** (Combining Effects in Structs)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const structOfEffects = {
-  a: Effect.succeed(42).pipe(Effect.tap(Console.log)),
-  b: Effect.succeed("Hello").pipe(Effect.tap(Console.log))
-}
-
-//      ┌─── Effect<{ a: number; b: string; }, never, never>
-//      ▼
-const resultsAsStruct = Effect.all(structOfEffects)
-
-Effect.runPromise(resultsAsStruct).then(console.log)
-/*
-Output:
-42
-Hello
-{ a: 42, b: 'Hello' }
-*/
-```
-
-**Example** (Combining Effects in Records)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const recordOfEffects: Record<string, Effect.Effect<number>> = {
-  key1: Effect.succeed(1).pipe(Effect.tap(Console.log)),
-  key2: Effect.succeed(2).pipe(Effect.tap(Console.log))
-}
-
-//      ┌─── Effect<{ [x: string]: number; }, never, never>
-//      ▼
-const resultsAsRecord = Effect.all(recordOfEffects)
-
-Effect.runPromise(resultsAsRecord).then(console.log)
-/*
-Output:
-1
-2
-{ key1: 1, key2: 2 }
-*/
-```
-
-#### Short-Circuiting Behavior
-
-The `Effect.all` function stops execution on the first error it encounters, this is called "short-circuiting".
-If any effect in the collection fails, the remaining effects will not run, and the error will be propagated.
-
-**Example** (Bail Out on First Failure)
-
-```ts twoslash
-import { Effect, Console } from "effect"
-
-const program = Effect.all([
-  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
-  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
-  // Won't execute due to earlier failure
-  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
-])
-
-Effect.runPromiseExit(program).then(console.log)
-/*
-Output:
-Task1
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: { _id: 'Cause', _tag: 'Fail', failure: 'Task2: Oh no!' }
-}
-*/
-```
-
-You can override this behavior by using the `mode` option.
-
-#### The `mode` option
-
-The `{ mode: "either" }` option changes the behavior of `Effect.all` to ensure all effects run, even if some fail. Instead of stopping on the first failure, this mode collects both successes and failures, returning an array of `Either` instances where each result is either a `Right` (success) or a `Left` (failure).
-
-**Example** (Collecting Results with `mode: "either"`)
-
-```ts twoslash /{ mode: "either" }/
-import { Effect, Console } from "effect"
-
-const effects = [
-  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
-  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
-  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
-]
-
-const program = Effect.all(effects, { mode: "either" })
-
-Effect.runPromiseExit(program).then(console.log)
-/*
-Output:
-Task1
-Task3
-{
-  _id: 'Exit',
-  _tag: 'Success',
-  value: [
-    { _id: 'Either', _tag: 'Right', right: 'Task1' },
-    { _id: 'Either', _tag: 'Left', left: 'Task2: Oh no!' },
-    { _id: 'Either', _tag: 'Right', right: 'Task3' }
-  ]
-}
-*/
-```
-
-Similarly, the `{ mode: "validate" }` option uses `Option` to indicate success or failure. Each effect returns `None` for success and `Some` with the error for failure.
-
-**Example** (Collecting Results with `mode: "validate"`)
-
-```ts twoslash /{ mode: "validate" }/
-import { Effect, Console } from "effect"
-
-const effects = [
-  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
-  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
-  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
-]
-
-const program = Effect.all(effects, { mode: "validate" })
-
-Effect.runPromiseExit(program).then((result) => console.log("%o", result))
-/*
-Output:
-Task1
-Task3
-{
-  _id: 'Exit',
-  _tag: 'Failure',
-  cause: {
-    _id: 'Cause',
-    _tag: 'Fail',
-    failure: [
-      { _id: 'Option', _tag: 'None' },
-      { _id: 'Option', _tag: 'Some', value: 'Task2: Oh no!' },
-      { _id: 'Option', _tag: 'None' }
-    ]
-  }
-}
-*/
-```
-
-create-effect-app.mdx
----
-title: Create Effect App
-description: Quickly set up a new Effect application with a customizable template or example, streamlining your development start.
-sidebar:
-  order: 3
----
-
-import { Tabs, TabItem } from "@astrojs/starlight/components"
-
-The `create-effect-app` CLI allow you to create a new Effect application using a default template or an [example](https://github.com/Effect-TS/examples) from a public Github repository.
-It is the easiest way to get started with Effect.
-
-## CLI
-
-To begin, run the `create-effect-app` command in your terminal using your preferred package manager:
-
-<Tabs syncKey="package-manager">
-
-<TabItem label="npm" icon="seti:npm">
-
-```sh showLineNumbers=false
-npx create-effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="pnpm" icon="pnpm">
-
-```sh showLineNumbers=false
-pnpm create effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="Yarn" icon="seti:yarn">
-
-```sh showLineNumbers=false
-yarn create effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="Bun" icon="bun">
-
-```sh showLineNumbers=false
-bunx create-effect-app@latest
-```
-
-</TabItem>
-
-<TabItem label="Deno" icon="deno">
-
-```sh showLineNumbers=false
-deno init --npm effect-app@latest
-```
-
-</TabItem>
-
-</Tabs>
-
-This command starts an interactive setup that guides you through the steps required to bootstrap your project:
-
-![create-effect-app](../_assets/create-effect-app.gif "Animated GIF demonstrating the interactive experience when create-effect-app is run in interactive mode")
-
-After making your selections, `create-effect-app` will generate your new Effect project and configure it based on your choices.
-
-**Example**
-
-For instance, to create a new Effect project in a directory named `"my-effect-app"` using the basic template with ESLint integration, you can run:
-
-```sh showLineNumbers=false
-npx create-effect-app --template basic --eslint my-effect-app
-```
-
-## Non-Interactive Usage
-
-If you prefer, `create-effect-app` can also be used in a non-interactive mode:
-
-```sh showLineNumbers=false
-create-effect-app
-  (-t, --template basic | cli | monorepo)
-  [--changesets]
-  [--flake]
-  [--eslint]
-  [--workflows]
-  [<project-name>]
-create-effect-app
-  (-e, --example http-server)
-  [<project-name>]
-```
-
-Below is a breakdown of the available options to customize an Effect project template:
-
-| Option         | Description                                                                        |
-| -------------- | ---------------------------------------------------------------------------------- |
-| `--changesets` | Initializes your project with the Changesets package for managing version control. |
-| `--flake`      | Initializes your project with a Nix flake for managing system dependencies.        |
-| `--eslint`     | Includes ESLint for code formatting and linting.                                   |
-| `--workflows`  | Sets up Effect's recommended GitHub Action workflows for automation.               |
-
 data.mdx
 ---
 title: Data
@@ -14500,6 +13701,235 @@ console.log(getRole({ role: "viewer" }))
 // Output: { _id: 'Either', _tag: 'Left', left: { role: 'viewer' } }
 ```
 
+planning-llm-interactions.mdx
+---
+title: Execution Planning
+description: Learn how to create structured execution plans for your LLM interactions
+sidebar:
+  order: 2
+---
+
+Imagine that we've refactored our `generateDadJoke` program from our [Getting Started](/docs/ai/getting-started/) guide. Now, instead of handling all errors internally, the code can **fail with domain-specific issues** like network interruptions or provider outages:
+
+```ts twoslash
+import type { AiResponse, Completions } from "@effect/ai"
+import { OpenAiCompletions } from "@effect/ai-openai"
+import { Data, Effect } from "effect"
+
+class NetworkError extends Data.TaggedError("NetworkError") {}
+
+class ProviderOutage extends Data.TaggedError("ProviderOutage") {}
+
+declare const generateDadJoke: Effect.Effect<
+  AiResponse.AiResponse, 
+  NetworkError | ProviderOutage, 
+  Completions.Completions
+>
+
+const main = Effect.gen(function*() {
+  const gpt4o = yield* OpenAiCompletions.model("gpt-4o")
+  const response = yield* gpt4o.provide(generateDadJoke)
+})
+```
+
+This is fine, but what if we instead want to:
+- Retry the program a fixed number of times on `NetworkError`s
+- Add some backoff delay between retries
+- Fallback to a different model provider if OpenAi is down
+
+How can we accomplish such logic?
+
+## The AiPlan Type
+
+The Effect AI integrations provide a robust method for creating **structured execution plans** for your LLM interactions through the `AiPlan` data type. Rather than making a single model call and hoping it succeeds, `AiPlan` lets you describe how to handle retries, fallbacks, and recoverable errors in a clear, declarative way.
+
+This is especially useful when:
+- You want to fall back to a secondary model if the primary one is unavailable
+- You want to retry on transient errors (e.g. network failures)
+- You want to control timing between retry attempts
+
+Think of an `AiPlan` as the **blueprint** for for an LLM interaction, with logic for when to keep trying to interact with one provider and when to switch providers.
+
+```ts showLineNumbers=false
+interface AiPlan<Errors, Provides, Requires> {}
+```
+
+An `AiPlan` has three generic type parameters:
+
+- **Errors**: Any errors that can be handled during execution of the plan
+- **Provides**: The services that this plan can provide (e.g. `Completions`, `Embeddings`)
+- **Requires**: The services that this plan requires (e.g. `OpenAiClient`, `AnthropicClient`)
+
+If you've used `AiModel` before (via `OpenAiCompletions.model()` or similar), you'll find `AiPlan` familiar. In fact, an `AiModel` *is* in fact an `AiPlan` with just a single step.
+
+This means you can start by writing your code with plain `AiModel`s, and as your needs become more complex (e.g. adding retries, switching providers), you can upgrade to `AiPlan` without changing how the rest of your code works.
+
+## Defining a Primary Model
+
+The primary entry point to building up an `AiPlan` is the `AiPlan.fromModel` constructor. 
+
+This method defines the **primary model** that you would like to use for an LLM interaction, as well as the rules for retrying it under specific conditions.
+
+Use this when you want to:
+- Retry a model multiple times
+- Customize backoff timing between attempts
+- Decide whether to retry based on the error type
+
+**Example** (Creating an `AiPlan` from an `AiModel`)
+
+```ts twoslash collapse={2-14}
+import { AiPlan } from "@effect/ai"
+import type { AiResponse, Completions } from "@effect/ai"
+import { OpenAiCompletions } from "@effect/ai-openai"
+import { Data, Effect, Schedule } from "effect"
+
+class NetworkError extends Data.TaggedError("NetworkError") {}
+
+class ProviderOutage extends Data.TaggedError("ProviderOutage") {}
+
+declare const generateDadJoke: Effect.Effect<
+  AiResponse.AiResponse, 
+  NetworkError | ProviderOutage, 
+  Completions.Completions
+>
+
+const DadJokePlan = AiPlan.fromModel(OpenAiCompletions.model("gpt-4o"), {
+  attempts: 3,
+  schedule: Schedule.exponential("100 millis", 1.5),
+  while: (error: NetworkError | ProviderOutage) => 
+    error._tag === "NetworkError"
+})
+
+const main = Effect.gen(function*() {
+  const plan = yield* DadJokePlan
+  const response = yield* plan.provide(generateDadJoke)
+})
+```
+
+This plan will:
+- Attempt to use OpenAi's `"gpt-4o"` model up to 3 times
+- Wait with an exponential backoff between attempts (starting at 100ms)
+- Only re-attempt the call to OpenAi if the error is a `NetworkError`
+
+---
+
+## Adding Fallback Models
+
+To make your LLM interactions resilient to provider outages, you can define a **fallback** model to use via `AiPlan.withFallback`. This will allow the plan to automatically fallback to another model if the previous step in the execution plan fails.
+
+Use this when:
+- You want to make your LLM interactions resilient to provider outages
+- You want to potentially have multiple fallback models 
+
+**Example** (Adding a Fallback to Anthropic from OpenAi)
+
+```ts twoslash collapse={2-15,18-21}
+import { AiPlan } from "@effect/ai"
+import type { AiResponse, Completions } from "@effect/ai"
+import { AnthropicCompletions } from "@effect/ai-anthropic"
+import { OpenAiCompletions } from "@effect/ai-openai"
+import { Data, Effect, Schedule } from "effect"
+
+class NetworkError extends Data.TaggedError("NetworkError") {}
+
+class ProviderOutage extends Data.TaggedError("ProviderOutage") {}
+
+declare const generateDadJoke: Effect.Effect<
+  AiResponse.AiResponse, 
+  NetworkError | ProviderOutage, 
+  Completions.Completions
+>
+
+const DadJokePlan = AiPlan.fromModel(OpenAiCompletions.model("gpt-4o"), {
+  attempts: 3,
+  schedule: Schedule.exponential("100 millis", 1.5),
+  while: (error: NetworkError | ProviderOutage) => 
+    error._tag === "NetworkError"
+}).pipe(
+  AiPlan.withFallback({
+    model: AnthropicCompletions.model("claude-3-7-sonnet-latest"),
+    attempts: 2,
+    schedule: Schedule.exponential("100 millis", 1.5),
+    while: (error: NetworkError | ProviderOutage) => 
+      error._tag === "ProviderOutage"
+  })
+)
+
+const main = Effect.gen(function*() {
+  const plan = yield* DadJokePlan
+  const response = yield* plan.provide(generateDadJoke)
+})
+```
+
+This plan will:
+- Fallback to Anthropic if the OpenAi step of the plan fails
+- Attempt to use Anthropic's `"claude-3-7-sonnet"` model up to 2 times
+- Wait with an exponential backoff between attempts (starting at 100ms)
+- Only run and / or re-attempt the fallback if the error is a `ProviderOutage` 
+
+## End-to-End Usage
+
+The following is the complete program with the desired `AiPlan` fully implemented:
+
+```ts
+import { AiPlan } from "@effect/ai"
+import type { AiResponse, Completions } from "@effect/ai"
+import { AnthropicClient, AnthropicCompletions } from "@effect/ai-anthropic"
+import { OpenAiClient, OpenAiCompletions } from "@effect/ai-openai"
+import { NodeHttpClient } from "@effect/platform-node"
+import { Data, Effect, Schedule } from "effect"
+
+class NetworkError extends Data.TaggedError("NetworkError") {}
+
+class ProviderOutage extends Data.TaggedError("ProviderOutage") {}
+
+declare const generateDadJoke: Effect.Effect<
+  AiResponse.AiResponse, 
+  NetworkError | ProviderOutage, 
+  Completions.Completions
+>
+
+const DadJokePlan = AiPlan.fromModel(OpenAiCompletions.model("gpt-4o"), {
+  attempts: 3,
+  schedule: Schedule.exponential("100 millis", 1.5),
+  while: (error: NetworkError | ProviderOutage) => 
+    error._tag === "NetworkError"
+}).pipe(
+  AiPlan.withFallback({
+    model: AnthropicCompletions.model("claude-3-7-sonnet-latest"),
+    attempts: 2,
+    schedule: Schedule.exponential("100 millis", 1.5),
+    while: (error: NetworkError | ProviderOutage) => 
+      error._tag === "ProviderOutage"
+  })
+)
+
+const main = Effect.gen(function*() {
+  const plan = yield* DadJokePlan
+  const response = yield* plan.provide(generateDadJoke)
+})
+
+const Anthropic = AnthropicClient.layerConfig({
+  apiKey: Config.redacted("ANTHROPIC_API_KEY")
+}).pipe(Layer.provide(NodeHttpClient.layerUndici))
+
+const OpenAi = OpenAiClient.layerConfig({
+  apiKey: Config.redacted("OPENAI_API_KEY")
+}).pipe(Layer.provide(NodeHttpClient.layerUndici))
+
+main.pipe(
+  Effect.provide([Anthropic, OpenAi]),
+  Effect.runPromise
+)
+```
+
+## Notes & Patterns
+
+- You can chain multiple `AiPlan.withFallback` calls together for more complex failover logic
+- Just like `AiModel`, `AiPlan` is re-usable and can be abstracted into shared logic if desired
+- Great for teams needing **multi-provider resilience** or **predictable behavior under failure**
+
+
 pubsub.mdx
 ---
 title: PubSub
@@ -15998,6 +15428,324 @@ Start processing...
 }
 */
 ```
+
+tool-use.mdx
+---
+title: Tool Use
+description: Equip your LLM interactions with the ability to use tools to perform specific actions
+sidebar:
+  order: 3
+---
+
+Language models are great at generating text, but often we need them to take **real-world actions**, such as querying an API, accessing a database, or calling a service. Most LLM providers support this through **tool use** (also known as *function calling*), where you expose specific operations in your application that the model can invoke. 
+
+Based on the input it receives, a model may choose to **invoke (or call)** one or more tools to augment its response. Your application then runs the corresponding logic for the tool using the parameters provided by the model. You then return the result to the model, allowing it to include the output in its final response.
+
+The `AiToolkit` simplifies tool integration by offering a structured, type-safe approach to defining tools. It takes care of all the wiring between the model and your application - all you have to do is define the tool and implement its behavior.
+
+## Defining a Tool 
+
+Let’s walk through a complete example of how to define, implement, and use a tool that fetches a dad joke from the [icanhazdadjoke.com](https://icanhazdadjoke.com) API.
+
+### 1. Define the Tool 
+
+We start by defining a tool as a tagged request using `Schema.TaggedRequest`. This describes what parameters the tool accepts (its `payload`) and what it returns (either `success` or `failure`):
+
+**Example** (Defining a Tool Call Request)
+
+```ts twoslash
+import { Schema } from "effect"
+
+class GetDadJoke extends Schema.TaggedRequest<GetDadJoke>()("GetDadJoke", {
+  payload: {
+    searchTerm: Schema.String.annotations({
+      description: "The search term to use to find dad jokes"
+    })
+  },
+  success: Schema.String,
+  failure: Schema.Never
+}, {
+  description: "Get a hilarious dad joke from the icanhazdadjoke API"
+}) {}
+```
+
+Based on the above, a request to call the `GetDadJoke` tool:
+- Takes a single `searchTerm` parameter
+- Succeeds with a string (i.e. the joke)
+- Never fails
+
+### 2. Create a Toolkit
+
+Once we have a tool request defined, we can use `AiToolkit.empty` to create an empty `AiToolkit` and then `.add(...)` our `GetDadJoke` tool request to it: 
+
+**Example** (Creating an `AiToolkit`)
+
+```ts twoslash collapse={1-14}
+import { Schema } from "effect"
+
+class GetDadJoke extends Schema.TaggedRequest<GetDadJoke>()("GetDadJoke", {
+  payload: {
+    searchTerm: Schema.String.annotations({
+      description: "The search term to use to find dad jokes"
+    })
+  },
+  success: Schema.String,
+  failure: Schema.Never
+}, {
+  description: "Get a hilarious dad joke from the icanhazdadjoke API"
+}) {}
+
+import { AiToolkit } from "@effect/ai"
+
+const DadJokeTools = AiToolkit.empty.add(GetDadJoke)
+```
+
+### 3. Implement the Logic
+
+The `.implement(...)` method on an `AiToolkit` allows you to define the handlers for each tool in the toolkit. Because `.implement(...)` takes an `Effect`, we can access services from our application to implement the tool call handlers. 
+
+**Example** (Implementing an `AiToolkit`)
+
+```ts twoslash collapse={1-58}
+import { AiToolkit } from "@effect/ai"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { NodeHttpClient } from "@effect/platform-node"
+import { Array, Effect, Schema } from "effect"
+
+class DadJoke extends Schema.Class<DadJoke>("DadJoke")({
+  id: Schema.String,
+  joke: Schema.String
+}) {}
+
+class SearchResponse extends Schema.Class<SearchResponse>("SearchResponse")({
+  results: Schema.Array(DadJoke)
+}) {}
+
+class ICanHazDadJoke extends Effect.Service<ICanHazDadJoke>()("ICanHazDadJoke", {
+  dependencies: [NodeHttpClient.layerUndici],
+  effect: Effect.gen(function*() {
+    const httpClient = yield* HttpClient.HttpClient
+    const httpClientOk = httpClient.pipe(
+      HttpClient.filterStatusOk,
+      HttpClient.mapRequest(HttpClientRequest.prependUrl("https://icanhazdadjoke.com"))
+    )
+
+    const search = Effect.fn("ICanHazDadJoke.search")(
+      function*(params: typeof GetDadJoke.Type) {
+        return yield* httpClientOk.get("/search", {
+          acceptJson: true,
+          urlParams: { ...params }
+        }).pipe(
+          Effect.flatMap(HttpClientResponse.schemaBodyJson(SearchResponse)),
+          Effect.flatMap(({ results }) => Array.head(results)),
+          Effect.map((joke) => joke.joke),
+          Effect.scoped,
+          Effect.orDie
+        )
+      }
+    )
+
+    return {
+      search
+    } as const
+  })
+}) {}
+
+class GetDadJoke extends Schema.TaggedRequest<GetDadJoke>()("GetDadJoke", {
+  payload: {
+    searchTerm: Schema.String.annotations({
+      description: "The search term to use to find dad jokes"
+    })
+  },
+  success: Schema.String,
+  failure: Schema.Never
+}, {
+  description: "Get a hilarious dad joke from the icanhazdadjoke API"
+}) {}
+
+const DadJokeTools = AiToolkit.empty.add(GetDadJoke)
+
+const DadJokeToolsLayer = DadJokeTools.implement((handlers) =>
+  Effect.gen(function*() {
+    // Extract the `ICanHazDadJoke` service from our application
+    const icanhazdadjoke = yield* ICanHazDadJoke
+    return handlers
+      // Implement the handler for the `GetDadJoke` tool call request
+      .handle("GetDadJoke", (params) => icanhazdadjoke.search(params))
+  })
+)
+```
+
+In the code above:
+- We access the `ICanHazDadJoke` service from our application
+- Register a handler for the `GetDadJoke` tool using `.handle("GetDadJoke", ...)`
+- Use the `.search` method on our `ICanHazDadJoke` service to search for a dad joke based on the tool call parameters
+
+The result of calling `.implement` on an `AiToolkit` is a `Layer` that contains the handlers for all the tools in our toolkit. 
+
+Because of this, it is quite simple to test an `AiToolkit` by `.implement`-ing a separate `Layer` specifically for testing.
+
+### 4. Give the Tools to the Model
+
+Once the tools are defined and implemented, you can pass them along to the model at request time. Behind the scenes, the model is given a structured description of each tool and can choose to call one or more of them when responding to input.
+
+**Example** (Using an `AiToolkit` in `Completions.toolkit`)
+
+```ts twoslash collapse={1-17}
+import { AiToolkit, Completions } from "@effect/ai"
+import { Effect, Schema } from "effect"
+
+class GetDadJoke extends Schema.TaggedRequest<GetDadJoke>()("GetDadJoke", {
+  payload: {
+    searchTerm: Schema.String.annotations({
+      description: "The search term to use to find dad jokes"
+    })
+  },
+  success: Schema.String,
+  failure: Schema.Never
+}, {
+  description: "Get a hilarious dad joke from the icanhazdadjoke API"
+}) {}
+
+const DadJokeTools = AiToolkit.empty.add(GetDadJoke)
+
+const generateDadJoke = Effect.gen(function*() {
+  const completions = yield* Completions.Completions
+  const tools = yield* DadJokeTools
+  const response = yield* completions.toolkit({
+    input: "Generate a dad joke",
+    tools
+  })
+  console.log(response.value)
+  return response
+})
+```
+
+In the code above:
+- We `yield*` the `AiToolkit` to gain access to our tools
+- We use `Completions.toolkit` to perform text generation supported by our tools (if required)
+- We log the result to the console
+
+### 5. Bring It All Together
+
+To make the program executable, we must provide the implementation of our tool call handlers:
+
+**Example** (Providing the Tool Call Handlers to a Program)
+
+```ts twoslash /DadJokeToolsLayer/ collapse={1-69}
+import { AiToolkit, Completions } from "@effect/ai"
+import { OpenAiClient, OpenAiCompletions } from "@effect/ai-openai"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { NodeHttpClient } from "@effect/platform-node"
+import { Array, Config, Effect, Layer, Schema } from "effect"
+
+class DadJoke extends Schema.Class<DadJoke>("DadJoke")({
+  id: Schema.String,
+  joke: Schema.String
+}) {}
+
+class SearchResponse extends Schema.Class<SearchResponse>("SearchResponse")({
+  results: Schema.Array(DadJoke)
+}) {}
+
+class ICanHazDadJoke extends Effect.Service<ICanHazDadJoke>()("ICanHazDadJoke", {
+  dependencies: [NodeHttpClient.layerUndici],
+  effect: Effect.gen(function*() {
+    const httpClient = yield* HttpClient.HttpClient
+    const httpClientOk = httpClient.pipe(
+      HttpClient.filterStatusOk,
+      HttpClient.mapRequest(HttpClientRequest.prependUrl("https://icanhazdadjoke.com"))
+    )
+
+    const search = Effect.fn("ICanHazDadJoke.search")(
+      function*(params: typeof GetDadJoke.Type) {
+        return yield* httpClientOk.get("/search", {
+          acceptJson: true,
+          urlParams: { ...params }
+        }).pipe(
+          Effect.flatMap(HttpClientResponse.schemaBodyJson(SearchResponse)),
+          Effect.flatMap(({ results }) => Array.head(results)),
+          Effect.map((joke) => joke.joke),
+          Effect.scoped,
+          Effect.orDie
+        )
+      }
+    )
+
+    return {
+      search
+    } as const
+  })
+}) {}
+
+class GetDadJoke extends Schema.TaggedRequest<GetDadJoke>()("GetDadJoke", {
+  payload: {
+    searchTerm: Schema.String.annotations({
+      description: "The search term to use to find dad jokes"
+    })
+  },
+  success: Schema.String,
+  failure: Schema.Never
+}, {
+  description: "Get a hilarious dad joke from the icanhazdadjoke API"
+}) {}
+
+const DadJokeTools = AiToolkit.empty.add(GetDadJoke)
+
+const DadJokeToolsLayer = DadJokeTools.implement((handlers) =>
+  Effect.gen(function*() {
+    // Extract the `ICanHazDadJoke` service from our application
+    const icanhazdadjoke = yield* ICanHazDadJoke
+    return handlers
+      // Implement the handler for the `GetDadJoke` tool call request
+      .handle("GetDadJoke", (params) => icanhazdadjoke.search(params))
+  })
+).pipe(Layer.provide(ICanHazDadJoke.Default))
+
+const generateDadJoke = Effect.gen(function*() {
+  const completions = yield* Completions.Completions
+  const tools = yield* DadJokeTools
+  const response = yield* completions.toolkit({
+    input: "Generate a dad joke",
+    tools
+  })
+  console.log(response.value)
+  return response
+})
+
+const program = Effect.gen(function*() {
+  const model = yield* OpenAiCompletions.model("gpt-4o")
+  const response = yield* model.provide(generateDadJoke)
+})
+
+const OpenAi = OpenAiClient.layerConfig({
+  apiKey: Config.redacted("OPENAI_API_KEY")
+}).pipe(Layer.provide(NodeHttpClient.layerUndici))
+
+program.pipe(
+  Effect.provide([OpenAi, DadJokeToolsLayer]),
+  Effect.runPromise
+)
+```
+
+## Benefits 
+
+**Type Safe**
+
+Every tool is fully described using Effect's `Schema`, including inputs, outputs, and descriptions.
+
+**Effect Native** 
+
+Tool call behavior is defined using Effect, so they can leverage all the power of Effect. This is especially useful when you need to access other services to support the implementation of your tool call handlers.
+
+**Injectable**
+
+Because implementing the handlers for an `AiToolkit` results in a `Layer`, providing alternate implementation of tool call handlers in different environments is as simple as providing a different `Layer` to your program.
+
+**Separation of Concerns**
+
+The definition of a tool call request is cleanly separated from both the implementation of the tool behavior, as well as the business logic that calls the model. 
+
 
 two-error-types.mdx
 ---
@@ -22854,6 +22602,805 @@ const program = Command.make("cat", "./some-file.txt").pipe(
 
 NodeRuntime.runMain(program.pipe(Effect.provide(NodeContext.layer)))
 ```
+
+control-flow.mdx
+---
+title: Control Flow Operators
+description: Learn to control execution flow in Effect programs using advanced constructs for conditional branching, iteration, and combining effects seamlessly.
+sidebar:
+  order: 10
+---
+
+Even though JavaScript provides built-in control flow structures, Effect offers additional control flow functions that are useful in Effect applications. In this section, we will introduce different ways to control the flow of execution.
+
+## if Expression
+
+When working with Effect values, we can use standard JavaScript if-then-else statements:
+
+**Example** (Returning None for Invalid Weight)
+
+Here we are using the [Option](/docs/data-types/option/) data type to represent the absence of a valid value.
+
+```ts twoslash
+import { Effect, Option } from "effect"
+
+// Function to validate weight and return an Option
+const validateWeightOption = (
+  weight: number
+): Effect.Effect<Option.Option<number>> => {
+  if (weight >= 0) {
+    // Return Some if the weight is valid
+    return Effect.succeed(Option.some(weight))
+  } else {
+    // Return None if the weight is invalid
+    return Effect.succeed(Option.none())
+  }
+}
+```
+
+**Example** (Returning Error for Invalid Weight)
+
+You can also handle invalid inputs by using the error channel, which allows you to return an error when the input is invalid:
+
+```ts twoslash
+import { Effect } from "effect"
+
+// Function to validate weight or fail with an error
+const validateWeightOrFail = (
+  weight: number
+): Effect.Effect<number, string> => {
+  if (weight >= 0) {
+    // Return the weight if valid
+    return Effect.succeed(weight)
+  } else {
+    // Fail with an error if invalid
+    return Effect.fail(`negative input: ${weight}`)
+  }
+}
+```
+
+## Conditional Operators
+
+### if
+
+Executes one of two effects based on a condition evaluated by an effectful predicate.
+
+Use `Effect.if` to run one of two effects depending on whether the predicate effect
+evaluates to `true` or `false`. If the predicate is `true`, the `onTrue` effect
+is executed. If it is `false`, the `onFalse` effect is executed instead.
+
+**Example** (Simulating a Coin Flip)
+
+In this example, we simulate a virtual coin flip using `Random.nextBoolean` to generate a random boolean value. If the value is `true`, the `onTrue` effect logs "Head". If the value is `false`, the `onFalse` effect logs "Tail".
+
+```ts twoslash
+import { Effect, Random, Console } from "effect"
+
+const flipTheCoin = Effect.if(Random.nextBoolean, {
+  onTrue: () => Console.log("Head"), // Runs if the predicate is true
+  onFalse: () => Console.log("Tail") // Runs if the predicate is false
+})
+
+Effect.runFork(flipTheCoin)
+```
+
+### when
+
+Conditionally executes an effect based on a boolean condition.
+
+`Effect.when` allows you to conditionally execute an effect, similar to using
+an `if (condition)` expression, but with the added benefit of handling
+effects. If the condition is `true`, the effect is executed; otherwise, it
+does nothing.
+
+The result of the effect is wrapped in an `Option<A>` to indicate whether the
+effect was executed. If the condition is `true`, the result of the effect is
+wrapped in a `Some`. If the condition is `false`, the result is `None`,
+representing that the effect was skipped.
+
+**Example** (Conditional Effect Execution)
+
+```ts twoslash
+import { Effect, Option } from "effect"
+
+const validateWeightOption = (
+  weight: number
+): Effect.Effect<Option.Option<number>> =>
+  // Conditionally execute the effect if the weight is non-negative
+  Effect.succeed(weight).pipe(Effect.when(() => weight >= 0))
+
+// Run with a valid weight
+Effect.runPromise(validateWeightOption(100)).then(console.log)
+/*
+Output:
+{
+  _id: "Option",
+  _tag: "Some",
+  value: 100
+}
+*/
+
+// Run with an invalid weight
+Effect.runPromise(validateWeightOption(-5)).then(console.log)
+/*
+Output:
+{
+  _id: "Option",
+  _tag: "None"
+}
+*/
+```
+
+In this example, the [Option](/docs/data-types/option/) data type is used to represent the presence or absence of a valid value. If the condition evaluates to `true` (in this case, if the weight is non-negative), the effect is executed and wrapped in a `Some`. Otherwise, the result is `None`.
+
+### whenEffect
+
+Executes an effect conditionally, based on the result of another effect.
+
+Use `Effect.whenEffect` when the condition to determine whether to execute the effect
+depends on the outcome of another effect that produces a boolean value.
+If the condition effect evaluates to `true`, the specified effect is executed.
+If it evaluates to `false`, no effect is executed.
+
+The result of the effect is wrapped in an `Option<A>` to indicate whether the
+effect was executed. If the condition is `true`, the result of the effect is
+wrapped in a `Some`. If the condition is `false`, the result is `None`,
+representing that the effect was skipped.
+
+**Example** (Using an Effect as a Condition)
+
+The following function creates a random integer, but only if a randomly generated boolean is `true`.
+
+```ts twoslash
+import { Effect, Random } from "effect"
+
+const randomIntOption = Random.nextInt.pipe(
+  Effect.whenEffect(Random.nextBoolean)
+)
+
+console.log(Effect.runSync(randomIntOption))
+/*
+Example Output:
+{ _id: 'Option', _tag: 'Some', value: 8609104974198840 }
+*/
+```
+
+### unless / unlessEffect
+
+The `Effect.unless` and `Effect.unlessEffect` functions are similar to the `when*` functions, but they are equivalent to the `if (!condition) expression` construct.
+
+## Zipping
+
+### zip
+
+Combines two effects into a single effect, producing a tuple with the results of both effects.
+
+The `Effect.zip` function executes the first effect (left) and then the second effect (right).
+Once both effects succeed, their results are combined into a tuple.
+
+**Example** (Combining Two Effects Sequentially)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const task1 = Effect.succeed(1).pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Effect.log("task1 done"))
+)
+
+const task2 = Effect.succeed("hello").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Effect.log("task2 done"))
+)
+
+// Combine the two effects together
+//
+//      ┌─── Effect<[number, string], never, never>
+//      ▼
+const program = Effect.zip(task1, task2)
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+timestamp=... level=INFO fiber=#0 message="task1 done"
+timestamp=... level=INFO fiber=#0 message="task2 done"
+[ 1, 'hello' ]
+*/
+```
+
+By default, the effects are run sequentially. To run them concurrently, use the `{ concurrent: true }` option.
+
+**Example** (Combining Two Effects Concurrently)
+
+```ts collapse={3-11} "{ concurrent: true }" "task2 done"
+import { Effect } from "effect"
+
+const task1 = Effect.succeed(1).pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Effect.log("task1 done"))
+)
+
+const task2 = Effect.succeed("hello").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Effect.log("task2 done"))
+)
+
+// Run both effects concurrently using the concurrent option
+const program = Effect.zip(task1, task2, { concurrent: true })
+
+Effect.runPromise(program).then(console.log)
+/*
+Output:
+timestamp=... level=INFO fiber=#3 message="task2 done"
+timestamp=... level=INFO fiber=#2 message="task1 done"
+[ 1, 'hello' ]
+*/
+```
+
+In this concurrent version, both effects run in parallel. `task2` completes first, but both tasks can be logged and processed as soon as they're done.
+
+### zipWith
+
+Combines two effects sequentially and applies a function to their results to produce a single value.
+
+The `Effect.zipWith` function is similar to [Effect.zip](#zip), but instead of returning a tuple of results,
+it applies a provided function to the results of the two effects, combining them into a single value.
+
+By default, the effects are run sequentially. To run them concurrently, use the `{ concurrent: true }` option.
+
+**Example** (Combining Effects with a Custom Function)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const task1 = Effect.succeed(1).pipe(
+  Effect.delay("200 millis"),
+  Effect.tap(Effect.log("task1 done"))
+)
+const task2 = Effect.succeed("hello").pipe(
+  Effect.delay("100 millis"),
+  Effect.tap(Effect.log("task2 done"))
+)
+
+//      ┌─── Effect<number, never, never>
+//      ▼
+const task3 = Effect.zipWith(
+  task1,
+  task2,
+  // Combines results into a single value
+  (number, string) => number + string.length
+)
+
+Effect.runPromise(task3).then(console.log)
+/*
+Output:
+timestamp=... level=INFO fiber=#3 message="task1 done"
+timestamp=... level=INFO fiber=#2 message="task2 done"
+6
+*/
+```
+
+## Looping
+
+### loop
+
+The `Effect.loop` function allows you to repeatedly update a state using a `step` function until a condition defined by the `while` function becomes `false`. It collects the intermediate states in an array and returns them as the final result.
+
+**Syntax**
+
+```ts showLineNumbers=false
+Effect.loop(initial, {
+  while: (state) => boolean,
+  step: (state) => state,
+  body: (state) => Effect
+})
+```
+
+This function is similar to a `while` loop in JavaScript, with the addition of effectful computations:
+
+```ts showLineNumbers=false
+let state = initial
+const result = []
+
+while (options.while(state)) {
+  result.push(options.body(state)) // Perform the effectful operation
+  state = options.step(state) // Update the state
+}
+
+return result
+```
+
+**Example** (Looping with Collected Results)
+
+```ts twoslash
+import { Effect } from "effect"
+
+// A loop that runs 5 times, collecting each iteration's result
+const result = Effect.loop(
+  // Initial state
+  1,
+  {
+    // Condition to continue looping
+    while: (state) => state <= 5,
+    // State update function
+    step: (state) => state + 1,
+    // Effect to be performed on each iteration
+    body: (state) => Effect.succeed(state)
+  }
+)
+
+Effect.runPromise(result).then(console.log)
+// Output: [1, 2, 3, 4, 5]
+```
+
+In this example, the loop starts with the state `1` and continues until the state exceeds `5`. Each state is incremented by `1` and is collected into an array, which becomes the final result.
+
+#### Discarding Intermediate Results
+
+The `discard` option, when set to `true`, will discard the results of each effectful operation, returning `void` instead of an array.
+
+**Example** (Loop with Discarded Results)
+
+```ts twoslash "discard: true"
+import { Effect, Console } from "effect"
+
+const result = Effect.loop(
+  // Initial state
+  1,
+  {
+    // Condition to continue looping
+    while: (state) => state <= 5,
+    // State update function
+    step: (state) => state + 1,
+    // Effect to be performed on each iteration
+    body: (state) => Console.log(`Currently at state ${state}`),
+    // Discard intermediate results
+    discard: true
+  }
+)
+
+Effect.runPromise(result).then(console.log)
+/*
+Output:
+Currently at state 1
+Currently at state 2
+Currently at state 3
+Currently at state 4
+Currently at state 5
+undefined
+*/
+```
+
+In this example, the loop performs a side effect of logging the current index on each iteration, but it discards all intermediate results. The final result is `undefined`.
+
+### iterate
+
+The `Effect.iterate` function lets you repeatedly update a state through an effectful operation. It runs the `body` effect to update the state in each iteration and continues as long as the `while` condition evaluates to `true`.
+
+**Syntax**
+
+```ts showLineNumbers=false
+Effect.iterate(initial, {
+  while: (result) => boolean,
+  body: (result) => Effect
+})
+```
+
+This function is similar to a `while` loop in JavaScript, with the addition of effectful computations:
+
+```ts showLineNumbers=false
+let result = initial
+
+while (options.while(result)) {
+  result = options.body(result)
+}
+
+return result
+```
+
+**Example** (Effectful Iteration)
+
+```ts twoslash
+import { Effect } from "effect"
+
+const result = Effect.iterate(
+  // Initial result
+  1,
+  {
+    // Condition to continue iterating
+    while: (result) => result <= 5,
+    // Operation to change the result
+    body: (result) => Effect.succeed(result + 1)
+  }
+)
+
+Effect.runPromise(result).then(console.log)
+// Output: 6
+```
+
+### forEach
+
+Executes an effectful operation for each element in an `Iterable`.
+
+The `Effect.forEach` function applies a provided operation to each element in the
+iterable, producing a new effect that returns an array of results.
+If any effect fails, the iteration stops immediately (short-circuiting), and
+the error is propagated.
+
+The `concurrency` option controls how many operations are performed
+concurrently. By default, the operations are performed sequentially.
+
+**Example** (Applying Effects to Iterable Elements)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const result = Effect.forEach([1, 2, 3, 4, 5], (n, index) =>
+  Console.log(`Currently at index ${index}`).pipe(Effect.as(n * 2))
+)
+
+Effect.runPromise(result).then(console.log)
+/*
+Output:
+Currently at index 0
+Currently at index 1
+Currently at index 2
+Currently at index 3
+Currently at index 4
+[ 2, 4, 6, 8, 10 ]
+*/
+```
+
+In this example, we iterate over the array `[1, 2, 3, 4, 5]`, applying an effect that logs the current index. The `Effect.as(n * 2)` operation transforms each value, resulting in an array `[2, 4, 6, 8, 10]`. The final output is the result of collecting all the transformed values.
+
+#### Discarding Results
+
+The `discard` option, when set to `true`, will discard the results of each effectful operation, returning `void` instead of an array.
+
+**Example** (Using `discard` to Ignore Results)
+
+```ts twoslash "{ discard: true }"
+import { Effect, Console } from "effect"
+
+// Apply effects but discard the results
+const result = Effect.forEach(
+  [1, 2, 3, 4, 5],
+  (n, index) =>
+    Console.log(`Currently at index ${index}`).pipe(Effect.as(n * 2)),
+  { discard: true }
+)
+
+Effect.runPromise(result).then(console.log)
+/*
+Output:
+Currently at index 0
+Currently at index 1
+Currently at index 2
+Currently at index 3
+Currently at index 4
+undefined
+*/
+```
+
+In this case, the effects still run for each element, but the results are discarded, so the final output is `undefined`.
+
+## Collecting
+
+### all
+
+Combines multiple effects into one, returning results based on the input structure.
+
+Use `Effect.all` when you need to run multiple effects and combine their results into a single output. It supports tuples, iterables, structs, and records, making it flexible for different input types.
+
+If any effect fails, it stops execution (short-circuiting) and propagates the error. To change this behavior, you can use the [`mode`](#the-mode-option) option, which allows all effects to run and collect results as [Either](/docs/data-types/either/) or [Option](/docs/data-types/option/).
+
+You can control the execution order (e.g., sequential vs. concurrent) using the [Concurrency Options](/docs/concurrency/basic-concurrency/#concurrency-options).
+
+For instance, if the input is a tuple:
+
+```ts showLineNumbers=false
+//         ┌─── a tuple of effects
+//         ▼
+Effect.all([effect1, effect2, ...])
+```
+
+the effects are executed sequentially, and the result is a new effect containing the results as a tuple. The results in the tuple match the order of the effects passed to `Effect.all`.
+
+Let's explore examples for different types of structures: tuples, iterables, objects, and records.
+
+**Example** (Combining Effects in Tuples)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const tupleOfEffects = [
+  Effect.succeed(42).pipe(Effect.tap(Console.log)),
+  Effect.succeed("Hello").pipe(Effect.tap(Console.log))
+] as const
+
+//      ┌─── Effect<[number, string], never, never>
+//      ▼
+const resultsAsTuple = Effect.all(tupleOfEffects)
+
+Effect.runPromise(resultsAsTuple).then(console.log)
+/*
+Output:
+42
+Hello
+[ 42, 'Hello' ]
+*/
+```
+
+**Example** (Combining Effects in Iterables)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const iterableOfEffects: Iterable<Effect.Effect<number>> = [1, 2, 3].map(
+  (n) => Effect.succeed(n).pipe(Effect.tap(Console.log))
+)
+
+//      ┌─── Effect<number[], never, never>
+//      ▼
+const resultsAsArray = Effect.all(iterableOfEffects)
+
+Effect.runPromise(resultsAsArray).then(console.log)
+/*
+Output:
+1
+2
+3
+[ 1, 2, 3 ]
+*/
+```
+
+**Example** (Combining Effects in Structs)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const structOfEffects = {
+  a: Effect.succeed(42).pipe(Effect.tap(Console.log)),
+  b: Effect.succeed("Hello").pipe(Effect.tap(Console.log))
+}
+
+//      ┌─── Effect<{ a: number; b: string; }, never, never>
+//      ▼
+const resultsAsStruct = Effect.all(structOfEffects)
+
+Effect.runPromise(resultsAsStruct).then(console.log)
+/*
+Output:
+42
+Hello
+{ a: 42, b: 'Hello' }
+*/
+```
+
+**Example** (Combining Effects in Records)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const recordOfEffects: Record<string, Effect.Effect<number>> = {
+  key1: Effect.succeed(1).pipe(Effect.tap(Console.log)),
+  key2: Effect.succeed(2).pipe(Effect.tap(Console.log))
+}
+
+//      ┌─── Effect<{ [x: string]: number; }, never, never>
+//      ▼
+const resultsAsRecord = Effect.all(recordOfEffects)
+
+Effect.runPromise(resultsAsRecord).then(console.log)
+/*
+Output:
+1
+2
+{ key1: 1, key2: 2 }
+*/
+```
+
+#### Short-Circuiting Behavior
+
+The `Effect.all` function stops execution on the first error it encounters, this is called "short-circuiting".
+If any effect in the collection fails, the remaining effects will not run, and the error will be propagated.
+
+**Example** (Bail Out on First Failure)
+
+```ts twoslash
+import { Effect, Console } from "effect"
+
+const program = Effect.all([
+  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
+  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
+  // Won't execute due to earlier failure
+  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
+])
+
+Effect.runPromiseExit(program).then(console.log)
+/*
+Output:
+Task1
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: { _id: 'Cause', _tag: 'Fail', failure: 'Task2: Oh no!' }
+}
+*/
+```
+
+You can override this behavior by using the `mode` option.
+
+#### The `mode` option
+
+The `{ mode: "either" }` option changes the behavior of `Effect.all` to ensure all effects run, even if some fail. Instead of stopping on the first failure, this mode collects both successes and failures, returning an array of `Either` instances where each result is either a `Right` (success) or a `Left` (failure).
+
+**Example** (Collecting Results with `mode: "either"`)
+
+```ts twoslash /{ mode: "either" }/
+import { Effect, Console } from "effect"
+
+const effects = [
+  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
+  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
+  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
+]
+
+const program = Effect.all(effects, { mode: "either" })
+
+Effect.runPromiseExit(program).then(console.log)
+/*
+Output:
+Task1
+Task3
+{
+  _id: 'Exit',
+  _tag: 'Success',
+  value: [
+    { _id: 'Either', _tag: 'Right', right: 'Task1' },
+    { _id: 'Either', _tag: 'Left', left: 'Task2: Oh no!' },
+    { _id: 'Either', _tag: 'Right', right: 'Task3' }
+  ]
+}
+*/
+```
+
+Similarly, the `{ mode: "validate" }` option uses `Option` to indicate success or failure. Each effect returns `None` for success and `Some` with the error for failure.
+
+**Example** (Collecting Results with `mode: "validate"`)
+
+```ts twoslash /{ mode: "validate" }/
+import { Effect, Console } from "effect"
+
+const effects = [
+  Effect.succeed("Task1").pipe(Effect.tap(Console.log)),
+  Effect.fail("Task2: Oh no!").pipe(Effect.tap(Console.log)),
+  Effect.succeed("Task3").pipe(Effect.tap(Console.log))
+]
+
+const program = Effect.all(effects, { mode: "validate" })
+
+Effect.runPromiseExit(program).then((result) => console.log("%o", result))
+/*
+Output:
+Task1
+Task3
+{
+  _id: 'Exit',
+  _tag: 'Failure',
+  cause: {
+    _id: 'Cause',
+    _tag: 'Fail',
+    failure: [
+      { _id: 'Option', _tag: 'None' },
+      { _id: 'Option', _tag: 'Some', value: 'Task2: Oh no!' },
+      { _id: 'Option', _tag: 'None' }
+    ]
+  }
+}
+*/
+```
+
+create-effect-app.mdx
+---
+title: Create Effect App
+description: Quickly set up a new Effect application with a customizable template or example, streamlining your development start.
+sidebar:
+  order: 3
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components"
+
+The `create-effect-app` CLI allow you to create a new Effect application using a default template or an [example](https://github.com/Effect-TS/examples) from a public Github repository.
+It is the easiest way to get started with Effect.
+
+## CLI
+
+To begin, run the `create-effect-app` command in your terminal using your preferred package manager:
+
+<Tabs syncKey="package-manager">
+
+<TabItem label="npm" icon="seti:npm">
+
+```sh showLineNumbers=false
+npx create-effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="pnpm" icon="pnpm">
+
+```sh showLineNumbers=false
+pnpm create effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="Yarn" icon="seti:yarn">
+
+```sh showLineNumbers=false
+yarn create effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="Bun" icon="bun">
+
+```sh showLineNumbers=false
+bunx create-effect-app@latest
+```
+
+</TabItem>
+
+<TabItem label="Deno" icon="deno">
+
+```sh showLineNumbers=false
+deno init --npm effect-app@latest
+```
+
+</TabItem>
+
+</Tabs>
+
+This command starts an interactive setup that guides you through the steps required to bootstrap your project:
+
+![create-effect-app](../_assets/create-effect-app.gif "Animated GIF demonstrating the interactive experience when create-effect-app is run in interactive mode")
+
+After making your selections, `create-effect-app` will generate your new Effect project and configure it based on your choices.
+
+**Example**
+
+For instance, to create a new Effect project in a directory named `"my-effect-app"` using the basic template with ESLint integration, you can run:
+
+```sh showLineNumbers=false
+npx create-effect-app --template basic --eslint my-effect-app
+```
+
+## Non-Interactive Usage
+
+If you prefer, `create-effect-app` can also be used in a non-interactive mode:
+
+```sh showLineNumbers=false
+create-effect-app
+  (-t, --template basic | cli | monorepo)
+  [--changesets]
+  [--flake]
+  [--eslint]
+  [--workflows]
+  [<project-name>]
+create-effect-app
+  (-e, --example http-server)
+  [<project-name>]
+```
+
+Below is a breakdown of the available options to customize an Effect project template:
+
+| Option         | Description                                                                        |
+| -------------- | ---------------------------------------------------------------------------------- |
+| `--changesets` | Initializes your project with the Changesets package for managing version control. |
+| `--flake`      | Initializes your project with a Nix flake for managing system dependencies.        |
+| `--eslint`     | Includes ESLint for code formatting and linting.                                   |
+| `--workflows`  | Sets up Effect's recommended GitHub Action workflows for automation.               |
 
 creating-effects.mdx
 ---
@@ -31214,992 +31761,6 @@ In simpler terms, if you encode a value and then immediately decode it, the resu
   return the original value.
 </Aside>
 
-json-schema.mdx
----
-title: Schema to JSON Schema
-description: Convert schema definitions into JSON Schema for data validation and interoperability.
-sidebar:
-  label: JSON Schema
-  order: 16
----
-
-The `JSONSchema.make` function allows you to generate a JSON Schema from a schema.
-
-**Example** (Creating a JSON Schema for a Struct)
-
-The following example defines a `Person` schema with properties for `name` (a string) and `age` (a number). It then generates the corresponding JSON Schema.
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const Person = Schema.Struct({
-  name: Schema.String,
-  age: Schema.Number
-})
-
-const jsonSchema = JSONSchema.make(Person)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": [
-    "name",
-    "age"
-  ],
-  "properties": {
-    "name": {
-      "type": "string"
-    },
-    "age": {
-      "type": "number"
-    }
-  },
-  "additionalProperties": false
-}
-*/
-```
-
-The `JSONSchema.make` function aims to produce an optimal JSON Schema representing the input part of the decoding phase.
-It does this by traversing the schema from the most nested component, incorporating each refinement, and **stops at the first transformation** encountered.
-
-**Example** (Excluding Transformations in JSON Schema)
-
-Consider modifying the `age` field to include both a refinement and a transformation. Only the refinement is reflected in the JSON Schema.
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const Person = Schema.Struct({
-  name: Schema.String,
-  age: Schema.Number.pipe(
-    // Refinement included in the JSON Schema
-    Schema.int(),
-    // Transformation excluded from the JSON Schema
-    Schema.clamp(1, 10)
-  )
-})
-
-const jsonSchema = JSONSchema.make(Person)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": [
-    "name",
-    "age"
-  ],
-  "properties": {
-    "name": {
-      "type": "string"
-    },
-    "age": {
-      "type": "integer",
-      "description": "an integer",
-      "title": "integer"
-    }
-  },
-  "additionalProperties": false
-}
-*/
-```
-
-In this case, the JSON Schema reflects the integer refinement but does not include the transformation that clamps the value.
-
-## Specific Outputs for Schema Types
-
-### Literals
-
-Literals are transformed into `enum` types within JSON Schema.
-
-**Example** (Single Literal)
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Literal("a")
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "string",
-  "enum": [
-    "a"
-  ]
-}
-*/
-```
-
-**Example** (Union of literals)
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Literal("a", "b")
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "string",
-  "enum": [
-    "a",
-    "b"
-  ]
-}
-*/
-```
-
-### Void
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Void
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "/schemas/void",
-  "title": "void"
-}
-*/
-```
-
-### Any
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Any
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "/schemas/any",
-  "title": "any"
-}
-*/
-```
-
-### Unknown
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Unknown
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "/schemas/unknown",
-  "title": "unknown"
-}
-*/
-```
-
-### Object
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Object
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "/schemas/object",
-  "anyOf": [
-    {
-      "type": "object"
-    },
-    {
-      "type": "array"
-    }
-  ],
-  "description": "an object in the TypeScript meaning, i.e. the `object` type",
-  "title": "object"
-}
-*/
-```
-
-### String
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.String
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "string"
-}
-*/
-```
-
-### Number
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Number
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "number"
-}
-*/
-```
-
-### Boolean
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Boolean
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "boolean"
-}
-*/
-```
-
-### Tuples
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Tuple(Schema.String, Schema.Number)
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "array",
-  "minItems": 2,
-  "items": [
-    {
-      "type": "string"
-    },
-    {
-      "type": "number"
-    }
-  ],
-  "additionalItems": false
-}
-*/
-```
-
-### Arrays
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Array(Schema.String)
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "array",
-  "items": {
-    "type": "string"
-  }
-}
-*/
-```
-
-### Non Empty Arrays
-
-Represents an array with at least one element.
-
-**Example**
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.NonEmptyArray(Schema.String)
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "array",
-  "minItems": 1,
-  "items": {
-    "type": "string"
-  }
-}
-*/
-```
-
-### Structs
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Struct({
-  name: Schema.String,
-  age: Schema.Number
-})
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": [
-    "name",
-    "age"
-  ],
-  "properties": {
-    "name": {
-      "type": "string"
-    },
-    "age": {
-      "type": "number"
-    }
-  },
-  "additionalProperties": false
-}
-*/
-```
-
-### Records
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Record({
-  key: Schema.String,
-  value: Schema.Number
-})
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": [],
-  "properties": {},
-  "patternProperties": {
-    "": {
-      "type": "number"
-    }
-  }
-}
-*/
-```
-
-### Mixed Structs with Records
-
-Combines fixed properties from a struct with dynamic properties from a record.
-
-**Example**
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Struct(
-  {
-    name: Schema.String,
-    age: Schema.Number
-  },
-  Schema.Record({
-    key: Schema.String,
-    value: Schema.Union(Schema.String, Schema.Number)
-  })
-)
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": [
-    "name",
-    "age"
-  ],
-  "properties": {
-    "name": {
-      "type": "string"
-    },
-    "age": {
-      "type": "number"
-    }
-  },
-  "patternProperties": {
-    "": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "number"
-        }
-      ]
-    }
-  }
-}
-*/
-```
-
-### Enums
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-enum Fruits {
-  Apple,
-  Banana
-}
-
-const schema = Schema.Enums(Fruits)
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$comment": "/schemas/enums",
-  "anyOf": [
-    {
-      "type": "number",
-      "title": "Apple",
-      "enum": [
-        0
-      ]
-    },
-    {
-      "type": "number",
-      "title": "Banana",
-      "enum": [
-        1
-      ]
-    }
-  ]
-}
-*/
-```
-
-### Template Literals
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.TemplateLiteral(Schema.Literal("a"), Schema.Number)
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "string",
-  "title": "`a${number}`",
-  "description": "a template literal",
-  "pattern": "^a[+-]?\\d*\\.?\\d+(?:[Ee][+-]?\\d+)?$"
-}
-*/
-```
-
-### Unions
-
-Unions are expressed using `anyOf` or `enum`, depending on the types involved:
-
-**Example** (Generic Union)
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Union(Schema.String, Schema.Number)
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "anyOf": [
-    {
-      "type": "string"
-    },
-    {
-      "type": "number"
-    }
-  ]
-}
-*/
-```
-
-**Example** (Union of literals)
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Literal("a", "b")
-
-console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "string",
-  "enum": [
-    "a",
-    "b"
-  ]
-}
-*/
-```
-
-## Identifier Annotations
-
-You can add `identifier` annotations to schemas to improve structure and maintainability. Annotated schemas are included in a `$defs` object in the root of the JSON Schema and referenced from there.
-
-**Example** (Using Identifier Annotations)
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const Name = Schema.String.annotations({ identifier: "Name" })
-
-const Age = Schema.Number.annotations({ identifier: "Age" })
-
-const Person = Schema.Struct({
-  name: Name,
-  age: Age
-})
-
-const jsonSchema = JSONSchema.make(Person)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$defs": {
-    "Name": {
-      "type": "string",
-      "description": "a string",
-      "title": "string"
-    },
-    "Age": {
-      "type": "number",
-      "description": "a number",
-      "title": "number"
-    }
-  },
-  "type": "object",
-  "required": [
-    "name",
-    "age"
-  ],
-  "properties": {
-    "name": {
-      "$ref": "#/$defs/Name"
-    },
-    "age": {
-      "$ref": "#/$defs/Age"
-    }
-  },
-  "additionalProperties": false
-}
-*/
-```
-
-By using identifier annotations, schemas can be reused and referenced more easily, especially in complex JSON Schemas.
-
-## Standard JSON Schema Annotations
-
-Standard JSON Schema annotations such as `title`, `description`, `default`, and `examples` are supported.
-These annotations allow you to enrich your schemas with metadata that can enhance readability and provide additional information about the data structure.
-
-**Example** (Using Annotations for Metadata)
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.String.annotations({
-  description: "my custom description",
-  title: "my custom title",
-  default: "",
-  examples: ["a", "b"]
-})
-
-const jsonSchema = JSONSchema.make(schema)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "string",
-  "description": "my custom description",
-  "title": "my custom title",
-  "examples": [
-    "a",
-    "b"
-  ],
-  "default": ""
-}
-*/
-```
-
-### Adding annotations to Struct properties
-
-To enhance the clarity of your JSON schemas, it's advisable to add annotations directly to the property signatures rather than to the type itself.
-This method is more semantically appropriate as it links descriptive titles and other metadata specifically to the properties they describe, rather than to the generic type.
-
-**Example** (Annotated Struct Properties)
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const Person = Schema.Struct({
-  firstName: Schema.propertySignature(Schema.String).annotations({
-    title: "First name"
-  }),
-  lastName: Schema.propertySignature(Schema.String).annotations({
-    title: "Last Name"
-  })
-})
-
-const jsonSchema = JSONSchema.make(Person)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": [
-    "firstName",
-    "lastName"
-  ],
-  "properties": {
-    "firstName": {
-      "type": "string",
-      "title": "First name"
-    },
-    "lastName": {
-      "type": "string",
-      "title": "Last Name"
-    }
-  },
-  "additionalProperties": false
-}
-*/
-```
-
-## Recursive and Mutually Recursive Schemas
-
-Recursive and mutually recursive schemas are supported, however it's **mandatory** to use `identifier` annotations for these types of schemas to ensure correct references and definitions within the generated JSON Schema.
-
-**Example** (Recursive Schema with Identifier Annotations)
-
-In this example, the `Category` schema refers to itself, making it necessary to use an `identifier` annotation to facilitate the reference.
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-// Define the interface representing a category structure
-interface Category {
-  readonly name: string
-  readonly categories: ReadonlyArray<Category>
-}
-
-// Define a recursive schema with a required identifier annotation
-const Category = Schema.Struct({
-  name: Schema.String,
-  categories: Schema.Array(
-    // Recursive reference to the Category schema
-    Schema.suspend((): Schema.Schema<Category> => Category)
-  )
-}).annotations({ identifier: "Category" })
-
-const jsonSchema = JSONSchema.make(Category)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$defs": {
-    "Category": {
-      "type": "object",
-      "required": [
-        "name",
-        "categories"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "categories": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Category"
-          }
-        }
-      },
-      "additionalProperties": false
-    }
-  },
-  "$ref": "#/$defs/Category"
-}
-*/
-```
-
-## Customizing JSON Schema Generation
-
-When working with JSON Schema certain data types, such as `bigint`, lack a direct representation because JSON Schema does not natively support them.
-This absence typically leads to an error when the schema is generated.
-
-**Example** (Error Due to Missing Annotation)
-
-Attempting to generate a JSON Schema for unsupported types like `bigint` will lead to a missing annotation error:
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Struct({
-  a_bigint_field: Schema.BigIntFromSelf
-})
-
-const jsonSchema = JSONSchema.make(schema)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-throws:
-Error: Missing annotation
-at path: ["a_bigint_field"]
-details: Generating a JSON Schema for this schema requires a "jsonSchema" annotation
-schema (BigIntKeyword): bigint
-*/
-```
-
-To address this, you can enhance the schema with a custom `jsonSchema` annotation, defining how you intend to represent such types in JSON Schema:
-
-**Example** (Using Custom Annotation for Unsupported Type)
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-const schema = Schema.Struct({
-  // Adding a custom JSON Schema annotation for the `bigint` type
-  a_bigint_field: Schema.BigIntFromSelf.annotations({
-    jsonSchema: {
-      type: "some custom way to represent a bigint in JSON Schema"
-    }
-  })
-})
-
-const jsonSchema = JSONSchema.make(schema)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": [
-    "a_bigint_field"
-  ],
-  "properties": {
-    "a_bigint_field": {
-      "type": "some custom way to represent a bigint in JSON Schema"
-    }
-  },
-  "additionalProperties": false
-}
-*/
-```
-
-### Refinements
-
-When defining a refinement (e.g., through the `Schema.filter` function), you can include a JSON Schema annotation to describe the refinement. This annotation is added as a "fragment" that becomes part of the generated JSON Schema. If a schema contains multiple refinements, their respective annotations are merged into the output.
-
-**Example** (Using Refinements with Merged Annotations)
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-// Define a schema with a refinement for positive numbers
-const Positive = Schema.Number.pipe(
-  Schema.filter((n) => n > 0, {
-    jsonSchema: { minimum: 0 }
-  })
-)
-
-// Add an upper bound refinement to the schema
-const schema = Positive.pipe(
-  Schema.filter((n) => n <= 10, {
-    jsonSchema: { maximum: 10 }
-  })
-)
-
-const jsonSchema = JSONSchema.make(schema)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "number",
-  "minimum": 0,
-  "maximum": 10
-}
-*/
-```
-
-The `jsonSchema` annotation is defined as a generic object, allowing it to represent non-standard extensions. This flexibility leaves the responsibility of enforcing type constraints to the user.
-
-If you prefer stricter type enforcement or need to support non-standard extensions, you can introduce a `satisfies` constraint on the object literal. This constraint should be used in conjunction with the typing library of your choice.
-
-**Example** (Ensuring Type Correctness)
-
-In the following example, we've used the `@types/json-schema` package to provide TypeScript definitions for JSON Schema. This approach not only ensures type correctness but also enables autocomplete suggestions in your IDE.
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-import type { JSONSchema7 } from "json-schema"
-
-const Positive = Schema.Number.pipe(
-  Schema.filter((n) => n > 0, {
-    jsonSchema: { minimum: 0 } // Generic object, no type enforcement
-  })
-)
-
-const schema = Positive.pipe(
-  Schema.filter((n) => n <= 10, {
-    jsonSchema: { maximum: 10 } satisfies JSONSchema7 // Enforces type constraints
-  })
-)
-
-const jsonSchema = JSONSchema.make(schema)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "number",
-  "minimum": 0,
-  "maximum": 10
-}
-*/
-```
-
-For schema types other than refinements, you can override the default generated JSON Schema by providing a custom `jsonSchema` annotation. The content of this annotation will replace the system-generated schema.
-
-**Example** (Custom Annotation for a Struct)
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-// Define a struct with a custom JSON Schema annotation
-const schema = Schema.Struct({ foo: Schema.String }).annotations({
-  jsonSchema: { type: "object" }
-})
-
-const jsonSchema = JSONSchema.make(schema)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-Output
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object"
-}
-the default would be:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": [
-    "foo"
-  ],
-  "properties": {
-    "foo": {
-      "type": "string"
-    }
-  },
-  "additionalProperties": false
-}
-*/
-```
-
-## Specialized JSON Schema Generation with Schema.parseJson
-
-The `Schema.parseJson` function provides a unique approach to JSON Schema generation. Instead of defaulting to a schema for a plain string, which represents the "from" side of the transformation, it generates a schema based on the structure provided within the argument.
-
-This behavior ensures that the generated JSON Schema reflects the intended structure of the parsed data, rather than the raw JSON input.
-
-**Example** (Generating JSON Schema for a Parsed Object)
-
-```ts twoslash
-import { JSONSchema, Schema } from "effect"
-
-// Define a schema that parses a JSON string into a structured object
-const schema = Schema.parseJson(
-  Schema.Struct({
-    // Nested parsing: JSON string to a number
-    a: Schema.parseJson(Schema.NumberFromString)
-  })
-)
-
-const jsonSchema = JSONSchema.make(schema)
-
-console.log(JSON.stringify(jsonSchema, null, 2))
-/*
-Output:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": [
-    "a"
-  ],
-  "properties": {
-    "a": {
-      "type": "string",
-      "contentMediaType": "application/json"
-    }
-  },
-  "additionalProperties": false
-}
-*/
-```
-
 key-value-store.mdx
 ---
 title: KeyValueStore
@@ -37446,62 +37007,6 @@ const program = Effect.log("Hello")
 // Run the program, writing logs to both the console (pretty format)
 // and "/tmp/log.txt" (logfmt)
 Effect.runFork(program.pipe(Effect.provide(LoggerLive)))
-```
-
-pretty.mdx
----
-title: Schema to Pretty Printer
-description: Generate formatted string representations of values based on schemas.
-sidebar:
-  label: Pretty Printer
-  order: 18
----
-
-The `Pretty.make` function is used to create pretty printers that generate a formatted string representation of values based on a schema.
-
-**Example** (Pretty Printer for a Struct Schema)
-
-```ts twoslash
-import { Pretty, Schema } from "effect"
-
-const Person = Schema.Struct({
-  name: Schema.String,
-  age: Schema.Number
-})
-
-// Create a pretty printer for the schema
-const PersonPretty = Pretty.make(Person)
-
-// Format and print a Person object
-console.log(PersonPretty({ name: "Alice", age: 30 }))
-/*
-Output:
-'{ "name": "Alice", "age": 30 }'
-*/
-```
-
-## Customizing Pretty Printer Generation
-
-You can customize how the pretty printer formats output by using the `pretty` annotation within your schema definition.
-
-The `pretty` annotation takes any type parameters provided (`typeParameters`) and formats the value into a string.
-
-**Example** (Custom Pretty Printer for Numbers)
-
-```ts twoslash
-import { Pretty, Schema } from "effect"
-
-// Define a schema with a custom pretty annotation
-const schema = Schema.Number.annotations({
-  pretty: (/**typeParameters**/) => (value) => `my format: ${value}`
-})
-
-// Create the pretty printer
-const customPrettyPrinter = Pretty.make(schema)
-
-// Format and print a value
-console.log(customPrettyPrinter(1))
-// Output: "my format: 1"
 ```
 
 repetition.mdx
@@ -44346,6 +43851,992 @@ const infiniteNumberStream = Stream.iterate(1, (n) => n + 1)
 
 In summary, a `Stream` is a versatile tool for representing programs that may yield multiple values, making it suitable for a wide range of tasks, from processing finite lists to handling infinite sequences.
 
+json-schema.mdx
+---
+title: Schema to JSON Schema
+description: Convert schema definitions into JSON Schema for data validation and interoperability.
+sidebar:
+  label: JSON Schema
+  order: 16
+---
+
+The `JSONSchema.make` function allows you to generate a JSON Schema from a schema.
+
+**Example** (Creating a JSON Schema for a Struct)
+
+The following example defines a `Person` schema with properties for `name` (a string) and `age` (a number). It then generates the corresponding JSON Schema.
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const Person = Schema.Struct({
+  name: Schema.String,
+  age: Schema.Number
+})
+
+const jsonSchema = JSONSchema.make(Person)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "name",
+    "age"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "age": {
+      "type": "number"
+    }
+  },
+  "additionalProperties": false
+}
+*/
+```
+
+The `JSONSchema.make` function aims to produce an optimal JSON Schema representing the input part of the decoding phase.
+It does this by traversing the schema from the most nested component, incorporating each refinement, and **stops at the first transformation** encountered.
+
+**Example** (Excluding Transformations in JSON Schema)
+
+Consider modifying the `age` field to include both a refinement and a transformation. Only the refinement is reflected in the JSON Schema.
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const Person = Schema.Struct({
+  name: Schema.String,
+  age: Schema.Number.pipe(
+    // Refinement included in the JSON Schema
+    Schema.int(),
+    // Transformation excluded from the JSON Schema
+    Schema.clamp(1, 10)
+  )
+})
+
+const jsonSchema = JSONSchema.make(Person)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "name",
+    "age"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "age": {
+      "type": "integer",
+      "description": "an integer",
+      "title": "integer"
+    }
+  },
+  "additionalProperties": false
+}
+*/
+```
+
+In this case, the JSON Schema reflects the integer refinement but does not include the transformation that clamps the value.
+
+## Specific Outputs for Schema Types
+
+### Literals
+
+Literals are transformed into `enum` types within JSON Schema.
+
+**Example** (Single Literal)
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Literal("a")
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "string",
+  "enum": [
+    "a"
+  ]
+}
+*/
+```
+
+**Example** (Union of literals)
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Literal("a", "b")
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "string",
+  "enum": [
+    "a",
+    "b"
+  ]
+}
+*/
+```
+
+### Void
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Void
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "/schemas/void",
+  "title": "void"
+}
+*/
+```
+
+### Any
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Any
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "/schemas/any",
+  "title": "any"
+}
+*/
+```
+
+### Unknown
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Unknown
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "/schemas/unknown",
+  "title": "unknown"
+}
+*/
+```
+
+### Object
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Object
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "/schemas/object",
+  "anyOf": [
+    {
+      "type": "object"
+    },
+    {
+      "type": "array"
+    }
+  ],
+  "description": "an object in the TypeScript meaning, i.e. the `object` type",
+  "title": "object"
+}
+*/
+```
+
+### String
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.String
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "string"
+}
+*/
+```
+
+### Number
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Number
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "number"
+}
+*/
+```
+
+### Boolean
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Boolean
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "boolean"
+}
+*/
+```
+
+### Tuples
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Tuple(Schema.String, Schema.Number)
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "minItems": 2,
+  "items": [
+    {
+      "type": "string"
+    },
+    {
+      "type": "number"
+    }
+  ],
+  "additionalItems": false
+}
+*/
+```
+
+### Arrays
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Array(Schema.String)
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "items": {
+    "type": "string"
+  }
+}
+*/
+```
+
+### Non Empty Arrays
+
+Represents an array with at least one element.
+
+**Example**
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.NonEmptyArray(Schema.String)
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "string"
+  }
+}
+*/
+```
+
+### Structs
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Struct({
+  name: Schema.String,
+  age: Schema.Number
+})
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "name",
+    "age"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "age": {
+      "type": "number"
+    }
+  },
+  "additionalProperties": false
+}
+*/
+```
+
+### Records
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Record({
+  key: Schema.String,
+  value: Schema.Number
+})
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [],
+  "properties": {},
+  "patternProperties": {
+    "": {
+      "type": "number"
+    }
+  }
+}
+*/
+```
+
+### Mixed Structs with Records
+
+Combines fixed properties from a struct with dynamic properties from a record.
+
+**Example**
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Struct(
+  {
+    name: Schema.String,
+    age: Schema.Number
+  },
+  Schema.Record({
+    key: Schema.String,
+    value: Schema.Union(Schema.String, Schema.Number)
+  })
+)
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "name",
+    "age"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "age": {
+      "type": "number"
+    }
+  },
+  "patternProperties": {
+    "": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    }
+  }
+}
+*/
+```
+
+### Enums
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+enum Fruits {
+  Apple,
+  Banana
+}
+
+const schema = Schema.Enums(Fruits)
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "/schemas/enums",
+  "anyOf": [
+    {
+      "type": "number",
+      "title": "Apple",
+      "enum": [
+        0
+      ]
+    },
+    {
+      "type": "number",
+      "title": "Banana",
+      "enum": [
+        1
+      ]
+    }
+  ]
+}
+*/
+```
+
+### Template Literals
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.TemplateLiteral(Schema.Literal("a"), Schema.Number)
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "string",
+  "title": "`a${number}`",
+  "description": "a template literal",
+  "pattern": "^a[+-]?\\d*\\.?\\d+(?:[Ee][+-]?\\d+)?$"
+}
+*/
+```
+
+### Unions
+
+Unions are expressed using `anyOf` or `enum`, depending on the types involved:
+
+**Example** (Generic Union)
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Union(Schema.String, Schema.Number)
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "anyOf": [
+    {
+      "type": "string"
+    },
+    {
+      "type": "number"
+    }
+  ]
+}
+*/
+```
+
+**Example** (Union of literals)
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Literal("a", "b")
+
+console.log(JSON.stringify(JSONSchema.make(schema), null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "string",
+  "enum": [
+    "a",
+    "b"
+  ]
+}
+*/
+```
+
+## Identifier Annotations
+
+You can add `identifier` annotations to schemas to improve structure and maintainability. Annotated schemas are included in a `$defs` object in the root of the JSON Schema and referenced from there.
+
+**Example** (Using Identifier Annotations)
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const Name = Schema.String.annotations({ identifier: "Name" })
+
+const Age = Schema.Number.annotations({ identifier: "Age" })
+
+const Person = Schema.Struct({
+  name: Name,
+  age: Age
+})
+
+const jsonSchema = JSONSchema.make(Person)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "Name": {
+      "type": "string",
+      "description": "a string",
+      "title": "string"
+    },
+    "Age": {
+      "type": "number",
+      "description": "a number",
+      "title": "number"
+    }
+  },
+  "type": "object",
+  "required": [
+    "name",
+    "age"
+  ],
+  "properties": {
+    "name": {
+      "$ref": "#/$defs/Name"
+    },
+    "age": {
+      "$ref": "#/$defs/Age"
+    }
+  },
+  "additionalProperties": false
+}
+*/
+```
+
+By using identifier annotations, schemas can be reused and referenced more easily, especially in complex JSON Schemas.
+
+## Standard JSON Schema Annotations
+
+Standard JSON Schema annotations such as `title`, `description`, `default`, and `examples` are supported.
+These annotations allow you to enrich your schemas with metadata that can enhance readability and provide additional information about the data structure.
+
+**Example** (Using Annotations for Metadata)
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.String.annotations({
+  description: "my custom description",
+  title: "my custom title",
+  default: "",
+  examples: ["a", "b"]
+})
+
+const jsonSchema = JSONSchema.make(schema)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "string",
+  "description": "my custom description",
+  "title": "my custom title",
+  "examples": [
+    "a",
+    "b"
+  ],
+  "default": ""
+}
+*/
+```
+
+### Adding annotations to Struct properties
+
+To enhance the clarity of your JSON schemas, it's advisable to add annotations directly to the property signatures rather than to the type itself.
+This method is more semantically appropriate as it links descriptive titles and other metadata specifically to the properties they describe, rather than to the generic type.
+
+**Example** (Annotated Struct Properties)
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const Person = Schema.Struct({
+  firstName: Schema.propertySignature(Schema.String).annotations({
+    title: "First name"
+  }),
+  lastName: Schema.propertySignature(Schema.String).annotations({
+    title: "Last Name"
+  })
+})
+
+const jsonSchema = JSONSchema.make(Person)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "firstName",
+    "lastName"
+  ],
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "title": "First name"
+    },
+    "lastName": {
+      "type": "string",
+      "title": "Last Name"
+    }
+  },
+  "additionalProperties": false
+}
+*/
+```
+
+## Recursive and Mutually Recursive Schemas
+
+Recursive and mutually recursive schemas are supported, however it's **mandatory** to use `identifier` annotations for these types of schemas to ensure correct references and definitions within the generated JSON Schema.
+
+**Example** (Recursive Schema with Identifier Annotations)
+
+In this example, the `Category` schema refers to itself, making it necessary to use an `identifier` annotation to facilitate the reference.
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+// Define the interface representing a category structure
+interface Category {
+  readonly name: string
+  readonly categories: ReadonlyArray<Category>
+}
+
+// Define a recursive schema with a required identifier annotation
+const Category = Schema.Struct({
+  name: Schema.String,
+  categories: Schema.Array(
+    // Recursive reference to the Category schema
+    Schema.suspend((): Schema.Schema<Category> => Category)
+  )
+}).annotations({ identifier: "Category" })
+
+const jsonSchema = JSONSchema.make(Category)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "Category": {
+      "type": "object",
+      "required": [
+        "name",
+        "categories"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Category"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$ref": "#/$defs/Category"
+}
+*/
+```
+
+## Customizing JSON Schema Generation
+
+When working with JSON Schema certain data types, such as `bigint`, lack a direct representation because JSON Schema does not natively support them.
+This absence typically leads to an error when the schema is generated.
+
+**Example** (Error Due to Missing Annotation)
+
+Attempting to generate a JSON Schema for unsupported types like `bigint` will lead to a missing annotation error:
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Struct({
+  a_bigint_field: Schema.BigIntFromSelf
+})
+
+const jsonSchema = JSONSchema.make(schema)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+throws:
+Error: Missing annotation
+at path: ["a_bigint_field"]
+details: Generating a JSON Schema for this schema requires a "jsonSchema" annotation
+schema (BigIntKeyword): bigint
+*/
+```
+
+To address this, you can enhance the schema with a custom `jsonSchema` annotation, defining how you intend to represent such types in JSON Schema:
+
+**Example** (Using Custom Annotation for Unsupported Type)
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+const schema = Schema.Struct({
+  // Adding a custom JSON Schema annotation for the `bigint` type
+  a_bigint_field: Schema.BigIntFromSelf.annotations({
+    jsonSchema: {
+      type: "some custom way to represent a bigint in JSON Schema"
+    }
+  })
+})
+
+const jsonSchema = JSONSchema.make(schema)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "a_bigint_field"
+  ],
+  "properties": {
+    "a_bigint_field": {
+      "type": "some custom way to represent a bigint in JSON Schema"
+    }
+  },
+  "additionalProperties": false
+}
+*/
+```
+
+### Refinements
+
+When defining a refinement (e.g., through the `Schema.filter` function), you can include a JSON Schema annotation to describe the refinement. This annotation is added as a "fragment" that becomes part of the generated JSON Schema. If a schema contains multiple refinements, their respective annotations are merged into the output.
+
+**Example** (Using Refinements with Merged Annotations)
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+// Define a schema with a refinement for positive numbers
+const Positive = Schema.Number.pipe(
+  Schema.filter((n) => n > 0, {
+    jsonSchema: { minimum: 0 }
+  })
+)
+
+// Add an upper bound refinement to the schema
+const schema = Positive.pipe(
+  Schema.filter((n) => n <= 10, {
+    jsonSchema: { maximum: 10 }
+  })
+)
+
+const jsonSchema = JSONSchema.make(schema)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "number",
+  "minimum": 0,
+  "maximum": 10
+}
+*/
+```
+
+The `jsonSchema` annotation is defined as a generic object, allowing it to represent non-standard extensions. This flexibility leaves the responsibility of enforcing type constraints to the user.
+
+If you prefer stricter type enforcement or need to support non-standard extensions, you can introduce a `satisfies` constraint on the object literal. This constraint should be used in conjunction with the typing library of your choice.
+
+**Example** (Ensuring Type Correctness)
+
+In the following example, we've used the `@types/json-schema` package to provide TypeScript definitions for JSON Schema. This approach not only ensures type correctness but also enables autocomplete suggestions in your IDE.
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+import type { JSONSchema7 } from "json-schema"
+
+const Positive = Schema.Number.pipe(
+  Schema.filter((n) => n > 0, {
+    jsonSchema: { minimum: 0 } // Generic object, no type enforcement
+  })
+)
+
+const schema = Positive.pipe(
+  Schema.filter((n) => n <= 10, {
+    jsonSchema: { maximum: 10 } satisfies JSONSchema7 // Enforces type constraints
+  })
+)
+
+const jsonSchema = JSONSchema.make(schema)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "number",
+  "minimum": 0,
+  "maximum": 10
+}
+*/
+```
+
+For schema types other than refinements, you can override the default generated JSON Schema by providing a custom `jsonSchema` annotation. The content of this annotation will replace the system-generated schema.
+
+**Example** (Custom Annotation for a Struct)
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+// Define a struct with a custom JSON Schema annotation
+const schema = Schema.Struct({ foo: Schema.String }).annotations({
+  jsonSchema: { type: "object" }
+})
+
+const jsonSchema = JSONSchema.make(schema)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+Output
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object"
+}
+the default would be:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "foo"
+  ],
+  "properties": {
+    "foo": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
+*/
+```
+
+## Specialized JSON Schema Generation with Schema.parseJson
+
+The `Schema.parseJson` function provides a unique approach to JSON Schema generation. Instead of defaulting to a schema for a plain string, which represents the "from" side of the transformation, it generates a schema based on the structure provided within the argument.
+
+This behavior ensures that the generated JSON Schema reflects the intended structure of the parsed data, rather than the raw JSON input.
+
+**Example** (Generating JSON Schema for a Parsed Object)
+
+```ts twoslash
+import { JSONSchema, Schema } from "effect"
+
+// Define a schema that parses a JSON string into a structured object
+const schema = Schema.parseJson(
+  Schema.Struct({
+    // Nested parsing: JSON string to a number
+    a: Schema.parseJson(Schema.NumberFromString)
+  })
+)
+
+const jsonSchema = JSONSchema.make(schema)
+
+console.log(JSON.stringify(jsonSchema, null, 2))
+/*
+Output:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "a"
+  ],
+  "properties": {
+    "a": {
+      "type": "string",
+      "contentMediaType": "application/json"
+    }
+  },
+  "additionalProperties": false
+}
+*/
+```
+
 leftovers.mdx
 ---
 title: Leftovers
@@ -46149,6 +46640,62 @@ Output:
 ```
 
 In this example, we've used the `Schedule.spaced("1 second")` schedule to introduce a one-second gap between each emission in the stream.
+
+pretty.mdx
+---
+title: Schema to Pretty Printer
+description: Generate formatted string representations of values based on schemas.
+sidebar:
+  label: Pretty Printer
+  order: 18
+---
+
+The `Pretty.make` function is used to create pretty printers that generate a formatted string representation of values based on a schema.
+
+**Example** (Pretty Printer for a Struct Schema)
+
+```ts twoslash
+import { Pretty, Schema } from "effect"
+
+const Person = Schema.Struct({
+  name: Schema.String,
+  age: Schema.Number
+})
+
+// Create a pretty printer for the schema
+const PersonPretty = Pretty.make(Person)
+
+// Format and print a Person object
+console.log(PersonPretty({ name: "Alice", age: 30 }))
+/*
+Output:
+'{ "name": "Alice", "age": 30 }'
+*/
+```
+
+## Customizing Pretty Printer Generation
+
+You can customize how the pretty printer formats output by using the `pretty` annotation within your schema definition.
+
+The `pretty` annotation takes any type parameters provided (`typeParameters`) and formats the value into a string.
+
+**Example** (Custom Pretty Printer for Numbers)
+
+```ts twoslash
+import { Pretty, Schema } from "effect"
+
+// Define a schema with a custom pretty annotation
+const schema = Schema.Number.annotations({
+  pretty: (/**typeParameters**/) => (value) => `my format: ${value}`
+})
+
+// Create the pretty printer
+const customPrettyPrinter = Pretty.make(schema)
+
+// Format and print a value
+console.log(customPrettyPrinter(1))
+// Output: "my format: 1"
+```
 
 projections.mdx
 ---
