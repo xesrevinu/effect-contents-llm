@@ -2721,586 +2721,6 @@ const bad1: PositiveInt = PositiveInt(-5)
 const bad2: PositiveInt = PositiveInt(3.14)
 ```
 
-building-pipelines.mdx
----
-title: Building Pipelines
-description: Learn to create modular, readable pipelines for composing and sequencing operations in Effect, enabling clear and efficient data transformations.
-sidebar:
-  order: 9
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-Effect pipelines allow for the composition and sequencing of operations on values, enabling the transformation and manipulation of data in a concise and modular manner.
-
-## Why Pipelines are Good for Structuring Your Application
-
-Pipelines are an excellent way to structure your application and handle data transformations in a concise and modular manner. They offer several benefits:
-
-1. **Readability**: Pipelines allow you to compose functions in a readable and sequential manner. You can clearly see the flow of data and the operations applied to it, making it easier to understand and maintain the code.
-
-2. **Code Organization**: With pipelines, you can break down complex operations into smaller, manageable functions. Each function performs a specific task, making your code more modular and easier to reason about.
-
-3. **Reusability**: Pipelines promote the reuse of functions. By breaking down operations into smaller functions, you can reuse them in different pipelines or contexts, improving code reuse and reducing duplication.
-
-4. **Type Safety**: By leveraging the type system, pipelines help catch errors at compile-time. Functions in a pipeline have well-defined input and output types, ensuring that the data flows correctly through the pipeline and minimizing runtime errors.
-
-## Functions vs Methods
-
-The use of functions in the Effect ecosystem libraries is important for
-achieving **tree shakeability** and ensuring **extensibility**.
-Functions enable efficient bundling by eliminating unused code, and they
-provide a flexible and modular approach to extending the libraries'
-functionality.
-
-### Tree Shakeability
-
-Tree shakeability refers to the ability of a build system to eliminate unused code during the bundling process. Functions are tree shakeable, while methods are not.
-
-When functions are used in the Effect ecosystem, only the functions that are actually imported and used in your application will be included in the final bundled code. Unused functions are automatically removed, resulting in a smaller bundle size and improved performance.
-
-On the other hand, methods are attached to objects or prototypes, and they cannot be easily tree shaken. Even if you only use a subset of methods, all methods associated with an object or prototype will be included in the bundle, leading to unnecessary code bloat.
-
-### Extensibility
-
-Another important advantage of using functions in the Effect ecosystem is the ease of extensibility. With methods, extending the functionality of an existing API often requires modifying the prototype of the object, which can be complex and error-prone.
-
-In contrast, with functions, extending the functionality is much simpler. You can define your own "extension methods" as plain old functions without the need to modify the prototypes of objects. This promotes cleaner and more modular code, and it also allows for better compatibility with other libraries and modules.
-
-## pipe
-
-The `pipe` function is a utility that allows us to compose functions in a readable and sequential manner. It takes the output of one function and passes it as the input to the next function in the pipeline. This enables us to build complex transformations by chaining multiple functions together.
-
-**Syntax**
-
-```ts showLineNumbers=false
-import { pipe } from "effect"
-
-const result = pipe(input, func1, func2, ..., funcN)
-```
-
-In this syntax, `input` is the initial value, and `func1`, `func2`, ..., `funcN` are the functions to be applied in sequence. The result of each function becomes the input for the next function, and the final result is returned.
-
-Here's an illustration of how `pipe` works:
-
-```text showLineNumbers=false
-┌───────┐    ┌───────┐    ┌───────┐    ┌───────┐    ┌───────┐    ┌────────┐
-│ input │───►│ func1 │───►│ func2 │───►│  ...  │───►│ funcN │───►│ result │
-└───────┘    └───────┘    └───────┘    └───────┘    └───────┘    └────────┘
-```
-
-It's important to note that functions passed to `pipe` must have a **single argument** because they are only called with a single argument.
-
-Let's see an example to better understand how `pipe` works:
-
-**Example** (Chaining Arithmetic Operations)
-
-```ts twoslash
-import { pipe } from "effect"
-
-// Define simple arithmetic operations
-const increment = (x: number) => x + 1
-const double = (x: number) => x * 2
-const subtractTen = (x: number) => x - 10
-
-// Sequentially apply these operations using `pipe`
-const result = pipe(5, increment, double, subtractTen)
-
-console.log(result)
-// Output: 2
-```
-
-In the above example, we start with an input value of `5`. The `increment` function adds `1` to the initial value, resulting in `6`. Then, the `double` function doubles the value, giving us `12`. Finally, the `subtractTen` function subtracts `10` from `12`, resulting in the final output of `2`.
-
-The result is equivalent to `subtractTen(double(increment(5)))`, but using `pipe` makes the code more readable because the operations are sequenced from left to right, rather than nesting them inside out.
-
-## map
-
-Transforms the value inside an effect by applying a function to it.
-
-**Syntax**
-
-```ts showLineNumbers=false
-const mappedEffect = pipe(myEffect, Effect.map(transformation))
-// or
-const mappedEffect = Effect.map(myEffect, transformation)
-// or
-const mappedEffect = myEffect.pipe(Effect.map(transformation))
-```
-
-`Effect.map` takes a function and applies it to the value contained within an
-effect, creating a new effect with the transformed value.
-
-<Aside type="note" title="Effects are Immutable">
-  It's important to note that effects are immutable, meaning that the
-  original effect is not modified. Instead, a new effect is returned with
-  the updated value.
-</Aside>
-
-**Example** (Adding a Service Charge)
-
-Here's a practical example where we apply a service charge to a transaction amount:
-
-```ts twoslash
-import { pipe, Effect } from "effect"
-
-// Function to add a small service charge to a transaction amount
-const addServiceCharge = (amount: number) => amount + 1
-
-// Simulated asynchronous task to fetch a transaction amount from database
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-// Apply service charge to the transaction amount
-const finalAmount = pipe(
-  fetchTransactionAmount,
-  Effect.map(addServiceCharge)
-)
-
-Effect.runPromise(finalAmount).then(console.log) // Output: 101
-```
-
-## as
-
-Replaces the value inside an effect with a constant value.
-
-`Effect.as` allows you to ignore the original value inside an effect and replace it with a new constant value.
-
-<Aside type="note" title="Effects are Immutable">
-  It's important to note that effects are immutable, meaning that the
-  original effect is not modified. Instead, a new effect is returned with
-  the updated value.
-</Aside>
-
-**Example** (Replacing a Value)
-
-```ts twoslash
-import { pipe, Effect } from "effect"
-
-// Replace the value 5 with the constant "new value"
-const program = pipe(Effect.succeed(5), Effect.as("new value"))
-
-Effect.runPromise(program).then(console.log) // Output: "new value"
-```
-
-## flatMap
-
-Chains effects to produce new `Effect` instances, useful for combining operations that depend on previous results.
-
-**Syntax**
-
-```ts showLineNumbers=false
-const flatMappedEffect = pipe(myEffect, Effect.flatMap(transformation))
-// or
-const flatMappedEffect = Effect.flatMap(myEffect, transformation)
-// or
-const flatMappedEffect = myEffect.pipe(Effect.flatMap(transformation))
-```
-
-In the code above, `transformation` is the function that takes a value and returns an `Effect`, and `myEffect` is the initial `Effect` being transformed.
-
-Use `Effect.flatMap` when you need to chain multiple effects, ensuring that each
-step produces a new `Effect` while flattening any nested effects that may
-occur.
-
-It is similar to `flatMap` used with arrays but works
-specifically with `Effect` instances, allowing you to avoid deeply nested
-effect structures.
-
-<Aside type="note" title="Effects are Immutable">
-  It's important to note that effects are immutable, meaning that the
-  original effect is not modified. Instead, a new effect is returned with
-  the updated value.
-</Aside>
-
-**Example** (Applying a Discount)
-
-```ts twoslash
-import { pipe, Effect } from "effect"
-
-// Function to apply a discount safely to a transaction amount
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-// Simulated asynchronous task to fetch a transaction amount from database
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-// Chaining the fetch and discount application using `flatMap`
-const finalAmount = pipe(
-  fetchTransactionAmount,
-  Effect.flatMap((amount) => applyDiscount(amount, 5))
-)
-
-Effect.runPromise(finalAmount).then(console.log)
-// Output: 95
-```
-
-### Ensure All Effects Are Considered
-
-Make sure that all effects within `Effect.flatMap` contribute to the final computation. If you ignore an effect, it can lead to unexpected behavior:
-
-```ts {3} showLineNumbers=false
-Effect.flatMap((amount) => {
-  // This effect will be ignored
-  Effect.sync(() => console.log(`Apply a discount to: ${amount}`))
-  return applyDiscount(amount, 5)
-})
-```
-
-In this case, the `Effect.sync` call is ignored and does not affect the result of `applyDiscount(amount, 5)`. To handle effects correctly, make sure to explicitly chain them using functions like `Effect.map`, `Effect.flatMap`, `Effect.andThen`, or `Effect.tap`.
-
-## andThen
-
-Chains two actions, where the second action can depend on the result of the first.
-
-**Syntax**
-
-```ts showLineNumbers=false
-const transformedEffect = pipe(myEffect, Effect.andThen(anotherEffect))
-// or
-const transformedEffect = Effect.andThen(myEffect, anotherEffect)
-// or
-const transformedEffect = myEffect.pipe(Effect.andThen(anotherEffect))
-```
-
-Use `andThen` when you need to run multiple actions in sequence, with the
-second action depending on the result of the first. This is useful for
-combining effects or handling computations that must happen in order.
-
-The second action can be:
-
-1. A value (similar to `Effect.as`)
-2. A function returning a value (similar to `Effect.map`)
-3. A `Promise`
-4. A function returning a `Promise`
-5. An `Effect`
-6. A function returning an `Effect` (similar to `Effect.flatMap`)
-
-**Example** (Applying a Discount Based on Fetched Amount)
-
-Let's look at an example comparing `Effect.andThen` with `Effect.map` and `Effect.flatMap`:
-
-```ts twoslash
-import { pipe, Effect } from "effect"
-
-// Function to apply a discount safely to a transaction amount
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-// Simulated asynchronous task to fetch a transaction amount from database
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-// Using Effect.map and Effect.flatMap
-const result1 = pipe(
-  fetchTransactionAmount,
-  Effect.map((amount) => amount * 2),
-  Effect.flatMap((amount) => applyDiscount(amount, 5))
-)
-
-Effect.runPromise(result1).then(console.log) // Output: 190
-
-// Using Effect.andThen
-const result2 = pipe(
-  fetchTransactionAmount,
-  Effect.andThen((amount) => amount * 2),
-  Effect.andThen((amount) => applyDiscount(amount, 5))
-)
-
-Effect.runPromise(result2).then(console.log) // Output: 190
-```
-
-### Option and Either with andThen
-
-Both [Option](/docs/data-types/option/#interop-with-effect) and [Either](/docs/data-types/either/#interop-with-effect) are commonly used for handling optional or missing values or simple error cases. These types integrate well with `Effect.andThen`. When used with `Effect.andThen`, the operations are categorized as scenarios 5 and 6 (as discussed earlier) because both `Option` and `Either` are treated as effects in this context.
-
-**Example** (with Option)
-
-```ts twoslash
-import { pipe, Effect, Option } from "effect"
-
-// Simulated asynchronous task fetching a number from a database
-const fetchNumberValue = Effect.tryPromise(() => Promise.resolve(42))
-
-//      ┌─── Effect<number, UnknownException | NoSuchElementException, never>
-//      ▼
-const program = pipe(
-  fetchNumberValue,
-  Effect.andThen((x) => (x > 0 ? Option.some(x) : Option.none()))
-)
-```
-
-You might expect the type of `program` to be `Effect<Option<number>, UnknownException, never>`, but it is actually `Effect<number, UnknownException | NoSuchElementException, never>`.
-
-This is because `Option<A>` is treated as an effect of type `Effect<A, NoSuchElementException>`, and as a result, the possible errors are combined into a union type.
-
-<Aside type="tip" title="Option As Effect">
-A value of type `Option<A>` is interpreted as an effect of type `Effect<A, NoSuchElementException>`.
-</Aside>
-
-**Example** (with Either)
-
-```ts twoslash
-import { pipe, Effect, Either } from "effect"
-
-// Function to parse an integer from a string that can fail
-const parseInteger = (input: string): Either.Either<number, string> =>
-  isNaN(parseInt(input))
-    ? Either.left("Invalid integer")
-    : Either.right(parseInt(input))
-
-// Simulated asynchronous task fetching a string from database
-const fetchStringValue = Effect.tryPromise(() => Promise.resolve("42"))
-
-//      ┌─── Effect<number, string | UnknownException, never>
-//      ▼
-const program = pipe(
-  fetchStringValue,
-  Effect.andThen((str) => parseInteger(str))
-)
-```
-
-Although one might expect the type of `program` to be `Effect<Either<number, string>, UnknownException, never>`, it is actually `Effect<number, string | UnknownException, never>`.
-
-This is because `Either<A, E>` is treated as an effect of type `Effect<A, E>`, meaning the errors are combined into a union type.
-
-<Aside type="tip" title="Either As Effect">
-A value of type `Either<A, E>` is interpreted as an effect of type `Effect<A, E>`.
-</Aside>
-
-## tap
-
-Runs a side effect with the result of an effect without changing the original value.
-
-Use `Effect.tap` when you want to perform a side effect, like logging or tracking,
-without modifying the main value. This is useful when you need to observe or
-record an action but want the original value to be passed to the next step.
-
-`Effect.tap` works similarly to `Effect.flatMap`, but it ignores the result of the function
-passed to it. The value from the previous effect remains available for the
-next part of the chain. Note that if the side effect fails, the entire chain
-will fail too.
-
-**Example** (Logging a step in a pipeline)
-
-```ts twoslash
-import { pipe, Effect, Console } from "effect"
-
-// Function to apply a discount safely to a transaction amount
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-// Simulated asynchronous task to fetch a transaction amount from database
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-const finalAmount = pipe(
-  fetchTransactionAmount,
-  // Log the fetched transaction amount
-  Effect.tap((amount) => Console.log(`Apply a discount to: ${amount}`)),
-  // `amount` is still available!
-  Effect.flatMap((amount) => applyDiscount(amount, 5))
-)
-
-Effect.runPromise(finalAmount).then(console.log)
-/*
-Output:
-Apply a discount to: 100
-95
-*/
-```
-
-In this example, `Effect.tap` is used to log the transaction amount before applying the discount, without modifying the value itself. The original value (`amount`) remains available for the next operation (`applyDiscount`).
-
-Using `Effect.tap` allows us to execute side effects during the computation without altering the result.
-This can be useful for logging, performing additional actions, or observing the intermediate values without interfering with the main computation flow.
-
-## all
-
-Combines multiple effects into one, returning results based on the input structure.
-
-Use `Effect.all` when you need to run multiple effects and combine their results
-into a single output. It supports tuples, iterables, structs, and records,
-making it flexible for different input types.
-
-For instance, if the input is a tuple:
-
-```ts showLineNumbers=false
-//         ┌─── a tuple of effects
-//         ▼
-Effect.all([effect1, effect2, ...])
-```
-
-the effects are executed in order, and the result is a new effect containing the results as a tuple. The results in the tuple match the order of the effects passed to `Effect.all`.
-
-By default, `Effect.all` runs effects sequentially and produces a tuple or object
-with the results. If any effect fails, it stops execution (short-circuiting)
-and propagates the error.
-
-See [Collecting](/docs/getting-started/control-flow/#all) for more information on how to use `Effect.all`.
-
-**Example** (Combining Configuration and Database Checks)
-
-```ts twoslash
-import { Effect } from "effect"
-
-// Simulated function to read configuration from a file
-const webConfig = Effect.promise(() =>
-  Promise.resolve({ dbConnection: "localhost", port: 8080 })
-)
-
-// Simulated function to test database connectivity
-const checkDatabaseConnectivity = Effect.promise(() =>
-  Promise.resolve("Connected to Database")
-)
-
-// Combine both effects to perform startup checks
-const startupChecks = Effect.all([webConfig, checkDatabaseConnectivity])
-
-Effect.runPromise(startupChecks).then(([config, dbStatus]) => {
-  console.log(
-    `Configuration: ${JSON.stringify(config)}\nDB Status: ${dbStatus}`
-  )
-})
-/*
-Output:
-Configuration: {"dbConnection":"localhost","port":8080}
-DB Status: Connected to Database
-*/
-```
-
-## Build your first pipeline
-
-Let's now combine the `pipe` function, `Effect.all`, and `Effect.andThen` to create a pipeline that performs a sequence of transformations.
-
-**Example** (Building a Transaction Pipeline)
-
-```ts twoslash
-import { Effect, pipe } from "effect"
-
-// Function to add a small service charge to a transaction amount
-const addServiceCharge = (amount: number) => amount + 1
-
-// Function to apply a discount safely to a transaction amount
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-// Simulated asynchronous task to fetch a transaction amount from database
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-// Simulated asynchronous task to fetch a discount rate
-// from a configuration file
-const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
-
-// Assembling the program using a pipeline of effects
-const program = pipe(
-  // Combine both fetch effects to get the transaction amount
-  // and discount rate
-  Effect.all([fetchTransactionAmount, fetchDiscountRate]),
-
-  // Apply the discount to the transaction amount
-  Effect.andThen(([transactionAmount, discountRate]) =>
-    applyDiscount(transactionAmount, discountRate)
-  ),
-
-  // Add the service charge to the discounted amount
-  Effect.andThen(addServiceCharge),
-
-  // Format the final result for display
-  Effect.andThen(
-    (finalAmount) => `Final amount to charge: ${finalAmount}`
-  )
-)
-
-// Execute the program and log the result
-Effect.runPromise(program).then(console.log)
-// Output: "Final amount to charge: 96"
-```
-
-This pipeline demonstrates how you can structure your code by combining different effects into a clear, readable flow.
-
-## The pipe method
-
-Effect provides a `pipe` method that works similarly to the `pipe` method found in [rxjs](https://rxjs.dev/api/index/function/pipe). This method allows you to chain multiple operations together, making your code more concise and readable.
-
-**Syntax**
-
-```ts showLineNumbers=false
-const result = effect.pipe(func1, func2, ..., funcN)
-```
-
-This is equivalent to using the `pipe` **function** like this:
-
-```ts showLineNumbers=false
-const result = pipe(effect, func1, func2, ..., funcN)
-```
-
-The `pipe` method is available on all effects and many other data types, eliminating the need to import the `pipe` function and saving you some keystrokes.
-
-**Example** (Using the `pipe` Method)
-
-Let's rewrite an [earlier example](#build-your-first-pipeline), this time using the `pipe` method.
-
-```ts twoslash collapse={3-15}
-import { Effect } from "effect"
-
-const addServiceCharge = (amount: number) => amount + 1
-
-const applyDiscount = (
-  total: number,
-  discountRate: number
-): Effect.Effect<number, Error> =>
-  discountRate === 0
-    ? Effect.fail(new Error("Discount rate cannot be zero"))
-    : Effect.succeed(total - (total * discountRate) / 100)
-
-const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
-
-const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
-
-const program = Effect.all([
-  fetchTransactionAmount,
-  fetchDiscountRate
-]).pipe(
-  Effect.andThen(([transactionAmount, discountRate]) =>
-    applyDiscount(transactionAmount, discountRate)
-  ),
-  Effect.andThen(addServiceCharge),
-  Effect.andThen(
-    (finalAmount) => `Final amount to charge: ${finalAmount}`
-  )
-)
-```
-
-## Cheatsheet
-
-Let's summarize the transformation functions we have seen so far:
-
-| API       | Input                                     | Output                      |
-| --------- | ----------------------------------------- | --------------------------- |
-| `map`     | `Effect<A, E, R>`, `A => B`               | `Effect<B, E, R>`           |
-| `flatMap` | `Effect<A, E, R>`, `A => Effect<B, E, R>` | `Effect<B, E, R>`           |
-| `andThen` | `Effect<A, E, R>`, \*                     | `Effect<B, E, R>`           |
-| `tap`     | `Effect<A, E, R>`, `A => Effect<B, E, R>` | `Effect<A, E, R>`           |
-| `all`     | `[Effect<A, E, R>, Effect<B, E, R>, ...]` | `Effect<[A, B, ...], E, R>` |
-
 cache.mdx
 ---
 title: Cache
@@ -11613,6 +11033,430 @@ While tacit functions may be appealing for their brevity, they can introduce a n
 - Additionally, stack traces might not be as clear when tacit usage is employed.
 
 Avoiding tacit usage is a simple precaution that makes your code more reliable.
+
+hash-set.mdx
+---
+title: HashSet
+description: Learn about HashSet data structures - both immutable and mutable variants.
+sidebar:
+  order: 3
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+A `HashSet` represents an _un-ordered_, _collection_ of _unique_ values with efficient lookup, insertion and removal operations.
+The Effect library provides two variants of this data structure:
+
+1. [**`HashSet<A>`**](/docs/data-types/hash-set/#hashset-details) - An immutable set implementation
+2. [**`MutableHashSet<A>`**](/docs/data-types/hash-set/#mutablehashset-details) - A mutable set implementation
+
+Both implementations store unique values and provide O(1) average-time complexity for core operations, but they differ in how modifications are handled.
+
+
+## What problem does HashSet solve?
+
+HashSet solves the problem of maintaining an **unsorted collection where each value appears exactly once**, with fast operations for checking membership and adding/removing values.
+
+Some common use cases include:
+- Tracking unique items (e.g., users who have completed an action)
+- Efficiently testing for membership in a collection
+- Performing set operations like union, intersection, and difference
+- Eliminating duplicates from a collection
+
+## When to use `HashSet` Instead of other "collections"
+
+Choose HashSet (either variant) over other collections when:
+
+- You need to ensure elements are unique
+- You frequently need to check if an element exists in the collection
+- You need to perform set operations like union, intersection, and difference
+- The order of elements doesn't matter to your use case
+
+Choose other collections when:
+- You need to maintain insertion order (use `List` or `Array`)
+- You need key-value associations (use `HashMap` or `MutableHashMap`)
+- You need to frequently access elements by index (use `Array`)
+
+## Choosing between _immutable_ and _mutable_ variants
+
+The Effect library provides two implementations to accommodate different programming styles and performance needs:
+
+### Immutable `HashSet<A>`
+
+The immutable `HashSet` follows functional programming principles where data structures are never modified in place. Instead, operations that would change the set return a new instance with the changes applied, leaving the original set unchanged.
+
+**Characteristics:**
+- Operations return new instances instead of modifying the original
+- Previous states are preserved
+- Thread-safe by design
+- Ideal for functional programming patterns
+- Suitable for sharing across different parts of your application
+
+### `MutableHashSet<A>`
+
+The mutable `MutableHashSet` allows direct modification of the underlying collection. Operations like add and remove change the set in place rather than creating new instances.
+
+**Characteristics:**
+- Operations modify the original set directly
+- More efficient when building sets incrementally
+- Requires careful handling to avoid unexpected side effects
+- Better performance in scenarios with many modifications
+- Ideal for localized use where mutations won't cause issues elsewhere
+
+
+### When to use each variant
+
+#### Use immutable `HashSet` when:
+
+- You need predictable behavior with no side effects
+- You want to preserve previous states of your data
+- You're sharing sets across different parts of your application
+- You prefer functional programming patterns
+- You need fiber safety in concurrent environments
+
+#### Use `MutableHashSet` when:
+
+- Performance is critical, and you need to avoid creating new instances
+- You're building a collection incrementally with many additions/removals
+- You're working in a controlled scope where mutation is safe
+- You need to optimize memory usage in performance-critical code
+
+#### Hybrid approach:
+Another option is to use the **bounded mutation context** provided by the immutable `HashSet`:
+
+```ts twoslash
+import { HashSet } from "effect"
+
+// Start with an immutable set
+const original = HashSet.make(1, 2, 3)
+
+// Use the mutation API for a series of changes
+const modified = HashSet.mutate(original, (draft) => {
+	// this is bounded mutation context!
+  HashSet.add(draft, 4)
+  HashSet.add(draft, 5)
+  HashSet.remove(draft, 1)
+})
+
+console.log(HashSet.toValues(original)) // [1, 2, 3] - original unchanged
+console.log(HashSet.toValues(modified)) // [2, 3, 4, 5] - new version with changes
+```
+
+## Performance characteristics
+
+Both HashSet variants provide similar time performance characteristics for their core operations:
+
+| Operation      | `HashSet`    | `MutableHashSet` | Description                           |
+|----------------|--------------|------------------|---------------------------------------|
+| Lookup         | O(1) average | O(1) average     | Checking if an element exists         |
+| Insertion      | O(1) average | O(1) average     | Adding a new element                  |
+| Removal        | O(1) average | O(1) average     | Removing an existing element          |
+| Iteration      | O(n)         | O(n)             | Traversing all elements               |
+| Set operations | O(n)         | O(n)             | Union, intersection, difference, etc. |
+
+
+The primary performance difference lies in how modifications are handled:
+
+- **Immutable HashSet** creates new instances for every modification, which can impact performance when making many sequential changes.
+- **MutableHashSet** modifies the existing structure, making it more efficient for multiple sequential modifications.
+
+## Equality and uniqueness
+
+Both HashSet variants use Effect's [`Equal`](/docs/trait/equal/) trait to determine when elements are the same, ensuring that each element appears exactly once in the set. This applies to:
+
+- **Primitive Values:** Equality is determined by value (similar to the `===` operator).
+- **Objects and Custom Types:** For objects and other custom types, equality is determined by whether those types implement the `Equal` interface themselves.
+	If an element type implements `Equal`, the `HashSet` will delegate to that implementation to perform the equality check. This allows you to define custom logic for determining when two instances of your objects should be considered equal based on their properties, rather than just their object identity. The fallback strategy is equality by reference.
+
+
+```ts twoslash
+import { Equal, Hash, HashSet } from "effect"
+
+class Person implements Equal.Equal {
+  constructor(
+    readonly id: number, // Unique identifier
+    readonly name: string,
+    readonly age: number
+  ) { }
+
+  // Define equality based on id, name, and age
+  [Equal.symbol](that: Equal.Equal): boolean {
+    if (that instanceof Person) {
+      return Equal.equals(this.id, that.id) && Equal.equals(this.name, that.name) && Equal.equals(this.age, that.age)
+    }
+    return false
+  }
+
+  // Generate a hash code based on the unique id
+  [Hash.symbol](): number {
+    return Hash.hash(this.id)
+  }
+}
+
+// Creating a HashSet with objects that implement the Equal interface
+const set = HashSet.empty().pipe(
+  HashSet.add(new Person(1, "Alice", 30)),
+  HashSet.add(new Person(1, "Alice", 30))
+)
+
+// HashSet recognizes them as equal, so only one element is stored
+console.log(HashSet.size(set))
+// Output: 1
+```
+
+**Simplifying Equality and Hashing with `Data` and `Schema`:**
+
+Using Effect's [`Data`](/docs/data-types/data/) or [`Schema.Data`](/docs/schema/effect-data-types/#interop-with-data) modules can automatically implement the necessary `Equal` trait for your custom types:
+
+```ts twoslash
+import { Data, Equal, HashSet, pipe } from "effect"
+import assert from "node:assert/strict"
+
+// Data.* implements the `Equal` traits automatically
+const person1 = Data.struct({ id: 1, name: "Alice", age: 30 })
+const person2 = Data.struct({ id: 1, name: "Alice", age: 30 })
+
+assert.equal(Object.is(person1, person2), false) // They are different references
+
+assert.equal(Equal.equals(person1, person2), true) // But they are equal in value
+
+const set = pipe(
+    HashSet.empty(),
+    HashSet.add(person1),
+    HashSet.add(person2) // since `person1` and `person2` are equal, only one will be stored
+)
+
+// Only one element is stored because they're considered equal
+console.log(HashSet.size(set)) // Output: 1
+```
+
+
+```ts twoslash
+import { Equal, MutableHashSet, Schema } from "effect"
+import assert from "node:assert/strict"
+
+// Schema.Data implements the `Equal` traits for us
+const PersonSchema = Schema.Data(
+  Schema.Struct({
+    id: Schema.Number,
+    name: Schema.String,
+    age: Schema.Number
+  })
+)
+
+const Person = Schema.decode(PersonSchema)
+
+const person1 = Person({ id: 1, name: "Alice", age: 30 })
+const person2 = Person({ id: 1, name: "Alice", age: 30 })
+
+assert(Equal.equals(person1, person2)) // Output: true
+
+const set = MutableHashSet.empty().pipe(
+  MutableHashSet.add(person1),
+  MutableHashSet.add(person2)
+)
+
+// HashSet, thanks to Schema.Data implementation of the `Equal` trait, recognizes the two Person as equal, so only one element is stored
+console.log(MutableHashSet.size(set)) // Output: 1
+```
+
+
+___
+
+## `HashSet` details
+
+An `HashSet<A>` is an _immutable_ collection of unique values. Once created, a `HashSet` cannot be modified; any operation that would alter the set instead returns a new `HashSet` with the changes. This immutability offers benefits like predictable state management and easier reasoning about your code.
+
+### Advanced features
+
+Immutable HashSet provides operations for:
+
+- **Transforming** sets with `map` and `flatMap`
+- **Filtering** elements with `filter`
+- **Combining** sets with `union`, `intersection` and `difference`
+- **Controlled mutability** with `mutate`, `beginMutation`, and `endMutation`
+
+### Operations
+
+| Category     | Operation                                                                              | Description                                 | Time Complexity |
+|--------------|----------------------------------------------------------------------------------------|---------------------------------------------|-----------------|
+| constructors | [empty](https://effect-ts.github.io/effect/effect/HashSet.ts.html#empty)               | Creates an empty HashSet                    | O(1)            |
+| constructors | [fromIterable](https://effect-ts.github.io/effect/effect/HashSet.ts.html#fromiterable) | Creates a HashSet from an iterable          | O(n)            |
+| constructors | [make](https://effect-ts.github.io/effect/effect/HashSet.ts.html#make)                 | Creates a HashSet from multiple values      | O(n)            |
+| elements     | [has](https://effect-ts.github.io/effect/effect/HashSet.ts.html#has)                   | Checks if a value exists in the set         | O(1) avg        |
+| elements     | [some](https://effect-ts.github.io/effect/effect/HashSet.ts.html#some)                 | Checks if any element satisfies a predicate | O(n)            |
+| elements     | [every](https://effect-ts.github.io/effect/effect/HashSet.ts.html#every)               | Checks if all elements satisfy a predicate  | O(n)            |
+| elements     | [isSubset](https://effect-ts.github.io/effect/effect/HashSet.ts.html#issubset)         | Checks if a set is a subset of another      | O(n)            |
+| getters      | [values](https://effect-ts.github.io/effect/effect/HashSet.ts.html#values)             | Gets an `Iterator` of all values            | O(1)            |
+| getters      | [toValues](https://effect-ts.github.io/effect/effect/HashSet.ts.html#tovalues)         | Gets an `Array` of all values               | O(n)            |
+| getters      | [size](https://effect-ts.github.io/effect/effect/HashSet.ts.html#size)                 | Gets the number of elements                 | O(1)            |
+| mutations    | [add](https://effect-ts.github.io/effect/effect/HashSet.ts.html#add)                   | Adds a value to the set                     | O(1) avg        |
+| mutations    | [remove](https://effect-ts.github.io/effect/effect/HashSet.ts.html#remove)             | Removes a value from the set                | O(1) avg        |
+| mutations    | [toggle](https://effect-ts.github.io/effect/effect/HashSet.ts.html#toggle)             | Toggles a value's presence                  | O(1) avg        |
+| operations   | [difference](https://effect-ts.github.io/effect/effect/HashSet.ts.html#difference)     | Computes set difference (A - B)             | O(n)            |
+| operations   | [intersection](https://effect-ts.github.io/effect/effect/HashSet.ts.html#intersection) | Computes set intersection (A ∩ B)           | O(n)            |
+| operations   | [union](https://effect-ts.github.io/effect/effect/HashSet.ts.html#union)               | Computes set union (A ∪ B)                  | O(n)            |
+| mapping      | [map](https://effect-ts.github.io/effect/effect/HashSet.ts.html#map)                   | Transforms each element                     | O(n)            |
+| sequencing   | [flatMap](https://effect-ts.github.io/effect/effect/HashSet.ts.html#flatmap)           | Transforms and flattens elements            | O(n)            |
+| traversing   | [forEach](https://effect-ts.github.io/effect/effect/HashSet.ts.html#foreach)           | Applies a function to each element          | O(n)            |
+| folding      | [reduce](https://effect-ts.github.io/effect/effect/HashSet.ts.html#reduce)             | Reduces the set to a single value           | O(n)            |
+| filtering    | [filter](https://effect-ts.github.io/effect/effect/HashSet.ts.html#filter)             | Keeps elements that satisfy a predicate     | O(n)            |
+| partitioning | [partition](https://effect-ts.github.io/effect/effect/HashSet.ts.html#partition)       | Splits into two sets by a predicate         | O(n)            |
+
+
+### Examples
+
+Creating and using an immutable HashSet:
+
+```ts twoslash
+import { HashSet } from "effect"
+
+// Creating a new set
+const set1 = HashSet.make(1, 2, 3)
+
+// Adding elements (returns a new set)
+const set2 = HashSet.add(set1, 4)
+
+// The original set remains unchanged
+console.log(HashSet.toValues(set1)) // [1, 2, 3]
+console.log(HashSet.toValues(set2)) // [1, 2, 3, 4]
+
+// Set operations
+const set3 = HashSet.make(3, 4, 5)
+const union = HashSet.union(set2, set3)
+const intersection = HashSet.intersection(set2, set3)
+const difference = HashSet.difference(set2, set3)
+
+console.log(HashSet.toValues(union)) // [1, 2, 3, 4, 5]
+console.log(HashSet.toValues(intersection)) // [3, 4]
+console.log(HashSet.toValues(difference)) // [1, 2]
+```
+
+Using pipe for a more fluent API:
+
+```ts twoslash
+import { HashSet, pipe } from "effect"
+
+const result = pipe(
+  HashSet.make(1, 2, 2, 3, 4, 5, 5),
+  HashSet.filter((n) => n % 2 === 0),
+  HashSet.map((n) => n * 2),
+  HashSet.toValues
+)
+
+console.log(result) // [4, 8]
+```
+___
+
+## `MutableHashSet` details
+
+A `MutableHashSet<A>` is a _mutable_ collection of unique values. Operations like add, remove, and clear directly modify the original set rather than creating a new one. This mutability offers benefits like improved performance in scenarios where you need to build or modify a set incrementally.
+
+### Advanced Features
+
+`MutableHashSet` provides operations for:
+
+- **Directly modifying** the set with `add`, `remove`, and `clear`
+- **Checking** for element existence with `has`
+- **Converting** to immutable collections when needed
+- **Building** sets incrementally with optimal performance
+
+
+### Operations
+
+| Category     | Operation                                                                                     | Description                         | Complexity |
+|--------------|-----------------------------------------------------------------------------------------------|-------------------------------------|------------|
+| constructors | [empty](https://effect-ts.github.io/effect/effect/MutableHashSet.ts.html#empty)               | Creates an empty MutableHashSet     | O(1)       |
+| constructors | [fromIterable](https://effect-ts.github.io/effect/effect/MutableHashSet.ts.html#fromiterable) | Creates a set from an iterable      | O(n)       |
+| constructors | [make](https://effect-ts.github.io/effect/effect/MutableHashSet.ts.html#make)                 | Creates a set from multiple values  | O(n)       |
+| elements     | [has](https://effect-ts.github.io/effect/effect/MutableHashSet.ts.html#has)                   | Checks if a value exists in the set | O(1) avg   |
+| elements     | [add](https://effect-ts.github.io/effect/effect/MutableHashSet.ts.html#add)                   | Adds a value to the set             | O(1) avg   |
+| elements     | [remove](https://effect-ts.github.io/effect/effect/MutableHashSet.ts.html#remove)             | Removes a value from the set        | O(1) avg   |
+| getters      | [size](https://effect-ts.github.io/effect/effect/MutableHashSet.ts.html#size)                 | Gets the number of elements         | O(1)       |
+| mutations    | [clear](https://effect-ts.github.io/effect/effect/MutableHashSet.ts.html#clear)               | Removes all values from the set     | O(1)       |
+
+### Examples
+
+Creating and using a mutable HashSet:
+
+```ts twoslash
+import { MutableHashSet } from "effect"
+
+// Creating a new mutable set
+const set = MutableHashSet.make(1, 2, 3)
+
+// Adding elements (modifies the original set)
+MutableHashSet.add(set, 4)
+
+// Set is modified in place
+console.log([...set]) // [1, 2, 3, 4]
+
+// Removing elements
+MutableHashSet.remove(set, 1)
+console.log([...set]) // [2, 3, 4]
+
+// Clearing the set
+MutableHashSet.clear(set)
+console.log(MutableHashSet.size(set)) // 0
+```
+
+
+
+## Interoperability with JavaScript
+
+Both HashSet variants work well with standard JavaScript collection operations since they implement the `Iterable` interface;
+Plus they also provide methods to access its elements in formats readily usable by JavaScript APIs:
+- `.values`, which returns an `IterableIterator<A>`, and
+- `.toValues` which returns an `Array<A>`.
+
+```ts twoslash
+import { HashSet, MutableHashSet } from "effect"
+
+//      ┌─── HashSet.HashSet<number>
+//      ▼
+const hashSet = HashSet.make(1, 2, 3)
+
+const mutableSet = MutableHashSet.make(4, 5, 6)
+
+// Using HashSet.values to convert HashSet.HashSet<A> to IterableIterator<A>
+const iterable = HashSet.values(hashSet)
+//	   ▲
+//	   └── IterableIterator<number>
+
+// Using spread operator
+console.log(...iterable) // Logs:  1 2 3
+
+
+// Using for...of
+for (const value of mutableSet) {
+  console.log(value)
+}
+
+// Using Array.from
+console.log(Array.from(mutableSet)) // Logs: [ 4, 5, 6 ]
+
+// Using HashSet.toValues to convert HashSet.HashSet<A> to Array<A>
+const array = HashSet.toValues(hashSet)
+//     ▲
+//     └── Array<number>
+
+console.log(array) // Logs: [ 1, 2, 3 ]
+```
+
+<Aside type="caution" title="Performance considerations">
+Be mindful of performance implications (both time and space complexity) **when frequently converting** between Effect's `HashSet` and mutable JavaScript data structures, **especially for large collections**.
+</Aside >
+
+___
+
+
+<Aside type="note"  title="Summary" >
+  The Effect library provides two HashSet implementations to meet different needs:
+  1. **`HashSet<A>`** - An immutable implementation that follows functional programming principles. Operations return new instances, preserving original data. Ideal for most use cases where predictable behavior and data safety are important.
+  2. **`MutableHashSet<A>`** - A mutable implementation that offers better performance for incremental construction. Operations modify the original set. Best used in controlled scopes where performance is critical.
+
+	Both implementations provide efficient O(1) average-time operations for core functionality like adding, removing, and checking elements, making HashSet an essential tool for managing unique collections of values.
+</Aside >
 
 introduction.mdx
 ---
@@ -21052,6 +20896,586 @@ const keys = Schema.keyof(schema)
 //     ▼
 type Type = typeof keys.Type
 ```
+
+building-pipelines.mdx
+---
+title: Building Pipelines
+description: Learn to create modular, readable pipelines for composing and sequencing operations in Effect, enabling clear and efficient data transformations.
+sidebar:
+  order: 9
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+Effect pipelines allow for the composition and sequencing of operations on values, enabling the transformation and manipulation of data in a concise and modular manner.
+
+## Why Pipelines are Good for Structuring Your Application
+
+Pipelines are an excellent way to structure your application and handle data transformations in a concise and modular manner. They offer several benefits:
+
+1. **Readability**: Pipelines allow you to compose functions in a readable and sequential manner. You can clearly see the flow of data and the operations applied to it, making it easier to understand and maintain the code.
+
+2. **Code Organization**: With pipelines, you can break down complex operations into smaller, manageable functions. Each function performs a specific task, making your code more modular and easier to reason about.
+
+3. **Reusability**: Pipelines promote the reuse of functions. By breaking down operations into smaller functions, you can reuse them in different pipelines or contexts, improving code reuse and reducing duplication.
+
+4. **Type Safety**: By leveraging the type system, pipelines help catch errors at compile-time. Functions in a pipeline have well-defined input and output types, ensuring that the data flows correctly through the pipeline and minimizing runtime errors.
+
+## Functions vs Methods
+
+The use of functions in the Effect ecosystem libraries is important for
+achieving **tree shakeability** and ensuring **extensibility**.
+Functions enable efficient bundling by eliminating unused code, and they
+provide a flexible and modular approach to extending the libraries'
+functionality.
+
+### Tree Shakeability
+
+Tree shakeability refers to the ability of a build system to eliminate unused code during the bundling process. Functions are tree shakeable, while methods are not.
+
+When functions are used in the Effect ecosystem, only the functions that are actually imported and used in your application will be included in the final bundled code. Unused functions are automatically removed, resulting in a smaller bundle size and improved performance.
+
+On the other hand, methods are attached to objects or prototypes, and they cannot be easily tree shaken. Even if you only use a subset of methods, all methods associated with an object or prototype will be included in the bundle, leading to unnecessary code bloat.
+
+### Extensibility
+
+Another important advantage of using functions in the Effect ecosystem is the ease of extensibility. With methods, extending the functionality of an existing API often requires modifying the prototype of the object, which can be complex and error-prone.
+
+In contrast, with functions, extending the functionality is much simpler. You can define your own "extension methods" as plain old functions without the need to modify the prototypes of objects. This promotes cleaner and more modular code, and it also allows for better compatibility with other libraries and modules.
+
+## pipe
+
+The `pipe` function is a utility that allows us to compose functions in a readable and sequential manner. It takes the output of one function and passes it as the input to the next function in the pipeline. This enables us to build complex transformations by chaining multiple functions together.
+
+**Syntax**
+
+```ts showLineNumbers=false
+import { pipe } from "effect"
+
+const result = pipe(input, func1, func2, ..., funcN)
+```
+
+In this syntax, `input` is the initial value, and `func1`, `func2`, ..., `funcN` are the functions to be applied in sequence. The result of each function becomes the input for the next function, and the final result is returned.
+
+Here's an illustration of how `pipe` works:
+
+```text showLineNumbers=false
+┌───────┐    ┌───────┐    ┌───────┐    ┌───────┐    ┌───────┐    ┌────────┐
+│ input │───►│ func1 │───►│ func2 │───►│  ...  │───►│ funcN │───►│ result │
+└───────┘    └───────┘    └───────┘    └───────┘    └───────┘    └────────┘
+```
+
+It's important to note that functions passed to `pipe` must have a **single argument** because they are only called with a single argument.
+
+Let's see an example to better understand how `pipe` works:
+
+**Example** (Chaining Arithmetic Operations)
+
+```ts twoslash
+import { pipe } from "effect"
+
+// Define simple arithmetic operations
+const increment = (x: number) => x + 1
+const double = (x: number) => x * 2
+const subtractTen = (x: number) => x - 10
+
+// Sequentially apply these operations using `pipe`
+const result = pipe(5, increment, double, subtractTen)
+
+console.log(result)
+// Output: 2
+```
+
+In the above example, we start with an input value of `5`. The `increment` function adds `1` to the initial value, resulting in `6`. Then, the `double` function doubles the value, giving us `12`. Finally, the `subtractTen` function subtracts `10` from `12`, resulting in the final output of `2`.
+
+The result is equivalent to `subtractTen(double(increment(5)))`, but using `pipe` makes the code more readable because the operations are sequenced from left to right, rather than nesting them inside out.
+
+## map
+
+Transforms the value inside an effect by applying a function to it.
+
+**Syntax**
+
+```ts showLineNumbers=false
+const mappedEffect = pipe(myEffect, Effect.map(transformation))
+// or
+const mappedEffect = Effect.map(myEffect, transformation)
+// or
+const mappedEffect = myEffect.pipe(Effect.map(transformation))
+```
+
+`Effect.map` takes a function and applies it to the value contained within an
+effect, creating a new effect with the transformed value.
+
+<Aside type="note" title="Effects are Immutable">
+  It's important to note that effects are immutable, meaning that the
+  original effect is not modified. Instead, a new effect is returned with
+  the updated value.
+</Aside>
+
+**Example** (Adding a Service Charge)
+
+Here's a practical example where we apply a service charge to a transaction amount:
+
+```ts twoslash
+import { pipe, Effect } from "effect"
+
+// Function to add a small service charge to a transaction amount
+const addServiceCharge = (amount: number) => amount + 1
+
+// Simulated asynchronous task to fetch a transaction amount from database
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+// Apply service charge to the transaction amount
+const finalAmount = pipe(
+  fetchTransactionAmount,
+  Effect.map(addServiceCharge)
+)
+
+Effect.runPromise(finalAmount).then(console.log) // Output: 101
+```
+
+## as
+
+Replaces the value inside an effect with a constant value.
+
+`Effect.as` allows you to ignore the original value inside an effect and replace it with a new constant value.
+
+<Aside type="note" title="Effects are Immutable">
+  It's important to note that effects are immutable, meaning that the
+  original effect is not modified. Instead, a new effect is returned with
+  the updated value.
+</Aside>
+
+**Example** (Replacing a Value)
+
+```ts twoslash
+import { pipe, Effect } from "effect"
+
+// Replace the value 5 with the constant "new value"
+const program = pipe(Effect.succeed(5), Effect.as("new value"))
+
+Effect.runPromise(program).then(console.log) // Output: "new value"
+```
+
+## flatMap
+
+Chains effects to produce new `Effect` instances, useful for combining operations that depend on previous results.
+
+**Syntax**
+
+```ts showLineNumbers=false
+const flatMappedEffect = pipe(myEffect, Effect.flatMap(transformation))
+// or
+const flatMappedEffect = Effect.flatMap(myEffect, transformation)
+// or
+const flatMappedEffect = myEffect.pipe(Effect.flatMap(transformation))
+```
+
+In the code above, `transformation` is the function that takes a value and returns an `Effect`, and `myEffect` is the initial `Effect` being transformed.
+
+Use `Effect.flatMap` when you need to chain multiple effects, ensuring that each
+step produces a new `Effect` while flattening any nested effects that may
+occur.
+
+It is similar to `flatMap` used with arrays but works
+specifically with `Effect` instances, allowing you to avoid deeply nested
+effect structures.
+
+<Aside type="note" title="Effects are Immutable">
+  It's important to note that effects are immutable, meaning that the
+  original effect is not modified. Instead, a new effect is returned with
+  the updated value.
+</Aside>
+
+**Example** (Applying a Discount)
+
+```ts twoslash
+import { pipe, Effect } from "effect"
+
+// Function to apply a discount safely to a transaction amount
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+// Simulated asynchronous task to fetch a transaction amount from database
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+// Chaining the fetch and discount application using `flatMap`
+const finalAmount = pipe(
+  fetchTransactionAmount,
+  Effect.flatMap((amount) => applyDiscount(amount, 5))
+)
+
+Effect.runPromise(finalAmount).then(console.log)
+// Output: 95
+```
+
+### Ensure All Effects Are Considered
+
+Make sure that all effects within `Effect.flatMap` contribute to the final computation. If you ignore an effect, it can lead to unexpected behavior:
+
+```ts {3} showLineNumbers=false
+Effect.flatMap((amount) => {
+  // This effect will be ignored
+  Effect.sync(() => console.log(`Apply a discount to: ${amount}`))
+  return applyDiscount(amount, 5)
+})
+```
+
+In this case, the `Effect.sync` call is ignored and does not affect the result of `applyDiscount(amount, 5)`. To handle effects correctly, make sure to explicitly chain them using functions like `Effect.map`, `Effect.flatMap`, `Effect.andThen`, or `Effect.tap`.
+
+## andThen
+
+Chains two actions, where the second action can depend on the result of the first.
+
+**Syntax**
+
+```ts showLineNumbers=false
+const transformedEffect = pipe(myEffect, Effect.andThen(anotherEffect))
+// or
+const transformedEffect = Effect.andThen(myEffect, anotherEffect)
+// or
+const transformedEffect = myEffect.pipe(Effect.andThen(anotherEffect))
+```
+
+Use `andThen` when you need to run multiple actions in sequence, with the
+second action depending on the result of the first. This is useful for
+combining effects or handling computations that must happen in order.
+
+The second action can be:
+
+1. A value (similar to `Effect.as`)
+2. A function returning a value (similar to `Effect.map`)
+3. A `Promise`
+4. A function returning a `Promise`
+5. An `Effect`
+6. A function returning an `Effect` (similar to `Effect.flatMap`)
+
+**Example** (Applying a Discount Based on Fetched Amount)
+
+Let's look at an example comparing `Effect.andThen` with `Effect.map` and `Effect.flatMap`:
+
+```ts twoslash
+import { pipe, Effect } from "effect"
+
+// Function to apply a discount safely to a transaction amount
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+// Simulated asynchronous task to fetch a transaction amount from database
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+// Using Effect.map and Effect.flatMap
+const result1 = pipe(
+  fetchTransactionAmount,
+  Effect.map((amount) => amount * 2),
+  Effect.flatMap((amount) => applyDiscount(amount, 5))
+)
+
+Effect.runPromise(result1).then(console.log) // Output: 190
+
+// Using Effect.andThen
+const result2 = pipe(
+  fetchTransactionAmount,
+  Effect.andThen((amount) => amount * 2),
+  Effect.andThen((amount) => applyDiscount(amount, 5))
+)
+
+Effect.runPromise(result2).then(console.log) // Output: 190
+```
+
+### Option and Either with andThen
+
+Both [Option](/docs/data-types/option/#interop-with-effect) and [Either](/docs/data-types/either/#interop-with-effect) are commonly used for handling optional or missing values or simple error cases. These types integrate well with `Effect.andThen`. When used with `Effect.andThen`, the operations are categorized as scenarios 5 and 6 (as discussed earlier) because both `Option` and `Either` are treated as effects in this context.
+
+**Example** (with Option)
+
+```ts twoslash
+import { pipe, Effect, Option } from "effect"
+
+// Simulated asynchronous task fetching a number from a database
+const fetchNumberValue = Effect.tryPromise(() => Promise.resolve(42))
+
+//      ┌─── Effect<number, UnknownException | NoSuchElementException, never>
+//      ▼
+const program = pipe(
+  fetchNumberValue,
+  Effect.andThen((x) => (x > 0 ? Option.some(x) : Option.none()))
+)
+```
+
+You might expect the type of `program` to be `Effect<Option<number>, UnknownException, never>`, but it is actually `Effect<number, UnknownException | NoSuchElementException, never>`.
+
+This is because `Option<A>` is treated as an effect of type `Effect<A, NoSuchElementException>`, and as a result, the possible errors are combined into a union type.
+
+<Aside type="tip" title="Option As Effect">
+A value of type `Option<A>` is interpreted as an effect of type `Effect<A, NoSuchElementException>`.
+</Aside>
+
+**Example** (with Either)
+
+```ts twoslash
+import { pipe, Effect, Either } from "effect"
+
+// Function to parse an integer from a string that can fail
+const parseInteger = (input: string): Either.Either<number, string> =>
+  isNaN(parseInt(input))
+    ? Either.left("Invalid integer")
+    : Either.right(parseInt(input))
+
+// Simulated asynchronous task fetching a string from database
+const fetchStringValue = Effect.tryPromise(() => Promise.resolve("42"))
+
+//      ┌─── Effect<number, string | UnknownException, never>
+//      ▼
+const program = pipe(
+  fetchStringValue,
+  Effect.andThen((str) => parseInteger(str))
+)
+```
+
+Although one might expect the type of `program` to be `Effect<Either<number, string>, UnknownException, never>`, it is actually `Effect<number, string | UnknownException, never>`.
+
+This is because `Either<A, E>` is treated as an effect of type `Effect<A, E>`, meaning the errors are combined into a union type.
+
+<Aside type="tip" title="Either As Effect">
+A value of type `Either<A, E>` is interpreted as an effect of type `Effect<A, E>`.
+</Aside>
+
+## tap
+
+Runs a side effect with the result of an effect without changing the original value.
+
+Use `Effect.tap` when you want to perform a side effect, like logging or tracking,
+without modifying the main value. This is useful when you need to observe or
+record an action but want the original value to be passed to the next step.
+
+`Effect.tap` works similarly to `Effect.flatMap`, but it ignores the result of the function
+passed to it. The value from the previous effect remains available for the
+next part of the chain. Note that if the side effect fails, the entire chain
+will fail too.
+
+**Example** (Logging a step in a pipeline)
+
+```ts twoslash
+import { pipe, Effect, Console } from "effect"
+
+// Function to apply a discount safely to a transaction amount
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+// Simulated asynchronous task to fetch a transaction amount from database
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+const finalAmount = pipe(
+  fetchTransactionAmount,
+  // Log the fetched transaction amount
+  Effect.tap((amount) => Console.log(`Apply a discount to: ${amount}`)),
+  // `amount` is still available!
+  Effect.flatMap((amount) => applyDiscount(amount, 5))
+)
+
+Effect.runPromise(finalAmount).then(console.log)
+/*
+Output:
+Apply a discount to: 100
+95
+*/
+```
+
+In this example, `Effect.tap` is used to log the transaction amount before applying the discount, without modifying the value itself. The original value (`amount`) remains available for the next operation (`applyDiscount`).
+
+Using `Effect.tap` allows us to execute side effects during the computation without altering the result.
+This can be useful for logging, performing additional actions, or observing the intermediate values without interfering with the main computation flow.
+
+## all
+
+Combines multiple effects into one, returning results based on the input structure.
+
+Use `Effect.all` when you need to run multiple effects and combine their results
+into a single output. It supports tuples, iterables, structs, and records,
+making it flexible for different input types.
+
+For instance, if the input is a tuple:
+
+```ts showLineNumbers=false
+//         ┌─── a tuple of effects
+//         ▼
+Effect.all([effect1, effect2, ...])
+```
+
+the effects are executed in order, and the result is a new effect containing the results as a tuple. The results in the tuple match the order of the effects passed to `Effect.all`.
+
+By default, `Effect.all` runs effects sequentially and produces a tuple or object
+with the results. If any effect fails, it stops execution (short-circuiting)
+and propagates the error.
+
+See [Collecting](/docs/getting-started/control-flow/#all) for more information on how to use `Effect.all`.
+
+**Example** (Combining Configuration and Database Checks)
+
+```ts twoslash
+import { Effect } from "effect"
+
+// Simulated function to read configuration from a file
+const webConfig = Effect.promise(() =>
+  Promise.resolve({ dbConnection: "localhost", port: 8080 })
+)
+
+// Simulated function to test database connectivity
+const checkDatabaseConnectivity = Effect.promise(() =>
+  Promise.resolve("Connected to Database")
+)
+
+// Combine both effects to perform startup checks
+const startupChecks = Effect.all([webConfig, checkDatabaseConnectivity])
+
+Effect.runPromise(startupChecks).then(([config, dbStatus]) => {
+  console.log(
+    `Configuration: ${JSON.stringify(config)}\nDB Status: ${dbStatus}`
+  )
+})
+/*
+Output:
+Configuration: {"dbConnection":"localhost","port":8080}
+DB Status: Connected to Database
+*/
+```
+
+## Build your first pipeline
+
+Let's now combine the `pipe` function, `Effect.all`, and `Effect.andThen` to create a pipeline that performs a sequence of transformations.
+
+**Example** (Building a Transaction Pipeline)
+
+```ts twoslash
+import { Effect, pipe } from "effect"
+
+// Function to add a small service charge to a transaction amount
+const addServiceCharge = (amount: number) => amount + 1
+
+// Function to apply a discount safely to a transaction amount
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+// Simulated asynchronous task to fetch a transaction amount from database
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+// Simulated asynchronous task to fetch a discount rate
+// from a configuration file
+const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
+
+// Assembling the program using a pipeline of effects
+const program = pipe(
+  // Combine both fetch effects to get the transaction amount
+  // and discount rate
+  Effect.all([fetchTransactionAmount, fetchDiscountRate]),
+
+  // Apply the discount to the transaction amount
+  Effect.andThen(([transactionAmount, discountRate]) =>
+    applyDiscount(transactionAmount, discountRate)
+  ),
+
+  // Add the service charge to the discounted amount
+  Effect.andThen(addServiceCharge),
+
+  // Format the final result for display
+  Effect.andThen(
+    (finalAmount) => `Final amount to charge: ${finalAmount}`
+  )
+)
+
+// Execute the program and log the result
+Effect.runPromise(program).then(console.log)
+// Output: "Final amount to charge: 96"
+```
+
+This pipeline demonstrates how you can structure your code by combining different effects into a clear, readable flow.
+
+## The pipe method
+
+Effect provides a `pipe` method that works similarly to the `pipe` method found in [rxjs](https://rxjs.dev/api/index/function/pipe). This method allows you to chain multiple operations together, making your code more concise and readable.
+
+**Syntax**
+
+```ts showLineNumbers=false
+const result = effect.pipe(func1, func2, ..., funcN)
+```
+
+This is equivalent to using the `pipe` **function** like this:
+
+```ts showLineNumbers=false
+const result = pipe(effect, func1, func2, ..., funcN)
+```
+
+The `pipe` method is available on all effects and many other data types, eliminating the need to import the `pipe` function and saving you some keystrokes.
+
+**Example** (Using the `pipe` Method)
+
+Let's rewrite an [earlier example](#build-your-first-pipeline), this time using the `pipe` method.
+
+```ts twoslash collapse={3-15}
+import { Effect } from "effect"
+
+const addServiceCharge = (amount: number) => amount + 1
+
+const applyDiscount = (
+  total: number,
+  discountRate: number
+): Effect.Effect<number, Error> =>
+  discountRate === 0
+    ? Effect.fail(new Error("Discount rate cannot be zero"))
+    : Effect.succeed(total - (total * discountRate) / 100)
+
+const fetchTransactionAmount = Effect.promise(() => Promise.resolve(100))
+
+const fetchDiscountRate = Effect.promise(() => Promise.resolve(5))
+
+const program = Effect.all([
+  fetchTransactionAmount,
+  fetchDiscountRate
+]).pipe(
+  Effect.andThen(([transactionAmount, discountRate]) =>
+    applyDiscount(transactionAmount, discountRate)
+  ),
+  Effect.andThen(addServiceCharge),
+  Effect.andThen(
+    (finalAmount) => `Final amount to charge: ${finalAmount}`
+  )
+)
+```
+
+## Cheatsheet
+
+Let's summarize the transformation functions we have seen so far:
+
+| API       | Input                                     | Output                      |
+| --------- | ----------------------------------------- | --------------------------- |
+| `map`     | `Effect<A, E, R>`, `A => B`               | `Effect<B, E, R>`           |
+| `flatMap` | `Effect<A, E, R>`, `A => Effect<B, E, R>` | `Effect<B, E, R>`           |
+| `andThen` | `Effect<A, E, R>`, \*                     | `Effect<B, E, R>`           |
+| `tap`     | `Effect<A, E, R>`, `A => Effect<B, E, R>` | `Effect<A, E, R>`           |
+| `all`     | `[Effect<A, E, R>, Effect<B, E, R>, ...]` | `Effect<[A, B, ...], E, R>` |
 
 built-in-schedules.mdx
 ---
@@ -31537,229 +31961,6 @@ When using schedules for retrying or repetition, each interval's starting bounda
 ## Composability of Schedules
 
 Schedules are composable, meaning you can combine simple schedules to create more complex recurrence patterns. Operators like `Schedule.union` or `Schedule.intersect` allow you to build sophisticated schedules by combining and modifying existing ones. This flexibility enables you to tailor the scheduling behavior to meet specific requirements.
-
-introduction.mdx
----
-title: Introduction to Effect Schema
-description: "Introduction to `effect/Schema`, a module for defining, validating, and transforming data schemas."
-sidebar:
-  label: Introduction
-  order: 0
----
-
-import { Aside } from "@astrojs/starlight/components"
-
-Welcome to the documentation for `effect/Schema`, a module for defining and using schemas to validate and transform data in TypeScript.
-
-The `effect/Schema` module allows you to define a `Schema<Type, Encoded, Requirements>` that provides a blueprint for describing the structure and data types of your data. Once defined, you can leverage this schema to perform a range of operations, including:
-
-| Operation       | Description                                                                          |
-| --------------- | ------------------------------------------------------------------------------------ |
-| Decoding        | Transforming data from an input type `Encoded` to an output type `Type`.             |
-| Encoding        | Converting data from an output type `Type` back to an input type `Encoded`.          |
-| Asserting       | Verifying that a value adheres to the schema's output type `Type`.                   |
-| Standard Schema | Generate a [Standard Schema V1](https://standardschema.dev/).                        |
-| Arbitraries     | Generate arbitraries for [fast-check](https://github.com/dubzzz/fast-check) testing. |
-| JSON Schemas    | Create JSON Schemas based on defined schemas.                                        |
-| Equivalence     | Create [Equivalence](/docs/schema/equivalence/) based on defined schemas.            |
-| Pretty printing | Support pretty printing for data structures.                                         |
-
-## Requirements
-
-- TypeScript 5.4 or newer.
-- The `strict` flag enabled in your `tsconfig.json` file.
-- (Optional) The `exactOptionalPropertyTypes` flag enabled in your `tsconfig.json` file.
-
-```json showLineNumbers=false
-{
-  "compilerOptions": {
-    "strict": true,
-    "exactOptionalPropertyTypes": true // optional
-  }
-}
-```
-
-### The exactOptionalPropertyTypes Option
-
-The `effect/Schema` module takes advantage of the `exactOptionalPropertyTypes` option of `tsconfig.json`. This option affects how optional properties are typed (to learn more about this option, you can refer to the official [TypeScript documentation](https://www.typescriptlang.org/tsconfig#exactOptionalPropertyTypes)).
-
-**Example** (With `exactOptionalPropertyTypes` Enabled)
-
-```ts twoslash
-import { Schema } from "effect"
-
-const Person = Schema.Struct({
-  name: Schema.optionalWith(Schema.NonEmptyString, { exact: true })
-})
-
-type Type = Schema.Schema.Type<typeof Person>
-/*
-type Type = {
-    readonly name?: string;
-}
-*/
-
-// @ts-expect-error
-Schema.decodeSync(Person)({ name: undefined })
-/*
-Argument of type '{ name: undefined; }' is not assignable to parameter of type '{ readonly name?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
-  Types of property 'name' are incompatible.
-    Type 'undefined' is not assignable to type 'string'.ts(2379)
-*/
-```
-
-Here, notice that the type of `name` is "exact" (`string`), which means the type checker will catch any attempt to assign an invalid value (like `undefined`).
-
-**Example** (With `exactOptionalPropertyTypes` Disabled)
-
-If, for some reason, you can't enable the `exactOptionalPropertyTypes` option (perhaps due to conflicts with other third-party libraries), you can still use `effect/Schema`. However, there will be a mismatch between the types and the runtime behavior:
-
-```ts
-import { Schema } from "effect"
-
-const Person = Schema.Struct({
-  name: Schema.optionalWith(Schema.NonEmptyString, { exact: true })
-})
-
-type Type = Schema.Schema.Type<typeof Person>
-/*
-type Type = {
-    readonly name?: string | undefined;
-}
-*/
-
-// No type error, but a decoding failure occurs
-Schema.decodeSync(Person)({ name: undefined })
-/*
-throws:
-ParseError: { readonly name?: NonEmptyString }
-└─ ["name"]
-   └─ NonEmptyString
-      └─ From side refinement failure
-         └─ Expected string, actual undefined
-*/
-```
-
-In this case, the type of `name` is widened to `string | undefined`, which means the type checker won't catch the invalid value (`undefined`). However, during decoding, you'll encounter an error, indicating that `undefined` is not allowed.
-
-## The Schema Type
-
-The `Schema` type represents an **immutable** value that describes the structure of your data.
-
-Here is the general form of a `Schema`:
-
-```text showLineNumbers=false
-         ┌─── Type of the decoded value
-         │        ┌─── Encoded type (input/output)
-         │        │      ┌─── Requirements (context)
-         ▼        ▼      ▼
-Schema<Type, Encoded, Requirements>
-```
-
-The `Schema` type has three type parameters with the following meanings:
-
-| Parameter        | Description                                                                                                                                                                                                                                                                                                        |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Type**         | Represents the type of value that a schema can succeed with during decoding.                                                                                                                                                                                                                                       |
-| **Encoded**      | Represents the type of value that a schema can succeed with during encoding. By default, it's equal to `Type` if not explicitly provided.                                                                                                                                                                          |
-| **Requirements** | Similar to the [`Effect`](https://effect.website/docs/getting-started/the-effect-type) type, it represents the contextual data required by the schema to execute both decoding and encoding. If this type parameter is `never` (default if not explicitly provided), it means the schema has no requirements. |
-
-**Examples**
-
-- `Schema<string>` (defaulted to `Schema<string, string, never>`) represents a schema that decodes to `string`, encodes to `string`, and has no requirements.
-- `Schema<number, string>` (defaulted to `Schema<number, string, never>`) represents a schema that decodes to `number` from `string`, encodes a `number` to a `string`, and has no requirements.
-
-<Aside type="note" title="Type Parameter Abbreviations">
-  In the Effect ecosystem, you may often encounter the type parameters of
-  `Schema` abbreviated as `A`, `I`, and `R` respectively. This is just
-  shorthand for the type value of type **A**, **I**nput, and
-  **R**equirements.
-</Aside>
-
-## Understanding Schema Values
-
-**Immutability**. `Schema` values are immutable, and every function in the `effect/Schema` module produces a new `Schema` value.
-
-**Modeling Data Structure**. These values do not perform any actions themselves, they simply model or describe the structure of your data.
-
-**Interpretation by Compilers**. A `Schema` can be interpreted by various "compilers" into specific operations, depending on the compiler type (decoding, encoding, pretty printing, arbitraries, etc...).
-
-## Understanding Decoding and Encoding
-
-When working with data in TypeScript, you often need to handle data coming from or being sent to external systems. This data may not always match the format or types you expect, especially when dealing with user input, data from APIs, or data stored in different formats. To handle these discrepancies, we use **decoding** and **encoding**.
-
-| Term         | Description                                                                                                  |
-| ------------ | ------------------------------------------------------------------------------------------------------------ |
-| **Decoding** | Used for parsing data from external sources where you have no control over the data format.                  |
-| **Encoding** | Used when sending data out to external sources, converting it to a format that is expected by those sources. |
-
-For instance, when working with forms in the frontend, you often receive untyped data in the form of strings. This data can be tampered with and does not natively support arrays or booleans. Decoding helps you validate and parse this data into more useful types like numbers, dates, and arrays. Encoding allows you to convert these types back into the string format expected by forms.
-
-Below is a diagram that shows the relationship between encoding and decoding using a `Schema<A, I, R>`:
-
-```text showLineNumbers=false
-┌─────────┐       ┌───┐       ┌───┐       ┌─────────┐
-| unknown |       | A |       | I |       | unknown |
-└─────────┘       └───┘       └───┘       └─────────┘
-     |              |           |              |
-     | validate     |           |              |
-     |─────────────►│           |              |
-     |              |           |              |
-     | is           |           |              |
-     |─────────────►│           |              |
-     |              |           |              |
-     | asserts      |           |              |
-     |─────────────►│           |              |
-     |              |           |              |
-     | encodeUnknown|           |              |
-     |─────────────────────────►|              |
-                    |           |              |
-                    | encode    |              |
-                    |──────────►│              |
-                    |           |              |
-                    |    decode |              |
-                    | ◄─────────|              |
-                    |           |              |
-                    |           | decodeUnknown|
-                    | ◄────────────────────────|
-```
-
-We'll break down these concepts using an example with a `Schema<Date, string, never>`. This schema serves as a tool to transform a `string` into a `Date` and vice versa.
-
-### Encoding
-
-When we talk about "encoding," we are referring to the process of changing a `Date` into a `string`. To put it simply, it's the act of converting data from one format to another.
-
-### Decoding
-
-Conversely, "decoding" entails transforming a `string` back into a `Date`. It's essentially the reverse operation of encoding, where data is returned to its original form.
-
-### Decoding From Unknown
-
-Decoding from `unknown` involves two key steps:
-
-1. **Checking:** Initially, we verify that the input data (which is of the `unknown` type) matches the expected structure. In our specific case, this means ensuring that the input is indeed a `string`.
-
-2. **Decoding:** Following the successful check, we proceed to convert the `string` into a `Date`. This process completes the decoding operation, where the data is both validated and transformed.
-
-### Encoding From Unknown
-
-Encoding from `unknown` involves two key steps:
-
-1. **Checking:** Initially, we verify that the input data (which is of the `unknown` type) matches the expected structure. In our specific case, this means ensuring that the input is indeed a `Date`.
-
-2. **Encoding:** Following the successful check, we proceed to convert the `Date` into a `string`. This process completes the encoding operation, where the data is both validated and transformed.
-
-## The Rule of Schemas
-
-When working with schemas, there's an important rule to keep in mind: your schemas should be crafted in a way that when you perform both encoding and decoding operations, you should end up with the original value.
-
-In simpler terms, if you encode a value and then immediately decode it, the result should match the original value you started with. This rule ensures that your data remains consistent and reliable throughout the encoding and decoding process.
-
-<Aside type="tip" title="Ensure Consistency">
-  As a general rule, schemas should be defined such that encode + decode
-  return the original value.
-</Aside>
 
 key-value-store.mdx
 ---
@@ -43706,6 +43907,229 @@ Explanation:
 
 introduction.mdx
 ---
+title: Introduction to Effect Schema
+description: "Introduction to `effect/Schema`, a module for defining, validating, and transforming data schemas."
+sidebar:
+  label: Introduction
+  order: 0
+---
+
+import { Aside } from "@astrojs/starlight/components"
+
+Welcome to the documentation for `effect/Schema`, a module for defining and using schemas to validate and transform data in TypeScript.
+
+The `effect/Schema` module allows you to define a `Schema<Type, Encoded, Requirements>` that provides a blueprint for describing the structure and data types of your data. Once defined, you can leverage this schema to perform a range of operations, including:
+
+| Operation       | Description                                                                          |
+| --------------- | ------------------------------------------------------------------------------------ |
+| Decoding        | Transforming data from an input type `Encoded` to an output type `Type`.             |
+| Encoding        | Converting data from an output type `Type` back to an input type `Encoded`.          |
+| Asserting       | Verifying that a value adheres to the schema's output type `Type`.                   |
+| Standard Schema | Generate a [Standard Schema V1](https://standardschema.dev/).                        |
+| Arbitraries     | Generate arbitraries for [fast-check](https://github.com/dubzzz/fast-check) testing. |
+| JSON Schemas    | Create JSON Schemas based on defined schemas.                                        |
+| Equivalence     | Create [Equivalence](/docs/schema/equivalence/) based on defined schemas.            |
+| Pretty printing | Support pretty printing for data structures.                                         |
+
+## Requirements
+
+- TypeScript 5.4 or newer.
+- The `strict` flag enabled in your `tsconfig.json` file.
+- (Optional) The `exactOptionalPropertyTypes` flag enabled in your `tsconfig.json` file.
+
+```json showLineNumbers=false
+{
+  "compilerOptions": {
+    "strict": true,
+    "exactOptionalPropertyTypes": true // optional
+  }
+}
+```
+
+### The exactOptionalPropertyTypes Option
+
+The `effect/Schema` module takes advantage of the `exactOptionalPropertyTypes` option of `tsconfig.json`. This option affects how optional properties are typed (to learn more about this option, you can refer to the official [TypeScript documentation](https://www.typescriptlang.org/tsconfig#exactOptionalPropertyTypes)).
+
+**Example** (With `exactOptionalPropertyTypes` Enabled)
+
+```ts twoslash
+import { Schema } from "effect"
+
+const Person = Schema.Struct({
+  name: Schema.optionalWith(Schema.NonEmptyString, { exact: true })
+})
+
+type Type = Schema.Schema.Type<typeof Person>
+/*
+type Type = {
+    readonly name?: string;
+}
+*/
+
+// @ts-expect-error
+Schema.decodeSync(Person)({ name: undefined })
+/*
+Argument of type '{ name: undefined; }' is not assignable to parameter of type '{ readonly name?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'name' are incompatible.
+    Type 'undefined' is not assignable to type 'string'.ts(2379)
+*/
+```
+
+Here, notice that the type of `name` is "exact" (`string`), which means the type checker will catch any attempt to assign an invalid value (like `undefined`).
+
+**Example** (With `exactOptionalPropertyTypes` Disabled)
+
+If, for some reason, you can't enable the `exactOptionalPropertyTypes` option (perhaps due to conflicts with other third-party libraries), you can still use `effect/Schema`. However, there will be a mismatch between the types and the runtime behavior:
+
+```ts
+import { Schema } from "effect"
+
+const Person = Schema.Struct({
+  name: Schema.optionalWith(Schema.NonEmptyString, { exact: true })
+})
+
+type Type = Schema.Schema.Type<typeof Person>
+/*
+type Type = {
+    readonly name?: string | undefined;
+}
+*/
+
+// No type error, but a decoding failure occurs
+Schema.decodeSync(Person)({ name: undefined })
+/*
+throws:
+ParseError: { readonly name?: NonEmptyString }
+└─ ["name"]
+   └─ NonEmptyString
+      └─ From side refinement failure
+         └─ Expected string, actual undefined
+*/
+```
+
+In this case, the type of `name` is widened to `string | undefined`, which means the type checker won't catch the invalid value (`undefined`). However, during decoding, you'll encounter an error, indicating that `undefined` is not allowed.
+
+## The Schema Type
+
+The `Schema` type represents an **immutable** value that describes the structure of your data.
+
+Here is the general form of a `Schema`:
+
+```text showLineNumbers=false
+         ┌─── Type of the decoded value
+         │        ┌─── Encoded type (input/output)
+         │        │      ┌─── Requirements (context)
+         ▼        ▼      ▼
+Schema<Type, Encoded, Requirements>
+```
+
+The `Schema` type has three type parameters with the following meanings:
+
+| Parameter        | Description                                                                                                                                                                                                                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Type**         | Represents the type of value that a schema can succeed with during decoding.                                                                                                                                                                                                                                       |
+| **Encoded**      | Represents the type of value that a schema can succeed with during encoding. By default, it's equal to `Type` if not explicitly provided.                                                                                                                                                                          |
+| **Requirements** | Similar to the [`Effect`](https://effect.website/docs/getting-started/the-effect-type) type, it represents the contextual data required by the schema to execute both decoding and encoding. If this type parameter is `never` (default if not explicitly provided), it means the schema has no requirements. |
+
+**Examples**
+
+- `Schema<string>` (defaulted to `Schema<string, string, never>`) represents a schema that decodes to `string`, encodes to `string`, and has no requirements.
+- `Schema<number, string>` (defaulted to `Schema<number, string, never>`) represents a schema that decodes to `number` from `string`, encodes a `number` to a `string`, and has no requirements.
+
+<Aside type="note" title="Type Parameter Abbreviations">
+  In the Effect ecosystem, you may often encounter the type parameters of
+  `Schema` abbreviated as `A`, `I`, and `R` respectively. This is just
+  shorthand for the type value of type **A**, **I**nput, and
+  **R**equirements.
+</Aside>
+
+## Understanding Schema Values
+
+**Immutability**. `Schema` values are immutable, and every function in the `effect/Schema` module produces a new `Schema` value.
+
+**Modeling Data Structure**. These values do not perform any actions themselves, they simply model or describe the structure of your data.
+
+**Interpretation by Compilers**. A `Schema` can be interpreted by various "compilers" into specific operations, depending on the compiler type (decoding, encoding, pretty printing, arbitraries, etc...).
+
+## Understanding Decoding and Encoding
+
+When working with data in TypeScript, you often need to handle data coming from or being sent to external systems. This data may not always match the format or types you expect, especially when dealing with user input, data from APIs, or data stored in different formats. To handle these discrepancies, we use **decoding** and **encoding**.
+
+| Term         | Description                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------ |
+| **Decoding** | Used for parsing data from external sources where you have no control over the data format.                  |
+| **Encoding** | Used when sending data out to external sources, converting it to a format that is expected by those sources. |
+
+For instance, when working with forms in the frontend, you often receive untyped data in the form of strings. This data can be tampered with and does not natively support arrays or booleans. Decoding helps you validate and parse this data into more useful types like numbers, dates, and arrays. Encoding allows you to convert these types back into the string format expected by forms.
+
+Below is a diagram that shows the relationship between encoding and decoding using a `Schema<A, I, R>`:
+
+```text showLineNumbers=false
+┌─────────┐       ┌───┐       ┌───┐       ┌─────────┐
+| unknown |       | A |       | I |       | unknown |
+└─────────┘       └───┘       └───┘       └─────────┘
+     |              |           |              |
+     | validate     |           |              |
+     |─────────────►│           |              |
+     |              |           |              |
+     | is           |           |              |
+     |─────────────►│           |              |
+     |              |           |              |
+     | asserts      |           |              |
+     |─────────────►│           |              |
+     |              |           |              |
+     | encodeUnknown|           |              |
+     |─────────────────────────►|              |
+                    |           |              |
+                    | encode    |              |
+                    |──────────►│              |
+                    |           |              |
+                    |    decode |              |
+                    | ◄─────────|              |
+                    |           |              |
+                    |           | decodeUnknown|
+                    | ◄────────────────────────|
+```
+
+We'll break down these concepts using an example with a `Schema<Date, string, never>`. This schema serves as a tool to transform a `string` into a `Date` and vice versa.
+
+### Encoding
+
+When we talk about "encoding," we are referring to the process of changing a `Date` into a `string`. To put it simply, it's the act of converting data from one format to another.
+
+### Decoding
+
+Conversely, "decoding" entails transforming a `string` back into a `Date`. It's essentially the reverse operation of encoding, where data is returned to its original form.
+
+### Decoding From Unknown
+
+Decoding from `unknown` involves two key steps:
+
+1. **Checking:** Initially, we verify that the input data (which is of the `unknown` type) matches the expected structure. In our specific case, this means ensuring that the input is indeed a `string`.
+
+2. **Decoding:** Following the successful check, we proceed to convert the `string` into a `Date`. This process completes the decoding operation, where the data is both validated and transformed.
+
+### Encoding From Unknown
+
+Encoding from `unknown` involves two key steps:
+
+1. **Checking:** Initially, we verify that the input data (which is of the `unknown` type) matches the expected structure. In our specific case, this means ensuring that the input is indeed a `Date`.
+
+2. **Encoding:** Following the successful check, we proceed to convert the `Date` into a `string`. This process completes the encoding operation, where the data is both validated and transformed.
+
+## The Rule of Schemas
+
+When working with schemas, there's an important rule to keep in mind: your schemas should be crafted in a way that when you perform both encoding and decoding operations, you should end up with the original value.
+
+In simpler terms, if you encode a value and then immediately decode it, the result should match the original value you started with. This rule ensures that your data remains consistent and reliable throughout the encoding and decoding process.
+
+<Aside type="tip" title="Ensure Consistency">
+  As a general rule, schemas should be defined such that encode + decode
+  return the original value.
+</Aside>
+
+introduction.mdx
+---
 title: Introduction
 description: Learn the role of Sink in stream processing, handling element consumption, error management, result production, and leftover elements.
 sidebar:
@@ -47954,8 +48378,8 @@ const BooleanFromNumericString = Schema.transform(
     strict: true,
     // If number is positive, use "on", otherwise "off"
     decode: (n) => (n > 0 ? "on" : "off"),
-    // If boolean is true, use 1, otherwise -1
-    encode: (bool) => (bool ? 1 : -1)
+    // If boolean is "on", use 1, otherwise -1
+    encode: (bool) => (bool === "on" ? 1 : -1)
   }
 )
 
