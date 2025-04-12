@@ -49939,7 +49939,7 @@ Matches any value without restrictions.
 declare const any: SafeRefinement<unknown, any>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L968)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L972)
 
 Since v1.0.0
 Match-bigint.md
@@ -49956,7 +49956,7 @@ Matches values of type `bigint`.
 declare const bigint: Predicate.Refinement<unknown, bigint>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1014)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1018)
 
 Since v1.0.0
 Match-boolean.md
@@ -49973,7 +49973,7 @@ Matches values of type `boolean`.
 declare const boolean: Predicate.Refinement<unknown, boolean>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L984)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L988)
 
 Since v1.0.0
 Match-date.md
@@ -49990,7 +49990,7 @@ Matches values that are instances of `Date`.
 declare const date: Predicate.Refinement<unknown, Date>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1030)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1034)
 
 Since v1.0.0
 Match-defined.md
@@ -50007,7 +50007,7 @@ Matches any defined (non-null and non-undefined) value.
 declare const defined: <A>(u: A) => u is A & {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L976)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L980)
 
 Since v1.0.0
 Match-discriminator.md
@@ -50045,7 +50045,7 @@ const match = pipe(
 declare const discriminator: <D extends string>(field: D) => <R, P extends Types.Tags<D, R> & string, Ret, Fn extends (_: Extract<R, Record<D, P>>) => Ret>(...pattern: [first: P, ...values: Array<P>, f: Fn]) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => Matcher<I, Types.AddWithout<F, Extract<R, Record<D, P>>>, Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<D, P>>>>, A | ReturnType<Fn>, Pr, Ret>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L512)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L516)
 
 Since v1.0.0
 Match-discriminators.md
@@ -50088,7 +50088,7 @@ const match = pipe(
 declare const discriminators: <D extends string>(field: D) => <R, Ret, P extends { readonly [Tag in Types.Tags<D, R> & string]?: ((_: Extract<R, Record<D, Tag>>) => Ret) | undefined; } & { readonly [Tag in Exclude<keyof P, Types.Tags<D, R>>]: never; }>(fields: P) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => Matcher<I, Types.AddWithout<F, Extract<R, Record<D, keyof P>>>, Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<D, keyof P>>>>, A | ReturnType<P[keyof P] & {}>, Pr, Ret>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L608)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L612)
 
 Since v1.0.0
 Match-discriminatorsExhaustive.md
@@ -50132,7 +50132,7 @@ const match = pipe(
 declare const discriminatorsExhaustive: <D extends string>(field: D) => <R, Ret, P extends { readonly [Tag in Types.Tags<D, R> & string]: (_: Extract<R, Record<D, Tag>>) => Ret; } & { readonly [Tag in Exclude<keyof P, Types.Tags<D, R>>]: never; }>(fields: P) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => [Pr] extends [never] ? (u: I) => Unify<A | ReturnType<P[keyof P]>> : Unify<A | ReturnType<P[keyof P]>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L661)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L665)
 
 Since v1.0.0
 Match-Matcher.md
@@ -50229,7 +50229,7 @@ console.log(match({ type: "A.A" })) // 1
 declare const discriminatorStartsWith: <D extends string>(field: D) => <R, P extends string, Ret, Fn extends (_: Extract<R, Record<D, `${P}${string}`>>) => Ret>(pattern: P, f: Fn) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => Matcher<I, Types.AddWithout<F, Extract<R, Record<D, `${P}${string}`>>>, Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<D, `${P}${string}`>>>>, A | ReturnType<Fn>, Pr, Ret>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L561)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L565)
 
 Since v1.0.0
 Match-either.md
@@ -50279,7 +50279,7 @@ console.log(getRole({ role: "viewer" }))
 declare const either: <I, F, R, A, Pr, Ret>(self: Matcher<I, F, R, A, Pr, Ret>) => [Pr] extends [never] ? (input: I) => Either.Either<Unify<A>, R> : Either.Either<Unify<A>, R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1157)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1161)
 
 Since v1.0.0
 Match-exhaustive.md
@@ -50315,7 +50315,7 @@ const match = Match.type<string | number>().pipe(
 declare const exhaustive: <I, F, A, Pr, Ret>(self: Matcher<I, F, never, A, Pr, Ret>) => [Pr] extends [never] ? (u: I) => Unify<A> : Unify<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1227)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1231)
 
 Since v1.0.0
 Match-instanceOf.md
@@ -50332,7 +50332,7 @@ Matches instances of a given class.
 declare const instanceOf: <A extends abstract new (...args: any) => any>(constructor: A) => SafeRefinement<InstanceType<A>, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1046)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1050)
 
 Since v1.0.0
 Match-is.md
@@ -50349,7 +50349,7 @@ Matches a specific set of literal values (e.g., `Match.is("a", 42, true)`).
 declare const is: <Literals extends ReadonlyArray<string | number | bigint | boolean | null>>(...literals: Literals) => Predicate.Refinement<unknown, Literals[number]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L942)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L946)
 
 Since v1.0.0
 Match-nonEmptyString.md
@@ -50366,7 +50366,7 @@ Matches non-empty strings.
 declare const nonEmptyString: SafeRefinement<string, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L934)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L938)
 
 Since v1.0.0
 Match-not.md
@@ -50411,7 +50411,7 @@ console.log(match("hi"))
 declare const not: <R, const P extends Types.PatternPrimitive<R> | Types.PatternBase<R>, Ret, Fn extends (_: Exclude<R, Types.ExtractMatch<R, Types.PForExclude<P>>>) => Ret>(pattern: P, f: Fn) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => Matcher<I, Types.AddOnly<F, Types.WhenMatch<R, P>>, Types.ApplyFilters<I, Types.AddOnly<F, Types.WhenMatch<R, P>>>, A | ReturnType<Fn>, Pr, Ret>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L909)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L913)
 
 Since v1.0.0
 Match-number.md
@@ -50428,7 +50428,7 @@ Matches values of type `number`.
 declare const number: Predicate.Refinement<unknown, number>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L960)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L964)
 
 Since v1.0.0
 Match-option.md
@@ -50476,7 +50476,7 @@ console.log(getRole({ role: "viewer" }))
 declare const option: <I, F, R, A, Pr, Ret>(self: Matcher<I, F, R, A, Pr, Ret>) => [Pr] extends [never] ? (input: I) => Option.Option<Unify<A>> : Option.Option<Unify<A>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1198)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1202)
 
 Since v1.0.0
 Match-orElse.md
@@ -50520,7 +50520,7 @@ console.log(match("b"))
 declare const orElse: <RA, Ret, F extends (_: RA) => Ret>(f: F) => <I, R, A, Pr>(self: Matcher<I, R, RA, A, Pr, Ret>) => [Pr] extends [never] ? (input: I) => Unify<ReturnType<F> | A> : Unify<ReturnType<F> | A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1091)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1095)
 
 Since v1.0.0
 Match-orElseAbsurd.md
@@ -50547,7 +50547,7 @@ ensures that an unmatched value is never silently ignored.
 declare const orElseAbsurd: <I, R, RA, A, Pr, Ret>(self: Matcher<I, R, RA, A, Pr, Ret>) => [Pr] extends [never] ? (input: I) => Unify<A> : Unify<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1114)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1118)
 
 Since v1.0.0
 Match-record.md
@@ -50564,7 +50564,7 @@ Matches objects where keys are `string` or `symbol` and values are `unknown`.
 declare const record: Predicate.Refinement<unknown, { [x: string]: unknown; [x: symbol]: unknown; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1038)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1042)
 
 Since v1.0.0
 Match-string.md
@@ -50581,7 +50581,7 @@ Matches values of type `string`.
 declare const string: Predicate.Refinement<unknown, string>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L952)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L956)
 
 Since v1.0.0
 Match-symbol.md
@@ -50598,7 +50598,7 @@ Matches values of type `symbol`.
 declare const symbol: Predicate.Refinement<unknown, symbol>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1022)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L1026)
 
 Since v1.0.0
 Match-tag.md
@@ -50652,7 +50652,7 @@ console.log(match({ _tag: "error", error: new Error("Oops!") }))
 declare const tag: <R, P extends Types.Tags<"_tag", R> & string, Ret, Fn extends (_: Extract<R, Record<"_tag", P>>) => Ret>(...pattern: [first: P, ...values: Array<P>, f: Fn]) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => Matcher<I, Types.AddWithout<F, Extract<R, Record<"_tag", P>>>, Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<"_tag", P>>>>, ReturnType<Fn> | A, Pr, Ret>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L719)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L723)
 
 Since v1.0.0
 Match-tagStartsWith.md
@@ -50693,7 +50693,7 @@ console.log(match({ _tag: "A.A" })) // 1
 declare const tagStartsWith: <R, P extends string, Ret, Fn extends (_: Extract<R, Record<"_tag", `${P}${string}`>>) => Ret>(pattern: P, f: Fn) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => Matcher<I, Types.AddWithout<F, Extract<R, Record<"_tag", `${P}${string}`>>>, Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<"_tag", `${P}${string}`>>>>, ReturnType<Fn> | A, Pr, Ret>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L766)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L770)
 
 Since v1.0.0
 Match-tags.md
@@ -50734,7 +50734,7 @@ const match = pipe(
 declare const tags: <R, Ret, P extends { readonly [Tag in Types.Tags<"_tag", R> & string]?: ((_: Extract<R, Record<"_tag", Tag>>) => Ret) | undefined; } & { readonly [Tag in Exclude<keyof P, Types.Tags<"_tag", R>>]: never; }>(fields: P) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => Matcher<I, Types.AddWithout<F, Extract<R, Record<"_tag", keyof P>>>, Types.ApplyFilters<I, Types.AddWithout<F, Extract<R, Record<"_tag", keyof P>>>>, A | ReturnType<P[keyof P] & {}>, Pr, Ret>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L814)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L818)
 
 Since v1.0.0
 Match-tagsExhaustive.md
@@ -50775,7 +50775,7 @@ const match = pipe(
 declare const tagsExhaustive: <R, Ret, P extends { readonly [Tag in Types.Tags<"_tag", R> & string]: (_: Extract<R, Record<"_tag", Tag>>) => Ret; } & { readonly [Tag in Exclude<keyof P, Types.Tags<"_tag", R>>]: never; }>(fields: P) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => [Pr] extends [never] ? (u: I) => Unify<A | ReturnType<P[keyof P]>> : Unify<A | ReturnType<P[keyof P]>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L862)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L866)
 
 Since v1.0.0
 Match-type.md
@@ -50941,7 +50941,7 @@ condition.
 declare const when: <R, const P extends Types.PatternPrimitive<R> | Types.PatternBase<R>, Ret, Fn extends (_: Types.WhenMatch<R, P>) => Ret>(pattern: P, f: Fn) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => Matcher<I, Types.AddWithout<F, Types.PForExclude<P>>, Types.ApplyFilters<I, Types.AddWithout<F, Types.PForExclude<P>>>, A | ReturnType<Fn>, Pr, Ret>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L351)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L355)
 
 Since v1.0.0
 Match-whenAnd.md
@@ -50992,7 +50992,7 @@ console.log(checkUser({ age: 20, role: "user" }))
 declare const whenAnd: <R, const P extends ReadonlyArray<Types.PatternPrimitive<R> | Types.PatternBase<R>>, Ret, Fn extends (_: Types.WhenMatch<R, T.UnionToIntersection<P[number]>>) => Ret>(...args: [...patterns: P, f: Fn]) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => Matcher<I, Types.AddWithout<F, Types.PForExclude<T.UnionToIntersection<P[number]>>>, Types.ApplyFilters<I, Types.AddWithout<F, Types.PForExclude<T.UnionToIntersection<P[number]>>>>, A | ReturnType<Fn>, Pr>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L469)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L473)
 
 Since v1.0.0
 Match-whenOr.md
@@ -51046,7 +51046,7 @@ console.log(handleError({ _tag: "ValidationError", field: "email" }))
 declare const whenOr: <R, const P extends ReadonlyArray<Types.PatternPrimitive<R> | Types.PatternBase<R>>, Ret, Fn extends (_: Types.WhenMatch<R, P[number]>) => Ret>(...args: [...patterns: P, f: Fn]) => <I, F, A, Pr>(self: Matcher<I, F, R, A, Pr, Ret>) => Matcher<I, Types.AddWithout<F, Types.PForExclude<P[number]>>, Types.ApplyFilters<I, Types.AddWithout<F, Types.PForExclude<P[number]>>>, A | ReturnType<Fn>, Pr, Ret>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L412)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L416)
 
 Since v1.0.0
 Match-withReturnType.md
@@ -51089,7 +51089,7 @@ const match = Match.type<{ a: number } | { b: string }>().pipe(
 declare const withReturnType: <Ret>() => <I, F, R, A, Pr, _>(self: Matcher<I, F, R, A, Pr, _>) => [Ret] extends [[A] extends [never] ? any : A] ? Matcher<I, F, R, A, Pr, Ret> : "withReturnType constraint does not extend Result type"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L299)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Match.ts#L303)
 
 Since v1.0.0
 MergeDecision-isMergeDecision.md
