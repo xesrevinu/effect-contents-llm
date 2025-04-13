@@ -66645,7 +66645,7 @@ It also responds to `Ping` requests.
 declare const layer: Layer.Layer<never, never, MessageStorage.MessageStorage | Sharding.Sharding | RpcServer.Protocol>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerServer.ts#L102)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerServer.ts#L113)
 
 Since v1.0.0
 RunnerServer-layerClientOnly.md
@@ -66666,7 +66666,7 @@ application.
 declare const layerClientOnly: Layer.Layer<Sharding.Sharding | Runners.Runners, never, MessageStorage.MessageStorage | ShardingConfig | Runners.RpcClientProtocol>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerServer.ts#L142)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerServer.ts#L153)
 
 Since v1.0.0
 RunnerServer-layerWithClients.md
@@ -66683,7 +66683,7 @@ A `RunnerServer` layer that includes the `Runners` & `Sharding` clients.
 declare const layerWithClients: Layer.Layer<Sharding.Sharding | Runners.Runners, never, ShardStorage.ShardStorage | MessageStorage.MessageStorage | ShardingConfig | Runners.RpcClientProtocol | RpcServer.Protocol>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerServer.ts#L117)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerServer.ts#L128)
 
 Since v1.0.0
 Runtime-runCallback.md
