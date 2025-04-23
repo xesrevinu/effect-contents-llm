@@ -4832,7 +4832,7 @@ assert.deepStrictEqual(abs(unsafeFromString("5")), unsafeFromString("5"))
 declare const abs: (n: BigDecimal) => BigDecimal
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L688)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L691)
 
 Since v2.0.0
 BigDecimal-between.md
@@ -4865,7 +4865,7 @@ assert.deepStrictEqual(between(BigDecimal.unsafeFromString("6")), false)
 declare const between: { (options: { minimum: BigDecimal; maximum: BigDecimal; }): (self: BigDecimal) => boolean; (self: BigDecimal, options: { minimum: BigDecimal; maximum: BigDecimal; }): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L569)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L572)
 
 Since v2.0.0
 BigDecimal-clamp.md
@@ -4902,7 +4902,7 @@ assert.deepStrictEqual(clamp(BigDecimal.unsafeFromString("6")), BigDecimal.unsaf
 declare const clamp: { (options: { minimum: BigDecimal; maximum: BigDecimal; }): (self: BigDecimal) => BigDecimal; (self: BigDecimal, options: { minimum: BigDecimal; maximum: BigDecimal; }): BigDecimal; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L605)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L608)
 
 Since v2.0.0
 BigDecimal-divide.md
@@ -4935,7 +4935,7 @@ assert.deepStrictEqual(BigDecimal.divide(BigDecimal.unsafeFromString("6"), BigDe
 declare const divide: { (that: BigDecimal): (self: BigDecimal) => Option.Option<BigDecimal>; (self: BigDecimal, that: BigDecimal): Option.Option<BigDecimal>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L384)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L387)
 
 Since v2.0.0
 BigDecimal-equals.md
@@ -4952,7 +4952,7 @@ Checks if two `BigDecimal`s are equal.
 declare const equals: { (that: BigDecimal): (self: BigDecimal) => boolean; (self: BigDecimal, that: BigDecimal): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L789)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L792)
 
 Since v2.0.0
 BigDecimal-format.md
@@ -4983,7 +4983,7 @@ assert.deepStrictEqual(format(unsafeFromString("-0.00000123")), "-0.00000123")
 declare const format: (n: BigDecimal) => string
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L974)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L977)
 
 Since v2.0.0
 BigDecimal-fromBigInt.md
@@ -5000,7 +5000,7 @@ Creates a `BigDecimal` from a `bigint` value.
 declare const fromBigInt: (n: bigint) => BigDecimal
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L800)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L803)
 
 Since v2.0.0
 BigDecimal-fromNumber.md
@@ -5022,7 +5022,7 @@ Throws a `RangeError` if the number is not finite (`NaN`, `+Infinity` or `-Infin
 declare const fromNumber: (n: number) => BigDecimal
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L837)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L840)
 
 Since v2.0.0
 BigDecimal-fromString.md
@@ -5050,7 +5050,7 @@ assert.deepStrictEqual(BigDecimal.fromString("123.abc"), Option.none())
 declare const fromString: (s: string) => Option.Option<BigDecimal>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L891)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L894)
 
 Since v2.0.0
 BigDecimal-greaterThan.md
@@ -5078,7 +5078,7 @@ assert.deepStrictEqual(greaterThan(unsafeFromString("4"), unsafeFromString("3"))
 declare const greaterThan: { (that: BigDecimal): (self: BigDecimal) => boolean; (self: BigDecimal, that: BigDecimal): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L522)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L525)
 
 Since v2.0.0
 BigDecimal-greaterThanOrEqualTo.md
@@ -5106,7 +5106,7 @@ assert.deepStrictEqual(greaterThanOrEqualTo(unsafeFromString("4"), unsafeFromStr
 declare const greaterThanOrEqualTo: { (that: BigDecimal): (self: BigDecimal) => boolean; (self: BigDecimal, that: BigDecimal): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L543)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L546)
 
 Since v2.0.0
 BigDecimal-isBigDecimal.md
@@ -5123,7 +5123,7 @@ Checks if a given value is a `BigDecimal`.
 declare const isBigDecimal: (u: unknown) => u is BigDecimal
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L92)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L95)
 
 Since v2.0.0
 BigDecimal-isInteger.md
@@ -5151,7 +5151,7 @@ assert.deepStrictEqual(isInteger(unsafeFromString("1.1")), false)
 declare const isInteger: (n: BigDecimal) => boolean
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1072)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1075)
 
 Since v2.0.0
 BigDecimal-isNegative.md
@@ -5179,7 +5179,7 @@ assert.deepStrictEqual(isNegative(unsafeFromString("1")), false)
 declare const isNegative: (n: BigDecimal) => boolean
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1107)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1110)
 
 Since v2.0.0
 BigDecimal-isPositive.md
@@ -5207,7 +5207,7 @@ assert.deepStrictEqual(isPositive(unsafeFromString("1")), true)
 declare const isPositive: (n: BigDecimal) => boolean
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1125)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1128)
 
 Since v2.0.0
 BigDecimal-isZero.md
@@ -5234,7 +5234,7 @@ assert.deepStrictEqual(isZero(unsafeFromString("1")), false)
 declare const isZero: (n: BigDecimal) => boolean
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1089)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1092)
 
 Since v2.0.0
 BigDecimal-lessThan.md
@@ -5262,7 +5262,7 @@ assert.deepStrictEqual(lessThan(unsafeFromString("4"), unsafeFromString("3")), f
 declare const lessThan: { (that: BigDecimal): (self: BigDecimal) => boolean; (self: BigDecimal, that: BigDecimal): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L480)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L483)
 
 Since v2.0.0
 BigDecimal-lessThanOrEqualTo.md
@@ -5290,7 +5290,7 @@ assert.deepStrictEqual(lessThanOrEqualTo(unsafeFromString("4"), unsafeFromString
 declare const lessThanOrEqualTo: { (that: BigDecimal): (self: BigDecimal) => boolean; (self: BigDecimal, that: BigDecimal): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L501)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L504)
 
 Since v2.0.0
 BigDecimal-make.md
@@ -5307,7 +5307,7 @@ Creates a `BigDecimal` from a `bigint` value and a scale.
 declare const make: (value: bigint, scale: number) => BigDecimal
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L100)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L103)
 
 Since v2.0.0
 BigDecimal-max.md
@@ -5333,7 +5333,7 @@ assert.deepStrictEqual(max(unsafeFromString("2"), unsafeFromString("3")), unsafe
 declare const max: { (that: BigDecimal): (self: BigDecimal) => BigDecimal; (self: BigDecimal, that: BigDecimal): BigDecimal; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L649)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L652)
 
 Since v2.0.0
 BigDecimal-min.md
@@ -5359,7 +5359,7 @@ assert.deepStrictEqual(min(unsafeFromString("2"), unsafeFromString("3")), unsafe
 declare const min: { (that: BigDecimal): (self: BigDecimal) => BigDecimal; (self: BigDecimal, that: BigDecimal): BigDecimal; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L630)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L633)
 
 Since v2.0.0
 BigDecimal-multiply.md
@@ -5385,7 +5385,7 @@ assert.deepStrictEqual(multiply(unsafeFromString("2"), unsafeFromString("3")), u
 declare const multiply: { (that: BigDecimal): (self: BigDecimal) => BigDecimal; (self: BigDecimal, that: BigDecimal): BigDecimal; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L247)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L250)
 
 Since v2.0.0
 BigDecimal-negate.md
@@ -5412,7 +5412,7 @@ assert.deepStrictEqual(negate(unsafeFromString("-6")), unsafeFromString("6"))
 declare const negate: (n: BigDecimal) => BigDecimal
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L705)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L708)
 
 Since v2.0.0
 BigDecimal-normalize.md
@@ -5439,7 +5439,7 @@ assert.deepStrictEqual(normalize(unsafeFromString("12300000")), normalize(make(1
 declare const normalize: (self: BigDecimal) => BigDecimal
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L143)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L146)
 
 Since v2.0.0
 BigDecimal-remainder.md
@@ -5469,7 +5469,7 @@ assert.deepStrictEqual(BigDecimal.remainder(BigDecimal.unsafeFromString("-4"), B
 declare const remainder: { (divisor: BigDecimal): (self: BigDecimal) => Option.Option<BigDecimal>; (self: BigDecimal, divisor: BigDecimal): Option.Option<BigDecimal>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L725)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L728)
 
 Since v2.0.0
 BigDecimal-safeFromNumber.md
@@ -5502,7 +5502,7 @@ assert.deepStrictEqual(BigDecimal.safeFromNumber(Infinity), Option.none())
 declare const safeFromNumber: (n: number) => Option.Option<BigDecimal>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L861)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L864)
 
 Since v3.11.0
 BigDecimal-scale.md
@@ -5522,7 +5522,7 @@ the nearest integer.
 declare const scale: { (scale: number): (self: BigDecimal) => BigDecimal; (self: BigDecimal, scale: number): BigDecimal; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L181)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L184)
 
 Since v2.0.0
 BigDecimal-sign.md
@@ -5550,7 +5550,7 @@ assert.deepStrictEqual(sign(unsafeFromString("5")), 1)
 declare const sign: (n: BigDecimal) => Ordering
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L670)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L673)
 
 Since v2.0.0
 BigDecimal-subtract.md
@@ -5576,7 +5576,7 @@ assert.deepStrictEqual(subtract(unsafeFromString("2"), unsafeFromString("3")), u
 declare const subtract: { (that: BigDecimal): (self: BigDecimal) => BigDecimal; (self: BigDecimal, that: BigDecimal): BigDecimal; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L272)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L275)
 
 Since v2.0.0
 BigDecimal-sum.md
@@ -5602,7 +5602,7 @@ assert.deepStrictEqual(sum(unsafeFromString("2"), unsafeFromString("3")), unsafe
 declare const sum: { (that: BigDecimal): (self: BigDecimal) => BigDecimal; (self: BigDecimal, that: BigDecimal): BigDecimal; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L210)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L213)
 
 Since v2.0.0
 BigDecimal-toExponential.md
@@ -5628,7 +5628,7 @@ assert.deepStrictEqual(toExponential(make(123456n, -5)), "1.23456e+10")
 declare const toExponential: (n: BigDecimal) => string
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1019)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1022)
 
 Since v3.11.0
 BigDecimal-unsafeDivide.md
@@ -5660,7 +5660,7 @@ assert.deepStrictEqual(unsafeDivide(unsafeFromString("6"), unsafeFromString("4")
 declare const unsafeDivide: { (that: BigDecimal): (self: BigDecimal) => BigDecimal; (self: BigDecimal, that: BigDecimal): BigDecimal; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L424)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L427)
 
 Since v2.0.0
 BigDecimal-unsafeFromNumber.md
@@ -5692,7 +5692,7 @@ assert.deepStrictEqual(unsafeFromNumber(123.456), make(123456n, 3))
 declare const unsafeFromNumber: (n: number) => BigDecimal
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L822)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L825)
 
 Since v3.11.0
 BigDecimal-unsafeFromString.md
@@ -5720,7 +5720,7 @@ assert.throws(() => unsafeFromString("123.abc"))
 declare const unsafeFromString: (s: string) => BigDecimal
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L952)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L955)
 
 Since v2.0.0
 BigDecimal-unsafeRemainder.md
@@ -5750,7 +5750,7 @@ assert.deepStrictEqual(unsafeRemainder(unsafeFromString("-4"), unsafeFromString(
 declare const unsafeRemainder: { (divisor: BigDecimal): (self: BigDecimal) => BigDecimal; (self: BigDecimal, divisor: BigDecimal): BigDecimal; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L755)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L758)
 
 Since v2.0.0
 BigDecimal-unsafeToNumber.md
@@ -5778,7 +5778,7 @@ assert.deepStrictEqual(unsafeToNumber(unsafeFromString("123.456")), 123.456)
 declare const unsafeToNumber: (n: BigDecimal) => number
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1054)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigDecimal.ts#L1057)
 
 Since v2.0.0
 BigInt-abs.md
@@ -5806,7 +5806,7 @@ assert.deepStrictEqual(abs(5n), 5n)
 declare const abs: (n: bigint) => bigint
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L406)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L409)
 
 Since v2.0.0
 BigInt-between.md
@@ -5836,7 +5836,7 @@ assert.deepStrictEqual(between(6n), false)
 declare const between: { (options: { minimum: bigint; maximum: bigint; }): (self: bigint) => boolean; (self: bigint, options: { minimum: bigint; maximum: bigint; }): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L293)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L296)
 
 Since v2.0.0
 BigInt-clamp.md
@@ -5870,7 +5870,7 @@ assert.equal(clamp(6n), 5n)
 declare const clamp: { (options: { minimum: bigint; maximum: bigint; }): (self: bigint) => bigint; (self: bigint, options: { minimum: bigint; maximum: bigint; }): bigint; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L325)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L328)
 
 Since v2.0.0
 BigInt-decrement.md
@@ -5896,7 +5896,7 @@ assert.deepStrictEqual(decrement(3n), 2n)
 declare const decrement: (n: bigint) => bigint
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L177)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L180)
 
 Since v2.0.0
 BigInt-divide.md
@@ -5928,7 +5928,7 @@ assert.deepStrictEqual(BigInt.divide(6n, 0n), Option.none())
 declare const divide: { (that: bigint): (self: bigint) => Option.Option<bigint>; (self: bigint, that: bigint): Option.Option<bigint>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L114)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L117)
 
 Since v2.0.0
 BigInt-fromNumber.md
@@ -5960,7 +5960,7 @@ assert.deepStrictEqual(BI.fromNumber(Number.MIN_SAFE_INTEGER - 1), Option.none()
 declare const fromNumber: (n: number) => Option.Option<bigint>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L630)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L633)
 
 Since v2.4.12
 BigInt-fromString.md
@@ -5991,7 +5991,7 @@ assert.deepStrictEqual(BI.fromString("a"), Option.none())
 declare const fromString: (s: string) => Option.Option<bigint>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L600)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L603)
 
 Since v2.4.12
 BigInt-gcd.md
@@ -6019,7 +6019,7 @@ assert.deepStrictEqual(gcd(16n, 24n), 8n)
 declare const gcd: { (that: bigint): (self: bigint) => bigint; (self: bigint, that: bigint): bigint; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L424)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L427)
 
 Since v2.0.0
 BigInt-greaterThan.md
@@ -6047,7 +6047,7 @@ assert.deepStrictEqual(greaterThan(4n, 3n), true)
 declare const greaterThan: { (that: bigint): (self: bigint) => boolean; (self: bigint, that: bigint): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L249)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L252)
 
 Since v2.0.0
 BigInt-greaterThanOrEqualTo.md
@@ -6075,7 +6075,7 @@ assert.deepStrictEqual(greaterThanOrEqualTo(4n, 3n), true)
 declare const greaterThanOrEqualTo: { (that: bigint): (self: bigint) => boolean; (self: bigint, that: bigint): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L270)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L273)
 
 Since v2.0.0
 BigInt-increment.md
@@ -6101,7 +6101,7 @@ assert.deepStrictEqual(increment(2n), 3n)
 declare const increment: (n: bigint) => bigint
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L161)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L164)
 
 Since v2.0.0
 BigInt-isBigInt.md
@@ -6128,7 +6128,7 @@ assert.deepStrictEqual(isBigInt(1), false)
 declare const isBigInt: (u: unknown) => u is bigint
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L35)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L38)
 
 Since v2.0.0
 BigInt-lcm.md
@@ -6156,7 +6156,7 @@ assert.deepStrictEqual(lcm(16n, 24n), 48n)
 declare const lcm: { (that: bigint): (self: bigint) => bigint; (self: bigint, that: bigint): bigint; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L452)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L455)
 
 Since v2.0.0
 BigInt-lessThan.md
@@ -6184,7 +6184,7 @@ assert.deepStrictEqual(lessThan(4n, 3n), false)
 declare const lessThan: { (that: bigint): (self: bigint) => boolean; (self: bigint, that: bigint): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L207)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L210)
 
 Since v2.0.0
 BigInt-lessThanOrEqualTo.md
@@ -6212,7 +6212,7 @@ assert.deepStrictEqual(lessThanOrEqualTo(4n, 3n), false)
 declare const lessThanOrEqualTo: { (that: bigint): (self: bigint) => boolean; (self: bigint, that: bigint): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L228)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L231)
 
 Since v2.0.0
 BigInt-max.md
@@ -6238,7 +6238,7 @@ assert.deepStrictEqual(max(2n, 3n), 3n)
 declare const max: { (that: bigint): (self: bigint) => bigint; (self: bigint, that: bigint): bigint; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L367)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L370)
 
 Since v2.0.0
 BigInt-min.md
@@ -6264,7 +6264,7 @@ assert.deepStrictEqual(min(2n, 3n), 2n)
 declare const min: { (that: bigint): (self: bigint) => bigint; (self: bigint, that: bigint): bigint; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L349)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L352)
 
 Since v2.0.0
 BigInt-multiply.md
@@ -6290,7 +6290,7 @@ assert.deepStrictEqual(multiply(2n, 3n), 6n)
 declare const multiply: { (that: bigint): (self: bigint) => bigint; (self: bigint, that: bigint): bigint; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L70)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L73)
 
 Since v2.0.0
 BigInt-multiplyAll.md
@@ -6316,7 +6316,7 @@ assert.deepStrictEqual(multiplyAll([2n, 3n, 4n]), 24n)
 declare const multiplyAll: (collection: Iterable<bigint>) => bigint
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L543)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L546)
 
 Since v2.0.0
 BigInt-sign.md
@@ -6344,7 +6344,7 @@ assert.deepStrictEqual(sign(5n), 1)
 declare const sign: (n: bigint) => Ordering
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L388)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L391)
 
 Since v2.0.0
 BigInt-sqrt.md
@@ -6373,7 +6373,7 @@ assert.deepStrictEqual(BigInt.sqrt(-1n), Option.none())
 declare const sqrt: (n: bigint) => Option.Option<bigint>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L504)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L507)
 
 Since v2.0.0
 BigInt-subtract.md
@@ -6399,7 +6399,7 @@ assert.deepStrictEqual(subtract(2n, 3n), -1n)
 declare const subtract: { (that: bigint): (self: bigint) => bigint; (self: bigint, that: bigint): bigint; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L89)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L92)
 
 Since v2.0.0
 BigInt-sum.md
@@ -6425,7 +6425,7 @@ assert.deepStrictEqual(sum(2n, 3n), 5n)
 declare const sum: { (that: bigint): (self: bigint) => bigint; (self: bigint, that: bigint): bigint; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L51)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L54)
 
 Since v2.0.0
 BigInt-sumAll.md
@@ -6451,7 +6451,7 @@ assert.deepStrictEqual(sumAll([2n, 3n, 4n]), 9n)
 declare const sumAll: (collection: Iterable<bigint>) => bigint
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L521)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L524)
 
 Since v2.0.0
 BigInt-toNumber.md
@@ -6483,7 +6483,7 @@ assert.deepStrictEqual(BI.toNumber(BigInt(Number.MIN_SAFE_INTEGER) - BigInt(1)),
 declare const toNumber: (b: bigint) => Option.Option<number>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L574)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L577)
 
 Since v2.0.0
 BigInt-unsafeDivide.md
@@ -6515,7 +6515,7 @@ assert.deepStrictEqual(unsafeDivide(6n, 4n), 1n)
 declare const unsafeDivide: { (that: bigint): (self: bigint) => bigint; (self: bigint, that: bigint): bigint; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L142)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L145)
 
 Since v2.0.0
 BigInt-unsafeSqrt.md
@@ -6543,7 +6543,7 @@ assert.deepStrictEqual(unsafeSqrt(16n), 4n)
 declare const unsafeSqrt: (n: bigint) => bigint
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L473)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/BigInt.ts#L476)
 
 Since v2.0.0
 Boolean-and.md
@@ -56092,14 +56092,14 @@ Checks if a `number` is between a `minimum` and `maximum` value (inclusive).
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { Number } from "effect"
 
 const between = Number.between({ minimum: 0, maximum: 5 })
 
-assert.deepStrictEqual(between(3), true)
-assert.deepStrictEqual(between(-1), false)
-assert.deepStrictEqual(between(6), false)
+assert.equal(between(3), true)
+assert.equal(between(-1), false)
+assert.equal(between(6), false)
 ```
 
 **Signature**
@@ -56108,7 +56108,7 @@ assert.deepStrictEqual(between(6), false)
 declare const between: { (options: { minimum: number; maximum: number; }): (self: number) => boolean; (self: number, options: { minimum: number; maximum: number; }): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L280)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L854)
 
 Since v2.0.0
 Number-clamp.md
@@ -56117,16 +56117,19 @@ Module: `Number`<br />
 
 ## Number.clamp
 
-Restricts the given `number` to be within the range specified by the `minimum` and `maximum` values.
+Restricts the given `number` to be within the range specified by the
+`minimum` and `maximum` values.
 
-- If the `number` is less than the `minimum` value, the function returns the `minimum` value.
-- If the `number` is greater than the `maximum` value, the function returns the `maximum` value.
+- If the `number` is less than the `minimum` value, the function returns the
+  `minimum` value.
+- If the `number` is greater than the `maximum` value, the function returns the
+  `maximum` value.
 - Otherwise, it returns the original `number`.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { Number } from "effect"
 
 const clamp = Number.clamp({ minimum: 1, maximum: 5 })
@@ -56142,7 +56145,7 @@ assert.equal(clamp(6), 5)
 declare const clamp: { (options: { minimum: number; maximum: number; }): (self: number) => number; (self: number, options: { minimum: number; maximum: number; }): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L312)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L890)
 
 Since v2.0.0
 Number-decrement.md
@@ -56156,10 +56159,10 @@ Decrements a number by `1`.
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { decrement } from "effect/Number"
 
-assert.deepStrictEqual(decrement(3), 2)
+assert.equal(decrement(3), 2)
 ```
 
 **Signature**
@@ -56168,7 +56171,7 @@ assert.deepStrictEqual(decrement(3), 2)
 declare const decrement: (n: number) => number
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L164)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L727)
 
 Since v2.0.0
 Number-divide.md
@@ -56177,25 +56180,65 @@ Module: `Number`<br />
 
 ## Number.divide
 
-Provides a division operation on `number`s.
+Performs division in the set of JavaScript numbers, returning the result
+wrapped in an `Option` to handle division by zero.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
-import { Number, Option } from "effect"
+import * as assert from "node:assert/strict"
+import { pipe, Option } from "effect"
+import * as Number from "effect/Number"
 
-assert.deepStrictEqual(Number.divide(6, 3), Option.some(2))
-assert.deepStrictEqual(Number.divide(6, 0), Option.none())
+// Data-first style (direct application)
+assert.equal(Number.divide(6, 3), Option.some(2)) // 6 ÷ 3 = 2
+assert.equal(Number.divide(-8, 4), Option.some(-2)) // (-8) ÷ 4 = -2
+assert.equal(Number.divide(-10, -5), Option.some(2)) // (-10) ÷ (-5) = 2
+assert.equal(Number.divide(1, 3), Option.some(0.3333333333333333)) // Note: floating-point approximation
+
+// Handling division by zero
+assert.equal(Number.divide(6, 0), Option.none()) // 6 ÷ 0 is undefined
+
+// Data-last style (pipeable)
+assert.equal(
+  pipe(
+    10,
+    Number.divide(2) // 10 ÷ 2 = 5
+  ),
+  Option.some(5)
+)
+
+// Chaining multiple divisions using Option combinators
+assert.equal(
+  pipe(
+    Option.some(24),
+    Option.flatMap((n) => Number.divide(n, 2)), // 24 ÷ 2 = 12
+    Option.flatMap(Number.divide(3)), // 12 ÷ 3 = 4
+    Option.flatMap(Number.divide(2)) // 4 ÷ 2 = 2
+  ),
+  Option.some(2)
+)
+
+// Division-by-one property: a ÷ 1 = a
+assert.equal(Number.divide(42, 1), Option.some(42))
+
+// Self-division property: a ÷ a = 1 (for a ≠ 0)
+assert.equal(Number.divide(42, 42), Option.some(1))
+
+// Non-commutative property: a ÷ b ≠ b ÷ a
+assert.notDeepStrictEqual(
+  Number.divide(6, 3), // 6 ÷ 3 = 2
+  Number.divide(3, 6) // 3 ÷ 6 = 0.5
+)
 ```
 
 **Signature**
 
 ```ts
-declare const divide: { (that: number): (self: number) => Option<number>; (self: number, that: number): Option<number>; }
+declare const divide: { (divisor: number): (dividend: number) => Option<number>; (dividend: number, divisor: number): Option<number>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L105)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L589)
 
 Since v2.0.0
 Number-greaterThan.md
@@ -56204,17 +56247,18 @@ Module: `Number`<br />
 
 ## Number.greaterThan
 
-Returns `true` if the first argument is greater than the second, otherwise `false`.
+Returns `true` if the first argument is greater than the second, otherwise
+`false`.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { greaterThan } from "effect/Number"
 
-assert.deepStrictEqual(greaterThan(2, 3), false)
-assert.deepStrictEqual(greaterThan(3, 3), false)
-assert.deepStrictEqual(greaterThan(4, 3), true)
+assert.equal(greaterThan(2, 3), false)
+assert.equal(greaterThan(3, 3), false)
+assert.equal(greaterThan(4, 3), true)
 ```
 
 **Signature**
@@ -56223,7 +56267,7 @@ assert.deepStrictEqual(greaterThan(4, 3), true)
 declare const greaterThan: { (that: number): (self: number) => boolean; (self: number, that: number): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L236)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L807)
 
 Since v2.0.0
 Number-greaterThanOrEqualTo.md
@@ -56232,17 +56276,18 @@ Module: `Number`<br />
 
 ## Number.greaterThanOrEqualTo
 
-Returns a function that checks if a given `number` is greater than or equal to the provided one.
+Returns a function that checks if a given `number` is greater than or equal
+to the provided one.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { greaterThanOrEqualTo } from "effect/Number"
 
-assert.deepStrictEqual(greaterThanOrEqualTo(2, 3), false)
-assert.deepStrictEqual(greaterThanOrEqualTo(3, 3), true)
-assert.deepStrictEqual(greaterThanOrEqualTo(4, 3), true)
+assert.equal(greaterThanOrEqualTo(2, 3), false)
+assert.equal(greaterThanOrEqualTo(3, 3), true)
+assert.equal(greaterThanOrEqualTo(4, 3), true)
 ```
 
 **Signature**
@@ -56251,7 +56296,7 @@ assert.deepStrictEqual(greaterThanOrEqualTo(4, 3), true)
 declare const greaterThanOrEqualTo: { (that: number): (self: number) => boolean; (self: number, that: number): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L257)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L830)
 
 Since v2.0.0
 Number-increment.md
@@ -56265,10 +56310,10 @@ Returns the result of adding `1` to a given number.
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { increment } from "effect/Number"
 
-assert.deepStrictEqual(increment(2), 3)
+assert.equal(increment(2), 3)
 ```
 
 **Signature**
@@ -56277,7 +56322,7 @@ assert.deepStrictEqual(increment(2), 3)
 declare const increment: (n: number) => number
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L148)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L710)
 
 Since v2.0.0
 Number-isNumber.md
@@ -56286,16 +56331,48 @@ Module: `Number`<br />
 
 ## Number.isNumber
 
-Tests if a value is a `number`.
+Type guard that tests if a value is a member of the set of JavaScript
+numbers.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
-import { isNumber } from "effect/Number"
+import * as assert from "node:assert/strict"
+import * as Number from "effect/Number"
 
-assert.deepStrictEqual(isNumber(2), true)
-assert.deepStrictEqual(isNumber("2"), false)
+// Regular numbers
+assert.equal(Number.isNumber(2), true)
+assert.equal(Number.isNumber(-3.14), true)
+assert.equal(Number.isNumber(0), true)
+
+// Special numeric values
+assert.equal(Number.isNumber(Infinity), true)
+assert.equal(Number.isNumber(NaN), true)
+
+// Non-number values
+assert.equal(Number.isNumber("2"), false)
+assert.equal(Number.isNumber(true), false)
+assert.equal(Number.isNumber(null), false)
+assert.equal(Number.isNumber(undefined), false)
+assert.equal(Number.isNumber({}), false)
+assert.equal(Number.isNumber([]), false)
+
+// Using as a type guard in conditionals
+function processValue(value: unknown): string {
+  if (Number.isNumber(value)) {
+    // TypeScript now knows 'value' is a number
+    return `Numeric value: ${value.toFixed(2)}`
+  }
+  return "Not a number"
+}
+
+assert.strictEqual(processValue(42), "Numeric value: 42.00")
+assert.strictEqual(processValue("hello"), "Not a number")
+
+// Filtering for numbers in an array
+const mixed = [1, "two", 3, false, 5]
+const onlyNumbers = mixed.filter(Number.isNumber)
+assert.equal(onlyNumbers, [1, 3, 5])
 ```
 
 **Signature**
@@ -56304,7 +56381,7 @@ assert.deepStrictEqual(isNumber("2"), false)
 declare const isNumber: (input: unknown) => input is number
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L31)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L160)
 
 Since v2.0.0
 Number-lessThan.md
@@ -56313,17 +56390,18 @@ Module: `Number`<br />
 
 ## Number.lessThan
 
-Returns `true` if the first argument is less than the second, otherwise `false`.
+Returns `true` if the first argument is less than the second, otherwise
+`false`.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { lessThan } from "effect/Number"
 
-assert.deepStrictEqual(lessThan(2, 3), true)
-assert.deepStrictEqual(lessThan(3, 3), false)
-assert.deepStrictEqual(lessThan(4, 3), false)
+assert.equal(lessThan(2, 3), true)
+assert.equal(lessThan(3, 3), false)
+assert.equal(lessThan(4, 3), false)
 ```
 
 **Signature**
@@ -56332,7 +56410,7 @@ assert.deepStrictEqual(lessThan(4, 3), false)
 declare const lessThan: { (that: number): (self: number) => boolean; (self: number, that: number): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L194)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L761)
 
 Since v2.0.0
 Number-lessThanOrEqualTo.md
@@ -56341,17 +56419,18 @@ Module: `Number`<br />
 
 ## Number.lessThanOrEqualTo
 
-Returns a function that checks if a given `number` is less than or equal to the provided one.
+Returns a function that checks if a given `number` is less than or equal to
+the provided one.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { lessThanOrEqualTo } from "effect/Number"
 
-assert.deepStrictEqual(lessThanOrEqualTo(2, 3), true)
-assert.deepStrictEqual(lessThanOrEqualTo(3, 3), true)
-assert.deepStrictEqual(lessThanOrEqualTo(4, 3), false)
+assert.equal(lessThanOrEqualTo(2, 3), true)
+assert.equal(lessThanOrEqualTo(3, 3), true)
+assert.equal(lessThanOrEqualTo(4, 3), false)
 ```
 
 **Signature**
@@ -56360,7 +56439,7 @@ assert.deepStrictEqual(lessThanOrEqualTo(4, 3), false)
 declare const lessThanOrEqualTo: { (that: number): (self: number) => boolean; (self: number, that: number): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L215)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L784)
 
 Since v2.0.0
 Number-max.md
@@ -56374,10 +56453,10 @@ Returns the maximum between two `number`s.
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { max } from "effect/Number"
 
-assert.deepStrictEqual(max(2, 3), 3)
+assert.equal(max(2, 3), 3)
 ```
 
 **Signature**
@@ -56386,7 +56465,7 @@ assert.deepStrictEqual(max(2, 3), 3)
 declare const max: { (that: number): (self: number) => number; (self: number, that: number): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L354)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L934)
 
 Since v2.0.0
 Number-min.md
@@ -56400,10 +56479,10 @@ Returns the minimum between two `number`s.
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { min } from "effect/Number"
 
-assert.deepStrictEqual(min(2, 3), 2)
+assert.equal(min(2, 3), 2)
 ```
 
 **Signature**
@@ -56412,7 +56491,7 @@ assert.deepStrictEqual(min(2, 3), 2)
 declare const min: { (that: number): (self: number) => number; (self: number, that: number): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L336)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L915)
 
 Since v2.0.0
 Number-multiply.md
@@ -56421,24 +56500,67 @@ Module: `Number`<br />
 
 ## Number.multiply
 
-Provides a multiplication operation on `number`s.
+Performs **multiplication** in the set of JavaScript numbers.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
-import { multiply } from "effect/Number"
+import * as assert from "node:assert/strict"
+import { pipe } from "effect"
+import * as Number from "effect/Number"
 
-assert.deepStrictEqual(multiply(2, 3), 6)
+// Data-first style (direct application)
+assert.equal(Number.multiply(2, 3), 6) // 2 × 3 = 6
+assert.equal(Number.multiply(-4, 5), -20) // (-4) × 5 = -20
+assert.equal(Number.multiply(-3, -2), 6) // (-3) × (-2) = 6
+assert.equal(Number.multiply(0.1, 0.2), 0.020000000000000004) // Note: floating-point precision limitation
+
+// Data-last style (pipeable)
+assert.equal(
+  pipe(
+    10,
+    Number.multiply(5) // 10 × 5 = 50
+  ),
+  50
+)
+
+// Chaining multiple multiplications
+assert.equal(
+  pipe(
+    2,
+    Number.multiply(3), // 2 × 3 = 6
+    Number.multiply(4), // 6 × 4 = 24
+    Number.multiply(0.5) // 24 × 0.5 = 12
+  ),
+  12
+)
+
+// Identity property: a × 1 = a
+assert.equal(Number.multiply(42, 1), 42)
+
+// Zero property: a × 0 = 0
+assert.equal(Number.multiply(42, 0), 0)
+
+// Commutative property: a × b = b × a
+assert.equal(Number.multiply(5, 3), Number.multiply(3, 5))
+
+// Associative property: (a × b) × c = a × (b × c)
+const a = 2,
+  b = 3,
+  c = 4
+assert.equal(
+  Number.multiply(Number.multiply(a, b), c),
+  Number.multiply(a, Number.multiply(b, c))
+)
 ```
 
 **Signature**
 
 ```ts
-declare const multiply: { (that: number): (self: number) => number; (self: number, that: number): number; }
+declare const multiply: { (multiplicand: number): (multiplier: number) => number; (multiplier: number, multiplicand: number): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L66)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L450)
 
 Since v2.0.0
 Number-multiplyAll.md
@@ -56447,15 +56569,41 @@ Module: `Number`<br />
 
 ## Number.multiplyAll
 
-Takes an `Iterable` of `number`s and returns their multiplication as a single `number`.
+Computes the product of all elements in an iterable collection of numbers.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
-import { multiplyAll } from "effect/Number"
+import * as assert from "node:assert/strict"
+import * as Number from "effect/Number"
 
-assert.deepStrictEqual(multiplyAll([2, 3, 4]), 24)
+// Basic products
+assert.equal(Number.multiplyAll([2, 3, 4]), 24) // 2 × 3 × 4 = 24
+assert.equal(Number.multiplyAll([1.5, 2, 3]), 9) // 1.5 × 2 × 3 = 9
+
+// Empty collection returns the multiplicative identity (1)
+assert.equal(Number.multiplyAll([]), 1)
+
+// Single element collection
+assert.equal(Number.multiplyAll([42]), 42)
+
+// Products with negative numbers
+assert.equal(Number.multiplyAll([2, -3, 4]), -24) // 2 × (-3) × 4 = -24
+assert.equal(Number.multiplyAll([-2, -3]), 6) // (-2) × (-3) = 6
+
+// Zero property - if any element is zero, product is zero
+assert.equal(Number.multiplyAll([2, 0, 3]), 0)
+
+// Works with any iterable
+assert.equal(Number.multiplyAll(new Set([2, 3, 4])), 24)
+
+// Using with generated sequences
+function* range(start: number, end: number) {
+  for (let i = start; i <= end; i++) yield i
+}
+
+// Compute factorial: 5! = 5 × 4 × 3 × 2 × 1 = 120
+assert.equal(Number.multiplyAll(range(1, 5)), 120)
 ```
 
 **Signature**
@@ -56464,25 +56612,74 @@ assert.deepStrictEqual(multiplyAll([2, 3, 4]), 24)
 declare const multiplyAll: (collection: Iterable<number>) => number
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L413)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L522)
 
 Since v2.0.0
+Number-negate.md
+Package: `effect`<br />
+Module: `Number`<br />
+
+## Number.negate
+
+Returns the additive inverse of a number, effectively negating it.
+
+**Example**
+
+```ts
+import * as assert from "node:assert/strict"
+import { pipe } from "effect"
+import * as Number from "effect/Number"
+
+assert.equal(
+  Number.negate(5), //
+  -5
+)
+
+assert.equal(
+  Number.negate(-5), //
+  5
+)
+
+assert.equal(
+  Number.negate(0), //
+  0
+)
+```
+
+**Signature**
+
+```ts
+declare const negate: (n: number) => number
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L194)
+
+Since v3.14.6
 Number-nextPow2.md
 Package: `effect`<br />
 Module: `Number`<br />
 
 ## Number.nextPow2
 
-Returns the next power of 2 from the given number.
+Returns the next power of 2 greater than or equal to the given number.
+
+- For `positive` inputs, returns the smallest power of 2 that is >= the input
+- For `zero`, returns 2
+- For `negative` inputs, returns NaN (as logarithms of negative numbers are
+  undefined)
+- For `NaN` input, returns NaN
+- For `Infinity`, returns Infinity
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { nextPow2 } from "effect/Number"
 
-assert.deepStrictEqual(nextPow2(5), 8)
-assert.deepStrictEqual(nextPow2(17), 32)
+assert.equal(nextPow2(5), 8)
+assert.equal(nextPow2(17), 32)
+assert.equal(nextPow2(0), 2)
+assert.equal(Number.isNaN(nextPow2(-1)), true) // Negative inputs result in NaN
 ```
 
 **Signature**
@@ -56491,7 +56688,7 @@ assert.deepStrictEqual(nextPow2(17), 32)
 declare const nextPow2: (n: number) => number
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L470)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L1016)
 
 Since v2.0.0
 Number-parse.md
@@ -56500,8 +56697,9 @@ Module: `Number`<br />
 
 ## Number.parse
 
-Tries to parse a `number` from a `string` using the `Number()` function.
-The following special string values are supported: "NaN", "Infinity", "-Infinity".
+Tries to parse a `number` from a `string` using the `Number()` function. The
+following special string values are supported: "NaN", "Infinity",
+"-Infinity".
 
 **Signature**
 
@@ -56509,7 +56707,7 @@ The following special string values are supported: "NaN", "Infinity", "-Infinity
 declare const parse: (s: string) => Option<number>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L482)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L1030)
 
 Since v2.0.0
 Number-remainder.md
@@ -56518,28 +56716,29 @@ Module: `Number`<br />
 
 ## Number.remainder
 
-Returns the remainder left over when one operand is divided by a second operand.
+Returns the remainder left over when one operand is divided by a second
+operand.
 
 It always takes the sign of the dividend.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { remainder } from "effect/Number"
 
-assert.deepStrictEqual(remainder(2, 2), 0)
-assert.deepStrictEqual(remainder(3, 2), 1)
-assert.deepStrictEqual(remainder(-4, 2), -0)
+assert.equal(remainder(2, 2), 0)
+assert.equal(remainder(3, 2), 1)
+assert.equal(remainder(-4, 2), -0)
 ```
 
 **Signature**
 
 ```ts
-declare const remainder: { (divisor: number): (self: number) => number; (self: number, divisor: number): number; }
+declare const remainder: { (divisor: number): (dividend: number) => number; (dividend: number, divisor: number): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L442)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L978)
 
 Since v2.0.0
 Number-round.md
@@ -56553,11 +56752,11 @@ Returns the number rounded with the given precision.
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { round } from "effect/Number"
 
-assert.deepStrictEqual(round(1.1234, 2), 1.12)
-assert.deepStrictEqual(round(1.567, 2), 1.57)
+assert.equal(round(1.1234, 2), 1.12)
+assert.equal(round(1.567, 2), 1.57)
 ```
 
 **Signature**
@@ -56566,7 +56765,7 @@ assert.deepStrictEqual(round(1.567, 2), 1.57)
 declare const round: { (precision: number): (self: number) => number; (self: number, precision: number): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L516)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L1065)
 
 Since v3.8.0
 Number-sign.md
@@ -56580,12 +56779,12 @@ Determines the sign of a given `number`.
 **Example**
 
 ```ts
-import * as assert from "node:assert"
+import * as assert from "node:assert/strict"
 import { sign } from "effect/Number"
 
-assert.deepStrictEqual(sign(-5), -1)
-assert.deepStrictEqual(sign(0), 0)
-assert.deepStrictEqual(sign(5), 1)
+assert.equal(sign(-5), -1)
+assert.equal(sign(0), 0)
+assert.equal(sign(5), 1)
 ```
 
 **Signature**
@@ -56594,7 +56793,7 @@ assert.deepStrictEqual(sign(5), 1)
 declare const sign: (n: number) => Ordering
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L375)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L956)
 
 Since v2.0.0
 Number-subtract.md
@@ -56603,24 +56802,61 @@ Module: `Number`<br />
 
 ## Number.subtract
 
-Provides a subtraction operation on `number`s.
+Performs subtraction in the set of JavaScript numbers.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
-import { subtract } from "effect/Number"
+import * as assert from "node:assert/strict"
+import { pipe } from "effect"
+import * as Number from "effect/Number"
 
-assert.deepStrictEqual(subtract(2, 3), -1)
+// Data-first style (direct application)
+assert.equal(Number.subtract(2, 3), -1) // 2 - 3 = -1
+assert.equal(Number.subtract(10, 5), 5) // 10 - 5 = 5
+assert.equal(Number.subtract(0.3, 0.1), 0.19999999999999998) // Note: floating-point precision limitation
+
+// Data-last style (pipeable)
+assert.equal(
+  pipe(
+    10,
+    Number.subtract(5) // 10 - 5 = 5
+  ),
+  5
+)
+
+// Chaining multiple subtractions
+assert.equal(
+  pipe(
+    20,
+    Number.subtract(5), // 20 - 5 = 15
+    Number.subtract(3), // 15 - 3 = 12
+    Number.subtract(2) // 12 - 2 = 10
+  ),
+  10
+)
+
+// Right identity property: a - 0 = a
+assert.equal(Number.subtract(42, 0), 42)
+
+// Self-annihilation property: a - a = 0
+assert.equal(Number.subtract(42, 42), 0)
+
+// Non-commutative property: a - b ≠ b - a
+assert.equal(Number.subtract(5, 3), 2) // 5 - 3 = 2
+assert.equal(Number.subtract(3, 5), -2) // 3 - 5 = -2
+
+// Inverse relation: a - b = -(b - a)
+assert.equal(Number.subtract(5, 3), -Number.subtract(3, 5))
 ```
 
 **Signature**
 
 ```ts
-declare const subtract: { (that: number): (self: number) => number; (self: number, that: number): number; }
+declare const subtract: { (subtrahend: number): (minuend: number) => number; (minuend: number, subtrahend: number): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L85)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L366)
 
 Since v2.0.0
 Number-sum.md
@@ -56629,15 +56865,45 @@ Module: `Number`<br />
 
 ## Number.sum
 
-Provides an addition operation on `number`s.
+Performs addition in the set of JavaScript numbers.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
-import { sum } from "effect/Number"
+import * as assert from "node:assert/strict"
+import { pipe } from "effect"
+import * as Number from "effect/Number"
 
-assert.deepStrictEqual(sum(2, 3), 5)
+// Data-first style (direct application)
+assert.equal(Number.sum(2, 3), 5)
+assert.equal(Number.sum(-10, 5), -5)
+assert.equal(Number.sum(0.1, 0.2), 0.30000000000000004) // Note: floating-point precision limitation
+
+// Data-last style (pipeable)
+assert.equal(
+  pipe(
+    10,
+    Number.sum(5) // 10 + 5 = 15
+  ),
+  15
+)
+
+// Chaining multiple additions
+assert.equal(
+  pipe(
+    1,
+    Number.sum(2), // 1 + 2 = 3
+    Number.sum(3), // 3 + 3 = 6
+    Number.sum(4) // 6 + 4 = 10
+  ),
+  10
+)
+
+// Identity property: a + 0 = a
+assert.equal(Number.sum(42, 0), 42)
+
+// Commutative property: a + b = b + a
+assert.equal(Number.sum(5, 3), Number.sum(3, 5))
 ```
 
 **Signature**
@@ -56646,7 +56912,7 @@ assert.deepStrictEqual(sum(2, 3), 5)
 declare const sum: { (that: number): (self: number) => number; (self: number, that: number): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L47)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L241)
 
 Since v2.0.0
 Number-sumAll.md
@@ -56655,15 +56921,44 @@ Module: `Number`<br />
 
 ## Number.sumAll
 
-Takes an `Iterable` of `number`s and returns their sum as a single `number`.
+Computes the sum of all elements in an iterable collection of numbers.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
-import { sumAll } from "effect/Number"
+import * as assert from "node:assert/strict"
+import * as Number from "effect/Number"
 
-assert.deepStrictEqual(sumAll([2, 3, 4]), 9)
+// Basic sums
+assert.equal(Number.sumAll([2, 3, 4]), 9) // 2 + 3 + 4 = 9
+assert.equal(Number.sumAll([1.1, 2.2, 3.3]), 6.6) // 1.1 + 2.2 + 3.3 = 6.6
+
+// Empty collection returns the additive identity (0)
+assert.equal(Number.sumAll([]), 0)
+
+// Single element collection
+assert.equal(Number.sumAll([42]), 42)
+
+// Sums with negative numbers
+assert.equal(Number.sumAll([2, -3, 4]), 3) // 2 + (-3) + 4 = 3
+assert.equal(Number.sumAll([-2, -3, -4]), -9) // (-2) + (-3) + (-4) = -9
+
+// Works with any iterable
+assert.equal(Number.sumAll(new Set([2, 3, 4])), 9)
+
+// Using with generated sequences
+function* range(start: number, end: number) {
+  for (let i = start; i <= end; i++) yield i
+}
+
+// Compute sum of first 5 natural numbers: 1 + 2 + 3 + 4 + 5 = 15
+assert.equal(Number.sumAll(range(1, 5)), 15)
+
+// Floating point precision example
+assert.equal(
+  Number.sumAll([0.1, 0.2]),
+  0.30000000000000004 // Note IEEE 754 precision limitation
+)
 ```
 
 **Signature**
@@ -56672,7 +56967,7 @@ assert.deepStrictEqual(sumAll([2, 3, 4]), 9)
 declare const sumAll: (collection: Iterable<number>) => number
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L391)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L312)
 
 Since v2.0.0
 Number-unsafeDivide.md
@@ -56681,26 +56976,72 @@ Module: `Number`<br />
 
 ## Number.unsafeDivide
 
-Provides a division operation on `number`s.
+Performs division in the set of JavaScript numbers, but misbehaves for
+division by zero.
 
-Throws a `RangeError` if the divisor is `0`.
+Unlike `module:Number.divide` which returns an Option, this function
+directly returns a number or `Infinity` or `NaN`.
+
+- If the `divisor` is zero, it returns `Infinity`.
+- If both the `dividend` and the `divisor` are zero, then it returns `NaN`.
+
+**Throws**
+
+An {@link module:Number.DivisionByZeroError} if the divisor is zero.
 
 **Example**
 
 ```ts
-import * as assert from "node:assert"
-import { unsafeDivide } from "effect/Number"
+import * as assert from "node:assert/strict"
+import { pipe } from "effect"
+import * as Number from "effect/Number"
 
-assert.deepStrictEqual(unsafeDivide(6, 3), 2)
+// Data-first style (direct application)
+assert.equal(Number.unsafeDivide(6, 3), 2) // 6 ÷ 3 = 2
+assert.equal(Number.unsafeDivide(-8, 4), -2) // (-8) ÷ 4 = -2
+assert.equal(Number.unsafeDivide(-10, -5), 2) // (-10) ÷ (-5) = 2
+assert.equal(Number.unsafeDivide(1, 3), 0.3333333333333333)
+
+// Data-last style (pipeable)
+assert.equal(
+  pipe(
+    10,
+    Number.unsafeDivide(2) // 10 ÷ 2 = 5
+  ),
+  5
+)
+
+// Chaining multiple divisions
+assert.equal(
+  pipe(
+    24,
+    Number.unsafeDivide(2), // 24 ÷ 2 = 12
+    Number.unsafeDivide(3), // 12 ÷ 3 = 4
+    Number.unsafeDivide(2) // 4 ÷ 2 = 2
+  ),
+  2
+)
+
+assert.equal(Number.unsafeDivide(6, 0), Infinity)
+
+assert.equal(Number.unsafeDivide(0, 0), NaN)
+
+// Compare with safe division
+const safeResult = Number.divide(6, 3) // Option.some(2)
+const unsafeResult = Number.unsafeDivide(6, 3) // 2 directly
 ```
+
+**See**
+
+- `module:Number.divide` - Safe division returning an Option
 
 **Signature**
 
 ```ts
-declare const unsafeDivide: { (that: number): (self: number) => number; (self: number, that: number): number; }
+declare const unsafeDivide: { (divisor: number): (dividend: number) => number; (dividend: number, divisor: number): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L129)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Number.ts#L670)
 
 Since v2.0.0
 Of-ofComposition.md
@@ -56879,6 +57220,50 @@ declare const addGenAIAnnotations: ((options: OpenAiTelemetryAttributeOptions) =
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiTelemetry.ts#L128)
 
 Since v1.0.0, utilities
+OpenApi-OpenAPISpec.md
+Package: `@effect/platform`<br />
+Module: `OpenApi`<br />
+
+## OpenApi.OpenAPISpec
+
+This model describes the OpenAPI specification (version 3.1.0) returned by
+`fromApi`. It is not intended to describe the entire OpenAPI
+specification, only the output of `fromApi`.
+
+**Signature**
+
+```ts
+export interface OpenAPISpec {
+  openapi: "3.1.0"
+  info: OpenAPISpecInfo
+  paths: OpenAPISpecPaths
+  components: OpenAPIComponents
+  security: Array<OpenAPISecurityRequirement>
+  tags: Array<OpenAPISpecTag>
+  servers?: Array<OpenAPISpecServer>
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/OpenApi.ts#L496)
+
+Since v1.0.0
+OpenApi-Transform.md
+Package: `@effect/platform`<br />
+Module: `OpenApi`<br />
+
+## OpenApi.Transform
+
+Transforms the generated OpenAPI specification
+
+**Signature**
+
+```ts
+declare class Transform
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/OpenApi.ts#L102)
+
+Since v1.0.0
 OpenApi-fromApi.md
 Package: `@effect/platform`<br />
 Module: `OpenApi`<br />
@@ -56933,50 +57318,6 @@ declare const fromApi: <Id extends string, Groups extends HttpApiGroup.Any, E, R
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/OpenApi.ts#L229)
-
-Since v1.0.0
-OpenApi-OpenAPISpec.md
-Package: `@effect/platform`<br />
-Module: `OpenApi`<br />
-
-## OpenApi.OpenAPISpec
-
-This model describes the OpenAPI specification (version 3.1.0) returned by
-`fromApi`. It is not intended to describe the entire OpenAPI
-specification, only the output of `fromApi`.
-
-**Signature**
-
-```ts
-export interface OpenAPISpec {
-  openapi: "3.1.0"
-  info: OpenAPISpecInfo
-  paths: OpenAPISpecPaths
-  components: OpenAPIComponents
-  security: Array<OpenAPISecurityRequirement>
-  tags: Array<OpenAPISpecTag>
-  servers?: Array<OpenAPISpecServer>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/OpenApi.ts#L496)
-
-Since v1.0.0
-OpenApi-Transform.md
-Package: `@effect/platform`<br />
-Module: `OpenApi`<br />
-
-## OpenApi.Transform
-
-Transforms the generated OpenAPI specification
-
-**Signature**
-
-```ts
-declare class Transform
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/OpenApi.ts#L102)
 
 Since v1.0.0
 OpenApiJsonSchema-makeWithDefs.md
@@ -57187,38 +57528,6 @@ declare const Do: Option<{}>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L2109)
-
-Since v2.0.0
-Option-Option.Value.md
-Package: `effect`<br />
-Module: `Option`<br />
-
-## Option.Option.Value
-
-Extracts the type of the value contained in an `Option`.
-
-**Example** (Getting the Value Type of an Option)
-
-```ts
-import { Option } from "effect"
-
-// Declare an Option holding a string
-declare const myOption: Option.Option<string>
-
-// Extract the type of the value within the Option
-//
-//      ┌─── string
-//      ▼
-type MyType = Option.Option.Value<typeof myOption>
-```
-
-**Signature**
-
-```ts
-type Value<T> = [T] extends [Option<infer _A>] ? _A : never
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L118)
 
 Since v2.0.0
 Option-Option.md
@@ -58913,6 +59222,38 @@ declare const none: <A = never>() => Option<A>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L162)
 
 Since v2.0.0
+Option-Option.Value.md
+Package: `effect`<br />
+Module: `Option`<br />
+
+## Option.Option.Value
+
+Extracts the type of the value contained in an `Option`.
+
+**Example** (Getting the Value Type of an Option)
+
+```ts
+import { Option } from "effect"
+
+// Declare an Option holding a string
+declare const myOption: Option.Option<string>
+
+// Extract the type of the value within the Option
+//
+//      ┌─── string
+//      ▼
+type MyType = Option.Option.Value<typeof myOption>
+```
+
+**Signature**
+
+```ts
+type Value<T> = [T] extends [Option<infer _A>] ? _A : never
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L118)
+
+Since v2.0.0
 Option-orElse.md
 Package: `effect`<br />
 Module: `Option`<br />
@@ -60182,23 +60523,6 @@ declare const asserts: <A, I, R>(schema: Schema.Schema<A, I, R>, options?: AST.P
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ParseResult.ts#L676)
 
 Since v3.10.0
-ParseResult-is.md
-Package: `effect`<br />
-Module: `ParseResult`<br />
-
-## ParseResult.is
-
-By default the option `exact` is set to `true`.
-
-**Signature**
-
-```ts
-declare const is: <A, I, R>(schema: Schema.Schema<A, I, R>, options?: AST.ParseOptions) => (u: unknown, overrideOptions?: AST.ParseOptions | number) => u is A
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ParseResult.ts#L663)
-
-Since v3.10.0
 ParseResult-Missing.md
 Package: `effect`<br />
 Module: `ParseResult`<br />
@@ -60337,6 +60661,23 @@ declare class Unexpected { constructor(
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ParseResult.ts#L75)
+
+Since v3.10.0
+ParseResult-is.md
+Package: `effect`<br />
+Module: `ParseResult`<br />
+
+## ParseResult.is
+
+By default the option `exact` is set to `true`.
+
+**Signature**
+
+```ts
+declare const is: <A, I, R>(schema: Schema.Schema<A, I, R>, options?: AST.ParseOptions) => (u: unknown, overrideOptions?: AST.ParseOptions | number) => u is A
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ParseResult.ts#L663)
 
 Since v3.10.0
 ParseResult-isComposite.md
@@ -64907,24 +65248,6 @@ declare const lessThan: { <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L271)
 
 Since v2.0.0
-RedBlackTree-lessThanEqual.md
-Package: `effect`<br />
-Module: `RedBlackTree`<br />
-
-## RedBlackTree.lessThanEqual
-
-Returns an iterator that traverse entries in order with keys less than or
-equal to the specified key.
-
-**Signature**
-
-```ts
-declare const lessThanEqual: { <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable<[K, V]>; <K, V>(self: RedBlackTree<K, V>, key: K): Iterable<[K, V]>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L295)
-
-Since v2.0.0
 Redacted-getEquivalence.md
 Package: `effect`<br />
 Module: `Redacted`<br />
@@ -65069,6 +65392,24 @@ export interface RedBlackTree<in out Key, out Value> extends Iterable<[Key, Valu
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L34)
+
+Since v2.0.0
+RedBlackTree-lessThanEqual.md
+Package: `effect`<br />
+Module: `RedBlackTree`<br />
+
+## RedBlackTree.lessThanEqual
+
+Returns an iterator that traverse entries in order with keys less than or
+equal to the specified key.
+
+**Signature**
+
+```ts
+declare const lessThanEqual: { <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable<[K, V]>; <K, V>(self: RedBlackTree<K, V>, key: K): Iterable<[K, V]>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L295)
 
 Since v2.0.0
 RedBlackTree-lessThanEqualReversed.md
@@ -66005,24 +66346,6 @@ declare const makeBatched: <A extends Request.Request<any, any>, R>(run: (reques
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RequestResolver.ts#L139)
 
 Since v2.0.0
-RequestResolver-makeWithEntry.md
-Package: `effect`<br />
-Module: `RequestResolver`<br />
-
-## RequestResolver.makeWithEntry
-
-Constructs a data source with the specified identifier and method to run
-requests.
-
-**Signature**
-
-```ts
-declare const makeWithEntry: <A, R>(runAll: (requests: Array<Array<Request.Entry<A>>>) => Effect.Effect<void, never, R>) => RequestResolver<A, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RequestResolver.ts#L129)
-
-Since v2.0.0
 RequestResolver-RequestResolver.md
 Package: `effect`<br />
 Module: `RequestResolver`<br />
@@ -66067,6 +66390,24 @@ export interface RequestResolver<in A, out R = never> extends RequestResolver.Va
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RequestResolver.ts#L52)
+
+Since v2.0.0
+RequestResolver-makeWithEntry.md
+Package: `effect`<br />
+Module: `RequestResolver`<br />
+
+## RequestResolver.makeWithEntry
+
+Constructs a data source with the specified identifier and method to run
+requests.
+
+**Signature**
+
+```ts
+declare const makeWithEntry: <A, R>(runAll: (requests: Array<Array<Request.Entry<A>>>) => Effect.Effect<void, never, R>) => RequestResolver<A, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RequestResolver.ts#L129)
 
 Since v2.0.0
 RequestResolver-mapInputContext.md
@@ -67056,24 +67397,6 @@ declare const isEnabled: { (flag: RuntimeFlag): (self: RuntimeFlags) => boolean;
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L255)
 
 Since v2.0.0
-RuntimeFlags-opSupervision.md
-Package: `effect`<br />
-Module: `RuntimeFlags`<br />
-
-## RuntimeFlags.opSupervision
-
-Returns `true` if the `OpSupervision` `RuntimeFlag` is enabled, `false`
-otherwise.
-
-**Signature**
-
-```ts
-declare const opSupervision: (self: RuntimeFlags) => boolean
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L290)
-
-Since v2.0.0
 RuntimeFlags-OpSupervision.md
 Package: `effect`<br />
 Module: `RuntimeFlags`<br />
@@ -67174,6 +67497,24 @@ declare const WindDown: RuntimeFlag
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L83)
+
+Since v2.0.0
+RuntimeFlags-opSupervision.md
+Package: `effect`<br />
+Module: `RuntimeFlags`<br />
+
+## RuntimeFlags.opSupervision
+
+Returns `true` if the `OpSupervision` `RuntimeFlag` is enabled, `false`
+otherwise.
+
+**Signature**
+
+```ts
+declare const opSupervision: (self: RuntimeFlags) => boolean
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L290)
 
 Since v2.0.0
 RuntimeFlags-patch.md
@@ -69546,33 +69887,6 @@ declare const resetAfter: { (duration: Duration.DurationInput): <Out, In, R>(sel
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1693)
 
 Since v2.0.0
-Schedule-resetWhen.md
-Package: `effect`<br />
-Module: `Schedule`<br />
-
-## Schedule.resetWhen
-
-Resets the schedule when the specified predicate on the schedule output
-evaluates to `true`.
-
-**Details**
-
-This function modifies a schedule so that it resets to its initial state
-whenever the provided predicate `f` returns `true` for an output value.
-
-**See**
-
-- `resetAfter` If you need to reset based on inactivity.
-
-**Signature**
-
-```ts
-declare const resetWhen: { <Out>(f: Predicate<Out>): <In, R>(self: Schedule<Out, In, R>) => Schedule<Out, In, R>; <Out, In, R>(self: Schedule<Out, In, R>, f: Predicate<Out>): Schedule<Out, In, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1712)
-
-Since v2.0.0
 Schedule-Schedule.md
 Package: `effect`<br />
 Module: `Schedule`<br />
@@ -69644,6 +69958,33 @@ export interface Schedule<out Out, in In = unknown, out R = never> extends Sched
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L94)
+
+Since v2.0.0
+Schedule-resetWhen.md
+Package: `effect`<br />
+Module: `Schedule`<br />
+
+## Schedule.resetWhen
+
+Resets the schedule when the specified predicate on the schedule output
+evaluates to `true`.
+
+**Details**
+
+This function modifies a schedule so that it resets to its initial state
+whenever the provided predicate `f` returns `true` for an output value.
+
+**See**
+
+- `resetAfter` If you need to reset based on inactivity.
+
+**Signature**
+
+```ts
+declare const resetWhen: { <Out>(f: Predicate<Out>): <In, R>(self: Schedule<Out, In, R>) => Schedule<Out, In, R>; <Out, In, R>(self: Schedule<Out, In, R>, f: Predicate<Out>): Schedule<Out, In, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1712)
 
 Since v2.0.0
 Schedule-run.md
@@ -70683,24 +71024,6 @@ declare const union: { (that: Intervals): (self: Intervals) => Intervals; (self:
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleIntervals.ts#L61)
 
 Since v2.0.0
-Schema-annotations.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.annotations
-
-Merges a set of new annotations with existing ones, potentially overwriting
-any duplicates.
-
-**Signature**
-
-```ts
-declare const annotations: { <S extends Annotable.All>(annotations: Annotations.GenericSchema<Schema.Type<S>>): (self: S) => Annotable.Self<S>; <S extends Annotable.All>(self: S, annotations: Annotations.GenericSchema<Schema.Type<S>>): Annotable.Self<S>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4190)
-
-Since v3.10.0
 Schema-BigDecimalFromNumber.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -70753,7 +71076,7 @@ Converts an `string` value into its corresponding `boolean`
 declare class BooleanFromString
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10089)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10092)
 
 Since v3.11.0
 Schema-BooleanFromUnknown.md
@@ -70775,7 +71098,7 @@ Uses `!!val` to coerce the value to a `boolean`.
 declare class BooleanFromUnknown
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10072)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10075)
 
 Since v3.10.0
 Schema-Capitalize.md
@@ -71030,7 +71353,7 @@ This is useful for serializing and deserializing errors across network boundarie
 declare class Defect
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L9489)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L9492)
 
 Since v3.10.0
 Schema-Duration.md
@@ -71136,32 +71459,22 @@ declare class Lowercase
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4673)
 
 Since v3.10.0
-Schema-NonEmptyTrimmedString.md
+Schema-annotations.md
 Package: `effect`<br />
 Module: `Schema`<br />
 
-## Schema.NonEmptyTrimmedString
+## Schema.annotations
 
-Useful for validating strings that must contain meaningful characters without
-leading or trailing whitespace.
-
-**Example**
-
-```ts
-import { Schema } from "effect"
-
-console.log(Schema.decodeOption(Schema.NonEmptyTrimmedString)("")) // Option.none()
-console.log(Schema.decodeOption(Schema.NonEmptyTrimmedString)(" a ")) // Option.none()
-console.log(Schema.decodeOption(Schema.NonEmptyTrimmedString)("a")) // Option.some("a")
-```
+Merges a set of new annotations with existing ones, potentially overwriting
+any duplicates.
 
 **Signature**
 
 ```ts
-declare class NonEmptyTrimmedString
+declare const annotations: { <S extends Annotable.All>(annotations: Annotations.GenericSchema<Schema.Type<S>>): (self: S) => Annotable.Self<S>; <S extends Annotable.All>(self: S, annotations: Annotations.GenericSchema<Schema.Type<S>>): Annotable.Self<S>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4755)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4190)
 
 Since v3.10.0
 Schema-attachPropertySignature.md
@@ -71405,7 +71718,7 @@ Given a schema `Schema<A, I, R>`, returns an `Equivalence` instance for `A`.
 declare const equivalence: <A, I, R>(schema: Schema<A, I, R>) => Equivalence.Equivalence<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10637)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10640)
 
 Since v3.10.0
 Schema-extend.md
@@ -71690,6 +72003,34 @@ declare const mutable: <S extends Schema.Any>(schema: S) => mutable<S>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3270)
 
 Since v3.10.0
+Schema-NonEmptyTrimmedString.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.NonEmptyTrimmedString
+
+Useful for validating strings that must contain meaningful characters without
+leading or trailing whitespace.
+
+**Example**
+
+```ts
+import { Schema } from "effect"
+
+console.log(Schema.decodeOption(Schema.NonEmptyTrimmedString)("")) // Option.none()
+console.log(Schema.decodeOption(Schema.NonEmptyTrimmedString)(" a ")) // Option.none()
+console.log(Schema.decodeOption(Schema.NonEmptyTrimmedString)("a")) // Option.some("a")
+```
+
+**Signature**
+
+```ts
+declare class NonEmptyTrimmedString
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4755)
+
+Since v3.10.0
 Schema-NonNegativeInt.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -71863,7 +72204,7 @@ export interface Serializable<A, I, R> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10133)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10136)
 
 Since v3.10.0
 Schema-SerializableWithResult.md
@@ -71895,7 +72236,7 @@ export interface SerializableWithResult<
 > extends Serializable<A, I, R>, WithResult<Success, SuccessEncoded, Failure, FailureEncoded, ResultR> {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10438)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10441)
 
 Since v3.10.0
 Schema-StringFromBase64.md
@@ -72765,26 +73106,6 @@ declare const uppercased: <S extends Schema.Any>(annotations?: Annotations.Filte
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4559)
 
 Since v3.10.0
-Schema-validDate.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.validDate
-
-Defines a filter that specifically rejects invalid dates, such as `new
-Date("Invalid Date")`. This filter ensures that only properly formatted and
-valid date objects are accepted, enhancing data integrity by preventing
-erroneous date values from being processed.
-
-**Signature**
-
-```ts
-declare const validDate: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends Date>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6621)
-
-Since v3.10.0
 Schema-ValidDateFromSelf.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -72828,7 +73149,27 @@ export interface WithResult<Success, SuccessEncoded, Failure, FailureEncoded, Re
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10218)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10221)
+
+Since v3.10.0
+Schema-validDate.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.validDate
+
+Defines a filter that specifically rejects invalid dates, such as `new
+Date("Invalid Date")`. This filter ensures that only properly formatted and
+valid date objects are accepted, enhancing data integrity by preventing
+erroneous date values from being processed.
+
+**Signature**
+
+```ts
+declare const validDate: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends Date>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6621)
 
 Since v3.10.0
 Schema-withConstructorDefault.md
@@ -73555,23 +73896,6 @@ declare const zipWith: <F extends TypeLambda>(F: SemiApplicative<F>) => { <R2, O
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/SemiApplicative.ts#L35)
 
 Since v0.24.0
-SemiProduct-appendElement.md
-Package: `@effect/typeclass`<br />
-Module: `SemiProduct`<br />
-
-## SemiProduct.appendElement
-
-Appends an element to the end of a tuple.
-
-**Signature**
-
-```ts
-declare const appendElement: <F extends TypeLambda>(F: SemiProduct<F>) => { <R2, O2, E2, B>(that: Kind<F, R2, O2, E2, B>): <R1, O1, E1, A extends ReadonlyArray<any>>(self: Kind<F, R1, O1, E1, A>) => Kind<F, R1 & R2, O2 | O1, E2 | E1, [...A, B]>; <R1, O1, E1, A extends ReadonlyArray<any>, R2, O2, E2, B>(self: Kind<F, R1, O1, E1, A>, that: Kind<F, R2, O2, E2, B>): Kind<F, R1 & R2, O1 | O2, E1 | E2, [...A, B]>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/SemiProduct.ts#L118)
-
-Since v0.24.0
 Semigroup-array.md
 Package: `@effect/typeclass`<br />
 Module: `Semigroup`<br />
@@ -73762,6 +74086,23 @@ declare const tuple: <T extends ReadonlyArray<Semigroup<any>>>(...elements: T) =
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Semigroup.ts#L214)
+
+Since v0.24.0
+SemiProduct-appendElement.md
+Package: `@effect/typeclass`<br />
+Module: `SemiProduct`<br />
+
+## SemiProduct.appendElement
+
+Appends an element to the end of a tuple.
+
+**Signature**
+
+```ts
+declare const appendElement: <F extends TypeLambda>(F: SemiProduct<F>) => { <R2, O2, E2, B>(that: Kind<F, R2, O2, E2, B>): <R1, O1, E1, A extends ReadonlyArray<any>>(self: Kind<F, R1, O1, E1, A>) => Kind<F, R1 & R2, O2 | O1, E2 | E1, [...A, B]>; <R1, O1, E1, A extends ReadonlyArray<any>, R2, O2, E2, B>(self: Kind<F, R1, O1, E1, A>, that: Kind<F, R2, O2, E2, B>): Kind<F, R1 & R2, O1 | O2, E1 | E2, [...A, B]>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/SemiProduct.ts#L118)
 
 Since v0.24.0
 SemiProduct-productComposition.md
@@ -75592,24 +75933,6 @@ declare const raceBoth: { <A1, In1, L1, E1, R1>(that: Sink<A1, In1, L1, E1, R1>,
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L1192)
 
 Since v2.0.0
-Sink-raceWith.md
-Package: `effect`<br />
-Module: `Sink`<br />
-
-## Sink.raceWith
-
-Runs both sinks in parallel on the input, using the specified merge
-function as soon as one result or the other has been computed.
-
-**Signature**
-
-```ts
-declare const raceWith: { <A2, In2, L2, E2, R2, A, E, A3, A4>(options: { readonly other: Sink<A2, In2, L2, E2, R2>; readonly onSelfDone: (exit: Exit.Exit<A, E>) => MergeDecision.MergeDecision<R2, E2, A2, E2 | E, A3>; readonly onOtherDone: (exit: Exit.Exit<A2, E2>) => MergeDecision.MergeDecision<R2, E, A, E2 | E, A4>; readonly capacity?: number | undefined; }): <In, L, R>(self: Sink<A, In, L, E, R>) => Sink<A3 | A4, In & In2, L2 | L, E2 | E, R2 | R>; <A, In, L, E, R, A2, In2, L2, E2, R2, A3, A4>(self: Sink<A, In, L, E, R>, options: { readonly other: Sink<A2, In2, L2, E2, R2>; readonly onSelfDone: (exit: Exit.Exit<A, E>) => MergeDecision.MergeDecision<R2, E2, A2, E | E2, A3>; readonly onOtherDone: (exit: Exit.Exit<A2, E2>) => MergeDecision.MergeDecision<R2, E, A, E | E2, A4>; readonly capacity?: number | undefined; }): Sink<A3 | A4, In & In2, L | L2, E | E2, R | R2>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L1211)
-
-Since v2.0.0
 STM-acquireUseRelease.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -75944,23 +76267,6 @@ declare const contextWith: <R0, R>(f: (environment: Context.Context<R0>) => R) =
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L458)
 
 Since v2.0.0
-STM-contextWithSTM.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.contextWithSTM
-
-Accesses the environment of the transaction to perform a transaction.
-
-**Signature**
-
-```ts
-declare const contextWithSTM: <R0, A, E, R>(f: (environment: Context.Context<R0>) => STM<A, E, R>) => STM<A, E, R0 | R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L466)
-
-Since v2.0.0
 Sink-Sink.md
 Package: `effect`<br />
 Module: `Sink`<br />
@@ -75982,6 +76288,24 @@ export interface Sink<out A, in In = unknown, out L = never, out E = never, out 
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L48)
+
+Since v2.0.0
+Sink-raceWith.md
+Package: `effect`<br />
+Module: `Sink`<br />
+
+## Sink.raceWith
+
+Runs both sinks in parallel on the input, using the specified merge
+function as soon as one result or the other has been computed.
+
+**Signature**
+
+```ts
+declare const raceWith: { <A2, In2, L2, E2, R2, A, E, A3, A4>(options: { readonly other: Sink<A2, In2, L2, E2, R2>; readonly onSelfDone: (exit: Exit.Exit<A, E>) => MergeDecision.MergeDecision<R2, E2, A2, E2 | E, A3>; readonly onOtherDone: (exit: Exit.Exit<A2, E2>) => MergeDecision.MergeDecision<R2, E, A, E2 | E, A4>; readonly capacity?: number | undefined; }): <In, L, R>(self: Sink<A, In, L, E, R>) => Sink<A3 | A4, In & In2, L2 | L, E2 | E, R2 | R>; <A, In, L, E, R, A2, In2, L2, E2, R2, A3, A4>(self: Sink<A, In, L, E, R>, options: { readonly other: Sink<A2, In2, L2, E2, R2>; readonly onSelfDone: (exit: Exit.Exit<A, E>) => MergeDecision.MergeDecision<R2, E2, A2, E | E2, A3>; readonly onOtherDone: (exit: Exit.Exit<A2, E2>) => MergeDecision.MergeDecision<R2, E, A, E | E2, A4>; readonly capacity?: number | undefined; }): Sink<A3 | A4, In & In2, L | L2, E | E2, R | R2>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L1211)
 
 Since v2.0.0
 Sink-some.md
@@ -76495,6 +76819,23 @@ declare const makeParser: (onParse: (event: AnyEvent) => void) => Parser
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/Sse.ts#L93)
 
 Since v1.0.0
+STM-contextWithSTM.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.contextWithSTM
+
+Accesses the environment of the transaction to perform a transaction.
+
+**Signature**
+
+```ts
+declare const contextWithSTM: <R0, A, E, R>(f: (environment: Context.Context<R0>) => STM<A, E, R>) => STM<A, E, R0 | R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L466)
+
+Since v2.0.0
 STM-die.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -77386,25 +77727,6 @@ declare const orElse: { <A2, E2, R2>(that: LazyArg<STM<A2, E2, R2>>): <A, E, R>(
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1354)
 
 Since v2.0.0
-STM-orElseEither.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.orElseEither
-
-Returns a transactional effect that will produce the value of this effect
-in left side, unless it fails or retries, in which case, it will produce
-the value of the specified effect in right side.
-
-**Signature**
-
-```ts
-declare const orElseEither: { <A2, E2, R2>(that: LazyArg<STM<A2, E2, R2>>): <A, E, R>(self: STM<A, E, R>) => STM<Either.Either<A2, A>, E2, R2 | R>; <A, E, R, A2, E2, R2>(self: STM<A, E, R>, that: LazyArg<STM<A2, E2, R2>>): STM<Either.Either<A2, A>, E2, R | R2>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1367)
-
-Since v2.0.0
 STM-STM.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -77458,6 +77780,25 @@ export interface STM<out A, out E = never, out R = never>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L70)
+
+Since v2.0.0
+STM-orElseEither.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.orElseEither
+
+Returns a transactional effect that will produce the value of this effect
+in left side, unless it fails or retries, in which case, it will produce
+the value of the specified effect in right side.
+
+**Signature**
+
+```ts
+declare const orElseEither: { <A2, E2, R2>(that: LazyArg<STM<A2, E2, R2>>): <A, E, R>(self: STM<A, E, R>) => STM<Either.Either<A2, A>, E2, R2 | R>; <A, E, R, A2, E2, R2>(self: STM<A, E, R>, that: LazyArg<STM<A2, E2, R2>>): STM<Either.Either<A2, A>, E2, R | R2>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1367)
 
 Since v2.0.0
 STM-orElseFail.md
@@ -78356,33 +78697,6 @@ declare const acquireRelease: <A, E, R, R2, X>(acquire: Effect.Effect<A, E, R>, 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L223)
 
 Since v2.0.0
-Stream-aggregate.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.aggregate
-
-Aggregates elements of this stream using the provided sink for as long as
-the downstream operators on the stream are busy.
-
-This operator divides the stream into two asynchronous "islands". Operators
-upstream of this operator run on one fiber, while downstream operators run
-on another. Whenever the downstream fiber is busy processing elements, the
-upstream fiber will feed elements into the sink until it signals
-completion.
-
-Any sink can be used here, but see `Sink.foldWeightedEffect` and
-`Sink.foldUntilEffect` for sinks that cover the common usecases.
-
-**Signature**
-
-```ts
-declare const aggregate: { <B, A, A2, E2, R2>(sink: Sink.Sink<B, A | A2, A2, E2, R2>): <E, R>(self: Stream<A, E, R>) => Stream<B, E2 | E, R2 | R>; <A, E, R, B, A2, E2, R2>(self: Stream<A, E, R>, sink: Sink.Sink<B, A | A2, A2, E2, R2>): Stream<B, E | E2, R | R2>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L244)
-
-Since v2.0.0
 Stream-DefaultChunkSize.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -78445,6 +78759,33 @@ declare const Do: Stream<{}, never, never>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L6183)
+
+Since v2.0.0
+Stream-aggregate.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.aggregate
+
+Aggregates elements of this stream using the provided sink for as long as
+the downstream operators on the stream are busy.
+
+This operator divides the stream into two asynchronous "islands". Operators
+upstream of this operator run on one fiber, while downstream operators run
+on another. Whenever the downstream fiber is busy processing elements, the
+upstream fiber will feed elements into the sink until it signals
+completion.
+
+Any sink can be used here, but see `Sink.foldWeightedEffect` and
+`Sink.foldUntilEffect` for sinks that cover the common usecases.
+
+**Signature**
+
+```ts
+declare const aggregate: { <B, A, A2, E2, R2>(sink: Sink.Sink<B, A | A2, A2, E2, R2>): <E, R>(self: Stream<A, E, R>) => Stream<B, E2 | E, R2 | R>; <A, E, R, B, A2, E2, R2>(self: Stream<A, E, R>, sink: Sink.Sink<B, A | A2, A2, E2, R2>): Stream<B, E | E2, R | R2>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L244)
 
 Since v2.0.0
 Stream-aggregateWithin.md
@@ -83137,24 +83478,6 @@ declare const runFoldScoped: { <S, A>(s: S, f: (s: S, a: A) => S): <E, R>(self: 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4149)
 
 Since v2.0.0
-Stream-runFoldScopedEffect.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.runFoldScopedEffect
-
-Executes an effectful fold over the stream of values. Returns a scoped
-value that represents the scope of the stream.
-
-**Signature**
-
-```ts
-declare const runFoldScopedEffect: { <S, A, E2, R2>(s: S, f: (s: S, a: A) => Effect.Effect<S, E2, R2>): <E, R>(self: Stream<A, E, R>) => Effect.Effect<S, E2 | E, Scope.Scope | R2 | R>; <A, E, R, S, E2, R2>(self: Stream<A, E, R>, s: S, f: (s: S, a: A) => Effect.Effect<S, E2, R2>): Effect.Effect<S, E | E2, Scope.Scope | R | R2>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4161)
-
-Since v2.0.0
 Stream-Stream.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -83188,6 +83511,24 @@ export interface Stream<out A, out E = never, out R = never> extends Stream.Vari
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L70)
+
+Since v2.0.0
+Stream-runFoldScopedEffect.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.runFoldScopedEffect
+
+Executes an effectful fold over the stream of values. Returns a scoped
+value that represents the scope of the stream.
+
+**Signature**
+
+```ts
+declare const runFoldScopedEffect: { <S, A, E2, R2>(s: S, f: (s: S, a: A) => Effect.Effect<S, E2, R2>): <E, R>(self: Stream<A, E, R>) => Effect.Effect<S, E2 | E, Scope.Scope | R2 | R>; <A, E, R, S, E2, R2>(self: Stream<A, E, R>, s: S, f: (s: S, a: A) => Effect.Effect<S, E2, R2>): Effect.Effect<S, E | E2, Scope.Scope | R | R2>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4161)
 
 Since v2.0.0
 Stream-runFoldWhile.md
@@ -86514,23 +86855,6 @@ declare const matchEffect: { <Z, E2, R, E, Z2, R2, A, Z3, E3, R3>(options: { rea
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Take.ts#L218)
 
 Since v2.0.0
-Take-of.md
-Package: `effect`<br />
-Module: `Take`<br />
-
-## Take.of
-
-Creates a `Take` with a single value chunk.
-
-**Signature**
-
-```ts
-declare const of: <A>(value: A) => Take<A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Take.ts#L242)
-
-Since v2.0.0
 TArray-collectFirst.md
 Package: `effect`<br />
 Module: `TArray`<br />
@@ -87244,6 +87568,23 @@ export interface Take<out A, out E = never> extends Take.Variance<A, E>, Pipeabl
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Take.ts#L33)
 
 Since v2.0.0
+Take-of.md
+Package: `effect`<br />
+Module: `Take`<br />
+
+## Take.of
+
+Creates a `Take` with a single value chunk.
+
+**Signature**
+
+```ts
+declare const of: <A>(value: A) => Take<A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Take.ts#L242)
+
+Since v2.0.0
 Take-tap.md
 Package: `effect`<br />
 Module: `Take`<br />
@@ -87399,24 +87740,6 @@ declare const annotate: (<A>(key: TestAnnotation.TestAnnotation<A>, value: A) =>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestAnnotationMap.ts#L97)
 
 Since v2.0.0
-TestAnnotationMap-get.md
-Package: `effect`<br />
-Module: `TestAnnotationMap`<br />
-
-## TestAnnotationMap.get
-
-Retrieves the annotation of the specified type, or its default value if
-there is none.
-
-**Signature**
-
-```ts
-declare const get: (<A>(key: TestAnnotation.TestAnnotation<A>) => (self: TestAnnotationMap) => A) & (<A>(self: TestAnnotationMap, key: TestAnnotation.TestAnnotation<A>) => A)
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestAnnotationMap.ts#L82)
-
-Since v2.0.0
 TMap-empty.md
 Package: `effect`<br />
 Module: `TMap`<br />
@@ -87523,23 +87846,6 @@ declare const forEach: { <K, V, X, E, R>(f: (key: K, value: V) => STM.STM<X, E, 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L130)
 
 Since v2.0.0
-TMap-fromIterable.md
-Package: `effect`<br />
-Module: `TMap`<br />
-
-## TMap.fromIterable
-
-Creates a new `TMap` from an iterable collection of key/value pairs.
-
-**Signature**
-
-```ts
-declare const fromIterable: <K, V>(iterable: Iterable<readonly [K, V]>) => STM.STM<TMap<K, V>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L141)
-
-Since v2.0.0
 TestAnnotationMap-TestAnnotationMap.md
 Package: `effect`<br />
 Module: `TestAnnotationMap`<br />
@@ -87559,6 +87865,24 @@ export interface TestAnnotationMap {
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestAnnotationMap.ts#L24)
+
+Since v2.0.0
+TestAnnotationMap-get.md
+Package: `effect`<br />
+Module: `TestAnnotationMap`<br />
+
+## TestAnnotationMap.get
+
+Retrieves the annotation of the specified type, or its default value if
+there is none.
+
+**Signature**
+
+```ts
+declare const get: (<A>(key: TestAnnotation.TestAnnotation<A>) => (self: TestAnnotationMap) => A) & (<A>(self: TestAnnotationMap, key: TestAnnotation.TestAnnotation<A>) => A)
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestAnnotationMap.ts#L82)
 
 Since v2.0.0
 TestAnnotations-TestAnnotations.md
@@ -88419,6 +88743,23 @@ export interface TMap<in out K, in out V> extends TMap.Variance<K, V> {}
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L33)
 
 Since v2.0.0
+TMap-fromIterable.md
+Package: `effect`<br />
+Module: `TMap`<br />
+
+## TMap.fromIterable
+
+Creates a new `TMap` from an iterable collection of key/value pairs.
+
+**Signature**
+
+```ts
+declare const fromIterable: <K, V>(iterable: Iterable<readonly [K, V]>) => STM.STM<TMap<K, V>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L141)
+
+Since v2.0.0
 TMap-get.md
 Package: `effect`<br />
 Module: `TMap`<br />
@@ -88938,27 +89279,6 @@ declare const values: <K, V>(self: TMap<K, V>) => STM.STM<Array<V>>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L515)
 
 Since v2.0.0
-TPriorityQueue-TPriorityQueue.md
-Package: `effect`<br />
-Module: `TPriorityQueue`<br />
-
-## TPriorityQueue.TPriorityQueue
-
-A `TPriorityQueue` contains values of type `A` that an `Order` is defined
-on. Unlike a `TQueue`, `take` returns the highest priority value (the value
-that is first in the specified ordering) as opposed to the first value
-offered to the queue. The ordering that elements with the same priority will
-be taken from the queue is not guaranteed.
-
-**Signature**
-
-```ts
-export interface TPriorityQueue<in out A> extends TPriorityQueue.Variance<A> {}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L36)
-
-Since v2.0.0
 TPriorityQueue-empty.md
 Package: `effect`<br />
 Module: `TPriorityQueue`<br />
@@ -89266,6 +89586,27 @@ declare const toChunk: <A>(self: TPriorityQueue<A>) => STM.STM<Chunk.Chunk<A>>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L215)
+
+Since v2.0.0
+TPriorityQueue-TPriorityQueue.md
+Package: `effect`<br />
+Module: `TPriorityQueue`<br />
+
+## TPriorityQueue.TPriorityQueue
+
+A `TPriorityQueue` contains values of type `A` that an `Order` is defined
+on. Unlike a `TQueue`, `take` returns the highest priority value (the value
+that is first in the specified ordering) as opposed to the first value
+offered to the queue. The ordering that elements with the same priority will
+be taken from the queue is not guaranteed.
+
+**Signature**
+
+```ts
+export interface TPriorityQueue<in out A> extends TPriorityQueue.Variance<A> {}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L36)
 
 Since v2.0.0
 TPubSub-awaitShutdown.md
@@ -90064,23 +90405,6 @@ declare const unbounded: <A>() => STM.STM<TQueue<A>>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TQueue.ts#L432)
 
 Since v2.0.0
-TRandom-Tag.md
-Package: `effect`<br />
-Module: `TRandom`<br />
-
-## TRandom.Tag
-
-The service tag used to access `TRandom` in the environment of an effect.
-
-**Signature**
-
-```ts
-declare const Tag: Context.Tag<TRandom, TRandom>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TRandom.ts#L71)
-
-Since v2.0.0
 TRandom-live.md
 Package: `effect`<br />
 Module: `TRandom`<br />
@@ -90222,6 +90546,23 @@ declare const withSpanContext: { (spanContext: Otel.SpanContext): <A, E, R>(effe
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/opentelemetry/src/Tracer.ts#L133)
 
 Since v1.0.0
+TRandom-Tag.md
+Package: `effect`<br />
+Module: `TRandom`<br />
+
+## TRandom.Tag
+
+The service tag used to access `TRandom` in the environment of an effect.
+
+**Signature**
+
+```ts
+declare const Tag: Context.Tag<TRandom, TRandom>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TRandom.ts#L71)
+
+Since v2.0.0
 TReentrantLock-TReentrantLock.md
 Package: `effect`<br />
 Module: `TReentrantLock`<br />
@@ -91563,41 +91904,6 @@ declare const toEntries: <V>(self: Trie<V>) => Array<[string, V]>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L229)
 
 Since v2.0.0
-Trie-toEntriesWithPrefix.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.toEntriesWithPrefix
-
-Returns `Array<[K, V]>` of the entries within the `Trie`
-that have `prefix` as prefix (`prefix` included if it exists).
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("sea", 2),
-  Trie.insert("she", 3)
-)
-
-const result = Trie.toEntriesWithPrefix(trie, "she")
-assert.deepStrictEqual(result, [["she", 3], ["shells", 0]])
-```
-
-**Signature**
-
-```ts
-declare const toEntriesWithPrefix: { (prefix: string): <V>(self: Trie<V>) => Array<[string, V]>; <V>(self: Trie<V>, prefix: string): Array<[string, V]>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L340)
-
-Since v2.0.0
 TSet-TSet.md
 Package: `effect`<br />
 Module: `TSet`<br />
@@ -92110,6 +92416,41 @@ export interface TSubscriptionRef<in out A> extends TSubscriptionRef.Variance<A>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSubscriptionRef.ts#L34)
 
 Since v3.10.0
+Trie-toEntriesWithPrefix.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.toEntriesWithPrefix
+
+Returns `Array<[K, V]>` of the entries within the `Trie`
+that have `prefix` as prefix (`prefix` included if it exists).
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie } from "effect"
+
+const trie = Trie.empty<number>().pipe(
+  Trie.insert("shells", 0),
+  Trie.insert("sells", 1),
+  Trie.insert("sea", 2),
+  Trie.insert("she", 3)
+)
+
+const result = Trie.toEntriesWithPrefix(trie, "she")
+assert.deepStrictEqual(result, [["she", 3], ["shells", 0]])
+```
+
+**Signature**
+
+```ts
+declare const toEntriesWithPrefix: { (prefix: string): <V>(self: Trie<V>) => Array<[string, V]>; <V>(self: Trie<V>, prefix: string): Array<[string, V]>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L340)
+
+Since v2.0.0
 Trie-unsafeGet.md
 Package: `effect`<br />
 Module: `Trie`<br />
