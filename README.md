@@ -64,7 +64,7 @@ This will:
 
 - Total Files: 14
 - Total Size: 10.8 MB
-- Total Tokens: 3,047,990
+- Total Tokens: 3,048,628
 
 #### website-docs
 
@@ -82,7 +82,7 @@ This will:
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/effect-modules.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-modules.txt) | 6.37 MB | 1,863,372 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-modules.txt) |
+| [output/effect-modules.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-modules.txt) | 6.37 MB | 1,864,010 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-modules.txt) |
 
 #### effect-core
 
