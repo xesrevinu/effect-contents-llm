@@ -29127,7 +29127,7 @@ Effect.liftPredicate(0, isPositive, n => `${n} is not positive`)
 **Signature**
 
 ```ts
-declare const liftPredicate: { <A, B extends A, E>(refinement: Refinement<NoInfer<A>, B>, orFailWith: (a: NoInfer<A>) => E): (a: A) => Effect<B, E>; <A, E>(predicate: Predicate<NoInfer<A>>, orFailWith: (a: NoInfer<A>) => E): (a: A) => Effect<A, E>; <A, E, B extends A>(self: A, refinement: Refinement<A, B>, orFailWith: (a: A) => E): Effect<B, E>; <A, E>(self: A, predicate: Predicate<NoInfer<A>>, orFailWith: (a: NoInfer<A>) => E): Effect<A, E>; }
+declare const liftPredicate: { <A, B extends A, E>(refinement: Refinement<A, B>, orFailWith: (a: A) => E): (a: A) => Effect<B, E>; <B extends A, E, A = B>(predicate: Predicate<A>, orFailWith: (a: A) => E): (a: B) => Effect<B, E>; <A, E, B extends A>(self: A, refinement: Refinement<A, B>, orFailWith: (a: A) => E): Effect<B, E>; <B extends A, E, A = B>(self: B, predicate: Predicate<A>, orFailWith: (a: A) => E): Effect<B, E>; }
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L4972)
@@ -37002,7 +37002,7 @@ assert.deepStrictEqual(result, Either.right({ x: 2, y: 3, sum: 5 }))
 declare const Do: Either<{}, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L840)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L835)
 
 Since v2.0.0
 Either-all.md
@@ -37034,7 +37034,7 @@ assert.deepStrictEqual(Either.all({ right: Either.right(1), b: Either.left("erro
 declare const all: <const I extends Iterable<Either<any, any>> | Record<string, Either<any, any>>>(input: I) => [I] extends [ReadonlyArray<Either<any, any>>] ? Either<{ -readonly [K in keyof I]: [I[K]] extends [Either<infer R, any>] ? R : never; }, I[number] extends never ? never : [I[number]] extends [Either<any, infer L>] ? L : never> : [I] extends [Iterable<Either<infer R, infer L>>] ? Either<Array<R>, L> : Either<{ -readonly [K in keyof I]: [I[K]] extends [Either<infer R, any>] ? R : never; }, I[keyof I] extends never ? never : [I[keyof I]] extends [Either<any, infer L>] ? L : never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L739)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L734)
 
 Since v2.0.0
 Either-andThen.md
@@ -37051,7 +37051,7 @@ Executes a sequence of two `Either`s. The second `Either` can be dependent on th
 declare const andThen: { <R, R2, L2>(f: (right: R) => Either<R2, L2>): <L>(self: Either<R, L>) => Either<R2, L | L2>; <R2, L2>(f: Either<R2, L2>): <L, R1>(self: Either<R1, L>) => Either<R2, L | L2>; <R, R2>(f: (right: R) => R2): <L>(self: Either<R, L>) => Either<R2, L>; <R2>(right: NotFunction<R2>): <R1, L>(self: Either<R1, L>) => Either<R2, L>; <R, L, R2, L2>(self: Either<R, L>, f: (right: R) => Either<R2, L2>): Either<R2, L | L2>; <R, L, R2, L2>(self: Either<R, L>, f: Either<R2, L2>): Either<R2, L | L2>; <R, L, R2>(self: Either<R, L>, f: (right: R) => R2): Either<R2, L>; <R, L, R2>(self: Either<R, L>, f: NotFunction<R2>): Either<R2, L>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L667)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L662)
 
 Since v2.0.0
 Either-bind.md
@@ -37096,7 +37096,7 @@ assert.deepStrictEqual(result, Either.right({ x: 2, y: 3, sum: 5 }))
 declare const bind: { <N extends string, A extends object, B, L2>(name: Exclude<N, keyof A>, f: (a: NoInfer<A>) => Either<B, L2>): <L1>(self: Either<A, L1>) => Either<{ [K in N | keyof A]: K extends keyof A ? A[K] : B; }, L1 | L2>; <A extends object, L1, N extends string, B, L2>(self: Either<A, L1>, name: Exclude<N, keyof A>, f: (a: NoInfer<A>) => Either<B, L2>): Either<{ [K in N | keyof A]: K extends keyof A ? A[K] : B; }, L1 | L2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L873)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L868)
 
 Since v2.0.0
 Either-bindTo.md
@@ -37141,7 +37141,7 @@ assert.deepStrictEqual(result, Either.right({ x: 2, y: 3, sum: 5 }))
 declare const bindTo: { <N extends string>(name: N): <R, L>(self: Either<R, L>) => Either<{ [K in N]: R; }, L>; <R, L, N extends string>(self: Either<R, L>, name: N): Either<{ [K in N]: R; }, L>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L916)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L911)
 
 Since v2.0.0
 Either-filterOrLeft.md
@@ -37183,7 +37183,7 @@ assert.deepStrictEqual(
 declare const filterOrLeft: { <R, B extends R, L2>(refinement: Refinement<NoInfer<R>, B>, orLeftWith: (right: NoInfer<R>) => L2): <L>(self: Either<R, L>) => Either<B, L2 | L>; <R, L2>(predicate: Predicate<NoInfer<R>>, orLeftWith: (right: NoInfer<R>) => L2): <L>(self: Either<R, L>) => Either<R, L2 | L>; <R, L, B extends R, L2>(self: Either<R, L>, refinement: Refinement<R, B>, orLeftWith: (right: R) => L2): Either<B, L | L2>; <R, L, E2>(self: Either<R, L>, predicate: Predicate<R>, orLeftWith: (right: R) => E2): Either<R, L | E2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L496)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L491)
 
 Since v2.0.0
 Either-flip.md
@@ -37201,7 +37201,7 @@ use all methods on the error channel, possibly before flipping back.
 declare const flip: <R, L>(self: Either<R, L>) => Either<L, R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L781)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L776)
 
 Since v2.0.0
 Either-fromNullable.md
@@ -37283,7 +37283,7 @@ assert.deepStrictEqual(Either.getOrElse(Either.left("not a number"), (error) => 
 declare const getOrElse: { <L, R2>(onLeft: (left: L) => R2): <R>(self: Either<R, L>) => R2 | R; <R, L, R2>(self: Either<R, L>, onLeft: (left: L) => R2): R | R2; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L541)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L536)
 
 Since v2.0.0
 Either-getOrThrow.md
@@ -37316,7 +37316,7 @@ assert.throws(() => Either.getOrThrow(Either.left("error")))
 declare const getOrThrow: <R, L>(self: Either<R, L>) => R
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L629)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L624)
 
 Since v2.0.0
 Either-getOrThrowWith.md
@@ -37348,7 +37348,7 @@ assert.throws(() => Either.getOrThrowWith(Either.left("error"), () => new Error(
 declare const getOrThrowWith: { <L>(onLeft: (left: L) => unknown): <A>(self: Either<A, L>) => A; <R, L>(self: Either<R, L>, onLeft: (left: L) => unknown): R; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L599)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L594)
 
 Since v2.0.0
 Either-getRight.md
@@ -37494,19 +37494,14 @@ import * as assert from "node:assert"
 import { pipe, Either } from "effect"
 
 const isPositive = (n: number): boolean => n > 0
+const isPositiveEither = Either.liftPredicate(isPositive, n => `${n} is not positive`)
 
 assert.deepStrictEqual(
-  pipe(
-    1,
-    Either.liftPredicate(isPositive, n => `${n} is not positive`)
-  ),
+  isPositiveEither(1),
   Either.right(1)
 )
 assert.deepStrictEqual(
-  pipe(
-    0,
-    Either.liftPredicate(isPositive, n => `${n} is not positive`)
-  ),
+  isPositiveEither(0),
   Either.left("0 is not positive")
 )
 ```
@@ -37514,10 +37509,10 @@ assert.deepStrictEqual(
 **Signature**
 
 ```ts
-declare const liftPredicate: { <A, B extends A, E>(refinement: Refinement<NoInfer<A>, B>, orLeftWith: (a: NoInfer<A>) => E): (a: A) => Either<B, E>; <A, E>(predicate: Predicate<NoInfer<A>>, orLeftWith: (a: NoInfer<A>) => E): (a: A) => Either<A, E>; <A, E, B extends A>(self: A, refinement: Refinement<A, B>, orLeftWith: (a: A) => E): Either<B, E>; <A, E>(self: A, predicate: Predicate<NoInfer<A>>, orLeftWith: (a: NoInfer<A>) => E): Either<A, E>; }
+declare const liftPredicate: { <A, B extends A, E>(refinement: Refinement<A, B>, orLeftWith: (a: A) => E): (a: A) => Either<B, E>; <B extends A, E, A = B>(predicate: Predicate<A>, orLeftWith: (a: A) => E): (a: B) => Either<B, E>; <A, E, B extends A>(self: A, refinement: Refinement<A, B>, orLeftWith: (a: A) => E): Either<B, E>; <B extends A, E, A = B>(self: B, predicate: Predicate<A>, orLeftWith: (a: A) => E): Either<B, E>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L444)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L439)
 
 Since v3.4.0
 Either-map.md
@@ -37603,7 +37598,7 @@ Returns `self` if it is a `Right` or `that` otherwise.
 declare const orElse: { <L, R2, L2>(that: (left: L) => Either<R2, L2>): <R>(self: Either<R, L>) => Either<R | R2, L2>; <R, L, R2, L2>(self: Either<R, L>, that: (left: L) => Either<R2, L2>): Either<R | R2, L2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L639)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L634)
 
 Since v2.0.0
 Either-right.md
@@ -37662,7 +37657,7 @@ console.log(Effect.runSync(result))
 declare const transposeOption: <A = never, E = never>(self: Option<Either<A, E>>) => Either<Option<A>, E>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L997)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Either.ts#L992)
 
 Since v3.14.0
 Embeddings-makeDataLoader.md
@@ -71076,7 +71071,7 @@ Converts an `string` value into its corresponding `boolean`
 declare class BooleanFromString
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10092)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10089)
 
 Since v3.11.0
 Schema-BooleanFromUnknown.md
@@ -71098,7 +71093,7 @@ Uses `!!val` to coerce the value to a `boolean`.
 declare class BooleanFromUnknown
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10075)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10072)
 
 Since v3.10.0
 Schema-Capitalize.md
@@ -71353,7 +71348,7 @@ This is useful for serializing and deserializing errors across network boundarie
 declare class Defect
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L9492)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L9489)
 
 Since v3.10.0
 Schema-Duration.md
@@ -71718,7 +71713,7 @@ Given a schema `Schema<A, I, R>`, returns an `Equivalence` instance for `A`.
 declare const equivalence: <A, I, R>(schema: Schema<A, I, R>) => Equivalence.Equivalence<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10640)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10637)
 
 Since v3.10.0
 Schema-extend.md
@@ -72204,7 +72199,7 @@ export interface Serializable<A, I, R> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10136)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10133)
 
 Since v3.10.0
 Schema-SerializableWithResult.md
@@ -72236,7 +72231,7 @@ export interface SerializableWithResult<
 > extends Serializable<A, I, R>, WithResult<Success, SuccessEncoded, Failure, FailureEncoded, ResultR> {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10441)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10438)
 
 Since v3.10.0
 Schema-StringFromBase64.md
@@ -73149,7 +73144,7 @@ export interface WithResult<Success, SuccessEncoded, Failure, FailureEncoded, Re
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10221)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10218)
 
 Since v3.10.0
 Schema-validDate.md
