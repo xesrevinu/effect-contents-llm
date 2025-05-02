@@ -17379,7 +17379,7 @@ Note: On Node versions < 22, fixed "Offset" zones will set the time zone to
 **Signature**
 
 ```ts
-declare const format: { (options?: (Intl.DateTimeFormatOptions & { readonly locale?: string | undefined; }) | undefined): (self: DateTime) => string; (self: DateTime, options?: (Intl.DateTimeFormatOptions & { readonly locale?: string | undefined; }) | undefined): string; }
+declare const format: { (options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): (self: DateTime) => string; (self: DateTime, options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): string; }
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1444)
@@ -17502,7 +17502,7 @@ It will use the system's local time zone & locale.
 **Signature**
 
 ```ts
-declare const formatLocal: { (options?: (Intl.DateTimeFormatOptions & { readonly locale?: string | undefined; }) | undefined): (self: DateTime) => string; (self: DateTime, options?: (Intl.DateTimeFormatOptions & { readonly locale?: string | undefined; }) | undefined): string; }
+declare const formatLocal: { (options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): (self: DateTime) => string; (self: DateTime, options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): string; }
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1470)
@@ -17521,7 +17521,7 @@ This forces the time zone to be UTC.
 **Signature**
 
 ```ts
-declare const formatUtc: { (options?: (Intl.DateTimeFormatOptions & { readonly locale?: string | undefined; }) | undefined): (self: DateTime) => string; (self: DateTime, options?: (Intl.DateTimeFormatOptions & { readonly locale?: string | undefined; }) | undefined): string; }
+declare const formatUtc: { (options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): (self: DateTime) => string; (self: DateTime, options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): string; }
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1496)
@@ -27821,7 +27821,7 @@ Same as `fn`, but allows you to create a function that is not traced, for when p
 declare const fnUntraced: fn.Untraced
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L14594)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L14598)
 
 Since v3.12.0
 Effect-forEach.md
@@ -93893,6 +93893,210 @@ declare const toRecord: (self: UrlParams) => Record<string, string | Arr.NonEmpt
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/UrlParams.ts#L263)
 
 Since v1.0.0
+utils-assertEquals.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertEquals
+
+Asserts that `actual` is equal to `expected` using the `Equal.equals` trait.
+
+**Signature**
+
+```ts
+declare const assertEquals: <A>(actual: A, expected: A, message?: string, ..._: Array<never>) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L58)
+
+Since v0.21.0
+utils-assertFailure.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertFailure
+
+Asserts that `exit` is a failure.
+
+**Signature**
+
+```ts
+declare const assertFailure: <A, E>(exit: Exit.Exit<A, E>, expected: Cause.Cause<E>, ..._: Array<never>) => asserts exit is Exit.Failure<never, E>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L243)
+
+Since v0.21.0
+utils-assertFalse.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertFalse
+
+Asserts that `self` is `false`.
+
+**Signature**
+
+```ts
+declare const assertFalse: (self: boolean, message?: string, ..._: Array<never>) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L106)
+
+Since v0.21.0
+utils-assertInclude.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertInclude
+
+Asserts that `actual` includes `expected`.
+
+**Signature**
+
+```ts
+declare const assertInclude: (actual: string | undefined, expected: string, ..._: Array<never>) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L115)
+
+Since v0.21.0
+utils-assertInstanceOf.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertInstanceOf
+
+Asserts that `value` is an instance of `constructor`.
+
+**Signature**
+
+```ts
+declare const assertInstanceOf: <C extends abstract new (...args: any) => any>(value: unknown, constructor: C, message?: string, ..._: Array<never>) => asserts value is InstanceType<C>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L83)
+
+Since v0.21.0
+utils-assertLeft.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertLeft
+
+Asserts that `either` is `Left`.
+
+**Signature**
+
+```ts
+declare const assertLeft: <R, L>(either: Either.Either<R, L>, expected: L, ..._: Array<never>) => asserts either is Either.Left<L, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L213)
+
+Since v0.21.0
+utils-assertMatch.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertMatch
+
+Asserts that `actual` matches `regexp`.
+
+**Signature**
+
+```ts
+declare const assertMatch: (actual: string, regexp: RegExp, ..._: Array<never>) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L128)
+
+Since v0.21.0
+utils-assertNone.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertNone
+
+Asserts that `option` is `None`.
+
+**Signature**
+
+```ts
+declare const assertNone: <A>(option: Option.Option<A>, ..._: Array<never>) => asserts option is Option.None<never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L187)
+
+Since v0.21.0
+utils-assertRight.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertRight
+
+Asserts that `either` is `Right`.
+
+**Signature**
+
+```ts
+declare const assertRight: <R, L>(either: Either.Either<R, L>, expected: R, ..._: Array<never>) => asserts either is Either.Right<never, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L226)
+
+Since v0.21.0
+utils-assertSome.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertSome
+
+Asserts that `option` is `Some`.
+
+**Signature**
+
+```ts
+declare const assertSome: <A>(option: Option.Option<A>, expected: A, ..._: Array<never>) => asserts option is Option.Some<A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L196)
+
+Since v0.21.0
+utils-assertSuccess.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertSuccess
+
+Asserts that `exit` is a success.
+
+**Signature**
+
+```ts
+declare const assertSuccess: <A, E>(exit: Exit.Exit<A, E>, expected: A, ..._: Array<never>) => asserts exit is Exit.Success<A, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L256)
+
+Since v0.21.0
+utils-assertTrue.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertTrue
+
+Asserts that `self` is `true`.
+
+**Signature**
+
+```ts
+declare const assertTrue: (self: unknown, message?: string, ..._: Array<never>) => asserts self
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L97)
+
+Since v0.21.0
 Utils-PCGRandom.md
 Package: `effect`<br />
 Module: `Utils`<br />
@@ -93989,3 +94193,122 @@ declare const launch: <A, E, R>(layer: Layer.Layer<A, E, R>) => Effect.Effect<vo
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/WorkerRunner.ts#L249)
 
 Since v1.0.0
+utils-deepStrictEqual.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.deepStrictEqual
+
+Asserts that `actual` is equal to `expected` using the `Equal.equals` trait.
+
+**Signature**
+
+```ts
+declare const deepStrictEqual: <A>(actual: A, expected: A, message?: string, ..._: Array<never>) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L31)
+
+Since v0.21.0
+utils-doesNotThrow.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.doesNotThrow
+
+Asserts that `thunk` does not throw an error.
+
+**Signature**
+
+```ts
+declare const doesNotThrow: (thunk: () => void, message?: string, ..._: Array<never>) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L70)
+
+Since v0.21.0
+utils-fail.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.fail
+
+Throws an `AssertionError` with the provided error message.
+
+**Signature**
+
+```ts
+declare const fail: (message: string) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L22)
+
+Since v0.21.0
+utils-notDeepStrictEqual.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.notDeepStrictEqual
+
+Asserts that `actual` is not equal to `expected` using the `Equal.equals` trait.
+
+**Signature**
+
+```ts
+declare const notDeepStrictEqual: <A>(actual: A, expected: A, message?: string, ..._: Array<never>) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L40)
+
+Since v0.21.0
+utils-strictEqual.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.strictEqual
+
+Asserts that `actual` is equal to `expected` using the `Equal.equals` trait.
+
+**Signature**
+
+```ts
+declare const strictEqual: <A>(actual: A, expected: A, message?: string, ..._: Array<never>) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L49)
+
+Since v0.21.0
+utils-throws.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.throws
+
+Asserts that `thunk` throws an error.
+
+**Signature**
+
+```ts
+declare const throws: (thunk: () => void, error?: Error | ((u: unknown) => undefined), ..._: Array<never>) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L139)
+
+Since v0.21.0
+utils-throwsAsync.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.throwsAsync
+
+Asserts that `thunk` throws an error.
+
+**Signature**
+
+```ts
+declare const throwsAsync: (thunk: () => Promise<void>, error?: Error | ((u: unknown) => undefined), ..._: Array<never>) => Promise<void>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L159)
+
+Since v0.21.0
