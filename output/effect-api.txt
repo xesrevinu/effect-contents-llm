@@ -27821,7 +27821,7 @@ Same as `fn`, but allows you to create a function that is not traced, for when p
 declare const fnUntraced: fn.Untraced
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L14598)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L14602)
 
 Since v3.12.0
 Effect-forEach.md
@@ -36034,7 +36034,7 @@ Effect.runFork(program)
 
 **See**
 
-- `FiberRef.minimumLogLevel` to retrieve the current minimum log level.
+- `FiberRef.currentMinimumLogLevel` to retrieve the current minimum log level.
 
 **Signature**
 
@@ -47045,7 +47045,7 @@ Module: `Layer`<br />
 
 ## Layer.discard
 
-Replaces the layer's output with `void` and includes the layer only for its
+Replaces the layer's output with `never` and includes the layer only for its
 side-effects.
 
 **Signature**
