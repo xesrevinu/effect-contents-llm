@@ -930,6 +930,8 @@ In typical application development, when interacting with external APIs, databas
 Here's a basic model that outlines the structure of our data and possible errors:
 
 ```ts twoslash
+import { Data } from "effect"
+
 // ------------------------------
 // Model
 // ------------------------------
@@ -941,9 +943,7 @@ interface User {
   readonly email: string
 }
 
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
+class GetUserError extends Data.TaggedError("GetUserError")<{}> {}
 
 interface Todo {
   readonly _tag: "Todo"
@@ -952,13 +952,9 @@ interface Todo {
   readonly ownerId: number
 }
 
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
+class GetTodosError extends Data.TaggedError("GetTodosError")<{}> {}
 
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
+class SendEmailError extends Data.TaggedError("SendEmailError")<{}> {}
 ```
 
 <Aside type="tip" title="Use Precise Types and Detailed Errors">
@@ -972,8 +968,8 @@ class SendEmailError {
 
 Let's define functions that interact with an external API, handling common operations such as fetching todos, retrieving user details, and sending emails.
 
-```ts twoslash collapse={7-31}
-import { Effect } from "effect"
+```ts twoslash collapse={7-25}
+import { Effect, Data } from "effect"
 
 // ------------------------------
 // Model
@@ -986,9 +982,7 @@ interface User {
   readonly email: string
 }
 
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
+class GetUserError extends Data.TaggedError("GetUserError")<{}> {}
 
 interface Todo {
   readonly _tag: "Todo"
@@ -997,13 +991,9 @@ interface Todo {
   readonly ownerId: number
 }
 
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
+class GetTodosError extends Data.TaggedError("GetTodosError")<{}> {}
 
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
+class SendEmailError extends Data.TaggedError("SendEmailError")<{}> {}
 
 // ------------------------------
 // API
@@ -1070,8 +1060,8 @@ While this approach is straightforward and readable, it may not be the most effi
 
 While these functions are clear and easy to understand, their use may not be the most efficient. For example, notifying todo owners involves repeated API calls which can be optimized.
 
-```ts twoslash collapse={7-31,37-82}
-import { Effect } from "effect"
+```ts twoslash collapse={7-25,31-76}
+import { Effect, Data } from "effect"
 
 // ------------------------------
 // Model
@@ -1084,9 +1074,7 @@ interface User {
   readonly email: string
 }
 
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
+class GetUserError extends Data.TaggedError("GetUserError")<{}> {}
 
 interface Todo {
   readonly _tag: "Todo"
@@ -1095,13 +1083,9 @@ interface Todo {
   readonly ownerId: number
 }
 
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
+class GetTodosError extends Data.TaggedError("GetTodosError")<{}> {}
 
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
+class SendEmailError extends Data.TaggedError("SendEmailError")<{}> {}
 
 // ------------------------------
 // API
@@ -1203,8 +1187,8 @@ A `Request` is a construct representing a request for a value of type `Value`, w
 
 Let's start by defining a structured model for the types of requests our data sources can handle.
 
-```ts twoslash collapse={7-31}
-import { Request } from "effect"
+```ts twoslash collapse={7-25}
+import { Request, Data } from "effect"
 
 // ------------------------------
 // Model
@@ -1217,9 +1201,7 @@ interface User {
   readonly email: string
 }
 
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
+class GetUserError extends Data.TaggedError("GetUserError")<{}> {}
 
 interface Todo {
   readonly _tag: "Todo"
@@ -1228,13 +1210,9 @@ interface Todo {
   readonly ownerId: number
 }
 
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
+class GetTodosError extends Data.TaggedError("GetTodosError")<{}> {}
 
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
+class SendEmailError extends Data.TaggedError("SendEmailError")<{}> {}
 
 // ------------------------------
 // Requests
@@ -1287,8 +1265,8 @@ A `RequestResolver` requires an environment `R` and is capable of executing requ
 
 In this section, we'll create individual resolvers for each type of request. The granularity of your resolvers can vary, but typically, they are divided based on the batching capabilities of the corresponding API calls.
 
-```ts twoslash collapse={7-31,37-65}
-import { Effect, Request, RequestResolver } from "effect"
+```ts twoslash collapse={7-25,31-59}
+import { Effect, Request, RequestResolver, Data } from "effect"
 
 // ------------------------------
 // Model
@@ -1301,9 +1279,7 @@ interface User {
   readonly email: string
 }
 
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
+class GetUserError extends Data.TaggedError("GetUserError")<{}> {}
 
 interface Todo {
   readonly _tag: "Todo"
@@ -1312,13 +1288,9 @@ interface Todo {
   readonly ownerId: number
 }
 
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
+class GetTodosError extends Data.TaggedError("GetTodosError")<{}> {}
 
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
+class SendEmailError extends Data.TaggedError("SendEmailError")<{}> {}
 
 // ------------------------------
 // Requests
@@ -1449,8 +1421,8 @@ In this configuration:
 
 Now that we've set up our resolvers, we're ready to tie all the pieces together to define our This step will enable us to perform data operations effectively within our application.
 
-```ts twoslash collapse={7-31,37-65,71-142}
-import { Effect, Request, RequestResolver } from "effect"
+```ts twoslash collapse={7-25,31-59,65-136}
+import { Effect, Request, RequestResolver, Data } from "effect"
 
 // ------------------------------
 // Model
@@ -1463,9 +1435,7 @@ interface User {
   readonly email: string
 }
 
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
+class GetUserError extends Data.TaggedError("GetUserError")<{}> {}
 
 interface Todo {
   readonly _tag: "Todo"
@@ -1474,13 +1444,9 @@ interface Todo {
   readonly ownerId: number
 }
 
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
+class GetTodosError extends Data.TaggedError("GetTodosError")<{}> {}
 
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
+class SendEmailError extends Data.TaggedError("SendEmailError")<{}> {}
 
 // ------------------------------
 // Requests
@@ -1662,8 +1628,8 @@ When creating request resolvers, it's crucial to manage the context carefully. P
 
 Consider the following example where we set up an HTTP service that the resolvers can use to execute API calls:
 
-```ts twoslash collapse={7-31,37-65}
-import { Effect, Context, RequestResolver, Request } from "effect"
+```ts twoslash collapse={7-25,31-59}
+import { Effect, Context, RequestResolver, Request, Data } from "effect"
 
 // ------------------------------
 // Model
@@ -1676,9 +1642,7 @@ interface User {
   readonly email: string
 }
 
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
+class GetUserError extends Data.TaggedError("GetUserError")<{}> {}
 
 interface Todo {
   readonly _tag: "Todo"
@@ -1687,13 +1651,9 @@ interface Todo {
   readonly ownerId: number
 }
 
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
+class GetTodosError extends Data.TaggedError("GetTodosError")<{}> {}
 
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
+class SendEmailError extends Data.TaggedError("SendEmailError")<{}> {}
 
 // ------------------------------
 // Requests
@@ -1781,8 +1741,15 @@ Alternatively you can create `RequestResolver`s as part of layers direcly access
 
 **Example**
 
-```ts twoslash collapse={7-31,37-65,71-91}
-import { Effect, Context, RequestResolver, Request, Layer } from "effect"
+```ts twoslash collapse={14-32,38-66,72-92}
+import {
+  Effect,
+  Context,
+  RequestResolver,
+  Request,
+  Layer,
+  Data
+} from "effect"
 
 // ------------------------------
 // Model
@@ -1795,9 +1762,7 @@ interface User {
   readonly email: string
 }
 
-class GetUserError {
-  readonly _tag = "GetUserError"
-}
+class GetUserError extends Data.TaggedError("GetUserError")<{}> {}
 
 interface Todo {
   readonly _tag: "Todo"
@@ -1806,13 +1771,9 @@ interface Todo {
   readonly ownerId: number
 }
 
-class GetTodosError {
-  readonly _tag = "GetTodosError"
-}
+class GetTodosError extends Data.TaggedError("GetTodosError")<{}> {}
 
-class SendEmailError {
-  readonly _tag = "SendEmailError"
-}
+class SendEmailError extends Data.TaggedError("SendEmailError")<{}> {}
 
 // ------------------------------
 // Requests
@@ -8209,23 +8170,22 @@ This function allows you to inspect errors that match a specific tag, helping yo
 **Example** (Inspecting Tagged Errors)
 
 ```ts twoslash
-import { Effect, Console } from "effect"
+import { Effect, Console, Data } from "effect"
 
-class NetworkError {
-  readonly _tag = "NetworkError"
-  constructor(readonly statusCode: number) {}
-}
+class NetworkError extends Data.TaggedError("NetworkError")<{
+  readonly statusCode: number
+}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-  constructor(readonly field: string) {}
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  readonly field: string
+}> {}
 
 // Create a task that fails with a NetworkError
 const task: Effect.Effect<number, NetworkError | ValidationError> =
-  Effect.fail(new NetworkError(504))
+  Effect.fail(new NetworkError({ statusCode: 504 }))
 
-// Use tapErrorTag to inspect only NetworkError types and log the status code
+// Use tapErrorTag to inspect only NetworkError types
+// and log the status code
 const tapping = Effect.tapErrorTag(task, "NetworkError", (error) =>
   Console.log(`expected error: ${error.statusCode}`)
 )
@@ -8615,11 +8575,10 @@ This means that the `Effect` type captures not only what the program returns on 
 In this example, we define a program that might randomly fail with an `HttpError`.
 
 ```ts twoslash
-import { Effect, Random } from "effect"
+import { Effect, Random, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+// Define a custom error type using Data.TaggedError
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
 //      ┌─── Effect<string, HttpError, never>
 //      ▼
@@ -8629,7 +8588,7 @@ const program = Effect.gen(function* () {
 
   // Simulate an HTTP error
   if (n < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
 
   return "some result"
@@ -8642,21 +8601,19 @@ The type of `program` tells us that it can either return a `string` or fail with
 const program: Effect<string, HttpError, never>
 ```
 
-In this case, we use a class to represent the `HttpError` type, which allows us to define both the error type and a constructor. However, you can use whatever
-you like to model your error types.
+In this case, we use a class to represent the `HttpError` type, which allows us to define both the error type and a constructor.
 
-It's also worth noting that we added a readonly `_tag` field to the class:
+When using `Data.TaggedError`, a `_tag` field is automatically added to the class
 
 ```ts showLineNumbers=false
-class HttpError {
-  // This field serves as a discriminant for the error
-  readonly _tag = "HttpError"
-}
+// This field serves as a discriminant for the error
+console.log(new HttpError()._tag)
+// Output: "HttpError"
 ```
 
 This discriminant field will be useful when we discuss APIs like [Effect.catchTag](#catchtag), which help in handling specific error types.
 
-<Aside type="tip" title="Discriminant Fields">
+<Aside type="tip" title="Why Tagged Errors Are Useful">
   Adding a discriminant field, such as `_tag`, can be beneficial for
   distinguishing between different types of errors during error handling.
   It also prevents TypeScript from unifying types, ensuring that each
@@ -8676,15 +8633,11 @@ The example below illustrates how errors are automatically tracked for you.
 **Example** (Automatically Tracking Errors)
 
 ```ts twoslash
-import { Effect, Random } from "effect"
+import { Effect, Random, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 //      ┌─── Effect<string, HttpError | ValidationError, never>
 //      ▼
@@ -8695,11 +8648,11 @@ const program = Effect.gen(function* () {
 
   // Simulate an HTTP error
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   // Simulate a validation error
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
 
   return "some result"
@@ -8790,15 +8743,11 @@ By yielding an `Either`, we gain the ability to "pattern match" on this type to 
 **Example** (Using `Effect.either` to Handle Errors)
 
 ```ts twoslash
-import { Effect, Either, Random } from "effect"
+import { Effect, Either, Random, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 //      ┌─── Effect<string, HttpError | ValidationError, never>
 //      ▼
@@ -8806,10 +8755,10 @@ const program = Effect.gen(function* () {
   const n1 = yield* Random.next
   const n2 = yield* Random.next
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
   return "some result"
 })
@@ -8841,16 +8790,12 @@ We can make the code less verbose by using the `Either.match` function, which di
 
 **Example** (Simplifying with `Either.match`)
 
-```ts twoslash collapse={3-23}
-import { Effect, Either, Random } from "effect"
+```ts twoslash collapse={3-19}
+import { Effect, Either, Random, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 //      ┌─── Effect<string, HttpError | ValidationError, never>
 //      ▼
@@ -8858,10 +8803,10 @@ const program = Effect.gen(function* () {
   const n1 = yield* Random.next
   const n2 = yield* Random.next
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
   return "some result"
 })
@@ -8950,15 +8895,11 @@ from errors using the provided fallback logic.
 **Example** (Providing Recovery Logic for Recoverable Errors)
 
 ```ts twoslash
-import { Effect, Random } from "effect"
+import { Effect, Random, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 //      ┌─── Effect<string, HttpError | ValidationError, never>
 //      ▼
@@ -8966,10 +8907,10 @@ const program = Effect.gen(function* () {
   const n1 = yield* Random.next
   const n2 = yield* Random.next
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
   return "some result"
 })
@@ -9038,15 +8979,11 @@ By yielding an `Either`, we gain the ability to "pattern match" on this type to 
 **Example** (Handling Specific Errors with `Effect.either`)
 
 ```ts twoslash
-import { Effect, Random, Either } from "effect"
+import { Effect, Random, Either, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 //      ┌─── Effect<string, HttpError | ValidationError, never>
 //      ▼
@@ -9054,10 +8991,10 @@ const program = Effect.gen(function* () {
   const n1 = yield* Random.next
   const n2 = yield* Random.next
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
   return "some result"
 })
@@ -9091,25 +9028,21 @@ indicating that `HttpError` has been handled.
 
 If we also want to handle `ValidationError`, we can easily add another case to our code:
 
-```ts twoslash collapse={3-21} {32-34}
-import { Effect, Random, Either } from "effect"
+```ts twoslash collapse={3-17} {28-30}
+import { Effect, Random, Either, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 const program = Effect.gen(function* () {
   const n1 = yield* Random.next
   const n2 = yield* Random.next
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
   return "some result"
 })
@@ -9153,15 +9086,11 @@ remains the same as in the original effect.
 **Example** (Handling Specific Errors with `Effect.catchSome`)
 
 ```ts twoslash
-import { Effect, Random, Option } from "effect"
+import { Effect, Random, Option, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 //      ┌─── Effect<string, HttpError | ValidationError, never>
 //      ▼
@@ -9169,10 +9098,10 @@ const program = Effect.gen(function* () {
   const n1 = yield* Random.next
   const n2 = yield* Random.next
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
   return "some result"
 })
@@ -9212,16 +9141,12 @@ error type unless a user-defined type guard is used to narrow the type.
 
 **Example** (Catching Specific Errors with a Predicate)
 
-```ts twoslash collapse={3-21
-import { Effect, Random } from "effect"
+```ts twoslash
+import { Data, Effect, Random } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 //      ┌─── Effect<string, HttpError | ValidationError, never>
 //      ▼
@@ -9229,10 +9154,10 @@ const program = Effect.gen(function* () {
   const n1 = yield* Random.next
   const n2 = yield* Random.next
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
   return "some result"
 })
@@ -9261,16 +9186,12 @@ In TypeScript versions >= 5.5, improved type narrowing causes the resulting erro
 
 If you provide a [user-defined type guard](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates) instead of a predicate, the resulting error type will be pruned, returning an `Effect<string, ValidationError, never>`:
 
-```ts twoslash collapse={3-23} {29-30}
-import { Effect, Random } from "effect"
+```ts twoslash collapse={3-19} {25-26}
+import { Data, Effect, Random } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 //      ┌─── Effect<string, HttpError | ValidationError, never>
 //      ▼
@@ -9278,10 +9199,10 @@ const program = Effect.gen(function* () {
   const n1 = yield* Random.next
   const n2 = yield* Random.next
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
   return "some result"
 })
@@ -9312,15 +9233,11 @@ is used to identify and match errors.
 **Example** (Handling Errors by Tag)
 
 ```ts twoslash
-import { Effect, Random } from "effect"
+import { Effect, Random, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 //      ┌─── Effect<string, HttpError | ValidationError, never>
 //      ▼
@@ -9328,10 +9245,10 @@ const program = Effect.gen(function* () {
   const n1 = yield* Random.next
   const n2 = yield* Random.next
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
   return "some result"
 })
@@ -9362,16 +9279,12 @@ If we also wanted to handle `ValidationError`, we can simply add another `catchT
 
 **Example** (Handling Multiple Error Types with `catchTag`)
 
-```ts twoslash collapse={3-23} {32-34}
-import { Effect, Random } from "effect"
+```ts twoslash collapse={3-19} {28-30}
+import { Effect, Random, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 //      ┌─── Effect<string, HttpError | ValidationError, never>
 //      ▼
@@ -9379,10 +9292,10 @@ const program = Effect.gen(function* () {
   const n1 = yield* Random.next
   const n2 = yield* Random.next
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
   return "some result"
 })
@@ -9426,15 +9339,11 @@ error types in a single call.
 **Example** (Handling Multiple Tagged Error Types at Once)
 
 ```ts twoslash
-import { Effect, Random } from "effect"
+import { Effect, Random, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
-class ValidationError {
-  readonly _tag = "ValidationError"
-}
+class ValidationError extends Data.TaggedError("ValidationError")<{}> {}
 
 //      ┌─── Effect<string, HttpError | ValidationError, never>
 //      ▼
@@ -9442,10 +9351,10 @@ const program = Effect.gen(function* () {
   const n1 = yield* Random.next
   const n2 = yield* Random.next
   if (n1 < 0.5) {
-    yield* Effect.fail(new HttpError())
+    return yield* Effect.fail(new HttpError())
   }
   if (n2 < 0.5) {
-    yield* Effect.fail(new ValidationError())
+    return yield* Effect.fail(new ValidationError())
   }
   return "some result"
 })
@@ -15187,7 +15096,7 @@ The `Effect.timeoutFail` function allows you to produce a specific error when a 
 **Example** (Custom Timeout Error)
 
 ```ts twoslash
-import { Effect } from "effect"
+import { Effect, Data } from "effect"
 
 const task = Effect.gen(function* () {
   console.log("Start processing...")
@@ -15196,9 +15105,7 @@ const task = Effect.gen(function* () {
   return "Result"
 })
 
-class MyTimeoutError {
-  readonly _tag = "MyTimeoutError"
-}
+class MyTimeoutError extends Data.TaggedError("MyTimeoutError")<{}> {}
 
 const program = task.pipe(
   Effect.timeoutFail({
@@ -23919,11 +23826,9 @@ Using "tagged" errors (objects with a `_tag` field) can help identify error type
 **Example** (Using Tagged Errors)
 
 ```ts twoslash
-import { Effect } from "effect"
+import { Effect, Data } from "effect"
 
-class HttpError {
-  readonly _tag = "HttpError"
-}
+class HttpError extends Data.TaggedError("HttpError")<{}> {}
 
 //      ┌─── Effect<never, HttpError, never>
 //      ▼
@@ -28737,14 +28642,13 @@ Sometimes, retries should only happen for certain error conditions. For example,
 **Example** (Retrying Only on Specific Error Codes)
 
 ```ts twoslash
-import { Console, Effect } from "effect"
+import { Console, Effect, Data } from "effect"
 
 // Custom error class for handling status codes
-class Err extends Error {
-  constructor(message: string, readonly status: number) {
-    super(message)
-  }
-}
+class Err extends Data.TaggedError("Err")<{
+  readonly message: string
+  readonly status: number
+}> {}
 
 // Function to make the API call
 const getJson = (url: string) =>
@@ -28753,7 +28657,7 @@ const getJson = (url: string) =>
       fetch(url).then((res) => {
         if (!res.ok) {
           console.log(res.status)
-          throw new Err(res.statusText, res.status)
+          throw new Err({ message: res.statusText, status: res.status })
         }
         return res.json() as unknown
       }),
@@ -28798,13 +28702,12 @@ Some API errors, such as `429 Too Many Requests`, include a `Retry-After` header
 This approach ensures that the retry delay adapts dynamically to the server's response, preventing unnecessary retries while respecting the provided `Retry-After` value.
 
 ```ts twoslash
-import { Duration, Effect, Schedule } from "effect"
+import { Duration, Effect, Schedule, Data } from "effect"
 
 // Custom error class representing a "Too Many Requests" response
-class TooManyRequestsError {
-  readonly _tag = "TooManyRequestsError"
-  constructor(readonly retryAfter: number) {}
-}
+class TooManyRequestsError extends Data.TaggedError(
+  "TooManyRequestsError"
+)<{ readonly retryAfter: number }> {}
 
 let n = 1
 const request = Effect.gen(function* () {
@@ -28813,7 +28716,7 @@ const request = Effect.gen(function* () {
     const retryAfter = n * 500
     console.log(`Attempt #${n++}, retry after ${retryAfter} millis...`)
     // Simulate retrieving the retry-after header
-    return yield* Effect.fail(new TooManyRequestsError(retryAfter))
+    return yield* Effect.fail(new TooManyRequestsError({ retryAfter }))
   }
   console.log("Done")
   return "some result"
@@ -39193,11 +39096,9 @@ To begin, we define the domain model for the required [services](/docs/requireme
 - `Database`
 
 ```ts twoslash
-import { Effect, Context } from "effect"
+import { Effect, Context, Data } from "effect"
 
-class S3Error {
-  readonly _tag = "S3Error"
-}
+class S3Error extends Data.TaggedError("S3Error")<{}> {}
 
 interface Bucket {
   readonly name: string
@@ -39211,9 +39112,9 @@ class S3 extends Context.Tag("S3")<
   }
 >() {}
 
-class ElasticSearchError {
-  readonly _tag = "ElasticSearchError"
-}
+class ElasticSearchError extends Data.TaggedError(
+  "ElasticSearchError"
+)<{}> {}
 
 interface Index {
   readonly id: string
@@ -39227,9 +39128,7 @@ class ElasticSearch extends Context.Tag("ElasticSearch")<
   }
 >() {}
 
-class DatabaseError {
-  readonly _tag = "DatabaseError"
-}
+class DatabaseError extends Data.TaggedError("DatabaseError")<{}> {}
 
 interface Entry {
   readonly id: string
@@ -39249,12 +39148,10 @@ class Database extends Context.Tag("Database")<
 
 Next, we define the three create actions and the overall transaction (`make`) for the
 
-```ts twoslash collapse={3-52}
-import { Effect, Context, Exit } from "effect"
+```ts twoslash collapse={3-48}
+import { Effect, Context, Exit, Data } from "effect"
 
-class S3Error {
-  readonly _tag = "S3Error"
-}
+class S3Error extends Data.TaggedError("S3Error")<{}> {}
 
 interface Bucket {
   readonly name: string
@@ -39268,9 +39165,9 @@ class S3 extends Context.Tag("S3")<
   }
 >() {}
 
-class ElasticSearchError {
-  readonly _tag = "ElasticSearchError"
-}
+class ElasticSearchError extends Data.TaggedError(
+  "ElasticSearchError"
+)<{}> {}
 
 interface Index {
   readonly id: string
@@ -39284,9 +39181,7 @@ class ElasticSearch extends Context.Tag("ElasticSearch")<
   }
 >() {}
 
-class DatabaseError {
-  readonly _tag = "DatabaseError"
-}
+class DatabaseError extends Data.TaggedError("DatabaseError")<{}> {}
 
 interface Entry {
   readonly id: string
@@ -39355,12 +39250,10 @@ We then create simple service implementations to test the behavior of our Worksp
 To achieve this, we will utilize [layers](/docs/requirements-management/layers/) to construct test
 These layers will be able to handle various scenarios, including errors, which we can control using the `FailureCase` type.
 
-```ts twoslash collapse={3-99}
-import { Effect, Context, Layer, Console, Exit } from "effect"
+```ts twoslash collapse={3-95}
+import { Effect, Context, Exit, Data, Layer, Console } from "effect"
 
-class S3Error {
-  readonly _tag = "S3Error"
-}
+class S3Error extends Data.TaggedError("S3Error")<{}> {}
 
 interface Bucket {
   readonly name: string
@@ -39374,9 +39267,9 @@ class S3 extends Context.Tag("S3")<
   }
 >() {}
 
-class ElasticSearchError {
-  readonly _tag = "ElasticSearchError"
-}
+class ElasticSearchError extends Data.TaggedError(
+  "ElasticSearchError"
+)<{}> {}
 
 interface Index {
   readonly id: string
@@ -39390,9 +39283,7 @@ class ElasticSearch extends Context.Tag("ElasticSearch")<
   }
 >() {}
 
-class DatabaseError {
-  readonly _tag = "DatabaseError"
-}
+class DatabaseError extends Data.TaggedError("DatabaseError")<{}> {}
 
 interface Entry {
   readonly id: string
@@ -39564,13 +39455,7 @@ Let's examine the test results for the scenario where `FailureCase` is set to `u
 [S3] creating bucket
 [ElasticSearch] creating index
 [Database] creating entry for bucket <bucket.name> and index <index.id>
-{
-  _id: "Either",
-  _tag: "Right",
-  right: {
-    id: "<entry.id>"
-  }
-}
+{ _id: 'Either', _tag: 'Right', right: { id: '<entry.id>' } }
 ```
 
 In this case, all operations succeed, and we see a successful result with `right({ id: '<entry.id>' })`.
@@ -39592,13 +39477,7 @@ The console output will be:
 [Database] creating entry for bucket <bucket.name> and index <index.id>
 [ElasticSearch] delete index <index.id>
 [S3] delete bucket <bucket.name>
-{
-  _id: "Either",
-  _tag: "Left",
-  left: {
-    _tag: "DatabaseError"
-  }
-}
+{ _id: 'Either', _tag: 'Left', left: { _tag: 'DatabaseError' } }
 ```
 
 You can observe that once the `Database` error occurs, there is a complete rollback that deletes the `ElasticSearch` index first and then the associated `S3` bucket. The result is a failure with `left(new DatabaseError())`.
@@ -39618,13 +39497,7 @@ In this case, the console output will be:
 [S3] creating bucket
 [ElasticSearch] creating index
 [S3] delete bucket <bucket.name>
-{
-  _id: "Either",
-  _tag: "Left",
-  left: {
-    _tag: "ElasticSearchError"
-  }
-}
+{ _id: 'Either', _tag: 'Left', left: { _tag: 'ElasticSearchError' } }
 ```
 
 As expected, once the `ElasticSearch` index creation fails, there is a rollback that deletes the `S3` bucket. The result is a failure with `left(new ElasticSearchError())`.
