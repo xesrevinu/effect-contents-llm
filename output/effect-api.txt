@@ -39647,7 +39647,7 @@ A Context.Tag to access the current entity address.
 declare class CurrentAddress
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L365)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L372)
 
 Since v1.0.0
 Entity-CurrentRunnerAddress.md
@@ -39664,7 +39664,7 @@ A Context.Tag to access the current Runner address.
 declare class CurrentRunnerAddress
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L376)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L383)
 
 Since v1.0.0
 Entity-fromRpcGroup.md
@@ -39682,7 +39682,7 @@ that adhere to the provided `RpcGroup`.
 declare const fromRpcGroup: <Rpcs extends Rpc.Any>(type: string, protocol: RpcGroup.RpcGroup<Rpcs>) => Entity<Rpcs>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L323)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L330)
 
 Since v1.0.0
 Entity-make.md
@@ -39700,7 +39700,7 @@ that adhere to the provided schemas.
 declare const make: <Rpcs extends ReadonlyArray<Rpc.Any>>(type: string, protocol: Rpcs) => Entity<Rpcs[number]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L347)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L354)
 
 Since v1.0.0
 EntityAddress-EntityAddress.md
@@ -95358,7 +95358,7 @@ if (Either.isRight(relativeParsed)) {
 declare const fromString: (url: string, base?: string | URL | undefined) => Either.Either<URL, Cause.IllegalArgumentException>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L59)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L60)
 
 Since v1.0.0
 Url-modifyUrlParams.md
@@ -95395,7 +95395,7 @@ console.log(changedUrl.toString())
 declare const modifyUrlParams: { (f: (urlParams: UrlParams.UrlParams) => UrlParams.UrlParams): (url: URL) => URL; (url: URL, f: (urlParams: UrlParams.UrlParams) => UrlParams.UrlParams): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L311)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L317)
 
 Since v1.0.0
 Url-mutate.md
@@ -95429,7 +95429,7 @@ console.log("Mutated:", mutatedUrl.toString())
 declare const mutate: { (f: (url: URL) => void): (self: URL) => URL; (self: URL, f: (url: URL) => void): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L91)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L92)
 
 Since v1.0.0
 Url-setHash.md
@@ -95446,7 +95446,7 @@ Updates the hash fragment of the URL.
 declare const setHash: { (hash: string): (url: URL) => URL; (url: URL, hash: string): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L116)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L117)
 
 Since v1.0.0
 Url-setHost.md
@@ -95463,7 +95463,7 @@ Updates the host (domain and port) of the URL.
 declare const setHost: { (host: string): (url: URL) => URL; (url: URL, host: string): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L127)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L128)
 
 Since v1.0.0
 Url-setHostname.md
@@ -95480,7 +95480,7 @@ Updates the domain of the URL without modifying the port.
 declare const setHostname: { (hostname: string): (url: URL) => URL; (url: URL, hostname: string): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L138)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L139)
 
 Since v1.0.0
 Url-setHref.md
@@ -95497,7 +95497,7 @@ Replaces the entire URL string.
 declare const setHref: { (href: string): (url: URL) => URL; (url: URL, href: string): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L149)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L150)
 
 Since v1.0.0
 Url-setPassword.md
@@ -95511,10 +95511,10 @@ Updates the password used for authentication.
 **Signature**
 
 ```ts
-declare const setPassword: { (password: string): (url: URL) => URL; (url: URL, password: string): URL; }
+declare const setPassword: { (password: string | Redacted.Redacted): (url: URL) => URL; (url: URL, password: string | Redacted.Redacted): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L160)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L161)
 
 Since v1.0.0
 Url-setPathname.md
@@ -95531,7 +95531,7 @@ Updates the path of the URL.
 declare const setPathname: { (pathname: string): (url: URL) => URL; (url: URL, pathname: string): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L171)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L177)
 
 Since v1.0.0
 Url-setPort.md
@@ -95548,7 +95548,7 @@ Updates the port of the URL.
 declare const setPort: { (port: string | number): (url: URL) => URL; (url: URL, port: string | number): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L182)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L188)
 
 Since v1.0.0
 Url-setProtocol.md
@@ -95565,7 +95565,7 @@ Updates the protocol (e.g., `http`, `https`).
 declare const setProtocol: { (protocol: string): (url: URL) => URL; (url: URL, protocol: string): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L193)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L199)
 
 Since v1.0.0
 Url-setSearch.md
@@ -95582,7 +95582,7 @@ Updates the query string of the URL.
 declare const setSearch: { (search: string): (url: URL) => URL; (url: URL, search: string): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L204)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L210)
 
 Since v1.0.0
 Url-setUrlParams.md
@@ -95622,7 +95622,7 @@ console.log(updatedUrl.toString())
 declare const setUrlParams: { (urlParams: UrlParams.UrlParams): (url: URL) => URL; (url: URL, urlParams: UrlParams.UrlParams): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L249)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L255)
 
 Since v1.0.0
 Url-setUsername.md
@@ -95639,7 +95639,7 @@ Updates the username used for authentication.
 declare const setUsername: { (username: string): (url: URL) => URL; (url: URL, username: string): URL; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L215)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L221)
 
 Since v1.0.0
 Url-urlParams.md
@@ -95676,7 +95676,7 @@ console.log(params)
 declare const urlParams: (url: URL) => UrlParams.UrlParams
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L283)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Url.ts#L289)
 
 Since v1.0.0
 UrlParams-schemaStruct.md
