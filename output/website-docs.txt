@@ -10486,8 +10486,8 @@ Next, we need to select which model provider we want to use:
 **Example** (Using a Model Provider to Satisfy the `AiLanguageModel` Requirement)
 
 ```ts twoslash collapse={5-11}
-import { AiLanguageModel } from "@effect/ai"
 import { OpenAiLanguageModel } from "@effect/ai-openai"
+import { AiLanguageModel } from "@effect/ai"
 import { Effect } from "effect"
 
 const generateDadJoke = Effect.gen(function*() {
@@ -10505,17 +10505,13 @@ const generateDadJoke = Effect.gen(function*() {
 //      ▼
 const Gpt4o = OpenAiLanguageModel.model("gpt-4o")
 
-// Building an `AiModel` adds its requirements to the program
+// Provide the `AiModel` to the program
 //
-//     ┌─── Effect<void, AiError, OpenAiClient>
+//     ┌─── Effect<AiResponse, AiError, OpenAiClient>
 //     ▼
-const main = Effect.gen(function*() {
-  // Build the `AiModel` into a `Provider`
-  const gpt4o = yield* Gpt4o
-  // Use the implementation of `AiLanguageModel` for the
-  // `generateDadJoke` program
-  const response = yield* gpt4o.use(generateDadJoke)
-})
+const main = generateDadJoke.pipe(
+  Effect.provide(Gpt4o)
+)
 ```
 
 Before moving on, it is important that we understand the purpose of the `AiModel` data type.
@@ -10554,25 +10550,24 @@ This creates an `AiModel` that:
 - **Provides** an OpenAi-specific implementation of the `AiLanguageModel` service using `"gpt-4o"`
 - **Requires** an `OpenAiClient` to be built
 
-### Building an `AiModel`
+### Providing an `AiModel`
 
-When you build an `AiModel<Provides, Requires>`, you get back a `Provider<Provides>`:
+Once you've created an `AiModel`, you can directly `Effect.provide` it to your Effect programs just like any other service: 
 
-```ts showLineNumbers=false
-Effect.gen(function*() {
-  //      ┌─── Provider<AiLanguageModel>
-  //      ▼
-  const gpt4o = yield* Gpt4o
-})
+```ts
+import { OpenAiLanguageModel } from "@effect/ai-openai"
+import { AiLanguageModel } from "@effect/ai"
+
+//      ┌─── AiModel<AiLanguageModel, OpenAiClient>
+//      ▼
+const Gpt4o = OpenAiLanguageModel.model("gpt-4o")
+
+//       ┌─── Effect<AiResponse, AiError, OpenAiClient>
+//       ▼
+const program = AiLanguageModel.generateText({
+  prompt: "Generate a dad joke"
+}).pipe(Effect.provide(Gpt4o))
 ```
-
-A `Provider` has a single `.use(...)` method
-
-```ts showLineNumbers=false
-gpt4o.use(myAiProgram)
-```
-
-which allows you to "use" the services provided by the `AiModel` to run a particular program, removing those services from that program's requirements.
 
 ### Benefits of `AiModel`
 
@@ -10580,11 +10575,11 @@ There are several benefits to this approach:
 
 **Reusability**
 
-You can `.use(...)` the same built model as many times as you like.
+You can provide the same `AiModel` to as many programs as you like.
 
-For example, we can re-use the same built model to provide `AiLanguageModel` to multiple calls to `generateDadJoke`:
+**Example** (Providing an AiModel to Multiple Programs)
 
-```ts twoslash {17-19} collapse={5-11}
+```ts twoslash {18-20} collapse={5-11}
 import { OpenAiLanguageModel } from "@effect/ai-openai"
 import { AiLanguageModel } from "@effect/ai"
 import { Effect } from "effect"
@@ -10600,11 +10595,12 @@ const generateDadJoke = Effect.gen(function*() {
 const Gpt4o = OpenAiLanguageModel.model("gpt-4o")
 
 const main = Effect.gen(function*() {
-  const gpt = yield* Gpt4o
-  const res1 = yield* gpt.use(generateDadJoke)
-  const res2 = yield* gpt.use(generateDadJoke)
-  const res3 = yield* gpt.use(generateDadJoke)
-})
+  // You can provide the `AiModel` individually to each
+  // program, or to all of them at once (as we do here)
+  const res1 = yield* generateDadJoke
+  const res2 = yield* generateDadJoke
+  const res3 = yield* generateDadJoke
+}).pipe(Effect.provide(Gpt4o))
 ```
 
 **Flexibility**
@@ -10635,25 +10631,23 @@ const Claude37 = AnthropicLanguageModel.model("claude-3-7-sonnet-latest")
 //      ┌─── Effect<void, AiError, AnthropicClient | OpenAiClient>
 //      ▼
 const main = Effect.gen(function*() {
-  const gpt = yield* Gpt4o
-  const claude = yield* Claude37
-  const res1 = yield* gpt.use(generateDadJoke)
-  const res2 = yield* gpt.use(generateDadJoke)
-  const res3 = yield* claude.use(generateDadJoke)
-})
+  const res1 = yield* generateDadJoke
+  const res2 = yield* generateDadJoke
+  const res3 = yield* Effect.provide(generateDadJoke, Claude37)
+}).pipe(Effect.provide(Gpt4o))
 ```
 
 Because Effect performs type-level dependency tracking, we can see that an `AnthropicClient` must now also be provided to make our program runnable.
 
 **Abstractability**
 
-Because there is separation between _building_ an `AiModel` and _providing_ its services, we can very nicely support the service constructor pattern.
+An `AiModel` can also be `yield*`'ed to lift its dependencies into the calling Effect. This is particularly useful when creating services that depend on AI interactions, where you want to avoid leaking service-level dependencies into the service interface.
 
 For example, in the code below the `main` program is only dependent upon the `DadJokes` service. All AI requirements are abstracted away into `Layer` composition.
 
 **Example** (Abstracting LLM Interactions into a Service)
 
-```ts twoslash collapse={14-20}
+```ts twoslash collapse={18-24}
 import { AnthropicLanguageModel } from "@effect/ai-anthropic"
 import { OpenAiLanguageModel } from "@effect/ai-openai"
 import { AiLanguageModel } from "@effect/ai"
@@ -10664,6 +10658,10 @@ const Claude37 = AnthropicLanguageModel.model("claude-3-7-sonnet-latest")
 
 class DadJokes extends Effect.Service<DadJokes>()("app/DadJokes", {
   effect: Effect.gen(function*() {
+    // Yielding the model will return a layer with no requirements
+    // 
+    //     ┌─── Layer<AiLanguageModel>
+    //     ▼
     const gpt = yield* Gpt4o
     const claude = yield* Claude37
 
@@ -10676,8 +10674,8 @@ class DadJokes extends Effect.Service<DadJokes>()("app/DadJokes", {
     })
 
     return {
-      generateDadJoke: gpt.use(generateDadJoke),
-      generateReallyGroanInducingDadJoke: claude.use(generateDadJoke)
+      generateDadJoke: Effect.provide(generateDadJoke, gpt),
+      generateBetterDadJoke: Effect.provide(generateDadJoke, claude)
     }
   })
 }) {}
@@ -10690,7 +10688,7 @@ class DadJokes extends Effect.Service<DadJokes>()("app/DadJokes", {
 const main = Effect.gen(function*() {
   const dadJokes = yield* DadJokes
   const res1 = yield* dadJokes.generateDadJoke
-  const res2 = yield* dadJokes.generateReallyGroanInducingDadJoke
+  const res2 = yield* dadJokes.generateBetterDadJoke
 })
 
 // The AI requirements are abstracted away into `Layer` composition
@@ -10721,12 +10719,11 @@ const generateDadJoke = Effect.gen(function*() {
 
 const Gpt4o = OpenAiLanguageModel.model("gpt-4o")
 
-//     ┌─── Effect<void, AiError, OpenAiClient>
+//     ┌─── Effect<AiResponse, AiError, OpenAiClient>
 //     ▼
-const main = Effect.gen(function*() {
-  const gpt4o = yield* Gpt4o
-  const response = yield* gpt4o.use(generateDadJoke)
-})
+const main = generateDadJoke.pipe(
+  Effect.provide(Gpt4o)
+)
 ```
 
 We can see that our `main` program still requires us to provide an `OpenAiClient`. 
@@ -10735,7 +10732,7 @@ Each of our provider integration packages exports a client module that can be us
 
 **Example** (Creating a Client Layer for a Model Provider)
 
-```ts twoslash /{ (OpenAiClient),/ {25-27} collapse={5-18}
+```ts twoslash /{ (OpenAiClient),/ {24-26} collapse={5-17}
 import { OpenAiClient, OpenAiLanguageModel } from "@effect/ai-openai"
 import { AiLanguageModel } from "@effect/ai"
 import { Config, Effect } from "effect"
@@ -10750,15 +10747,14 @@ const generateDadJoke = Effect.gen(function*() {
 
 const Gpt4o = OpenAiLanguageModel.model("gpt-4o")
 
-const main = Effect.gen(function*() {
-  const gpt4o = yield* Gpt4o
-  const response = yield* gpt4o.use(generateDadJoke)
-})
+const main = generateDadJoke.pipe(
+  Effect.provide(Gpt4o)
+)
 
 // Create a `Layer` which produces an `OpenAiClient` and requires
 // an `HttpClient`
 //
-//      ┌─── Layer<OpenAiClient, never, HttpClient>
+//      ┌─── Layer<OpenAiClient, ConfigError, HttpClient>
 //      ▼
 const OpenAi = OpenAiClient.layerConfig({
   apiKey: Config.redacted("OPENAI_API_KEY")
@@ -10771,7 +10767,7 @@ The provider clients also have a dependency on an `HttpClient` implementation to
 
 For example, if we know we are going to run this code in NodeJS, we can utilize the `NodeHttpClient` module from `@effect/platform-node` to provide an `HttpClient` implementation:
 
-```ts twoslash /{ (NodeHttpClient) }|, (HttpClient)>|, (never)>/ {35} collapse={6-19} 
+```ts twoslash /{ (NodeHttpClient) }|, (HttpClient)>|, (never)>/ {35} collapse={6-18} 
 import { OpenAiClient, OpenAiLanguageModel } from "@effect/ai-openai"
 import { AiLanguageModel } from "@effect/ai"
 import { NodeHttpClient } from "@effect/platform-node"
@@ -10787,15 +10783,14 @@ const generateDadJoke = Effect.gen(function*() {
 
 const Gpt4o = OpenAiLanguageModel.model("gpt-4o")
 
-const main = Effect.gen(function*() {
-  const gpt4o = yield* Gpt4o
-  const response = yield* gpt4o.use(generateDadJoke)
-})
+const main = generateDadJoke.pipe(
+  Effect.provide(Gpt4o)
+)
 
 // Create a `Layer` which produces an `OpenAiClient` and requires
 // an `HttpClient`
 //
-//      ┌─── Layer<OpenAiClient, never, HttpClient>
+//      ┌─── Layer<OpenAiClient, ConfigError, HttpClient>
 //      ▼
 const OpenAi = OpenAiClient.layerConfig({
   apiKey: Config.redacted("OPENAI_API_KEY")
@@ -10804,7 +10799,7 @@ const OpenAi = OpenAiClient.layerConfig({
 // Provide a platform-specific implementation of `HttpClient` to our 
 // OpenAi layer
 //
-//        ┌─── Layer<OpenAiClient, never, never>
+//        ┌─── Layer<OpenAiClient, ConfigError, never>
 //        ▼
 const OpenAiWithHttp = Layer.provide(OpenAi, NodeHttpClient.layerUndici)
 ```
@@ -10831,10 +10826,9 @@ const generateDadJoke = Effect.gen(function*() {
 
 const Gpt4o = OpenAiLanguageModel.model("gpt-4o")
 
-const main = Effect.gen(function*() {
-  const gpt4o = yield* Gpt4o
-  const response = yield* gpt4o.use(generateDadJoke)
-})
+const main = generateDadJoke.pipe(
+  Effect.provide(Gpt4o)
+)
 
 const OpenAi = OpenAiClient.layerConfig({
   apiKey: Config.redacted("OPENAI_API_KEY")
@@ -13500,62 +13494,37 @@ declare const generateDadJoke: Effect.Effect<
 >
 
 const main = Effect.gen(function*() {
-  const gpt4o = yield* OpenAiLanguageModel.model("gpt-4o")
-  const response = yield* gpt4o.use(generateDadJoke)
+  const response = yield* generateDadJoke
   console.log(response.text)
-})
+}).pipe(Effect.provide(OpenAiLanguageModel.model("gpt-4o")))
 ```
 
-This is fine, but what if we instead want to:
+This is fine, but what if we want to:
 - Retry the program a fixed number of times on `NetworkError`s
 - Add some backoff delay between retries
 - Fallback to a different model provider if OpenAi is down
 
 How can we accomplish such logic?
 
-## The AiPlan Type
+## Planning LLM Interactions 
 
-The Effect AI integrations provide a robust method for creating **structured execution plans** for your LLM interactions through the `AiPlan` data type. Rather than making a single model call and hoping it succeeds, `AiPlan` lets you describe how to handle retries, fallbacks, and recoverable errors in a clear, declarative way.
+The `ExecutionPlan` module from Effect provides a robust method for creating **structured execution plans** for your Effect programs. Rather than making a single model call and hoping that it succeeds, you can use `ExecutionPlan` to describe how to handle errors, retries, and fallbacks in a clear, declarative way.
 
 This is especially useful when:
 - You want to fall back to a secondary model if the primary one is unavailable
 - You want to retry on transient errors (e.g. network failures)
 - You want to control timing between retry attempts
 
-Think of an `AiPlan` as the **blueprint** for for an LLM interaction, with logic for when to keep trying to interact with one provider and when to switch providers.
+## Creating Execution Plans 
 
-```ts showLineNumbers=false
-interface AiPlan<Errors, Provides, Requires> {}
-```
+To create an `ExecutionPlan`, we can use the `ExecutionPlan.make` constructor.
 
-An `AiPlan` has three generic type parameters:
+**Example** (Creating an `ExecutionPlan` for LLM Interactions)
 
-- **Errors**: Any errors that can be handled during execution of the plan
-- **Provides**: The services that this plan can provide (e.g. `AiLanguageModel`, `AiEmbeddingsModel`)
-- **Requires**: The services that this plan requires (e.g. `OpenAiClient`, `AnthropicClient`)
-
-If you've used `AiModel` before (via `OpenAiLanguageModel.model()` or similar), you'll find `AiPlan` familiar. In fact, an `AiModel` *is* in fact an `AiPlan` with just a single step.
-
-This means you can start by writing your code with plain `AiModel`s, and as your needs become more complex (e.g. adding retries, switching providers), you can upgrade to `AiPlan` without changing how the rest of your code works.
-
-## Defining a Primary Model
-
-The primary entry point to building up an `AiPlan` is the `AiPlan.make` constructor. 
-
-This method defines the **primary model** that you would like to use for an LLM interaction, as well as the rules for retrying it under specific conditions.
-
-Use this when you want to:
-- Retry a model multiple times
-- Customize backoff timing between attempts
-- Decide whether to retry based on the error type
-
-**Example** (Creating an `AiPlan` from an `AiModel`)
-
-```ts twoslash collapse={6-14}
-import { AiPlan } from "@effect/ai"
+```ts twoslash collapse={5-13}
 import type { AiLanguageModel, AiResponse } from "@effect/ai"
 import { OpenAiLanguageModel } from "@effect/ai-openai"
-import { Data, Effect, Schedule } from "effect"
+import { Data, Effect, ExecutionPlan, Schedule } from "effect"
 
 class NetworkError extends Data.TaggedError("NetworkError") {}
 
@@ -13567,27 +13536,27 @@ declare const generateDadJoke: Effect.Effect<
   AiLanguageModel.AiLanguageModel
 >
 
-const DadJokePlan = AiPlan.make({
-  model: OpenAiLanguageModel.model("gpt-4o"),
+const DadJokePlan = ExecutionPlan.make({
+  provide: OpenAiLanguageModel.model("gpt-4o"),
   attempts: 3,
   schedule: Schedule.exponential("100 millis", 1.5),
   while: (error: NetworkError | ProviderOutage) => 
     error._tag === "NetworkError"
 })
 
+//     ┌─── Effect<void, NetworkError | ProviderOutage, OpenAiClient>
+//     ▼
 const main = Effect.gen(function*() {
-  const plan = yield* DadJokePlan
-  const response = yield* plan.use(generateDadJoke)
+  const response = yield* generateDadJoke
   console.log(response.text)
-})
+}).pipe(Effect.withExecutionPlan(DadJokePlan))
 ```
 
-This plan will:
-- Attempt to use OpenAi's `"gpt-4o"` model up to 3 times
-- Wait with an exponential backoff between attempts (starting at 100ms)
+This plan contains a single step which will:
+- Provide OpenAi's `"gpt-4o"` model as an `AiLanguageModel` for the program 
+- Attempt to call OpenAi up to 3 times
+- Wait with an exponential backoff between attempts (starting at `100ms`)
 - Only re-attempt the call to OpenAi if the error is a `NetworkError`
-
----
 
 ## Adding Fallback Models
 
@@ -13599,12 +13568,11 @@ Use this when:
 
 **Example** (Adding a Fallback to Anthropic from OpenAi)
 
-```ts twoslash {24-28} collapse={7-15} 
-import { AiPlan } from "@effect/ai"
+```ts twoslash {23-27} collapse={6-14} 
 import type { AiLanguageModel, AiResponse } from "@effect/ai"
 import { AnthropicLanguageModel } from "@effect/ai-anthropic"
 import { OpenAiLanguageModel } from "@effect/ai-openai"
-import { Data, Effect, Schedule } from "effect"
+import { Data, Effect, ExecutionPlan, Schedule } from "effect"
 
 class NetworkError extends Data.TaggedError("NetworkError") {}
 
@@ -13616,44 +13584,59 @@ declare const generateDadJoke: Effect.Effect<
   AiLanguageModel.AiLanguageModel
 >
 
-const DadJokePlan = AiPlan.make({
-  model: OpenAiLanguageModel.model("gpt-4o"),
+const DadJokePlan = ExecutionPlan.make({
+  provide: OpenAiLanguageModel.model("gpt-4o"),
   attempts: 3,
   schedule: Schedule.exponential("100 millis", 1.5),
   while: (error: NetworkError | ProviderOutage) => 
     error._tag === "NetworkError"
 }, {
-  model: AnthropicLanguageModel.model("claude-3-7-sonnet-latest"),
+  provide: AnthropicLanguageModel.model("claude-3-7-sonnet-latest"),
   attempts: 2,
   schedule: Schedule.exponential("100 millis", 1.5),
   while: (error: NetworkError | ProviderOutage) => 
     error._tag === "ProviderOutage"
 })
 
+//     ┌─── Effect<..., ..., AnthropicClient | OpenAiClient>
+//     ▼
 const main = Effect.gen(function*() {
-  const plan = yield* DadJokePlan
-  const response = yield* plan.use(generateDadJoke)
+  const response = yield* generateDadJoke
   console.log(response.text)
-})
+}).pipe(Effect.withExecutionPlan(DadJokePlan))
 ```
 
-This plan will:
-- Fallback to Anthropic if the OpenAi step of the plan fails
-- Attempt to use Anthropic's `"claude-3-7-sonnet"` model up to 2 times
-- Wait with an exponential backoff between attempts (starting at 100ms)
-- Only run and / or re-attempt the fallback if the error is a `ProviderOutage` 
+This plan contains two steps. 
+
+**Step 1**
+
+The first step will:
+- Provide OpenAi's `"gpt-4o"` model as an `AiLanguageModel` for the program 
+- Attempt to call OpenAi up to 3 times
+- Wait with an exponential backoff between attempts (starting at `100ms`)
+- Only attempt the call to OpenAi if the error is a `NetworkError`
+
+If all of the above logic fails to run the program successfully, the plan will 
+try to run the program using the second step. 
+
+**Step 2**
+
+The second step will:
+- Provide Anthropic's `"claude-3-7-sonnet"` model as an `AiLanguageModel` for the program 
+- Attempt to call Anthropic up to 2 times
+- Wait with an exponential backoff between attempts (starting at `100ms`)
+- Only attempt the fallback if the error is a `ProviderOutage` 
 
 ## End-to-End Usage
 
 The following is the complete program with the desired `AiPlan` fully implemented:
 
-```ts
-import { AiPlan } from "@effect/ai"
+```ts twoslash
 import type { AiLanguageModel, AiResponse } from "@effect/ai"
 import { AnthropicClient, AnthropicLanguageModel } from "@effect/ai-anthropic"
 import { OpenAiClient, OpenAiLanguageModel } from "@effect/ai-openai"
 import { NodeHttpClient } from "@effect/platform-node"
-import { Config, Data, Effect, Layer, Schedule } from "effect"
+import { Config, Data, Effect, ExecutionPlan, Layer, Schedule } from "effect"
 
 class NetworkError extends Data.TaggedError("NetworkError") {}
 
@@ -13665,14 +13648,14 @@ declare const generateDadJoke: Effect.Effect<
   AiLanguageModel.AiLanguageModel
 >
 
-const DadJokePlan = AiPlan.make({
-  model: OpenAiLanguageModel.model("gpt-4o"),
+const DadJokePlan = ExecutionPlan.make({
+  provide: OpenAiLanguageModel.model("gpt-4o"),
   attempts: 3,
   schedule: Schedule.exponential("100 millis", 1.5),
   while: (error: NetworkError | ProviderOutage) => 
     error._tag === "NetworkError"
 }, {
-  model: AnthropicLanguageModel.model("claude-3-7-sonnet-latest"),
+  provide: AnthropicLanguageModel.model("claude-3-7-sonnet-latest"),
   attempts: 2,
   schedule: Schedule.exponential("100 millis", 1.5),
   while: (error: NetworkError | ProviderOutage) => 
@@ -13680,10 +13663,9 @@ const DadJokePlan = AiPlan.make({
 })
 
 const main = Effect.gen(function*() {
-  const plan = yield* DadJokePlan
-  const response = yield* plan.use(generateDadJoke)
+  const response = yield* generateDadJoke
   console.log(response.text)
-})
+}).pipe(Effect.withExecutionPlan(DadJokePlan))
 
 const Anthropic = AnthropicClient.layerConfig({
   apiKey: Config.redacted("ANTHROPIC_API_KEY")
@@ -13698,13 +13680,6 @@ main.pipe(
   Effect.runPromise
 )
 ```
-
-## Notes & Patterns
-
-- You can chain multiple calls together for more complex failover logic
-- `AiPlan` is re-usable and can be abstracted into shared logic if desired
-- Great for teams needing **multi-provider resilience** or **predictable behavior under failure**
-
 
 pubsub.mdx
 ---
@@ -15403,7 +15378,7 @@ To make the program executable, we must provide the implementation of our tool c
 
 **Example** (Providing the Tool Call Handlers to a Program)
 
-```ts twoslash /DadJokeToolHandlers/ collapse={11-61,72-81}
+```ts twoslash /DadJokeToolHandlers/ collapse={11-61}
 import { AiLanguageModel, AiTool, AiToolkit } from "@effect/ai"
 import { OpenAiClient, OpenAiLanguageModel } from "@effect/ai-openai"
 import { 
@@ -15412,7 +15387,7 @@ import {
   HttpClientResponse 
 } from "@effect/platform"
 import { NodeHttpClient } from "@effect/platform-node"
-import { Array, Config, Effect, Layer, Schema } from "effect"
+import { Array, Config, Console, Effect, Layer, Schema } from "effect"
 
 class DadJoke extends Schema.Class<DadJoke>("DadJoke")({
   id: Schema.String,
@@ -15475,16 +15450,13 @@ const DadJokeToolHandlers = DadJokeTools.toLayer(
   })
 ).pipe(Layer.provide(ICanHazDadJoke.Default))
 
-const generateDadJoke = AiLanguageModel.generateText({
+const program = AiLanguageModel.generateText({
   prompt: "Generate a dad joke about pirates",
   tools: DadJokeTools
-})
-
-const program = Effect.gen(function*() {
-  const model = yield* OpenAiLanguageModel.model("gpt-4o")
-  const response = yield* model.use(generateDadJoke)
-  console.log(response.text)
-})
+}).pipe(
+  Effect.flatMap((response) => Console.log(response.text)),
+  Effect.provide(OpenAiLanguageModel.model("gpt-4o"))
+)
 
 const OpenAi = OpenAiClient.layerConfig({
   apiKey: Config.redacted("OPENAI_API_KEY")
