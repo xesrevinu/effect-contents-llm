@@ -518,7 +518,7 @@ output of the model.
 declare const generateObject: <A, I extends Record<string, unknown>, R>(options: GenerateObjectOptions<A, I, R>) => Effect.Effect<AiResponse.WithStructuredOutput<A>, AiError, AiLanguageModel | R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L556)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L565)
 
 Since v1.0.0
 AiLanguageModel-generateText.md
@@ -535,10 +535,10 @@ be able to perform tool calls to augment its response.
 **Signature**
 
 ```ts
-declare const generateText: <Tools extends AiTool.Any, Options>(options: Options & GenerateTextOptions<Tools>) => Effect.Effect<ExtractSuccess<Options>, ExtractError<Options>, AiLanguageModel | ExtractContext<Options>>
+declare const generateText: <Tools extends AiTool.Any, Options extends NoExcessProperties<GenerateTextOptions<any>, Options>>(options: Options & GenerateTextOptions<Tools>) => Effect.Effect<ExtractSuccess<Options>, ExtractError<Options>, AiLanguageModel | ExtractContext<Options>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L537)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L543)
 
 Since v1.0.0
 AiLanguageModel-streamText.md
@@ -556,10 +556,10 @@ be able to perform tool calls to augment its response.
 **Signature**
 
 ```ts
-declare const streamText: <Tools extends AiTool.Any, Options>(options: Options & GenerateTextOptions<Tools>) => Stream.Stream<ExtractSuccess<Options>, ExtractError<Options>, AiLanguageModel | ExtractContext<Options>>
+declare const streamText: <Tools extends AiTool.Any, Options extends NoExcessProperties<GenerateTextOptions<any>, Options>>(options: Options & GenerateTextOptions<Tools>) => Stream.Stream<ExtractSuccess<Options>, ExtractError<Options>, AiLanguageModel | ExtractContext<Options>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L574)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L583)
 
 Since v1.0.0
 AiResponse-AiResponse.md
@@ -77724,7 +77724,7 @@ setting.
 declare const fork: <A>(value: A) => Fork<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/Rpc.ts#L725)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/Rpc.ts#L727)
 
 Since v1.0.0
 RpcSerialization-layerJson.md
@@ -77801,7 +77801,7 @@ A rpc protocol that uses streaming http for communication.
 declare const layerProtocolHttp: <I = HttpRouter.Default>(options: { readonly path: HttpRouter.PathInput; readonly routerTag?: HttpRouter.HttpRouter.TagClass<I, string, any, any>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1030)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1023)
 
 Since v1.0.0
 RpcServer-layerProtocolSocketServer.md
@@ -77818,7 +77818,7 @@ A rpc protocol that uses `SocketServer` for communication.
 declare const layerProtocolSocketServer: Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | SocketServer.SocketServer>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L758)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L751)
 
 Since v1.0.0
 RpcServer-layerProtocolWebsocket.md
@@ -77835,7 +77835,7 @@ A rpc protocol that uses websockets for communication.
 declare const layerProtocolWebsocket: <I = HttpRouter.Default>(options: { readonly path: HttpRouter.PathInput; readonly routerTag?: HttpRouter.HttpRouter.TagClass<I, string, any, any>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L818)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L811)
 
 Since v1.0.0
 RpcServer-toWebHandler.md
@@ -77852,7 +77852,7 @@ Construct an http web handler from an `RpcGroup`.
 declare const toWebHandler: <Rpcs extends Rpc.Any, LE>(group: RpcGroup.RpcGroup<Rpcs>, options: { readonly layer: Layer.Layer<Rpc.ToHandler<Rpcs> | Rpc.Middleware<Rpcs> | RpcSerialization.RpcSerialization | HttpRouter.HttpRouter.DefaultServices, LE>; readonly disableTracing?: boolean | undefined; readonly spanPrefix?: string | undefined; readonly middleware?: (httpApp: HttpApp.Default) => HttpApp.Default<never, HttpRouter.HttpRouter.DefaultServices>; readonly memoMap?: Layer.MemoMap; }) => { readonly handler: (request: globalThis.Request, context?: Context.Context<never> | undefined) => Promise<Response>; readonly dispose: () => Promise<void>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1113)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1106)
 
 Since v1.0.0
 Runner-Runner.md
