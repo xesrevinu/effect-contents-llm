@@ -40392,7 +40392,7 @@ A Context.Tag to access the current entity address.
 declare class CurrentAddress
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Entity.ts#L387)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Entity.ts#L402)
 
 Since v1.0.0
 Entity-CurrentRunnerAddress.md
@@ -40409,7 +40409,7 @@ A Context.Tag to access the current Runner address.
 declare class CurrentRunnerAddress
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Entity.ts#L398)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Entity.ts#L413)
 
 Since v1.0.0
 Entity-fromRpcGroup.md
@@ -40427,7 +40427,7 @@ that adhere to the provided `RpcGroup`.
 declare const fromRpcGroup: <Rpcs extends Rpc.Any>(type: string, protocol: RpcGroup.RpcGroup<Rpcs>) => Entity<Rpcs>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Entity.ts#L344)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Entity.ts#L359)
 
 Since v1.0.0
 Entity-make.md
@@ -40445,7 +40445,7 @@ that adhere to the provided schemas.
 declare const make: <Rpcs extends ReadonlyArray<Rpc.Any>>(type: string, protocol: Rpcs) => Entity<Rpcs[number]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Entity.ts#L369)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Entity.ts#L384)
 
 Since v1.0.0
 EntityAddress-EntityAddress.md
@@ -77801,7 +77801,7 @@ A rpc protocol that uses streaming http for communication.
 declare const layerProtocolHttp: <I = HttpRouter.Default>(options: { readonly path: HttpRouter.PathInput; readonly routerTag?: HttpRouter.HttpRouter.TagClass<I, string, any, any>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1023)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1035)
 
 Since v1.0.0
 RpcServer-layerProtocolSocketServer.md
@@ -77818,7 +77818,7 @@ A rpc protocol that uses `SocketServer` for communication.
 declare const layerProtocolSocketServer: Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | SocketServer.SocketServer>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L751)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L763)
 
 Since v1.0.0
 RpcServer-layerProtocolWebsocket.md
@@ -77835,7 +77835,7 @@ A rpc protocol that uses websockets for communication.
 declare const layerProtocolWebsocket: <I = HttpRouter.Default>(options: { readonly path: HttpRouter.PathInput; readonly routerTag?: HttpRouter.HttpRouter.TagClass<I, string, any, any>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L811)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L823)
 
 Since v1.0.0
 RpcServer-toWebHandler.md
@@ -77849,10 +77849,10 @@ Construct an http web handler from an `RpcGroup`.
 **Signature**
 
 ```ts
-declare const toWebHandler: <Rpcs extends Rpc.Any, LE>(group: RpcGroup.RpcGroup<Rpcs>, options: { readonly layer: Layer.Layer<Rpc.ToHandler<Rpcs> | Rpc.Middleware<Rpcs> | RpcSerialization.RpcSerialization | HttpRouter.HttpRouter.DefaultServices, LE>; readonly disableTracing?: boolean | undefined; readonly spanPrefix?: string | undefined; readonly middleware?: (httpApp: HttpApp.Default) => HttpApp.Default<never, HttpRouter.HttpRouter.DefaultServices>; readonly memoMap?: Layer.MemoMap; }) => { readonly handler: (request: globalThis.Request, context?: Context.Context<never> | undefined) => Promise<Response>; readonly dispose: () => Promise<void>; }
+declare const toWebHandler: <Rpcs extends Rpc.Any, LE>(group: RpcGroup.RpcGroup<Rpcs>, options: { readonly layer: Layer.Layer<Rpc.ToHandler<Rpcs> | Rpc.Middleware<Rpcs> | RpcSerialization.RpcSerialization | HttpRouter.HttpRouter.DefaultServices, LE>; readonly disableTracing?: boolean | undefined; readonly spanPrefix?: string | undefined; readonly spanAttributes?: Record<string, unknown> | undefined; readonly middleware?: (httpApp: HttpApp.Default) => HttpApp.Default<never, HttpRouter.HttpRouter.DefaultServices>; readonly memoMap?: Layer.MemoMap; }) => { readonly handler: (request: globalThis.Request, context?: Context.Context<never> | undefined) => Promise<Response>; readonly dispose: () => Promise<void>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1106)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1122)
 
 Since v1.0.0
 Runner-Runner.md
@@ -105605,6 +105605,26 @@ declare const launch: <A, E, R>(layer: Layer.Layer<A, E, R>) => Effect.Effect<vo
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/WorkerRunner.ts#L249)
 
 Since v1.0.0
+Workflow-CaptureDefects.md
+Package: `@effect/workflow`<br />
+Module: `Workflow`<br />
+
+## Workflow.CaptureDefects
+
+If you set this annotation to `true` for a workflow, it will capture defects
+and include them in the result of the workflow or it's activities.
+
+By default, this is set to `true`, meaning that defects will be captured.
+
+**Signature**
+
+```ts
+declare class CaptureDefects
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L557)
+
+Since v1.0.0
 Workflow-withCompensation.md
 Package: `@effect/workflow`<br />
 Module: `Workflow`<br />
@@ -105624,7 +105644,7 @@ finalizers are only registered for top-level effects in the workflow.
 declare const withCompensation: { <A, R2>(compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): <E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; <A, E, R, R2>(effect: Effect.Effect<A, E, R>, compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L514)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L520)
 
 Since v1.0.0
 WorkflowProxy-toHttpApiGroup.md
