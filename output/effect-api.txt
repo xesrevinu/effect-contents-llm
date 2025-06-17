@@ -47257,7 +47257,7 @@ The provided schemas must have a `identifier` annotation.
 declare class AdditionalSchemas
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApi.ts#L450)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApi.ts#L452)
 
 Since v1.0.0
 HttpApi-HttpApi.md
@@ -47433,7 +47433,7 @@ export interface Handlers<
    */
   handleRaw<Name extends HttpApiEndpoint.HttpApiEndpoint.Name<Endpoints>, R1>(
     name: Name,
-    handler: HttpApiEndpoint.HttpApiEndpoint.HandlerResponseWithName<Endpoints, Name, E, R1>,
+    handler: HttpApiEndpoint.HttpApiEndpoint.HandlerRawWithName<Endpoints, Name, E, R1>,
     options?: { readonly uninterruptible?: boolean | undefined } | undefined
   ): Handlers<
     E,
@@ -47559,7 +47559,7 @@ Create an `HttpApi` level middleware `Layer`.
 declare const middleware: { <EX = never, RX = never>(middleware: MiddlewareFn<never> | Effect.Effect<MiddlewareFn<never>, EX, RX>, options?: { readonly withContext?: false | undefined; }): Layer.Layer<never, EX, Exclude<RX, Scope>>; <R, EX = never, RX = never>(middleware: MiddlewareFn<never, R> | Effect.Effect<MiddlewareFn<never, R>, EX, RX>, options: { readonly withContext: true; }): Layer.Layer<never, EX, Exclude<HttpRouter.HttpRouter.ExcludeProvided<R> | RX, Scope>>; <ApiId extends string, Groups extends HttpApiGroup.HttpApiGroup.Any, Error, ErrorR, EX = never, RX = never>(api: HttpApi.HttpApi<ApiId, Groups, Error, ErrorR>, middleware: MiddlewareFn<NoInfer<Error>> | Effect.Effect<MiddlewareFn<NoInfer<Error>>, EX, RX>, options?: { readonly withContext?: false | undefined; }): Layer.Layer<never, EX, Exclude<RX, Scope>>; <ApiId extends string, Groups extends HttpApiGroup.HttpApiGroup.Any, Error, ErrorR, R, EX = never, RX = never>(api: HttpApi.HttpApi<ApiId, Groups, Error, ErrorR>, middleware: MiddlewareFn<NoInfer<Error>, R> | Effect.Effect<MiddlewareFn<NoInfer<Error>, R>, EX, RX>, options: { readonly withContext: true; }): Layer.Layer<never, EX, Exclude<HttpRouter.HttpRouter.ExcludeProvided<R> | RX, Scope>>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L876)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L882)
 
 Since v1.0.0
 HttpApiBuilder-middlewareCors.md
@@ -47576,7 +47576,7 @@ A CORS middleware layer that can be provided to the `HttpApiBuilder.serve` layer
 declare const middlewareCors: (options?: { readonly allowedOrigins?: ReadonlyArray<string> | undefined; readonly allowedMethods?: ReadonlyArray<string> | undefined; readonly allowedHeaders?: ReadonlyArray<string> | undefined; readonly exposedHeaders?: ReadonlyArray<string> | undefined; readonly maxAge?: number | undefined; readonly credentials?: boolean | undefined; } | undefined) => Layer.Layer<never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L932)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L938)
 
 Since v1.0.0
 HttpApiBuilder-middlewareOpenApi.md
@@ -47593,7 +47593,7 @@ A middleware that adds an openapi.json endpoint to the API.
 declare const middlewareOpenApi: (options?: { readonly path?: HttpApiEndpoint.PathSegment | undefined; readonly additionalPropertiesStrategy?: OpenApi.AdditionalPropertiesStrategy | undefined; } | undefined) => Layer.Layer<never, never, HttpApi.Api>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L949)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L955)
 
 Since v1.0.0
 HttpApiBuilder-securitySetCookie.md
@@ -47619,7 +47619,7 @@ handlers.handle(
 declare const securitySetCookie: (self: HttpApiSecurity.ApiKey, value: string | Redacted.Redacted, options?: Cookie["options"]) => Effect.Effect<void>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L1046)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L1052)
 
 Since v1.0.0
 HttpApiBuilder-serve.md
@@ -47882,7 +47882,7 @@ export interface HttpApiEndpoint<
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiEndpoint.ts#L52)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiEndpoint.ts#L55)
 
 Since v1.0.0
 HttpApiEndpoint-PathSegment.md
@@ -47900,7 +47900,7 @@ segment of a URL path.
 type PathSegment = `/${string}`
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiEndpoint.ts#L43)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiEndpoint.ts#L46)
 
 Since v1.0.0
 HttpApiGroup-HttpApiGroup.md
@@ -63317,7 +63317,7 @@ Register a resource with the McpServer.
 **Signature**
 
 ```ts
-declare const resource: { <E, R>(options: { readonly uri: string; readonly name: string; readonly description?: string | undefined; readonly mimeType?: string | undefined; readonly audience?: ReadonlyArray<"user" | "assistant"> | undefined; readonly priority?: number | undefined; readonly content: Effect.Effect<ReadResourceResult | string | Uint8Array, E, R>; }): Layer.Layer<never, never, R | McpServer>; <const Schemas extends ReadonlyArray<Schema.Schema.Any>>(segments: TemplateStringsArray, ...schemas: Schemas & { readonly [K in keyof Schemas]: Schema.Schema.Encoded<Schemas[K]> extends string ? unknown : "Schema must be encodable to a string"; }): <E, R, const Completions extends Partial<ResourceCompletions<Schemas>> = {}>(options: { readonly name: string; readonly description?: string | undefined; readonly mimeType?: string | undefined; readonly audience?: ReadonlyArray<"user" | "assistant"> | undefined; readonly priority?: number | undefined; readonly completion?: ValidateCompletions<Completions, keyof ResourceCompletions<Schemas>> | undefined; readonly content: (uri: string, ...params: { readonly [K in keyof Schemas]: Schemas[K]["Type"]; }) => Effect.Effect<ReadResourceResult | string | Uint8Array, E, R>; }) => Layer.Layer<never, never, R | (Completions[keyof Completions] extends (input: string) => infer Ret ? Ret extends Effect.Effect<infer _A, infer _E, infer _R> ? _R : never : never)>; }
+declare const resource: { <E, R>(options: { readonly uri: string; readonly name: string; readonly description?: string | undefined; readonly mimeType?: string | undefined; readonly audience?: ReadonlyArray<"user" | "assistant"> | undefined; readonly priority?: number | undefined; readonly content: Effect.Effect<ReadResourceResult | string | Uint8Array, E, R>; }): Layer.Layer<never, never, R>; <const Schemas extends ReadonlyArray<Schema.Schema.Any>>(segments: TemplateStringsArray, ...schemas: Schemas & { readonly [K in keyof Schemas]: Schema.Schema.Encoded<Schemas[K]> extends string ? unknown : "Schema must be encodable to a string"; }): <E, R, const Completions extends Partial<ResourceCompletions<Schemas>> = {}>(options: { readonly name: string; readonly description?: string | undefined; readonly mimeType?: string | undefined; readonly audience?: ReadonlyArray<"user" | "assistant"> | undefined; readonly priority?: number | undefined; readonly completion?: ValidateCompletions<Completions, keyof ResourceCompletions<Schemas>> | undefined; readonly content: (uri: string, ...params: { readonly [K in keyof Schemas]: Schemas[K]["Type"]; }) => Effect.Effect<ReadResourceResult | string | Uint8Array, E, R>; }) => Layer.Layer<never, never, R | (Completions[keyof Completions] extends (input: string) => infer Ret ? Ret extends Effect.Effect<infer _A, infer _E, infer _R> ? _R : never : never)>; }
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L730)
@@ -86812,7 +86812,7 @@ The messaging protocol for the `ShardManager`.
 declare class Rpcs
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/ShardManager.ts#L280)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/ShardManager.ts#L275)
 
 Since v1.0.0
 ShardManager-ShardManagerClient.md
@@ -86830,7 +86830,7 @@ Represents a client which can be used to communicate with the
 declare class ShardManagerClient
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/ShardManager.ts#L221)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/ShardManager.ts#L216)
 
 Since v1.0.0
 ShardStorage-ShardStorage.md
