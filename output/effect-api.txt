@@ -48562,7 +48562,7 @@ Re-exports all named exports from the "find-my-way-ts" module as `FindMyWay`.
 export * as FindMyWay from "find-my-way-ts"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L31)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L37)
 
 Since v1.0.0
 HttpLayerRouter-GlobalProvided.md
@@ -48580,7 +48580,7 @@ type GlobalProvided = | HttpServerRequest.HttpServerRequest
   | Scope.Scope
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L551)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L557)
 
 Since v1.0.0
 HttpLayerRouter-Provided.md
@@ -48601,7 +48601,7 @@ type Provided = | HttpServerRequest.HttpServerRequest
   | RouteContext
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L539)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L545)
 
 Since v1.0.0
 HttpLayerRouter-Type.md
@@ -48623,7 +48623,7 @@ export interface Type<Kind extends string, T> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L502)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L508)
 
 Since v1.0.0
 HttpLayerRouter-add.md
@@ -48647,7 +48647,7 @@ const Route = HttpLayerRouter.add("GET", "/hello", HttpServerResponse.text("Hell
 declare const add: <E, R>(method: "*" | "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS", path: PathInput, handler: Effect.Effect<HttpServerResponse.HttpServerResponse, E, R> | ((request: HttpServerRequest.HttpServerRequest) => Effect.Effect<HttpServerResponse.HttpServerResponse, E, R>), options?: { readonly uninterruptible?: boolean | undefined; }) => Layer.Layer<never, never, HttpRouter | Type.From<"Requires", Exclude<R, Provided>> | Type.From<"Error", E>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L295)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L301)
 
 Since v1.0.0
 HttpLayerRouter-addAll.md
@@ -48673,7 +48673,7 @@ const Routes = HttpLayerRouter.addAll([
 declare const addAll: <Routes extends ReadonlyArray<Route<any, any>>, EX = never, RX = never>(routes: Routes | Effect.Effect<Routes, EX, RX>, options?: { readonly prefix?: string | undefined; }) => Layer.Layer<never, EX, HttpRouter | Exclude<RX, Scope.Scope> | Type.From<"Requires", Exclude<Route.Context<Routes[number]>, Provided>> | Type.From<"Error", Route.Error<Routes[number]>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L322)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L328)
 
 Since v1.0.0
 HttpLayerRouter-addHttpApi.md
@@ -48741,10 +48741,10 @@ HttpLayerRouter.serve(AllRoutes).pipe(
 **Signature**
 
 ```ts
-declare const addHttpApi: <Id extends string, Groups extends HttpApiGroup.HttpApiGroup.Any, E, R>(api: HttpApi.HttpApi<Id, Groups, E, R>, options?: { readonly openapiPath?: `/${string}` | undefined; }) => Layer.Layer<never, never, HttpRouter | HttpApiGroup.HttpApiGroup.ToService<Id, Groups> | R | HttpApiGroup.HttpApiGroup.ErrorContext<Groups>>
+declare const addHttpApi: <Id extends string, Groups extends HttpApiGroup.HttpApiGroup.Any, E, R>(api: HttpApi.HttpApi<Id, Groups, E, R>, options?: { readonly openapiPath?: `/${string}` | undefined; }) => Layer.Layer<never, never, Etag.Generator | HttpRouter | FileSystem | HttpPlatform | Path | R | HttpApiGroup.HttpApiGroup.ToService<Id, Groups> | HttpApiGroup.HttpApiGroup.ErrorContext<Groups>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L989)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L995)
 
 Since v1.0.0
 HttpLayerRouter-cors.md
@@ -48761,7 +48761,7 @@ A middleware that applies CORS headers to the HTTP response.
 declare const cors: (options?: { readonly allowedOrigins?: ReadonlyArray<string> | undefined; readonly allowedMethods?: ReadonlyArray<string> | undefined; readonly allowedHeaders?: ReadonlyArray<string> | undefined; readonly exposedHeaders?: ReadonlyArray<string> | undefined; readonly maxAge?: number | undefined; readonly credentials?: boolean | undefined; } | undefined) => Layer.Layer<never, never, HttpRouter>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L899)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L905)
 
 Since v1.0.0
 HttpLayerRouter-disableLogger.md
@@ -48789,7 +48789,7 @@ const Route = HttpLayerRouter.add("GET", "/hello", HttpServerResponse.text("Hell
 declare const disableLogger: Layer.Layer<never, never, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L927)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L933)
 
 Since v1.0.0
 HttpLayerRouter-middleware.md
@@ -48859,7 +48859,7 @@ Effect.gen(function*() {
 declare const middleware: middleware.Make<never, never> & (<Config extends { provides?: any; handles?: any; } = {}>() => middleware.Make<Config extends { provides: infer R; } ? R : never, Config extends { handles: infer E; } ? E : never>)
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L681)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L687)
 
 Since v1.0.0
 HttpLayerRouter-serve.md
@@ -48873,10 +48873,10 @@ Serves the provided application layer as an HTTP server.
 **Signature**
 
 ```ts
-declare const serve: <A, E, R, HE, HR = Type.Only<"Requires", R> | Type.Only<"GlobalRequires", R>>(appLayer: Layer.Layer<A, E, R>, options?: { readonly routerConfig?: Partial<FindMyWay.RouterConfig> | undefined; readonly disableLogger?: boolean | undefined; readonly disableListenLog?: boolean; readonly middleware?: (effect: Effect.Effect<HttpServerResponse.HttpServerResponse, Type.Only<"Error", R> | Type.Only<"GlobalError", R> | HttpServerError.RouteNotFound, Scope.Scope | HttpServerRequest.HttpServerRequest | Type.Only<"Requires", R> | Type.Only<"GlobalRequires", R>>) => Effect.Effect<HttpServerResponse.HttpServerResponse, HE, HR>; }) => Layer.Layer<never, Type.Without<E>, HttpServer.HttpServer | Exclude<Type.Without<R> | Exclude<HR, Provided>, HttpRouter>>
+declare const serve: <A, E, R, HE, HR = Type.Only<"Requires", R> | Type.Only<"GlobalRequires", R>>(appLayer: Layer.Layer<A, E, R>, options?: { readonly routerConfig?: Partial<FindMyWay.RouterConfig> | undefined; readonly disableLogger?: boolean | undefined; readonly disableListenLog?: boolean; readonly middleware?: (effect: Effect.Effect<HttpServerResponse.HttpServerResponse, Type.Only<"Error", R> | Type.Only<"GlobalError", R> | HttpServerError.RouteNotFound, Scope.Scope | HttpServerRequest.HttpServerRequest | Type.Only<"Requires", R> | Type.Only<"GlobalRequires", R>>) => Effect.Effect<HttpServerResponse.HttpServerResponse, HE, HR>; }) => Layer.Layer<never, Type.Without<E>, HttpServer.HttpServer | Exclude<Type.Without<R> | Exclude<HR, GlobalProvided>, HttpRouter>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L1024)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L1047)
 
 Since v1.0.0
 HttpLayerRouter-unhandled.md
@@ -48896,7 +48896,7 @@ export interface unhandled {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L574)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L580)
 
 Since v1.0.0
 HttpLayerRouter-use.md
@@ -48925,7 +48925,7 @@ const MyRoute = Layer.scopedDiscard(Effect.gen(function*() {
 declare const use: <A, E, R>(f: (router: HttpRouter) => Effect.Effect<A, E, R>) => Layer.Layer<never, E, HttpRouter | Exclude<R, Scope.Scope>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L278)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L284)
 
 Since v1.0.0
 HttpMethod-isHttpMethod.md
