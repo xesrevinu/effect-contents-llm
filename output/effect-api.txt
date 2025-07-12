@@ -40624,7 +40624,7 @@ const ApiLayer = HttpApiBuilder.api(MyApi).pipe(
 declare const toHttpApiGroup: <const Name extends string, Type extends string, Rpcs extends Rpc.Any>(name: Name, entity: Entity.Entity<Type, Rpcs>) => HttpApiGroup.HttpApiGroup<Name, ConvertHttpApi<Rpcs>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/EntityProxy.ts#L143)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/EntityProxy.ts#L162)
 
 Since v1.0.0
 EntityProxy-toRpcGroup.md
@@ -44188,7 +44188,7 @@ Represents a size in bytes.
 type Size = Brand.Branded<bigint, "Size">
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L260)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L266)
 
 Since v1.0.0
 FileSystem-SizeInput.md
@@ -44205,7 +44205,7 @@ Represents a size in bytes.
 type SizeInput = bigint | number | Size
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L268)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L274)
 
 Since v1.0.0
 FileSystem-layerNoop.md
@@ -44222,7 +44222,7 @@ Create a no-op file system that can be used for testing.
 declare const layerNoop: (fileSystem: Partial<FileSystem>) => Layer<FileSystem>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L463)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L480)
 
 Since v1.0.0
 FileSystem-makeNoop.md
@@ -44239,7 +44239,7 @@ Create a no-op file system that can be used for testing.
 declare const makeNoop: (fileSystem: Partial<FileSystem>) => FileSystem
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L455)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L472)
 
 Since v1.0.0
 Filterable-filterMapComposition.md
@@ -58237,7 +58237,7 @@ Creates an KeyValueStorage from an instance of the `Storage` api.
 declare const layerStorage: (evaluate: LazyArg<Storage>) => Layer.Layer<KeyValueStore>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/KeyValueStore.ts#L241)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/KeyValueStore.ts#L243)
 
 Since v1.0.0
 KeyedPool-make.md
@@ -107857,7 +107857,28 @@ By default, this is set to `true`, meaning that defects will be captured.
 declare class CaptureDefects
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L557)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L593)
+
+Since v1.0.0
+Workflow-SuspendOnFailure.md
+Package: `@effect/workflow`<br />
+Module: `Workflow`<br />
+
+## Workflow.SuspendOnFailure
+
+If you set this annotation to `true` for a workflow, it will suspend if it
+encounters any kind of error.
+
+You can then manually resume the workflow later with
+`Workflow.resume(executionId)`.
+
+**Signature**
+
+```ts
+declare class SuspendOnFailure
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L607)
 
 Since v1.0.0
 Workflow-withCompensation.md
@@ -107879,7 +107900,7 @@ finalizers are only registered for top-level effects in the workflow.
 declare const withCompensation: { <A, R2>(compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): <E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; <A, E, R, R2>(effect: Effect.Effect<A, E, R>, compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L520)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L556)
 
 Since v1.0.0
 WorkflowProxy-toHttpApiGroup.md
