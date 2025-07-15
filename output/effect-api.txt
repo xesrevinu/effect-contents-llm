@@ -35330,7 +35330,7 @@ of rejecting.
 **Signature**
 
 ```ts
-declare const runPromise: <A, E>(effect: Effect<A, E, never>, options?: { readonly signal?: AbortSignal; } | undefined) => Promise<A>
+declare const runPromise: <A, E>(effect: Effect<A, E, never>, options?: { readonly signal?: AbortSignal | undefined; } | undefined) => Promise<A>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L12104)
@@ -47540,7 +47540,7 @@ export interface Handlers<
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L236)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L222)
 
 Since v1.0.0
 HttpApiBuilder-Router.md
@@ -47557,7 +47557,7 @@ The router that the API endpoints are attached to.
 declare class Router
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L51)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L50)
 
 Since v1.0.0
 HttpApiBuilder-api.md
@@ -47574,7 +47574,7 @@ Create a top-level `HttpApi` layer.
 declare const api: <Id extends string, Groups extends HttpApiGroup.HttpApiGroup.Any, E, R>(api: HttpApi.HttpApi<Id, Groups, E, R>) => Layer.Layer<HttpApi.Api, never, HttpApiGroup.HttpApiGroup.ToService<Id, Groups> | R | HttpApiGroup.HttpApiGroup.ErrorContext<Groups>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L59)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L58)
 
 Since v1.0.0
 HttpApiBuilder-group.md
@@ -47596,7 +47596,7 @@ You can implement endpoints using the `handlers.handle` api.
 declare const group: <ApiId extends string, Groups extends HttpApiGroup.HttpApiGroup.Any, ApiError, ApiR, const Name extends HttpApiGroup.HttpApiGroup.Name<Groups>, Return>(api: HttpApi.HttpApi<ApiId, Groups, ApiError, ApiR>, groupName: Name, build: (handlers: Handlers.FromGroup<ApiError, ApiR, HttpApiGroup.HttpApiGroup.WithName<Groups, Name>>) => Handlers.ValidateReturn<Return>) => Layer.Layer<HttpApiGroup.ApiGroup<ApiId, Name>, Handlers.Error<Return>, Exclude<Handlers.Context<Return> | HttpApiGroup.HttpApiGroup.MiddlewareWithName<Groups, Name>, Scope>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L471)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L457)
 
 Since v1.0.0
 HttpApiBuilder-handler.md
@@ -47613,7 +47613,7 @@ Create a `Handler` for a single endpoint.
 declare const handler: <ApiId extends string, Groups extends HttpApiGroup.HttpApiGroup.Any, ApiError, ApiR, const GroupName extends Groups["identifier"], const Name extends HttpApiGroup.HttpApiGroup.EndpointsWithName<Groups, GroupName>["name"], R>(_api: HttpApi.HttpApi<ApiId, Groups, ApiError, ApiR>, _groupName: GroupName, _name: Name, f: HttpApiEndpoint.HttpApiEndpoint.HandlerWithName<HttpApiGroup.HttpApiGroup.EndpointsWithName<Groups, GroupName>, Name, ApiError | HttpApiGroup.HttpApiGroup.ErrorWithName<Groups, GroupName>, R>) => HttpApiEndpoint.HttpApiEndpoint.HandlerWithName<HttpApiGroup.HttpApiGroup.EndpointsWithName<Groups, GroupName>, Name, ApiError | HttpApiGroup.HttpApiGroup.ErrorWithName<Groups, GroupName>, R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L528)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L514)
 
 Since v1.0.0
 HttpApiBuilder-httpApp.md
@@ -47630,7 +47630,7 @@ Construct an `HttpApp` from an `HttpApi` instance.
 declare const httpApp: Effect.Effect<HttpApp.Default<never, HttpRouter.HttpRouter.DefaultServices>, never, HttpApi.Api | Router | Middleware>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L103)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L102)
 
 Since v1.0.0
 HttpApiBuilder-middleware.md
@@ -47647,7 +47647,7 @@ Create an `HttpApi` level middleware `Layer`.
 declare const middleware: { <EX = never, RX = never>(middleware: MiddlewareFn<never> | Effect.Effect<MiddlewareFn<never>, EX, RX>, options?: { readonly withContext?: false | undefined; }): Layer.Layer<never, EX, Exclude<RX, Scope>>; <R, EX = never, RX = never>(middleware: MiddlewareFn<never, R> | Effect.Effect<MiddlewareFn<never, R>, EX, RX>, options: { readonly withContext: true; }): Layer.Layer<never, EX, Exclude<HttpRouter.HttpRouter.ExcludeProvided<R> | RX, Scope>>; <ApiId extends string, Groups extends HttpApiGroup.HttpApiGroup.Any, Error, ErrorR, EX = never, RX = never>(api: HttpApi.HttpApi<ApiId, Groups, Error, ErrorR>, middleware: MiddlewareFn<NoInfer<Error>> | Effect.Effect<MiddlewareFn<NoInfer<Error>>, EX, RX>, options?: { readonly withContext?: false | undefined; }): Layer.Layer<never, EX, Exclude<RX, Scope>>; <ApiId extends string, Groups extends HttpApiGroup.HttpApiGroup.Any, Error, ErrorR, R, EX = never, RX = never>(api: HttpApi.HttpApi<ApiId, Groups, Error, ErrorR>, middleware: MiddlewareFn<NoInfer<Error>, R> | Effect.Effect<MiddlewareFn<NoInfer<Error>, R>, EX, RX>, options: { readonly withContext: true; }): Layer.Layer<never, EX, Exclude<HttpRouter.HttpRouter.ExcludeProvided<R> | RX, Scope>>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L923)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L909)
 
 Since v1.0.0
 HttpApiBuilder-middlewareCors.md
@@ -47664,7 +47664,7 @@ A CORS middleware layer that can be provided to the `HttpApiBuilder.serve` layer
 declare const middlewareCors: (options?: { readonly allowedOrigins?: ReadonlyArray<string> | undefined; readonly allowedMethods?: ReadonlyArray<string> | undefined; readonly allowedHeaders?: ReadonlyArray<string> | undefined; readonly exposedHeaders?: ReadonlyArray<string> | undefined; readonly maxAge?: number | undefined; readonly credentials?: boolean | undefined; } | undefined) => Layer.Layer<never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L979)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L965)
 
 Since v1.0.0
 HttpApiBuilder-middlewareOpenApi.md
@@ -47681,7 +47681,7 @@ A middleware that adds an openapi.json endpoint to the API.
 declare const middlewareOpenApi: (options?: { readonly path?: HttpApiEndpoint.PathSegment | undefined; readonly additionalPropertiesStrategy?: OpenApi.AdditionalPropertiesStrategy | undefined; } | undefined) => Layer.Layer<never, never, HttpApi.Api>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L996)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L982)
 
 Since v1.0.0
 HttpApiBuilder-securitySetCookie.md
@@ -47707,7 +47707,7 @@ handlers.handle(
 declare const securitySetCookie: (self: HttpApiSecurity.ApiKey, value: string | Redacted.Redacted, options?: Cookie["options"]) => Effect.Effect<void>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L1093)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L1079)
 
 Since v1.0.0
 HttpApiBuilder-serve.md
@@ -47728,7 +47728,7 @@ the `HttpApp` before serving.
 declare const serve: <R = never>(middleware?: (httpApp: HttpApp.Default) => HttpApp.Default<never, R>) => Layer.Layer<never, never, HttpServer.HttpServer | HttpRouter.HttpRouter.DefaultServices | Exclude<R, Scope | HttpServerRequest.HttpServerRequest> | HttpApi.Api>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L81)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L80)
 
 Since v1.0.0
 HttpApiBuilder-toWebHandler.md
@@ -47765,7 +47765,7 @@ const { dispose, handler } = HttpApiBuilder.toWebHandler(
 declare const toWebHandler: <LA, LE>(layer: Layer.Layer<LA | HttpApi.Api | HttpRouter.HttpRouter.DefaultServices, LE>, options?: { readonly middleware?: (httpApp: HttpApp.Default) => HttpApp.Default<never, HttpApi.Api | Router | HttpRouter.HttpRouter.DefaultServices>; readonly memoMap?: Layer.MemoMap; }) => { readonly handler: (request: Request, context?: Context.Context<never> | undefined) => Promise<Response>; readonly dispose: () => Promise<void>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L182)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApiBuilder.ts#L181)
 
 Since v1.0.0
 HttpApiEndpoint-HttpApiEndpoint.md
@@ -48202,7 +48202,7 @@ function to eject from the default scope closure.
 declare const ejectDefaultScopeClose: (scope: Scope.Scope) => void
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApp.ts#L132)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpApp.ts#L133)
 
 Since v1.0.0
 HttpClient-filterOrElse.md
@@ -48562,7 +48562,7 @@ Re-exports all named exports from the "find-my-way-ts" module as `FindMyWay`.
 export * as FindMyWay from "find-my-way-ts"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L37)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L36)
 
 Since v1.0.0
 HttpLayerRouter-GlobalProvided.md
@@ -48580,7 +48580,7 @@ type GlobalProvided = | HttpServerRequest.HttpServerRequest
   | Scope.Scope
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L557)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L556)
 
 Since v1.0.0
 HttpLayerRouter-Provided.md
@@ -48601,7 +48601,7 @@ type Provided = | HttpServerRequest.HttpServerRequest
   | RouteContext
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L545)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L544)
 
 Since v1.0.0
 HttpLayerRouter-Request.md
@@ -48623,7 +48623,7 @@ export interface Request<Kind extends string, T> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L508)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L507)
 
 Since v1.0.0
 HttpLayerRouter-add.md
@@ -48647,7 +48647,7 @@ const Route = HttpLayerRouter.add("GET", "/hello", HttpServerResponse.text("Hell
 declare const add: <E, R>(method: "*" | "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS", path: PathInput, handler: Effect.Effect<HttpServerResponse.HttpServerResponse, E, R> | ((request: HttpServerRequest.HttpServerRequest) => Effect.Effect<HttpServerResponse.HttpServerResponse, E, R>), options?: { readonly uninterruptible?: boolean | undefined; }) => Layer.Layer<never, never, HttpRouter | Request.From<"Requires", Exclude<R, Provided>> | Request.From<"Error", E>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L301)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L300)
 
 Since v1.0.0
 HttpLayerRouter-addAll.md
@@ -48673,7 +48673,7 @@ const Routes = HttpLayerRouter.addAll([
 declare const addAll: <Routes extends ReadonlyArray<Route<any, any>>, EX = never, RX = never>(routes: Routes | Effect.Effect<Routes, EX, RX>, options?: { readonly prefix?: string | undefined; }) => Layer.Layer<never, EX, HttpRouter | Exclude<RX, Scope.Scope> | Request.From<"Requires", Exclude<Route.Context<Routes[number]>, Provided>> | Request.From<"Error", Route.Error<Routes[number]>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L328)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L327)
 
 Since v1.0.0
 HttpLayerRouter-addHttpApi.md
@@ -48744,7 +48744,7 @@ HttpLayerRouter.serve(AllRoutes).pipe(
 declare const addHttpApi: <Id extends string, Groups extends HttpApiGroup.HttpApiGroup.Any, E, R>(api: HttpApi.HttpApi<Id, Groups, E, R>, options?: { readonly openapiPath?: `/${string}` | undefined; }) => Layer.Layer<never, never, Etag.Generator | HttpRouter | FileSystem | HttpPlatform | Path | R | HttpApiGroup.HttpApiGroup.ToService<Id, Groups> | HttpApiGroup.HttpApiGroup.ErrorContext<Groups>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L995)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L994)
 
 Since v1.0.0
 HttpLayerRouter-cors.md
@@ -48761,7 +48761,7 @@ A middleware that applies CORS headers to the HTTP response.
 declare const cors: (options?: { readonly allowedOrigins?: ReadonlyArray<string> | undefined; readonly allowedMethods?: ReadonlyArray<string> | undefined; readonly allowedHeaders?: ReadonlyArray<string> | undefined; readonly exposedHeaders?: ReadonlyArray<string> | undefined; readonly maxAge?: number | undefined; readonly credentials?: boolean | undefined; } | undefined) => Layer.Layer<never, never, HttpRouter>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L905)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L904)
 
 Since v1.0.0
 HttpLayerRouter-disableLogger.md
@@ -48789,7 +48789,7 @@ const Route = HttpLayerRouter.add("GET", "/hello", HttpServerResponse.text("Hell
 declare const disableLogger: Layer.Layer<never, never, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L933)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L932)
 
 Since v1.0.0
 HttpLayerRouter-middleware.md
@@ -48859,7 +48859,7 @@ Effect.gen(function*() {
 declare const middleware: middleware.Make<never, never> & (<Config extends { provides?: any; handles?: any; } = {}>() => middleware.Make<Config extends { provides: infer R; } ? R : never, Config extends { handles: infer E; } ? E : never>)
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L687)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L686)
 
 Since v1.0.0
 HttpLayerRouter-serve.md
@@ -48876,7 +48876,7 @@ Serves the provided application layer as an HTTP server.
 declare const serve: <A, E, R, HE, HR = Request.Only<"Requires", R> | Request.Only<"GlobalRequires", R>>(appLayer: Layer.Layer<A, E, R>, options?: { readonly routerConfig?: Partial<FindMyWay.RouterConfig> | undefined; readonly disableLogger?: boolean | undefined; readonly disableListenLog?: boolean; readonly middleware?: (effect: Effect.Effect<HttpServerResponse.HttpServerResponse, Request.Only<"Error", R> | Request.Only<"GlobalError", R> | HttpServerError.RouteNotFound, Scope.Scope | HttpServerRequest.HttpServerRequest | Request.Only<"Requires", R> | Request.Only<"GlobalRequires", R>>) => Effect.Effect<HttpServerResponse.HttpServerResponse, HE, HR>; }) => Layer.Layer<never, Request.Without<E>, HttpServer.HttpServer | Exclude<Request.Without<R> | Exclude<HR, GlobalProvided>, HttpRouter>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L1047)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L1046)
 
 Since v1.0.0
 HttpLayerRouter-unhandled.md
@@ -48896,7 +48896,7 @@ export interface unhandled {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L580)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L579)
 
 Since v1.0.0
 HttpLayerRouter-use.md
@@ -48925,7 +48925,7 @@ const MyRoute = Layer.scopedDiscard(Effect.gen(function*() {
 declare const use: <A, E, R>(f: (router: HttpRouter) => Effect.Effect<A, E, R>) => Layer.Layer<never, E, HttpRouter | Exclude<R, Scope.Scope>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L284)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/HttpLayerRouter.ts#L283)
 
 Since v1.0.0
 HttpMethod-isHttpMethod.md
@@ -52910,7 +52910,7 @@ the tests in a `describe` block if a name is provided.
 declare const layer: <R, E, const ExcludeTestServices extends boolean = false>(layer_: Layer.Layer<R, E>, options?: { readonly memoMap?: Layer.MemoMap; readonly timeout?: Duration.DurationInput; readonly excludeTestServices?: ExcludeTestServices; }) => { (f: (it: Vitest.MethodsNonLive<R, ExcludeTestServices>) => void): void; (name: string, f: (it: Vitest.MethodsNonLive<R, ExcludeTestServices>) => void): void; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/index.ts#L209)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/index.ts#L245)
 
 Since v1.0.0
 
@@ -80031,7 +80031,7 @@ use HTTP.
 declare const layerHttpRouter: <Rpcs extends Rpc.Any>(options: { readonly group: RpcGroup.RpcGroup<Rpcs>; readonly path: HttpRouter.PathInput; readonly protocol?: "http" | "websocket" | undefined; readonly disableTracing?: boolean | undefined; readonly spanPrefix?: string | undefined; readonly spanAttributes?: Record<string, unknown> | undefined; readonly concurrency?: number | "unbounded" | undefined; }) => Layer.Layer<never, never, RpcSerialization.RpcSerialization | HttpLayerRouter.HttpRouter | Rpc.ToHandler<Rpcs> | Rpc.Middleware<Rpcs>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L735)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L734)
 
 Since v1.0.0
 RpcServer-layerProtocolHttp.md
@@ -80048,7 +80048,7 @@ A rpc protocol that uses streaming http for communication.
 declare const layerProtocolHttp: <I = HttpRouter.Default>(options: { readonly path: HttpRouter.PathInput; readonly routerTag?: HttpRouter.HttpRouter.TagClass<I, string, any, any>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1140)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1139)
 
 Since v1.0.0
 RpcServer-layerProtocolHttpRouter.md
@@ -80067,7 +80067,7 @@ Uses a `HttpLayerRouter` to provide the http endpoint.
 declare const layerProtocolHttpRouter: (options: { readonly path: HttpRouter.PathInput; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | HttpLayerRouter.HttpRouter>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1159)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1158)
 
 Since v1.0.0
 RpcServer-layerProtocolSocketServer.md
@@ -80084,7 +80084,7 @@ A rpc protocol that uses `SocketServer` for communication.
 declare const layerProtocolSocketServer: Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | SocketServer.SocketServer>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L805)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L804)
 
 Since v1.0.0
 RpcServer-layerProtocolStdio.md
@@ -80101,7 +80101,7 @@ Create a protocol that uses the provided `Stream` and `Sink` for communication.
 declare const layerProtocolStdio: <EIn, EOut, RIn, ROut>(options: { readonly stdin: Stream.Stream<Uint8Array, EIn, RIn>; readonly stdout: Sink.Sink<void, Uint8Array | string, unknown, EOut, ROut>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | RIn | ROut>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1351)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1336)
 
 Since v1.0.0
 RpcServer-layerProtocolWebsocket.md
@@ -80118,7 +80118,7 @@ A rpc protocol that uses websockets for communication.
 declare const layerProtocolWebsocket: <I = HttpRouter.Default>(options: { readonly path: HttpRouter.PathInput; readonly routerTag?: HttpRouter.HttpRouter.TagClass<I, string, any, any>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L886)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L885)
 
 Since v1.0.0
 RpcServer-layerProtocolWebsocketRouter.md
@@ -80137,7 +80137,7 @@ Uses a `HttpLayerRouter` to provide the websocket endpoint.
 declare const layerProtocolWebsocketRouter: (options: { readonly path: HttpLayerRouter.PathInput; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | HttpLayerRouter.HttpRouter>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L905)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L904)
 
 Since v1.0.0
 RpcServer-makeProtocolStdio.md
@@ -80154,7 +80154,7 @@ Create a protocol that uses the provided `Stream` and `Sink` for communication.
 declare const makeProtocolStdio: <EIn, EOut, RIn, ROut>(options: { readonly stdin: Stream.Stream<Uint8Array, EIn, RIn>; readonly stdout: Sink.Sink<void, Uint8Array | string, unknown, EOut, ROut>; }) => Effect.Effect<{ readonly run: (f: (clientId: number, data: FromClientEncoded) => Effect.Effect<void>) => Effect.Effect<never>; readonly disconnects: Mailbox.ReadonlyMailbox<number>; readonly send: (clientId: number, response: FromServerEncoded, transferables?: ReadonlyArray<globalThis.Transferable>) => Effect.Effect<void>; readonly end: (clientId: number) => Effect.Effect<void>; readonly clientIds: Effect.Effect<Iterable<number>>; readonly initialMessage: Effect.Effect<Option.Option<unknown>>; readonly supportsAck: boolean; readonly supportsTransferables: boolean; readonly supportsSpanPropagation: boolean; }, never, Scope.Scope | RpcSerialization.RpcSerialization | RIn | Exclude<ROut, Scope.Scope>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1291)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1276)
 
 Since v1.0.0
 RpcServer-toWebHandler.md
@@ -80171,7 +80171,7 @@ Construct an http web handler from an `RpcGroup`.
 declare const toWebHandler: <Rpcs extends Rpc.Any, LE>(group: RpcGroup.RpcGroup<Rpcs>, options: { readonly layer: Layer.Layer<Rpc.ToHandler<Rpcs> | Rpc.Middleware<Rpcs> | RpcSerialization.RpcSerialization | HttpRouter.HttpRouter.DefaultServices, LE>; readonly disableTracing?: boolean | undefined; readonly spanPrefix?: string | undefined; readonly spanAttributes?: Record<string, unknown> | undefined; readonly middleware?: (httpApp: HttpApp.Default) => HttpApp.Default<never, HttpRouter.HttpRouter.DefaultServices>; readonly memoMap?: Layer.MemoMap; }) => { readonly handler: (request: globalThis.Request, context?: Context.Context<never> | undefined) => Promise<Response>; readonly dispose: () => Promise<void>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1240)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1239)
 
 Since v1.0.0
 Runner-Runner.md
@@ -108024,7 +108024,7 @@ Asserts that `exit` is a failure.
 declare const assertFailure: <A, E>(exit: Exit.Exit<A, E>, expected: Cause.Cause<E>, ..._: Array<never>) => asserts exit is Exit.Failure<never, E>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L243)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L244)
 
 Since v0.21.0
 utils-assertFalse.md
@@ -108041,7 +108041,7 @@ Asserts that `self` is `false`.
 declare const assertFalse: (self: boolean, message?: string, ..._: Array<never>) => void
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L106)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L107)
 
 Since v0.21.0
 utils-assertInclude.md
@@ -108058,7 +108058,7 @@ Asserts that `actual` includes `expected`.
 declare const assertInclude: (actual: string | undefined, expected: string, ..._: Array<never>) => void
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L115)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L116)
 
 Since v0.21.0
 utils-assertInstanceOf.md
@@ -108092,7 +108092,7 @@ Asserts that `either` is `Left`.
 declare const assertLeft: <R, L>(either: Either.Either<R, L>, expected: L, ..._: Array<never>) => asserts either is Either.Left<L, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L213)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L214)
 
 Since v0.21.0
 utils-assertMatch.md
@@ -108109,7 +108109,7 @@ Asserts that `actual` matches `regexp`.
 declare const assertMatch: (actual: string, regexp: RegExp, ..._: Array<never>) => void
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L128)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L129)
 
 Since v0.21.0
 utils-assertNone.md
@@ -108126,7 +108126,7 @@ Asserts that `option` is `None`.
 declare const assertNone: <A>(option: Option.Option<A>, ..._: Array<never>) => asserts option is Option.None<never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L187)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L188)
 
 Since v0.21.0
 utils-assertRight.md
@@ -108143,7 +108143,7 @@ Asserts that `either` is `Right`.
 declare const assertRight: <R, L>(either: Either.Either<R, L>, expected: R, ..._: Array<never>) => asserts either is Either.Right<never, R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L226)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L227)
 
 Since v0.21.0
 utils-assertSome.md
@@ -108160,7 +108160,7 @@ Asserts that `option` is `Some`.
 declare const assertSome: <A>(option: Option.Option<A>, expected: A, ..._: Array<never>) => asserts option is Option.Some<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L196)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L197)
 
 Since v0.21.0
 utils-assertSuccess.md
@@ -108177,7 +108177,7 @@ Asserts that `exit` is a success.
 declare const assertSuccess: <A, E>(exit: Exit.Exit<A, E>, expected: A, ..._: Array<never>) => asserts exit is Exit.Success<A, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L256)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L257)
 
 Since v0.21.0
 utils-assertTrue.md
@@ -108194,7 +108194,7 @@ Asserts that `self` is `true`.
 declare const assertTrue: (self: unknown, message?: string, ..._: Array<never>) => asserts self
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L97)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L98)
 
 Since v0.21.0
 utils-deepStrictEqual.md
@@ -108296,7 +108296,7 @@ Asserts that `thunk` throws an error.
 declare const throws: (thunk: () => void, error?: Error | ((u: unknown) => undefined), ..._: Array<never>) => void
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L139)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L140)
 
 Since v0.21.0
 utils-throwsAsync.md
@@ -108313,6 +108313,6 @@ Asserts that `thunk` throws an error.
 declare const throwsAsync: (thunk: () => Promise<void>, error?: Error | ((u: unknown) => undefined), ..._: Array<never>) => Promise<void>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L159)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L160)
 
 Since v0.21.0
