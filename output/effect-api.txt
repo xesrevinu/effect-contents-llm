@@ -58526,7 +58526,7 @@ Builds a layer into a scoped value.
 declare const build: <RIn, E, ROut>(self: Layer<ROut, E, RIn>) => Effect.Effect<Context.Context<ROut>, E, Scope.Scope | RIn>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L197)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L198)
 
 Since v2.0.0
 Layer-buildWithMemoMap.md
@@ -58544,7 +58544,7 @@ the layer construction.
 declare const buildWithMemoMap: { (memoMap: MemoMap, scope: Scope.Scope): <RIn, E, ROut>(self: Layer<ROut, E, RIn>) => Effect.Effect<Context.Context<ROut>, E, RIn>; <RIn, E, ROut>(self: Layer<ROut, E, RIn>, memoMap: MemoMap, scope: Scope.Scope): Effect.Effect<Context.Context<ROut>, E, RIn>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L1178)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L1184)
 
 Since v2.0.0
 Layer-buildWithScope.md
@@ -58565,7 +58565,7 @@ layer is provided to.
 declare const buildWithScope: { (scope: Scope.Scope): <RIn, E, ROut>(self: Layer<ROut, E, RIn>) => Effect.Effect<Context.Context<ROut>, E, RIn>; <RIn, E, ROut>(self: Layer<ROut, E, RIn>, scope: Scope.Scope): Effect.Effect<Context.Context<ROut>, E, RIn>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L211)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L212)
 
 Since v2.0.0
 Layer-catchAll.md
@@ -58582,7 +58582,7 @@ Recovers from all errors.
 declare const catchAll: { <E, RIn2, E2, ROut2>(onError: (error: E) => Layer<ROut2, E2, RIn2>): <RIn, ROut>(self: Layer<ROut, E, RIn>) => Layer<ROut & ROut2, E2, RIn2 | RIn>; <RIn, E, ROut, RIn2, E2, ROut2>(self: Layer<ROut, E, RIn>, onError: (error: E) => Layer<ROut2, E2, RIn2>): Layer<ROut & ROut2, E2, RIn | RIn2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L222)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L223)
 
 Since v2.0.0
 Layer-catchAllCause.md
@@ -58599,7 +58599,7 @@ Recovers from all errors.
 declare const catchAllCause: { <E, RIn2, E2, ROut2>(onError: (cause: Cause.Cause<E>) => Layer<ROut2, E2, RIn2>): <RIn, ROut>(self: Layer<ROut, E, RIn>) => Layer<ROut & ROut2, E2, RIn2 | RIn>; <RIn, E, ROut, RIn2, E2, ROut22>(self: Layer<ROut, E, RIn>, onError: (cause: Cause.Cause<E>) => Layer<ROut22, E2, RIn2>): Layer<ROut & ROut22, E2, RIn | RIn2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L238)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L239)
 
 Since v2.0.0
 Layer-context.md
@@ -58617,7 +58617,7 @@ output.
 declare const context: <R>() => Layer<R, never, R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L255)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L256)
 
 Since v2.0.0
 Layer-die.md
@@ -58634,7 +58634,7 @@ Constructs a layer that dies with the specified defect.
 declare const die: (defect: unknown) => Layer<unknown>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L263)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L264)
 
 Since v2.0.0
 Layer-dieSync.md
@@ -58651,7 +58651,7 @@ Constructs a layer that dies with the specified defect.
 declare const dieSync: (evaluate: LazyArg<unknown>) => Layer<unknown>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L271)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L272)
 
 Since v2.0.0
 Layer-discard.md
@@ -58669,7 +58669,7 @@ side-effects.
 declare const discard: <RIn, E, ROut>(self: Layer<ROut, E, RIn>) => Layer<never, E, RIn>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L280)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L281)
 
 Since v2.0.0
 Layer-effect.md
@@ -58686,7 +58686,7 @@ Constructs a layer from the specified effect.
 declare const effect: { <I, S>(tag: Context.Tag<I, S>): <E, R>(effect: Effect.Effect<Types.NoInfer<S>, E, R>) => Layer<I, E, R>; <I, S, E, R>(tag: Context.Tag<I, S>, effect: Effect.Effect<Types.NoInfer<S>, E, R>): Layer<I, E, R>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L288)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L289)
 
 Since v2.0.0
 Layer-effectContext.md
@@ -58704,7 +58704,7 @@ services.
 declare const effectContext: <A, E, R>(effect: Effect.Effect<Context.Context<A>, E, R>) => Layer<A, E, R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L308)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L309)
 
 Since v2.0.0
 Layer-effectDiscard.md
@@ -58721,7 +58721,7 @@ Constructs a layer from the specified effect, discarding its output.
 declare const effectDiscard: <X, E, R>(effect: Effect.Effect<X, E, R>) => Layer<never, E, R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L299)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L300)
 
 Since v2.0.0
 Layer-empty.md
@@ -58738,7 +58738,7 @@ A Layer that constructs an empty Context.
 declare const empty: Layer<never, never, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L317)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L318)
 
 Since v2.0.0
 Layer-extendScope.md
@@ -58758,7 +58758,7 @@ effect depends on is closed.
 declare const extendScope: <RIn, E, ROut>(self: Layer<ROut, E, RIn>) => Layer<ROut, E, Scope.Scope | RIn>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L328)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L329)
 
 Since v2.0.0
 Layer-fail.md
@@ -58775,7 +58775,7 @@ Constructs a layer that fails with the specified error.
 declare const fail: <E>(error: E) => Layer<unknown, E>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L337)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L338)
 
 Since v2.0.0
 Layer-failCause.md
@@ -58792,7 +58792,7 @@ Constructs a layer that fails with the specified cause.
 declare const failCause: <E>(cause: Cause.Cause<E>) => Layer<unknown, E>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L353)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L354)
 
 Since v2.0.0
 Layer-failCauseSync.md
@@ -58809,7 +58809,7 @@ Constructs a layer that fails with the specified cause.
 declare const failCauseSync: <E>(evaluate: LazyArg<Cause.Cause<E>>) => Layer<unknown, E>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L361)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L362)
 
 Since v2.0.0
 Layer-failSync.md
@@ -58826,7 +58826,7 @@ Constructs a layer that fails with the specified error.
 declare const failSync: <E>(evaluate: LazyArg<E>) => Layer<unknown, E>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L345)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L346)
 
 Since v2.0.0
 Layer-flatMap.md
@@ -58843,7 +58843,7 @@ Constructs a layer dynamically based on the output of this layer.
 declare const flatMap: { <A, A2, E2, R2>(f: (context: Context.Context<A>) => Layer<A2, E2, R2>): <E, R>(self: Layer<A, E, R>) => Layer<A2, E2 | E, R2 | R>; <A, E, R, A2, E2, R2>(self: Layer<A, E, R>, f: (context: Context.Context<A>) => Layer<A2, E2, R2>): Layer<A2, E | E2, R | R2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L369)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L370)
 
 Since v2.0.0
 Layer-flatten.md
@@ -58860,7 +58860,7 @@ Flattens layers nested in the context of an effect.
 declare const flatten: { <I, A, E2, R2>(tag: Context.Tag<I, Layer<A, E2, R2>>): <E, R>(self: Layer<I, E, R>) => Layer<A, E2 | E, R2 | R>; <I, E, R, A, E2, R2>(self: Layer<I, E, R>, tag: Context.Tag<I, Layer<A, E2, R2>>): Layer<A, E | E2, R | R2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L385)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L386)
 
 Since v2.0.0
 Layer-fresh.md
@@ -58877,7 +58877,7 @@ Creates a fresh version of this layer that will not be shared.
 declare const fresh: <A, E, R>(self: Layer<A, E, R>) => Layer<A, E, R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L396)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L397)
 
 Since v2.0.0
 Layer-function.md
@@ -58894,7 +58894,7 @@ Constructs a layer from the context using the specified function.
 declare const function: <I1, S1, I2, S2>(tagA: Context.Tag<I1, S1>, tagB: Context.Tag<I2, S2>, f: (a: Types.NoInfer<S1>) => Types.NoInfer<S2>) => Layer<I2, never, I1>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L462)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L468)
 
 Since v2.0.0
 Layer-isFresh.md
@@ -58912,7 +58912,7 @@ shared, `false` otherwise.
 declare const isFresh: <RIn, E, ROut>(self: Layer<ROut, E, RIn>) => boolean
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L167)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L168)
 
 Since v2.0.0
 Layer-isLayer.md
@@ -58929,7 +58929,7 @@ Returns `true` if the specified value is a `Layer`, `false` otherwise.
 declare const isLayer: (u: unknown) => u is Layer<unknown, unknown, unknown>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L158)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L159)
 
 Since v2.0.0
 Layer-launch.md
@@ -58947,7 +58947,7 @@ your entire application is a layer, such as an HTTP server.
 declare const launch: <RIn, E, ROut>(self: Layer<ROut, E, RIn>) => Effect.Effect<never, E, RIn>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L472)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L478)
 
 Since v2.0.0
 Layer-makeMemoMap.md
@@ -58964,7 +58964,7 @@ Constructs a `MemoMap` that can be used to build additional layers.
 declare const makeMemoMap: Effect.Effect<MemoMap, never, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L1169)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L1175)
 
 Since v2.0.0
 Layer-map.md
@@ -58981,7 +58981,7 @@ Returns a new layer whose output is mapped by the specified function.
 declare const map: { <A, B>(f: (context: Context.Context<A>) => Context.Context<B>): <E, R>(self: Layer<A, E, R>) => Layer<B, E, R>; <A, E, R, B>(self: Layer<A, E, R>, f: (context: Context.Context<A>) => Context.Context<B>): Layer<B, E, R>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L480)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L486)
 
 Since v2.0.0
 Layer-mapError.md
@@ -58998,7 +58998,7 @@ Returns a layer with its error channel mapped using the specified function.
 declare const mapError: { <E, E2>(f: (error: E) => E2): <A, R>(self: Layer<A, E, R>) => Layer<A, E2, R>; <A, E, R, E2>(self: Layer<A, E, R>, f: (error: E) => E2): Layer<A, E2, R>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L491)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L497)
 
 Since v2.0.0
 Layer-match.md
@@ -59017,7 +59017,7 @@ the inputs of this layer, and the error or outputs of the specified layer.
 declare const match: { <E, A2, E2, R2, A, A3, E3, R3>(options: { readonly onFailure: (error: E) => Layer<A2, E2, R2>; readonly onSuccess: (context: Context.Context<A>) => Layer<A3, E3, R3>; }): <R>(self: Layer<A, E, R>) => Layer<A2 & A3, E2 | E3, R2 | R3 | R>; <A, E, R, A2, E2, R2, A3, E3, R3>(self: Layer<A, E, R>, options: { readonly onFailure: (error: E) => Layer<A2, E2, R2>; readonly onSuccess: (context: Context.Context<A>) => Layer<A3, E3, R3>; }): Layer<A2 & A3, E2 | E3, R | R2 | R3>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L504)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L510)
 
 Since v2.0.0
 Layer-matchCause.md
@@ -59036,7 +59036,7 @@ the inputs of this layer, and the error or outputs of the specified layer.
 declare const matchCause: { <E, A2, E2, R2, A, A3, E3, R3>(options: { readonly onFailure: (cause: Cause.Cause<E>) => Layer<A2, E2, R2>; readonly onSuccess: (context: Context.Context<A>) => Layer<A3, E3, R3>; }): <R>(self: Layer<A, E, R>) => Layer<A2 & A3, E2 | E3, R2 | R3 | R>; <A, E, R, A2, E2, R2, A3, E3, R3>(self: Layer<A, E, R>, options: { readonly onFailure: (cause: Cause.Cause<E>) => Layer<A2, E2, R2>; readonly onSuccess: (context: Context.Context<A>) => Layer<A3, E3, R3>; }): Layer<A2 & A3, E2 | E3, R | R2 | R3>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L528)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L534)
 
 Since v2.0.0
 Layer-memoize.md
@@ -59054,7 +59054,7 @@ result of this layer.
 declare const memoize: <RIn, E, ROut>(self: Layer<ROut, E, RIn>) => Effect.Effect<Layer<ROut, E, RIn>, never, Scope.Scope>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L551)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L557)
 
 Since v2.0.0
 Layer-merge.md
@@ -59071,7 +59071,7 @@ Merges this layer with the specified layer concurrently, producing a new layer w
 declare const merge: { <RIn2, E2, ROut2>(that: Layer<ROut2, E2, RIn2>): <RIn, E1, ROut>(self: Layer<ROut, E1, RIn>) => Layer<ROut2 | ROut, E2 | E1, RIn2 | RIn>; <RIn, E1, ROut, RIn2, E2, ROut2>(self: Layer<ROut, E1, RIn>, that: Layer<ROut2, E2, RIn2>): Layer<ROut | ROut2, E1 | E2, RIn | RIn2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L561)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L567)
 
 Since v2.0.0
 Layer-mergeAll.md
@@ -59088,7 +59088,7 @@ Combines all the provided layers concurrently, creating a new layer with merged 
 declare const mergeAll: <Layers extends [Layer<never, any, any>, ...Array<Layer<never, any, any>>]>(...layers: Layers) => Layer<{ [k in keyof Layers]: Layer.Success<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Context<Layers[k]>; }[number]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L577)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L583)
 
 Since v2.0.0
 Layer-mock.md
@@ -59125,7 +59125,7 @@ const MyServiceTest = Layer.mock(MyService, {
 declare const mock: { <I, S extends object>(tag: Context.Tag<I, S>): (service: PartialEffectful<S>) => Layer<I>; <I, S extends object>(tag: Context.Tag<I, S>, service: PartialEffectful<S>): Layer<I>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L444)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L450)
 
 Since v3.17.0
 Layer-orDie.md
@@ -59143,7 +59143,7 @@ unchecked and not a part of the type of the layer.
 declare const orDie: <A, E, R>(self: Layer<A, E, R>) => Layer<A, never, R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L592)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L598)
 
 Since v2.0.0
 Layer-orElse.md
@@ -59161,7 +59161,7 @@ executes the specified layer.
 declare const orElse: { <A2, E2, R2>(that: LazyArg<Layer<A2, E2, R2>>): <A, E, R>(self: Layer<A, E, R>) => Layer<A & A2, E2 | E, R2 | R>; <A, E, R, A2, E2, R2>(self: Layer<A, E, R>, that: LazyArg<Layer<A2, E2, R2>>): Layer<A & A2, E | E2, R | R2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L601)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L607)
 
 Since v2.0.0
 Layer-parentSpan.md
@@ -59178,7 +59178,7 @@ Adds the provided span to the span stack.
 declare const parentSpan: (span: Tracer.AnySpan) => Layer<Tracer.ParentSpan>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L999)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L1005)
 
 Since v2.0.0
 Layer-passthrough.md
@@ -59196,7 +59196,7 @@ passes through the inputs.
 declare const passthrough: <RIn, E, ROut>(self: Layer<ROut, E, RIn>) => Layer<RIn | ROut, E, RIn>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L613)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L619)
 
 Since v2.0.0
 Layer-project.md
@@ -59214,7 +59214,7 @@ specified function.
 declare const project: { <I1, S1, I2, S2>(tagA: Context.Tag<I1, S1>, tagB: Context.Tag<I2, S2>, f: (a: Types.NoInfer<S1>) => Types.NoInfer<S2>): <RIn, E>(self: Layer<I1, E, RIn>) => Layer<I2, E, RIn>; <RIn, E, I1, S1, I2, S2>(self: Layer<I1, E, RIn>, tagA: Context.Tag<I1, S1>, tagB: Context.Tag<I2, S2>, f: (a: Types.NoInfer<S1>) => Types.NoInfer<S2>): Layer<I2, E, RIn>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L622)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L628)
 
 Since v2.0.0
 Layer-provide.md
@@ -59233,7 +59233,7 @@ well as any leftover inputs, and the outputs of the specified builder.
 declare const provide: { <RIn, E, ROut>(that: Layer<ROut, E, RIn>): <RIn2, E2, ROut2>(self: Layer<ROut2, E2, RIn2>) => Layer<ROut2, E | E2, RIn | Exclude<RIn2, ROut>>; <const Layers extends [Layer.Any, ...Array<Layer.Any>]>(that: Layers): <A, E, R>(self: Layer<A, E, R>) => Layer<A, E | { [k in keyof Layers]: Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Context<Layers[k]>; }[number] | Exclude<R, { [k in keyof Layers]: Layer.Success<Layers[k]>; }[number]>>; <RIn2, E2, ROut2, RIn, E, ROut>(self: Layer<ROut2, E2, RIn2>, that: Layer<ROut, E, RIn>): Layer<ROut2, E | E2, RIn | Exclude<RIn2, ROut>>; <A, E, R, const Layers extends [Layer.Any, ...Array<Layer.Any>]>(self: Layer<A, E, R>, that: Layers): Layer<A, E | { [k in keyof Layers]: Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Context<Layers[k]>; }[number] | Exclude<R, { [k in keyof Layers]: Layer.Success<Layers[k]>; }[number]>>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L893)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L899)
 
 Since v2.0.0
 Layer-provideMerge.md
@@ -59252,7 +59252,7 @@ outputs of both layers.
 declare const provideMerge: { <RIn, E, ROut>(self: Layer<ROut, E, RIn>): <RIn2, E2, ROut2>(that: Layer<ROut2, E2, RIn2>) => Layer<ROut | ROut2, E | E2, RIn | Exclude<RIn2, ROut>>; <RIn2, E2, ROut2, RIn, E, ROut>(that: Layer<ROut2, E2, RIn2>, self: Layer<ROut, E, RIn>): Layer<ROut2 | ROut, E2 | E, RIn | Exclude<RIn2, ROut>>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L930)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L936)
 
 Since v2.0.0
 Layer-retry.md
@@ -59269,7 +59269,7 @@ Retries constructing this layer according to the specified schedule.
 declare const retry: { <X, E, RIn2>(schedule: Schedule.Schedule<X, NoInfer<E>, RIn2>): <ROut, RIn>(self: Layer<ROut, E, RIn>) => Layer<ROut, E, RIn2 | RIn>; <ROut, E, RIn, X, RIn2>(self: Layer<ROut, E, RIn>, schedule: Schedule.Schedule<X, E, RIn2>): Layer<ROut, E, RIn | RIn2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L694)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L700)
 
 Since v2.0.0
 Layer-scope.md
@@ -59289,7 +59289,7 @@ workflow.
 declare const scope: Layer<Scope.Scope, never, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L713)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L719)
 
 Since v2.0.0
 Layer-scoped.md
@@ -59306,7 +59306,7 @@ Constructs a layer from the specified scoped effect.
 declare const scoped: { <I, S>(tag: Context.Tag<I, S>): <E, R>(effect: Effect.Effect<Types.NoInfer<S>, E, R>) => Layer<I, E, Exclude<R, Scope.Scope>>; <I, S, E, R>(tag: Context.Tag<I, S>, effect: Effect.Effect<Types.NoInfer<S>, E, R>): Layer<I, E, Exclude<R, Scope.Scope>>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L721)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L727)
 
 Since v2.0.0
 Layer-scopedContext.md
@@ -59324,7 +59324,7 @@ or more services.
 declare const scopedContext: <A, E, R>(effect: Effect.Effect<Context.Context<A>, E, R>) => Layer<A, E, Exclude<R, Scope.Scope>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L747)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L753)
 
 Since v2.0.0
 Layer-scopedDiscard.md
@@ -59341,7 +59341,7 @@ Constructs a layer from the specified scoped effect.
 declare const scopedDiscard: <X, E, R>(effect: Effect.Effect<X, E, R>) => Layer<never, E, Exclude<R, Scope.Scope>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L737)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L743)
 
 Since v2.0.0
 Layer-service.md
@@ -59359,7 +59359,7 @@ context.
 declare const service: <I, S>(tag: Context.Tag<I, S>) => Layer<I, never, I>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L758)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L764)
 
 Since v2.0.0
 Layer-setConfigProvider.md
@@ -59376,7 +59376,7 @@ Sets the current `ConfigProvider`.
 declare const setConfigProvider: (configProvider: ConfigProvider) => Layer<never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L991)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L997)
 
 Since v2.0.0
 Layer-setTracer.md
@@ -59393,7 +59393,7 @@ Create a Layer that sets the current Tracer
 declare const setTracer: (tracer: Tracer.Tracer) => Layer<never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L1084)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L1090)
 
 Since v2.0.0
 Layer-span.md
@@ -59412,7 +59412,7 @@ The span is ended when the Layer is released.
 declare const span: (name: string, options?: Tracer.SpanOptions & { readonly onEnd?: ((span: Tracer.Span, exit: Exit.Exit<unknown, unknown>) => Effect.Effect<void>) | undefined; }) => Layer<Tracer.ParentSpan>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L1069)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L1075)
 
 Since v2.0.0
 Layer-succeed.md
@@ -59429,7 +59429,7 @@ Constructs a layer from the specified value.
 declare const succeed: { <I, S>(tag: Context.Tag<I, S>): (resource: Types.NoInfer<S>) => Layer<I>; <I, S>(tag: Context.Tag<I, S>, resource: Types.NoInfer<S>): Layer<I>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L766)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L772)
 
 Since v2.0.0
 Layer-succeedContext.md
@@ -59447,7 +59447,7 @@ services.
 declare const succeedContext: <A>(context: Context.Context<A>) => Layer<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L778)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L784)
 
 Since v2.0.0
 Layer-suspend.md
@@ -59465,7 +59465,7 @@ creating layers that refer to themselves.
 declare const suspend: <RIn, E, ROut>(evaluate: LazyArg<Layer<ROut, E, RIn>>) => Layer<ROut, E, RIn>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L787)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L793)
 
 Since v2.0.0
 Layer-sync.md
@@ -59482,7 +59482,7 @@ Lazily constructs a layer from the specified value.
 declare const sync: { <I, S>(tag: Context.Tag<I, S>): (evaluate: LazyArg<Types.NoInfer<S>>) => Layer<I>; <I, S>(tag: Context.Tag<I, S>, evaluate: LazyArg<Types.NoInfer<S>>): Layer<I>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L795)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L801)
 
 Since v2.0.0
 Layer-syncContext.md
@@ -59500,7 +59500,7 @@ services.
 declare const syncContext: <A>(evaluate: LazyArg<Context.Context<A>>) => Layer<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L807)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L813)
 
 Since v2.0.0
 Layer-tap.md
@@ -59517,7 +59517,7 @@ Performs the specified effect if this layer succeeds.
 declare const tap: { <ROut, XR extends ROut, RIn2, E2, X>(f: (context: Context.Context<XR>) => Effect.Effect<X, E2, RIn2>): <RIn, E>(self: Layer<ROut, E, RIn>) => Layer<ROut, E2 | E, RIn2 | RIn>; <RIn, E, ROut, XR extends ROut, RIn2, E2, X>(self: Layer<ROut, E, RIn>, f: (context: Context.Context<XR>) => Effect.Effect<X, E2, RIn2>): Layer<ROut, E | E2, RIn | RIn2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L815)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L821)
 
 Since v2.0.0
 Layer-tapError.md
@@ -59534,7 +59534,7 @@ Performs the specified effect if this layer fails.
 declare const tapError: { <E, XE extends E, RIn2, E2, X>(f: (e: XE) => Effect.Effect<X, E2, RIn2>): <RIn, ROut>(self: Layer<ROut, E, RIn>) => Layer<ROut, E | E2, RIn2 | RIn>; <RIn, E, XE extends E, ROut, RIn2, E2, X>(self: Layer<ROut, E, RIn>, f: (e: XE) => Effect.Effect<X, E2, RIn2>): Layer<ROut, E | E2, RIn | RIn2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L831)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L837)
 
 Since v2.0.0
 Layer-tapErrorCause.md
@@ -59551,7 +59551,7 @@ Performs the specified effect if this layer fails.
 declare const tapErrorCause: { <E, XE extends E, RIn2, E2, X>(f: (cause: Cause.Cause<XE>) => Effect.Effect<X, E2, RIn2>): <RIn, ROut>(self: Layer<ROut, E, RIn>) => Layer<ROut, E | E2, RIn2 | RIn>; <RIn, E, XE extends E, ROut, RIn2, E2, X>(self: Layer<ROut, E, RIn>, f: (cause: Cause.Cause<XE>) => Effect.Effect<X, E2, RIn2>): Layer<ROut, E | E2, RIn | RIn2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L847)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L853)
 
 Since v2.0.0
 Layer-toRuntime.md
@@ -59569,7 +59569,7 @@ be used to execute effects.
 declare const toRuntime: <RIn, E, ROut>(self: Layer<ROut, E, RIn>) => Effect.Effect<Runtime.Runtime<ROut>, E, Scope.Scope | RIn>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L864)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L870)
 
 Since v2.0.0
 Layer-toRuntimeWithMemoMap.md
@@ -59587,7 +59587,7 @@ be used to execute effects.
 declare const toRuntimeWithMemoMap: { (memoMap: MemoMap): <RIn, E, ROut>(self: Layer<ROut, E, RIn>) => Effect.Effect<Runtime.Runtime<ROut>, E, Scope.Scope | RIn>; <RIn, E, ROut>(self: Layer<ROut, E, RIn>, memoMap: MemoMap): Effect.Effect<Runtime.Runtime<ROut>, E, Scope.Scope | RIn>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L875)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L881)
 
 Since v2.0.0
 Layer-updateService.md
@@ -59616,7 +59616,7 @@ creation of a layer.
 declare const updateService: (<I, A>(tag: Context.Tag<I, A>, f: (a: A) => A) => <A1, E1, R1>(layer: Layer<A1, E1, R1>) => Layer<A1, E1, I | R1>) & (<A1, E1, R1, I, A>(layer: Layer<A1, E1, R1>, tag: Context.Tag<I, A>, f: (a: A) => A) => Layer<A1, E1, I | R1>)
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L1208)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L1214)
 
 Since v3.13.0
 Layer-zipWith.md
@@ -59634,7 +59634,7 @@ combined output types using the provided function.
 declare const zipWith: { <B, E2, R2, A, C>(that: Layer<B, E2, R2>, f: (a: Context.Context<A>, b: Context.Context<B>) => Context.Context<C>): <E, R>(self: Layer<A, E, R>) => Layer<C, E2 | E, R2 | R>; <A, E, R, B, E2, R2, C>(self: Layer<A, E, R>, that: Layer<B, E2, R2>, f: (a: Context.Context<A>, b: Context.Context<B>) => Context.Context<C>): Layer<C, E | E2, R | R2>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L947)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L953)
 
 Since v2.0.0
 Layout-Layout.FittingPredicate.md
