@@ -18584,6 +18584,62 @@ type DateTime = Utc | Zoned
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L37)
 
 Since v3.6.0
+DateTime-Disambiguation.md
+Package: `effect`<br />
+Module: `DateTime`<br />
+
+## DateTime.Disambiguation
+
+A `Disambiguation` is used to resolve ambiguities when a `DateTime` is
+ambiguous, such as during a daylight saving time transition.
+
+For more information, see the [Temporal documentation](https://tc39.es/proposal-temporal/docs/timezone.html#ambiguity-due-to-dst-or-other-time-zone-offset-changes)
+
+- `"compatible"`: (default) Behavior matching Temporal API and legacy JavaScript Date and moment.js.
+  For repeated times, chooses the earlier occurrence. For gap times, chooses the later interpretation.
+
+- `"earlier"`: For repeated times, always choose the earlier occurrence.
+  For gap times, choose the time before the gap.
+
+- `"later"`: For repeated times, always choose the later occurrence.
+  For gap times, choose the time after the gap.
+
+- `"reject"`: Throw an `RangeError` when encountering ambiguous or non-existent times.
+
+**Example**
+
+```ts
+import { DateTime } from "effect"
+
+// Fall-back example: 01:30 on Nov 2, 2025 in New York happens twice
+const ambiguousTime = { year: 2025, month: 11, day: 2, hours: 1, minutes: 30 }
+const timeZone = DateTime.zoneUnsafeMakeNamed("America/New_York")
+
+DateTime.makeZoned(ambiguousTime, { timeZone, adjustForTimeZone: true, disambiguation: "earlier" })
+// Earlier occurrence (DST time): 2025-11-02T05:30:00.000Z
+
+DateTime.makeZoned(ambiguousTime, { timeZone, adjustForTimeZone: true, disambiguation: "later" })
+// Later occurrence (standard time): 2025-11-02T06:30:00.000Z
+
+// Gap example: 02:30 on Mar 9, 2025 in New York doesn't exist
+const gapTime = { year: 2025, month: 3, day: 9, hours: 2, minutes: 30 }
+
+DateTime.makeZoned(gapTime, { timeZone, adjustForTimeZone: true, disambiguation: "earlier" })
+// Time before gap: 2025-03-09T06:30:00.000Z (01:30 EST)
+
+DateTime.makeZoned(gapTime, { timeZone, adjustForTimeZone: true, disambiguation: "later" })
+// Time after gap: 2025-03-09T07:30:00.000Z (03:30 EDT)
+```
+
+**Signature**
+
+```ts
+type Disambiguation = "compatible" | "earlier" | "later" | "reject"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L262)
+
+Since v3.18.0
 DateTime-add.md
 Package: `effect`<br />
 Module: `DateTime`<br />
@@ -18612,7 +18668,7 @@ DateTime.unsafeMake(0).pipe(
 declare const add: { (parts: Partial<DateTime.PartsForMath>): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, parts: Partial<DateTime.PartsForMath>): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1311)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1396)
 
 Since v3.6.0
 DateTime-addDuration.md
@@ -18640,7 +18696,7 @@ DateTime.unsafeMake(0).pipe(
 declare const addDuration: { (duration: Duration.DurationInput): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, duration: Duration.DurationInput): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1268)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1353)
 
 Since v3.6.0
 DateTime-distance.md
@@ -18674,7 +18730,7 @@ Effect.gen(function* () {
 declare const distance: { (other: DateTime): (self: DateTime) => number; (self: DateTime, other: DateTime): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L676)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L748)
 
 Since v3.6.0
 DateTime-distanceDuration.md
@@ -18705,7 +18761,7 @@ Effect.gen(function* () {
 declare const distanceDuration: { (other: DateTime): (self: DateTime) => Duration.Duration; (self: DateTime, other: DateTime): Duration.Duration; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L731)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L803)
 
 Since v3.6.0
 DateTime-distanceDurationEither.md
@@ -18745,7 +18801,7 @@ Effect.gen(function* () {
 declare const distanceDurationEither: { (other: DateTime): (self: DateTime) => Either.Either<Duration.Duration, Duration.Duration>; (self: DateTime, other: DateTime): Either.Either<Duration.Duration, Duration.Duration>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L708)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L780)
 
 Since v3.6.0
 DateTime-endOf.md
@@ -18777,29 +18833,7 @@ DateTime.unsafeMake("2024-01-01T12:00:00Z").pipe(
 declare const endOf: { (part: DateTime.UnitSingular, options?: { readonly weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | undefined; }): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, part: DateTime.UnitSingular, options?: { readonly weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | undefined; }): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1386)
-
-Since v3.6.0
-DateTime-format.md
-Package: `effect`<br />
-Module: `DateTime`<br />
-
-## DateTime.format
-
-Format a `DateTime` as a string using the `DateTimeFormat` API.
-
-The `timeZone` option is set to the offset of the time zone.
-
-Note: On Node versions < 22, fixed "Offset" zones will set the time zone to
-"UTC" and use the adjusted `Date`.
-
-**Signature**
-
-```ts
-declare const format: { (options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): (self: DateTime) => string; (self: DateTime, options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): string; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1444)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1471)
 
 Since v3.6.0
 data-BigInt-MonoidMultiply.md
@@ -19583,6 +19617,28 @@ declare const Semigroup: semigroup.Semigroup<string>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/String.ts#L13)
 
 Since v0.24.0
+DateTime-format.md
+Package: `effect`<br />
+Module: `DateTime`<br />
+
+## DateTime.format
+
+Format a `DateTime` as a string using the `DateTimeFormat` API.
+
+The `timeZone` option is set to the offset of the time zone.
+
+Note: On Node versions < 22, fixed "Offset" zones will set the time zone to
+"UTC" and use the adjusted `Date`.
+
+**Signature**
+
+```ts
+declare const format: { (options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): (self: DateTime) => string; (self: DateTime, options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): string; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1529)
+
+Since v3.6.0
 DateTime-formatIntl.md
 Package: `effect`<br />
 Module: `DateTime`<br />
@@ -19597,7 +19653,7 @@ Format a `DateTime` as a string using the `DateTimeFormat` API.
 declare const formatIntl: { (format: Intl.DateTimeFormat): (self: DateTime) => string; (self: DateTime, format: Intl.DateTimeFormat): string; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1520)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1605)
 
 Since v3.6.0
 DateTime-formatIso.md
@@ -19614,7 +19670,7 @@ Format a `DateTime` as a UTC ISO string.
 declare const formatIso: (self: DateTime) => string
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1531)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1616)
 
 Since v3.6.0
 DateTime-formatIsoDate.md
@@ -19631,7 +19687,7 @@ Format a `DateTime` as a time zone adjusted ISO date string.
 declare const formatIsoDate: (self: DateTime) => string
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1539)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1624)
 
 Since v3.6.0
 DateTime-formatIsoDateUtc.md
@@ -19648,7 +19704,7 @@ Format a `DateTime` as a UTC ISO date string.
 declare const formatIsoDateUtc: (self: DateTime) => string
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1547)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1632)
 
 Since v3.6.0
 DateTime-formatIsoOffset.md
@@ -19665,7 +19721,7 @@ Format a `DateTime.Zoned` as a ISO string with an offset.
 declare const formatIsoOffset: (self: DateTime) => string
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1555)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1640)
 
 Since v3.6.0
 DateTime-formatIsoZoned.md
@@ -19684,7 +19740,7 @@ It uses the format: `YYYY-MM-DDTHH:mm:ss.sss+HH:MM[Time/Zone]`.
 declare const formatIsoZoned: (self: Zoned) => string
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1565)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1650)
 
 Since v3.6.0
 DateTime-formatLocal.md
@@ -19703,7 +19759,7 @@ It will use the system's local time zone & locale.
 declare const formatLocal: { (options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): (self: DateTime) => string; (self: DateTime, options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): string; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1470)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1555)
 
 Since v3.6.0
 DateTime-formatUtc.md
@@ -19722,7 +19778,7 @@ This forces the time zone to be UTC.
 declare const formatUtc: { (options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): (self: DateTime) => string; (self: DateTime, options?: (Intl.DateTimeFormatOptions & { readonly locale?: Intl.LocalesArgument; }) | undefined): string; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1496)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1581)
 
 Since v3.6.0
 DateTime-getPart.md
@@ -19752,7 +19808,7 @@ assert.strictEqual(year, 2024)
 declare const getPart: { (part: keyof DateTime.PartsWithWeekday): (self: DateTime) => number; (self: DateTime, part: keyof DateTime.PartsWithWeekday): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L954)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1026)
 
 Since v3.6.0
 DateTime-getPartUtc.md
@@ -19782,7 +19838,7 @@ assert.strictEqual(year, 2024)
 declare const getPartUtc: { (part: keyof DateTime.PartsWithWeekday): (self: DateTime) => number; (self: DateTime, part: keyof DateTime.PartsWithWeekday): number; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L932)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1004)
 
 Since v3.6.0
 DateTime-layerCurrentZone.md
@@ -19799,7 +19855,7 @@ Create a Layer from the given time zone.
 declare const layerCurrentZone: (zone: TimeZone) => Layer.Layer<CurrentTimeZone>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1573)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1658)
 
 Since v3.6.0
 DateTime-layerCurrentZoneLocal.md
@@ -19816,7 +19872,7 @@ Create a Layer from the systems local time zone.
 declare const layerCurrentZoneLocal: Layer.Layer<CurrentTimeZone, never, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1601)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1686)
 
 Since v3.6.0
 DateTime-layerCurrentZoneNamed.md
@@ -19833,7 +19889,7 @@ Create a Layer from the given IANA time zone identifier.
 declare const layerCurrentZoneNamed: (zoneId: string) => Layer.Layer<CurrentTimeZone, IllegalArgumentException>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1590)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1675)
 
 Since v3.6.0
 DateTime-layerCurrentZoneOffset.md
@@ -19850,7 +19906,7 @@ Create a Layer from the given time zone offset.
 declare const layerCurrentZoneOffset: (offset: number) => Layer.Layer<CurrentTimeZone>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1581)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1666)
 
 Since v3.6.0
 DateTime-make.md
@@ -19890,7 +19946,7 @@ DateTime.make("2024-01-01")
 declare const make: <A extends DateTime.Input>(input: A) => Option.Option<DateTime.PreserveZone<A>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L400)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L464)
 
 Since v3.6.0
 DateTime-makeZoned.md
@@ -19901,7 +19957,16 @@ Module: `DateTime`<br />
 
 Create a `DateTime.Zoned` using `DateTime.make` and a time zone.
 
-The input is treated as UTC and then the time zone is attached.
+The input is treated as UTC and then the time zone is attached, unless
+`adjustForTimeZone` is set to `true`. In that case, the input is treated as
+already in the time zone.
+
+When `adjustForTimeZone` is true and ambiguous times occur during DST transitions,
+the `disambiguation` option controls how to resolve the ambiguity:
+- `compatible` (default): Choose earlier time for repeated times, later for gaps
+- `earlier`: Always choose the earlier of two possible times
+- `later`: Always choose the later of two possible times
+- `reject`: Throw an error when ambiguous times are encountered
 
 If the date time input or time zone is invalid, `None` will be returned.
 
@@ -19916,10 +19981,10 @@ DateTime.makeZoned(new Date(), { timeZone: "Europe/London" })
 **Signature**
 
 ```ts
-declare const makeZoned: (input: DateTime.Input, options?: { readonly timeZone?: number | string | TimeZone | undefined; readonly adjustForTimeZone?: boolean | undefined; }) => Option.Option<Zoned>
+declare const makeZoned: (input: DateTime.Input, options?: { readonly timeZone?: number | string | TimeZone | undefined; readonly adjustForTimeZone?: boolean | undefined; readonly disambiguation?: Disambiguation | undefined; }) => Option.Option<Zoned>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L365)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L428)
 
 Since v3.6.0
 DateTime-makeZonedFromString.md
@@ -19938,7 +20003,7 @@ It uses the format: `YYYY-MM-DDTHH:mm:ss.sss+HH:MM[Time/Zone]`.
 declare const makeZonedFromString: (input: string) => Option.Option<Zoned>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L410)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L474)
 
 Since v3.6.0
 DateTime-mapEpochMillis.md
@@ -19967,7 +20032,7 @@ DateTime.unsafeMake(0).pipe(
 declare const mapEpochMillis: { (f: (millis: number) => number): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, f: (millis: number) => number): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1187)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1272)
 
 Since v3.6.0
 DateTime-mutate.md
@@ -19981,13 +20046,15 @@ Modify a `DateTime` by applying a function to a cloned `Date` instance.
 The `Date` will first have the time zone applied if possible, and then be
 converted back to a `DateTime` within the same time zone.
 
+Supports `disambiguation` when the new wall clock time is ambiguous.
+
 **Signature**
 
 ```ts
-declare const mutate: { (f: (date: Date) => void): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, f: (date: Date) => void): A; }
+declare const mutate: { (f: (date: Date) => void, options?: { readonly disambiguation?: Disambiguation | undefined; }): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, f: (date: Date) => void, options?: { readonly disambiguation?: Disambiguation | undefined; }): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1155)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1229)
 
 Since v3.6.0
 DateTime-mutateUtc.md
@@ -20004,7 +20071,7 @@ Modify a `DateTime` by applying a function to a cloned UTC `Date` instance.
 declare const mutateUtc: { (f: (date: Date) => void): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, f: (date: Date) => void): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1166)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1251)
 
 Since v3.6.0
 DateTime-nearest.md
@@ -20036,7 +20103,7 @@ DateTime.unsafeMake("2024-01-01T12:01:00Z").pipe(
 declare const nearest: { (part: DateTime.UnitSingular, options?: { readonly weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | undefined; }): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, part: DateTime.UnitSingular, options?: { readonly weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | undefined; }): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1417)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1502)
 
 Since v3.6.0
 DateTime-now.md
@@ -20063,7 +20130,7 @@ Effect.gen(function* () {
 declare const now: Effect.Effect<Utc, never, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L426)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L490)
 
 Since v3.6.0
 DateTime-nowAsDate.md
@@ -20090,7 +20157,7 @@ Effect.gen(function* () {
 declare const nowAsDate: Effect.Effect<Date, never, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L442)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L506)
 
 Since v3.14.0
 DateTime-nowInCurrentZone.md
@@ -20118,7 +20185,7 @@ Effect.gen(function* () {
 declare const nowInCurrentZone: Effect.Effect<Zoned, never, CurrentTimeZone>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1140)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1212)
 
 Since v3.6.0
 DateTime-removeTime.md
@@ -20151,7 +20218,7 @@ DateTime.unsafeMakeZoned("2024-01-01T05:00:00Z", {
 declare const removeTime: (self: DateTime) => Utc
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L889)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L961)
 
 Since v3.6.0
 DateTime-setParts.md
@@ -20170,7 +20237,7 @@ The Date will be time zone adjusted.
 declare const setParts: { (parts: Partial<DateTime.PartsWithWeekday>): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, parts: Partial<DateTime.PartsWithWeekday>): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L967)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1039)
 
 Since v3.6.0
 DateTime-setPartsUtc.md
@@ -20187,7 +20254,7 @@ Set the different parts of a `DateTime` as an object.
 declare const setPartsUtc: { (parts: Partial<DateTime.PartsWithWeekday>): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, parts: Partial<DateTime.PartsWithWeekday>): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L978)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1050)
 
 Since v3.6.0
 DateTime-setZone.md
@@ -20215,10 +20282,10 @@ Effect.gen(function* () {
 **Signature**
 
 ```ts
-declare const setZone: { (zone: TimeZone, options?: { readonly adjustForTimeZone?: boolean | undefined; }): (self: DateTime) => Zoned; (self: DateTime, zone: TimeZone, options?: { readonly adjustForTimeZone?: boolean | undefined; }): Zoned; }
+declare const setZone: { (zone: TimeZone, options?: { readonly adjustForTimeZone?: boolean | undefined; readonly disambiguation?: Disambiguation | undefined; }): (self: DateTime) => Zoned; (self: DateTime, zone: TimeZone, options?: { readonly adjustForTimeZone?: boolean | undefined; readonly disambiguation?: Disambiguation | undefined; }): Zoned; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L491)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L555)
 
 Since v3.6.0
 DateTime-setZoneCurrent.md
@@ -20249,7 +20316,7 @@ Effect.gen(function* () {
 declare const setZoneCurrent: (self: DateTime) => Effect.Effect<Zoned, never, CurrentTimeZone>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1011)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1083)
 
 Since v3.6.0
 DateTime-setZoneNamed.md
@@ -20276,10 +20343,10 @@ Effect.gen(function* () {
 **Signature**
 
 ```ts
-declare const setZoneNamed: { (zoneId: string, options?: { readonly adjustForTimeZone?: boolean | undefined; }): (self: DateTime) => Option.Option<Zoned>; (self: DateTime, zoneId: string, options?: { readonly adjustForTimeZone?: boolean | undefined; }): Option.Option<Zoned>; }
+declare const setZoneNamed: { (zoneId: string, options?: { readonly adjustForTimeZone?: boolean | undefined; readonly disambiguation?: Disambiguation | undefined; }): (self: DateTime) => Option.Option<Zoned>; (self: DateTime, zoneId: string, options?: { readonly adjustForTimeZone?: boolean | undefined; readonly disambiguation?: Disambiguation | undefined; }): Option.Option<Zoned>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L616)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L684)
 
 Since v3.6.0
 DateTime-setZoneOffset.md
@@ -20308,10 +20375,10 @@ Effect.gen(function* () {
 **Signature**
 
 ```ts
-declare const setZoneOffset: { (offset: number, options?: { readonly adjustForTimeZone?: boolean | undefined; }): (self: DateTime) => Zoned; (self: DateTime, offset: number, options?: { readonly adjustForTimeZone?: boolean | undefined; }): Zoned; }
+declare const setZoneOffset: { (offset: number, options?: { readonly adjustForTimeZone?: boolean | undefined; readonly disambiguation?: Disambiguation | undefined; }): (self: DateTime) => Zoned; (self: DateTime, offset: number, options?: { readonly adjustForTimeZone?: boolean | undefined; readonly disambiguation?: Disambiguation | undefined; }): Zoned; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L519)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L585)
 
 Since v3.6.0
 DateTime-startOf.md
@@ -20343,7 +20410,7 @@ DateTime.unsafeMake("2024-01-01T12:00:00Z").pipe(
 declare const startOf: { (part: DateTime.UnitSingular, options?: { readonly weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | undefined; }): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, part: DateTime.UnitSingular, options?: { readonly weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | undefined; }): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1355)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1440)
 
 Since v3.6.0
 DateTime-subtract.md
@@ -20371,7 +20438,7 @@ DateTime.unsafeMake(0).pipe(
 declare const subtract: { (parts: Partial<DateTime.PartsForMath>): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, parts: Partial<DateTime.PartsForMath>): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1331)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1416)
 
 Since v3.6.0
 DateTime-subtractDuration.md
@@ -20399,7 +20466,7 @@ DateTime.unsafeMake(0).pipe(
 declare const subtractDuration: { (duration: Duration.DurationInput): <A extends DateTime>(self: A) => A; <A extends DateTime>(self: A, duration: Duration.DurationInput): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1288)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1373)
 
 Since v3.6.0
 DateTime-toDate.md
@@ -20416,7 +20483,7 @@ Convert a `DateTime` to a `Date`, applying the time zone first.
 declare const toDate: (self: DateTime) => Date
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L841)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L913)
 
 Since v3.6.0
 DateTime-toDateUtc.md
@@ -20433,7 +20500,7 @@ Get the UTC `Date` of a `DateTime`.
 declare const toDateUtc: (self: DateTime) => Date
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L833)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L905)
 
 Since v3.6.0
 DateTime-toEpochMillis.md
@@ -20450,7 +20517,7 @@ Get the milliseconds since the Unix epoch of a `DateTime`.
 declare const toEpochMillis: (self: DateTime) => number
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L867)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L939)
 
 Since v3.6.0
 DateTime-toParts.md
@@ -20469,7 +20536,7 @@ The parts will be time zone adjusted.
 declare const toParts: (self: DateTime) => DateTime.PartsWithWeekday
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L903)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L975)
 
 Since v3.6.0
 DateTime-toPartsUtc.md
@@ -20488,7 +20555,7 @@ The parts will be in UTC.
 declare const toPartsUtc: (self: DateTime) => DateTime.PartsWithWeekday
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L913)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L985)
 
 Since v3.6.0
 DateTime-toUtc.md
@@ -20516,7 +20583,7 @@ const utc: DateTime.Utc = DateTime.toUtc(now)
 declare const toUtc: (self: DateTime) => Utc
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L471)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L535)
 
 Since v3.13.0
 DateTime-unsafeFromDate.md
@@ -20535,7 +20602,7 @@ If the `Date` is invalid, an `IllegalArgumentException` will be thrown.
 declare const unsafeFromDate: (date: Date) => Utc
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L299)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L345)
 
 Since v3.6.0
 DateTime-unsafeMake.md
@@ -20573,7 +20640,7 @@ DateTime.unsafeMake("2024-01-01")
 declare const unsafeMake: <A extends DateTime.Input>(input: A) => DateTime.PreserveZone<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L326)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L372)
 
 Since v3.6.0
 DateTime-unsafeMakeZoned.md
@@ -20588,6 +20655,13 @@ The input is treated as UTC and then the time zone is attached, unless
 `adjustForTimeZone` is set to `true`. In that case, the input is treated as
 already in the time zone.
 
+When `adjustForTimeZone` is true and ambiguous times occur during DST transitions,
+the `disambiguation` option controls how to resolve the ambiguity:
+- `compatible` (default): Choose earlier time for repeated times, later for gaps
+- `earlier`: Always choose the earlier of two possible times
+- `later`: Always choose the later of two possible times
+- `reject`: Throw an error when ambiguous times are encountered
+
 **Example**
 
 ```ts
@@ -20599,10 +20673,10 @@ DateTime.unsafeMakeZoned(new Date(), { timeZone: "Europe/London" })
 **Signature**
 
 ```ts
-declare const unsafeMakeZoned: (input: DateTime.Input, options?: { readonly timeZone?: number | string | TimeZone | undefined; readonly adjustForTimeZone?: boolean | undefined; }) => Zoned
+declare const unsafeMakeZoned: (input: DateTime.Input, options?: { readonly timeZone?: number | string | TimeZone | undefined; readonly adjustForTimeZone?: boolean | undefined; readonly disambiguation?: Disambiguation | undefined; }) => Zoned
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L344)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L397)
 
 Since v3.6.0
 DateTime-unsafeNow.md
@@ -20619,7 +20693,7 @@ Get the current time using `Date.now`.
 declare const unsafeNow: LazyArg<Utc>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L450)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L514)
 
 Since v3.6.0
 DateTime-unsafeSetZoneNamed.md
@@ -20646,10 +20720,10 @@ Effect.gen(function* () {
 **Signature**
 
 ```ts
-declare const unsafeSetZoneNamed: { (zoneId: string, options?: { readonly adjustForTimeZone?: boolean | undefined; }): (self: DateTime) => Zoned; (self: DateTime, zoneId: string, options?: { readonly adjustForTimeZone?: boolean | undefined; }): Zoned; }
+declare const unsafeSetZoneNamed: { (zoneId: string, options?: { readonly adjustForTimeZone?: boolean | undefined; readonly disambiguation?: Disambiguation | undefined; }): (self: DateTime) => Zoned; (self: DateTime, zoneId: string, options?: { readonly adjustForTimeZone?: boolean | undefined; readonly disambiguation?: Disambiguation | undefined; }): Zoned; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L642)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L712)
 
 Since v3.6.0
 DateTime-withCurrentZone.md
@@ -20678,7 +20752,7 @@ Effect.gen(function* () {
 declare const withCurrentZone: { (zone: TimeZone): <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, Exclude<R, CurrentTimeZone>>; <A, E, R>(effect: Effect.Effect<A, E, R>, zone: TimeZone): Effect.Effect<A, E, Exclude<R, CurrentTimeZone>>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1030)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1102)
 
 Since v3.6.0
 DateTime-withCurrentZoneLocal.md
@@ -20707,7 +20781,7 @@ Effect.gen(function* () {
 declare const withCurrentZoneLocal: <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, Exclude<R, CurrentTimeZone>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1059)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1131)
 
 Since v3.6.0
 DateTime-withCurrentZoneNamed.md
@@ -20738,7 +20812,7 @@ Effect.gen(function* () {
 declare const withCurrentZoneNamed: { (zone: string): <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E | IllegalArgumentException, Exclude<R, CurrentTimeZone>>; <A, E, R>(effect: Effect.Effect<A, E, R>, zone: string): Effect.Effect<A, E | IllegalArgumentException, Exclude<R, CurrentTimeZone>>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1108)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1180)
 
 Since v3.6.0
 DateTime-withCurrentZoneOffset.md
@@ -20766,7 +20840,7 @@ Effect.gen(function* () {
 declare const withCurrentZoneOffset: { (offset: number): <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, Exclude<R, CurrentTimeZone>>; <A, E, R>(effect: Effect.Effect<A, E, R>, offset: number): Effect.Effect<A, E, Exclude<R, CurrentTimeZone>>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1079)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1151)
 
 Since v3.6.0
 DateTime-withDate.md
@@ -20795,7 +20869,7 @@ DateTime.unsafeMakeZoned(0, { timeZone: "Europe/London" }).pipe(
 declare const withDate: { <A>(f: (date: Date) => A): (self: DateTime) => A; <A>(self: DateTime, f: (date: Date) => A): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1208)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1293)
 
 Since v3.6.0
 DateTime-withDateUtc.md
@@ -20824,7 +20898,7 @@ DateTime.unsafeMake(0).pipe(
 declare const withDateUtc: { <A>(f: (date: Date) => A): (self: DateTime) => A; <A>(self: DateTime, f: (date: Date) => A): A; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1229)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L1314)
 
 Since v3.6.0
 DateTime-zoneFromString.md
@@ -20841,7 +20915,7 @@ Try parse a TimeZone from a string
 declare const zoneFromString: (zone: string) => Option.Option<TimeZone>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L579)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L647)
 
 Since v3.6.0
 DateTime-zoneMakeLocal.md
@@ -20858,7 +20932,7 @@ Create a named time zone from the system's local time zone.
 declare const zoneMakeLocal: () => TimeZone.Named
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L571)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L639)
 
 Since v3.6.0
 DateTime-zoneMakeNamed.md
@@ -20876,7 +20950,7 @@ is invalid, `None` will be returned.
 declare const zoneMakeNamed: (zoneId: string) => Option.Option<TimeZone.Named>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L553)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L621)
 
 Since v3.6.0
 DateTime-zoneMakeNamedEffect.md
@@ -20894,7 +20968,7 @@ is invalid, it will fail with an `IllegalArgumentException`.
 declare const zoneMakeNamedEffect: (zoneId: string) => Effect.Effect<TimeZone.Named, IllegalArgumentException>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L562)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L630)
 
 Since v3.6.0
 DateTime-zoneMakeOffset.md
@@ -20911,7 +20985,7 @@ Create a fixed offset time zone.
 declare const zoneMakeOffset: (offset: number) => TimeZone.Offset
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L544)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L612)
 
 Since v3.6.0
 DateTime-zoneToString.md
@@ -20940,7 +21014,7 @@ DateTime.zoneToString(DateTime.zoneUnsafeMakeNamed("Europe/London"))
 declare const zoneToString: (self: TimeZone) => string
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L597)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L665)
 
 Since v3.6.0
 DateTime-zoneUnsafeMakeNamed.md
@@ -20959,7 +21033,7 @@ If the time zone is invalid, an `IllegalArgumentException` will be thrown.
 declare const zoneUnsafeMakeNamed: (zoneId: string) => TimeZone.Named
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L536)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L604)
 
 Since v3.6.0
 DateTime-zonedOffset.md
@@ -20976,7 +21050,7 @@ Calculate the time zone offset of a `DateTime.Zoned` in milliseconds.
 declare const zonedOffset: (self: Zoned) => number
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L849)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L921)
 
 Since v3.6.0
 DateTime-zonedOffsetIso.md
@@ -20995,7 +21069,7 @@ The offset is formatted as "±HH:MM".
 declare const zonedOffsetIso: (self: Zoned) => string
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L859)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/DateTime.ts#L931)
 
 Since v3.6.0
 Deferred-Deferred.md
@@ -21786,27 +21860,6 @@ declare const angleBracketed: <A>(self: Doc<A>) => Doc<A>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/printer/src/Doc.ts#L2288)
 
 Since v1.0.0
-Doc-annotate.md
-Package: `@effect/printer`<br />
-Module: `Doc`<br />
-
-## Doc.annotate
-
-Adds an annotation to a `Doc`. The annotation can then be used by the rendering
-algorithm to, for example, add color to certain parts of the output.
-
-**Note** This function is relevant only for custom formats with their own annotations,
-and is not relevant for basic pretty printing.
-
-**Signature**
-
-```ts
-declare const annotate: { <A>(annotation: A): (self: Doc<A>) => Doc<A>; <A>(self: Doc<A>, annotation: A): Doc<A>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/printer/src/Doc.ts#L2062)
-
-Since v1.0.0
 Doc-Annotated.md
 Package: `@effect/printer`<br />
 Module: `Doc`<br />
@@ -21988,6 +22041,27 @@ export interface FlatAlt<A> extends Doc.Variance<A> {
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/printer/src/Doc.ts#L204)
+
+Since v1.0.0
+Doc-annotate.md
+Package: `@effect/printer`<br />
+Module: `Doc`<br />
+
+## Doc.annotate
+
+Adds an annotation to a `Doc`. The annotation can then be used by the rendering
+algorithm to, for example, add color to certain parts of the output.
+
+**Note** This function is relevant only for custom formats with their own annotations,
+and is not relevant for basic pretty printing.
+
+**Signature**
+
+```ts
+declare const annotate: { <A>(annotation: A): (self: Doc<A>) => Doc<A>; <A>(self: Doc<A>, annotation: A): Doc<A>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/printer/src/Doc.ts#L2062)
 
 Since v1.0.0
 Doc-backslash.md
@@ -23304,23 +23378,6 @@ declare const isFail: <A>(self: Doc<A>) => self is Fail<A>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/printer/src/Doc.ts#L326)
 
 Since v1.0.0
-Doc-isFlatAlt.md
-Package: `@effect/printer`<br />
-Module: `Doc`<br />
-
-## Doc.isFlatAlt
-
-Returns `true` if the specified `Doc` is a `FlatAlt`, `false` otherwise.
-
-**Signature**
-
-```ts
-declare const isFlatAlt: <A>(self: Doc<A>) => self is FlatAlt<A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/printer/src/Doc.ts#L366)
-
-Since v1.0.0
 Doc-Line.md
 Package: `@effect/printer`<br />
 Module: `Doc`<br />
@@ -23450,6 +23507,23 @@ export interface WithPageWidth<A> extends Doc.Variance<A> {
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/printer/src/Doc.ts#L280)
+
+Since v1.0.0
+Doc-isFlatAlt.md
+Package: `@effect/printer`<br />
+Module: `Doc`<br />
+
+## Doc.isFlatAlt
+
+Returns `true` if the specified `Doc` is a `FlatAlt`, `false` otherwise.
+
+**Signature**
+
+```ts
+declare const isFlatAlt: <A>(self: Doc<A>) => self is FlatAlt<A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/printer/src/Doc.ts#L366)
 
 Since v1.0.0
 Doc-isLine.md
@@ -26212,6 +26286,34 @@ declare const allSuccesses: <X extends Effect<any, any, any>>(elements: Iterable
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L1032)
 
 Since v2.0.0
+Effect-allowInterrupt.md
+Package: `effect`<br />
+Module: `Effect`<br />
+
+## Effect.allowInterrupt
+
+Allows interruption of the current fiber, even in uninterruptible regions.
+
+**Details**
+
+This effect checks whether any other fibers are attempting to interrupt the
+current fiber. If so, it allows the current fiber to perform a
+self-interruption.
+
+**When to Use**
+
+This is useful in situations where you want to allow interruption to happen
+even in regions of the code that are normally uninterruptible.
+
+**Signature**
+
+```ts
+declare const allowInterrupt: Effect<void, never, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L4724)
+
+Since v2.0.0
 Effect-allWith.md
 Package: `effect`<br />
 Module: `Effect`<br />
@@ -26261,34 +26363,6 @@ declare const allWith: <O extends NoExcessProperties<{ readonly concurrency?: Co
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L876)
-
-Since v2.0.0
-Effect-allowInterrupt.md
-Package: `effect`<br />
-Module: `Effect`<br />
-
-## Effect.allowInterrupt
-
-Allows interruption of the current fiber, even in uninterruptible regions.
-
-**Details**
-
-This effect checks whether any other fibers are attempting to interrupt the
-current fiber. If so, it allows the current fiber to perform a
-self-interruption.
-
-**When to Use**
-
-This is useful in situations where you want to allow interruption to happen
-even in regions of the code that are normally uninterruptible.
-
-**Signature**
-
-```ts
-declare const allowInterrupt: Effect<void, never, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L4724)
 
 Since v2.0.0
 Effect-andThen.md
@@ -28472,82 +28546,6 @@ declare const diffFiberRefs: <A, E, R>(self: Effect<A, E, R>) => Effect<[FiberRe
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L6184)
 
 Since v2.0.0
-Effect-disconnect.md
-Package: `effect`<br />
-Module: `Effect`<br />
-
-## Effect.disconnect
-
-Provides a way to handle timeouts in uninterruptible effects, allowing them
-to continue in the background while the main control flow proceeds with the
-timeout error.
-
-**Details**
-
-The `disconnect` function allows an uninterruptible effect to continue
-running in the background, while enabling the main control flow to
-immediately recognize a timeout condition. This is useful when you want to
-avoid blocking the program due to long-running tasks, especially when those
-tasks do not need to affect the flow of the rest of the program.
-
-Without `disconnect`, an uninterruptible effect will ignore the
-timeout and continue executing until it completes. The timeout error will
-only be assessed after the effect finishes, which can cause delays in
-recognizing a timeout.
-
-With `disconnect`, the uninterruptible effect proceeds in the
-background while the main program flow can immediately handle the timeout
-error or trigger alternative logic. This enables faster timeout handling
-without waiting for the completion of the long-running task.
-
-**Example**
-
-```ts
-import { Effect } from "effect"
-
-const longRunningTask = Effect.gen(function* () {
-  console.log("Start heavy processing...")
-  yield* Effect.sleep("5 seconds") // Simulate a long process
-  console.log("Heavy processing done.")
-  return "Data processed"
-})
-
-const timedEffect = longRunningTask.pipe(
-  Effect.uninterruptible,
-  // Allows the task to finish in the background if it times out
-  Effect.disconnect,
-  Effect.timeout("1 second")
-)
-
-Effect.runPromiseExit(timedEffect).then(console.log)
-// Output:
-// Start heavy processing...
-// {
-//   _id: 'Exit',
-//   _tag: 'Failure',
-//   cause: {
-//     _id: 'Cause',
-//     _tag: 'Fail',
-//     failure: { _tag: 'TimeoutException' }
-//   }
-// }
-// Heavy processing done.
-```
-
-**See**
-
-- `timeout` for a version that interrupts the effect.
-- `uninterruptible` for creating an uninterruptible effect.
-
-**Signature**
-
-```ts
-declare const disconnect: <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L4833)
-
-Since v2.0.0
 Effect-Do.md
 Package: `effect`<br />
 Module: `Effect`<br />
@@ -28656,6 +28654,82 @@ export interface FunctionWithSpanOptions {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L13112)
 
 Since v3.2.0
+Effect-disconnect.md
+Package: `effect`<br />
+Module: `Effect`<br />
+
+## Effect.disconnect
+
+Provides a way to handle timeouts in uninterruptible effects, allowing them
+to continue in the background while the main control flow proceeds with the
+timeout error.
+
+**Details**
+
+The `disconnect` function allows an uninterruptible effect to continue
+running in the background, while enabling the main control flow to
+immediately recognize a timeout condition. This is useful when you want to
+avoid blocking the program due to long-running tasks, especially when those
+tasks do not need to affect the flow of the rest of the program.
+
+Without `disconnect`, an uninterruptible effect will ignore the
+timeout and continue executing until it completes. The timeout error will
+only be assessed after the effect finishes, which can cause delays in
+recognizing a timeout.
+
+With `disconnect`, the uninterruptible effect proceeds in the
+background while the main program flow can immediately handle the timeout
+error or trigger alternative logic. This enables faster timeout handling
+without waiting for the completion of the long-running task.
+
+**Example**
+
+```ts
+import { Effect } from "effect"
+
+const longRunningTask = Effect.gen(function* () {
+  console.log("Start heavy processing...")
+  yield* Effect.sleep("5 seconds") // Simulate a long process
+  console.log("Heavy processing done.")
+  return "Data processed"
+})
+
+const timedEffect = longRunningTask.pipe(
+  Effect.uninterruptible,
+  // Allows the task to finish in the background if it times out
+  Effect.disconnect,
+  Effect.timeout("1 second")
+)
+
+Effect.runPromiseExit(timedEffect).then(console.log)
+// Output:
+// Start heavy processing...
+// {
+//   _id: 'Exit',
+//   _tag: 'Failure',
+//   cause: {
+//     _id: 'Cause',
+//     _tag: 'Fail',
+//     failure: { _tag: 'TimeoutException' }
+//   }
+// }
+// Heavy processing done.
+```
+
+**See**
+
+- `timeout` for a version that interrupts the effect.
+- `uninterruptible` for creating an uninterruptible effect.
+
+**Signature**
+
+```ts
+declare const disconnect: <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L4833)
+
+Since v2.0.0
 Effect-dropUntil.md
 Package: `effect`<br />
 Module: `Effect`<br />
@@ -30832,24 +30906,6 @@ declare const gen: { <Eff extends YieldWrap<Effect<any, any, any>>, AEff>(f: (re
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L2760)
 
 Since v2.0.0
-Effect-getFiberRefs.md
-Package: `effect`<br />
-Module: `Effect`<br />
-
-## Effect.getFiberRefs
-
-Returns a collection of all `FiberRef` values for the fiber running this
-effect.
-
-**Signature**
-
-```ts
-declare const getFiberRefs: Effect<FiberRefs.FiberRefs, never, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L10411)
-
-Since v2.0.0
 Effect-Latch.md
 Package: `effect`<br />
 Module: `Effect`<br />
@@ -30954,6 +31010,24 @@ export interface Latch extends Effect<void> {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L11868)
 
 Since v3.8.0
+Effect-getFiberRefs.md
+Package: `effect`<br />
+Module: `Effect`<br />
+
+## Effect.getFiberRefs
+
+Returns a collection of all `FiberRef` values for the fiber running this
+effect.
+
+**Signature**
+
+```ts
+declare const getFiberRefs: Effect<FiberRefs.FiberRefs, never, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L10411)
+
+Since v2.0.0
 Effect-getRuntimeFlags.md
 Package: `effect`<br />
 Module: `Effect`<br />
@@ -35832,30 +35906,6 @@ declare const scope: Effect<Scope.Scope, never, Scope.Scope>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L6018)
 
 Since v2.0.0
-Effect-scoped.md
-Package: `effect`<br />
-Module: `Effect`<br />
-
-## Effect.scoped
-
-Scopes all resources used in an effect to the lifetime of the effect.
-
-**Details**
-
-This function ensures that all resources used within an effect are tied to
-its lifetime. Finalizers for these resources are executed automatically when
-the effect completes, whether through success, failure, or interruption. This
-guarantees proper resource cleanup without requiring explicit management.
-
-**Signature**
-
-```ts
-declare const scoped: <A, E, R>(effect: Effect<A, E, R>) => Effect<A, E, Exclude<R, Scope.Scope>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L6053)
-
-Since v2.0.0
 Effect-Semaphore.md
 Package: `effect`<br />
 Module: `Effect`<br />
@@ -36038,6 +36088,30 @@ declare const scopeWith: <A, E, R>(f: (scope: Scope.Scope) => Effect<A, E, R>) =
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L6026)
+
+Since v2.0.0
+Effect-scoped.md
+Package: `effect`<br />
+Module: `Effect`<br />
+
+## Effect.scoped
+
+Scopes all resources used in an effect to the lifetime of the effect.
+
+**Details**
+
+This function ensures that all resources used within an effect are tied to
+its lifetime. Finalizers for these resources are executed automatically when
+the effect completes, whether through success, failure, or interruption. This
+guarantees proper resource cleanup without requiring explicit management.
+
+**Signature**
+
+```ts
+declare const scoped: <A, E, R>(effect: Effect<A, E, R>) => Effect<A, E, Exclude<R, Scope.Scope>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L6053)
 
 Since v2.0.0
 Effect-scopedWith.md
@@ -42065,23 +42139,6 @@ declare const children: <A, E>(self: Fiber<A, E>) => Effect.Effect<Array<Runtime
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Fiber.ts#L369)
 
 Since v2.0.0
-Fiber-done.md
-Package: `effect`<br />
-Module: `Fiber`<br />
-
-## Fiber.done
-
-A fiber that is done with the specified `Exit` value.
-
-**Signature**
-
-```ts
-declare const done: <A, E>(exit: Exit.Exit<A, E>) => Fiber<A, E>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Fiber.ts#L386)
-
-Since v2.0.0
 Fiber-Fiber.Descriptor.md
 Package: `effect`<br />
 Module: `Fiber`<br />
@@ -42278,6 +42335,23 @@ export interface RuntimeFiber<out A, out E = never> extends Fiber<A, E>, Fiber.R
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Fiber.ts#L129)
+
+Since v2.0.0
+Fiber-done.md
+Package: `effect`<br />
+Module: `Fiber`<br />
+
+## Fiber.done
+
+A fiber that is done with the specified `Exit` value.
+
+**Signature**
+
+```ts
+declare const done: <A, E>(exit: Exit.Exit<A, E>) => Fiber<A, E>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Fiber.ts#L386)
 
 Since v2.0.0
 Fiber-fail.md
@@ -45364,23 +45438,6 @@ declare const evaluate: { <K, V, E, A, E2, R2>(f: (key: K, stream: Stream.Stream
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/GroupBy.ts#L61)
 
 Since v2.0.0
-GroupBy-filter.md
-Package: `effect`<br />
-Module: `GroupBy`<br />
-
-## GroupBy.filter
-
-Filter the groups to be processed.
-
-**Signature**
-
-```ts
-declare const filter: { <K>(predicate: Predicate<NoInfer<K>>): <V, E, R>(self: GroupBy<K, V, E, R>) => GroupBy<K, V, E, R>; <K, V, E, R>(self: GroupBy<K, V, E, R>, predicate: Predicate<K>): GroupBy<K, V, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/GroupBy.ts#L79)
-
-Since v2.0.0
 GroupBy-GroupBy.md
 Package: `effect`<br />
 Module: `GroupBy`<br />
@@ -45400,6 +45457,23 @@ export interface GroupBy<out K, out V, out E = never, out R = never> extends Gro
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/GroupBy.ts#L32)
+
+Since v2.0.0
+GroupBy-filter.md
+Package: `effect`<br />
+Module: `GroupBy`<br />
+
+## GroupBy.filter
+
+Filter the groups to be processed.
+
+**Signature**
+
+```ts
+declare const filter: { <K>(predicate: Predicate<NoInfer<K>>): <V, E, R>(self: GroupBy<K, V, E, R>) => GroupBy<K, V, E, R>; <K, V, E, R>(self: GroupBy<K, V, E, R>, predicate: Predicate<K>): GroupBy<K, V, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/GroupBy.ts#L79)
 
 Since v2.0.0
 GroupBy-first.md
@@ -52941,23 +53015,6 @@ export * as Layout from "./Layout.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/printer/src/index.ts#L39)
 
 Since v1.0.0
-index-LibsqlClient.md
-Package: `@effect/sql-libsql`<br />
-Module: `index`<br />
-
-## index.LibsqlClient
-
-Re-exports all named exports from the "./LibsqlClient.js" module as `LibsqlClient`.
-
-**Signature**
-
-```ts
-export * as LibsqlClient from "./LibsqlClient.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/sql-libsql/src/index.ts#L4)
-
-Since v1.0.0
 index-layer.md
 Package: `@effect/vitest`<br />
 Module: `index`<br />
@@ -53012,6 +53069,23 @@ layer(Foo.Live)("layer", (it) => {
   })
 })
 ```
+index-LibsqlClient.md
+Package: `@effect/sql-libsql`<br />
+Module: `index`<br />
+
+## index.LibsqlClient
+
+Re-exports all named exports from the "./LibsqlClient.js" module as `LibsqlClient`.
+
+**Signature**
+
+```ts
+export * as LibsqlClient from "./LibsqlClient.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/sql-libsql/src/index.ts#L4)
+
+Since v1.0.0
 index-LibsqlMigrator.md
 Package: `@effect/sql-libsql`<br />
 Module: `index`<br />
@@ -57252,23 +57326,6 @@ export * as UrlParams from "./UrlParams.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L285)
 
 Since v1.0.0
-index-Usage.md
-Package: `@effect/cli`<br />
-Module: `index`<br />
-
-## index.Usage
-
-Re-exports all named exports from the "./Usage.js" module as `Usage`.
-
-**Signature**
-
-```ts
-export * as Usage from "./Usage.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/index.ts#L69)
-
-Since v1.0.0
 Invariant-imapComposition.md
 Package: `@effect/typeclass`<br />
 Module: `Invariant`<br />
@@ -58033,25 +58090,23 @@ declare const some: { <A>(predicate: (a: A, i: number) => boolean): (self: Itera
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L944)
 
 Since v2.0.0
-Iterable-take.md
-Package: `effect`<br />
-Module: `Iterable`<br />
+index-Usage.md
+Package: `@effect/cli`<br />
+Module: `index`<br />
 
-## Iterable.take
+## index.Usage
 
-Keep only a max number of elements from the start of an `Iterable`, creating a new `Iterable`.
-
-**Note**. `n` is normalized to a non negative integer.
+Re-exports all named exports from the "./Usage.js" module as `Usage`.
 
 **Signature**
 
 ```ts
-declare const take: { (n: number): <A>(self: Iterable<A>) => Iterable<A>; <A>(self: Iterable<A>, n: number): Iterable<A>; }
+export * as Usage from "./Usage.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L305)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/index.ts#L69)
 
-Since v2.0.0
+Since v1.0.0
 index-Utils.md
 Package: `effect`<br />
 Module: `index`<br />
@@ -58239,6 +58294,25 @@ export * as WorkflowProxyServer from "./WorkflowProxyServer.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L34)
 
 Since v1.0.0
+Iterable-take.md
+Package: `effect`<br />
+Module: `Iterable`<br />
+
+## Iterable.take
+
+Keep only a max number of elements from the start of an `Iterable`, creating a new `Iterable`.
+
+**Note**. `n` is normalized to a non negative integer.
+
+**Signature**
+
+```ts
+declare const take: { (n: number): <A>(self: Iterable<A>) => Iterable<A>; <A>(self: Iterable<A>, n: number): Iterable<A>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L305)
+
+Since v2.0.0
 Iterable-takeWhile.md
 Package: `effect`<br />
 Module: `Iterable`<br />
@@ -60242,24 +60316,6 @@ declare const isNil: <A>(self: List<A>) => self is Nil<A>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L219)
 
 Since v2.0.0
-List-last.md
-Package: `effect`<br />
-Module: `List`<br />
-
-## List.last
-
-Returns the last element of the specified list, or `None` if the list is
-empty.
-
-**Signature**
-
-```ts
-declare const last: <A>(self: List<A>) => Option.Option<A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L711)
-
-Since v2.0.0
 List-List.md
 Package: `effect`<br />
 Module: `List`<br />
@@ -60279,6 +60335,24 @@ type List<A> = Cons<A> | Nil<A>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L49)
+
+Since v2.0.0
+List-last.md
+Package: `effect`<br />
+Module: `List`<br />
+
+## List.last
+
+Returns the last element of the specified list, or `None` if the list is
+empty.
+
+**Signature**
+
+```ts
+declare const last: <A>(self: List<A>) => Option.Option<A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L711)
 
 Since v2.0.0
 List-make.md
@@ -61407,69 +61481,6 @@ export interface Mailbox<in out A, in out E = never> extends ReadonlyMailbox<A, 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Mailbox.ts#L67)
 
 Since v3.8.0
-Mailbox-ReadonlyMailbox.md
-Package: `effect`<br />
-Module: `Mailbox`<br />
-
-## Mailbox.ReadonlyMailbox
-
-A `ReadonlyMailbox` represents a mailbox that can only be read from.
-
-**Signature**
-
-```ts
-export interface ReadonlyMailbox<out A, out E = never>
-  extends Effect<readonly [messages: Chunk<A>, done: boolean], E>, Inspectable
-{
-  readonly [ReadonlyTypeId]: ReadonlyTypeId
-  /**
-   * Take all messages from the mailbox, returning an empty Chunk if the mailbox
-   * is empty or done.
-   */
-  readonly clear: Effect<Chunk<A>, E>
-  /**
-   * Take all messages from the mailbox, or wait for messages to be available.
-   *
-   * If the mailbox is done, the `done` flag will be `true`. If the mailbox
-   * fails, the Effect will fail with the error.
-   */
-  readonly takeAll: Effect<readonly [messages: Chunk<A>, done: boolean], E>
-  /**
-   * Take a specified number of messages from the mailbox. It will only take
-   * up to the capacity of the mailbox.
-   *
-   * If the mailbox is done, the `done` flag will be `true`. If the mailbox
-   * fails, the Effect will fail with the error.
-   */
-  readonly takeN: (n: number) => Effect<readonly [messages: Chunk<A>, done: boolean], E>
-  /**
-   * Take a single message from the mailbox, or wait for a message to be
-   * available.
-   *
-   * If the mailbox is done, it will fail with `NoSuchElementException`. If the
-   * mailbox fails, the Effect will fail with the error.
-   */
-  readonly take: Effect<A, E | NoSuchElementException>
-  /** Wait for the mailbox to be done. */
-  readonly await: Effect<void, E>
-  /**
-   * Check the size of the mailbox.
-   *
-   * If the mailbox is complete, it will return `None`.
-   */
-  readonly size: Effect<Option<number>>
-  /**
-   * Check the size of the mailbox.
-   *
-   * If the mailbox is complete, it will return `None`.
-   */
-  readonly unsafeSize: () => Option<number>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Mailbox.ts#L126)
-
-Since v3.8.0
 Mailbox-fromStream.md
 Package: `effect`<br />
 Module: `Mailbox`<br />
@@ -61550,6 +61561,69 @@ declare const make: <A, E = never>(capacity?: number | { readonly capacity?: num
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Mailbox.ts#L209)
+
+Since v3.8.0
+Mailbox-ReadonlyMailbox.md
+Package: `effect`<br />
+Module: `Mailbox`<br />
+
+## Mailbox.ReadonlyMailbox
+
+A `ReadonlyMailbox` represents a mailbox that can only be read from.
+
+**Signature**
+
+```ts
+export interface ReadonlyMailbox<out A, out E = never>
+  extends Effect<readonly [messages: Chunk<A>, done: boolean], E>, Inspectable
+{
+  readonly [ReadonlyTypeId]: ReadonlyTypeId
+  /**
+   * Take all messages from the mailbox, returning an empty Chunk if the mailbox
+   * is empty or done.
+   */
+  readonly clear: Effect<Chunk<A>, E>
+  /**
+   * Take all messages from the mailbox, or wait for messages to be available.
+   *
+   * If the mailbox is done, the `done` flag will be `true`. If the mailbox
+   * fails, the Effect will fail with the error.
+   */
+  readonly takeAll: Effect<readonly [messages: Chunk<A>, done: boolean], E>
+  /**
+   * Take a specified number of messages from the mailbox. It will only take
+   * up to the capacity of the mailbox.
+   *
+   * If the mailbox is done, the `done` flag will be `true`. If the mailbox
+   * fails, the Effect will fail with the error.
+   */
+  readonly takeN: (n: number) => Effect<readonly [messages: Chunk<A>, done: boolean], E>
+  /**
+   * Take a single message from the mailbox, or wait for a message to be
+   * available.
+   *
+   * If the mailbox is done, it will fail with `NoSuchElementException`. If the
+   * mailbox fails, the Effect will fail with the error.
+   */
+  readonly take: Effect<A, E | NoSuchElementException>
+  /** Wait for the mailbox to be done. */
+  readonly await: Effect<void, E>
+  /**
+   * Check the size of the mailbox.
+   *
+   * If the mailbox is complete, it will return `None`.
+   */
+  readonly size: Effect<Option<number>>
+  /**
+   * Check the size of the mailbox.
+   *
+   * If the mailbox is complete, it will return `None`.
+   */
+  readonly unsafeSize: () => Option<number>
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Mailbox.ts#L126)
 
 Since v3.8.0
 Mailbox-toChannel.md
@@ -63916,23 +63990,6 @@ declare class Subscribe
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L774)
 
 Since v1.0.0
-McpSchema-TextContent.md
-Package: `@effect/ai`<br />
-Module: `McpSchema`<br />
-
-## McpSchema.TextContent
-
-Text provided to or from an LLM.
-
-**Signature**
-
-```ts
-declare class TextContent
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L876)
-
-Since v1.0.0
 McpSchema-param.md
 Package: `@effect/ai`<br />
 Module: `McpSchema`<br />
@@ -63948,6 +64005,23 @@ declare const param: <const Id extends string, S extends Schema.Schema.Any>(id: 
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L2027)
+
+Since v1.0.0
+McpSchema-TextContent.md
+Package: `@effect/ai`<br />
+Module: `McpSchema`<br />
+
+## McpSchema.TextContent
+
+Text provided to or from an LLM.
+
+**Signature**
+
+```ts
+declare class TextContent
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L876)
 
 Since v1.0.0
 McpSchema-TextResourceContents.md
@@ -65064,7 +65138,7 @@ applied to.
 **Signature**
 
 ```ts
-declare const trackSuccessWith: { <Type, In, Out, In2>(metric: Metric<Type, In, Out>, f: (value: In2) => In): <A extends In2, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>; <A extends In2, E, R, Type, In, Out, In2>(self: Effect.Effect<A, E, R>, metric: Metric<Type, In, Out>, f: (value: In2) => In): Effect.Effect<A, E, R>; }
+declare const trackSuccessWith: { <Type, In, Out, A>(metric: Metric<Type, In, Out>, f: (value: Types.NoInfer<A>) => In): <E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>; <A, E, R, Type, In, Out>(self: Effect.Effect<A, E, R>, metric: Metric<Type, In, Out>, f: (value: Types.NoInfer<A>) => In): Effect.Effect<A, E, R>; }
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Metric.ts#L679)
@@ -65973,23 +66047,6 @@ declare const fail: <E>(error: E) => Micro<never, E>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L865)
 
 Since v3.4.0
-Micro-failCause.md
-Package: `effect`<br />
-Module: `Micro`<br />
-
-## Micro.failCause
-
-Creates a `Micro` effect that will fail with the specified `MicroCause`.
-
-**Signature**
-
-```ts
-declare const failCause: <E>(cause: MicroCause<E>) => Micro<never, E>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L843)
-
-Since v3.4.6
 Micro-Micro.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -66100,6 +66157,23 @@ declare class NoSuchElementException
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L4396)
 
 Since v3.4.4
+Micro-failCause.md
+Package: `effect`<br />
+Module: `Micro`<br />
+
+## Micro.failCause
+
+Creates a `Micro` effect that will fail with the specified `MicroCause`.
+
+**Signature**
+
+```ts
+declare const failCause: <E>(cause: MicroCause<E>) => Micro<never, E>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L843)
+
+Since v3.4.6
 Micro-failCauseSync.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -66912,23 +66986,6 @@ declare const repeatExit: { <A, E>(options: { while: Predicate<MicroExit<A, E>>;
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2270)
 
 Since v3.4.6
-Micro-replicate.md
-Package: `effect`<br />
-Module: `Micro`<br />
-
-## Micro.replicate
-
-Replicates the given effect `n` times.
-
-**Signature**
-
-```ts
-declare const replicate: { (n: number): <A, E, R>(self: Micro<A, E, R>) => Array<Micro<A, E, R>>; <A, E, R>(self: Micro<A, E, R>, n: number): Array<Micro<A, E, R>>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2356)
-
-Since v3.11.0
 Micro-TimeoutException.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -66946,6 +67003,23 @@ declare class TimeoutException
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L4405)
 
 Since v3.4.4
+Micro-replicate.md
+Package: `effect`<br />
+Module: `Micro`<br />
+
+## Micro.replicate
+
+Replicates the given effect `n` times.
+
+**Signature**
+
+```ts
+declare const replicate: { (n: number): <A, E, R>(self: Micro<A, E, R>) => Array<Micro<A, E, R>>; <A, E, R>(self: Micro<A, E, R>, n: number): Array<Micro<A, E, R>>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2356)
+
+Since v3.11.0
 Micro-replicateEffect.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -73948,28 +74022,6 @@ type ParseIssue = | Type
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ParseResult.ts#L29)
 
 Since v3.10.0
-ParseResult-Refinement.md
-Package: `effect`<br />
-Module: `ParseResult`<br />
-
-## ParseResult.Refinement
-
-Error that occurs when a refinement has an error.
-
-**Signature**
-
-```ts
-declare class Refinement { constructor(
-    readonly ast: AST.Refinement,
-    readonly actual: unknown,
-    readonly kind: "From" | "Predicate",
-    readonly issue: ParseIssue
-  ) }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ParseResult.ts#L141)
-
-Since v3.10.0
 ParseResult-asserts.md
 Package: `effect`<br />
 Module: `ParseResult`<br />
@@ -74023,6 +74075,28 @@ declare const isComposite: (issue: ParseIssue) => issue is Composite
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ParseResult.ts#L1834)
+
+Since v3.10.0
+ParseResult-Refinement.md
+Package: `effect`<br />
+Module: `ParseResult`<br />
+
+## ParseResult.Refinement
+
+Error that occurs when a refinement has an error.
+
+**Signature**
+
+```ts
+declare class Refinement { constructor(
+    readonly ast: AST.Refinement,
+    readonly actual: unknown,
+    readonly kind: "From" | "Predicate",
+    readonly issue: ParseIssue
+  ) }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ParseResult.ts#L141)
 
 Since v3.10.0
 ParseResult-Transformation.md
@@ -75516,40 +75590,6 @@ declare const isTagged: { <K extends string>(tag: K): (self: unknown) => self is
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L643)
 
 Since v2.0.0
-Predicate-isTruthy.md
-Package: `effect`<br />
-Module: `Predicate`<br />
-
-## Predicate.isTruthy
-
-A predicate that checks if a value is "truthy" in JavaScript.
-Fails for `false`, `0`, `-0`, `0n`, `""`, `null`, `undefined`, and `NaN`.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { isTruthy } from "effect/Predicate"
-
-assert.strictEqual(isTruthy(1), true)
-assert.strictEqual(isTruthy("hello"), true)
-assert.strictEqual(isTruthy({}), true)
-
-assert.strictEqual(isTruthy(0), false)
-assert.strictEqual(isTruthy(""), false)
-assert.strictEqual(isTruthy(null), false)
-assert.strictEqual(isTruthy(undefined), false)
-```
-
-**Signature**
-
-```ts
-declare const isTruthy: (input: unknown) => boolean
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L275)
-
-Since v2.0.0
 Predicate-Predicate.Any.md
 Package: `effect`<br />
 Module: `Predicate`<br />
@@ -75750,6 +75790,40 @@ export interface Refinement<in A, out B extends A> {
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L81)
+
+Since v2.0.0
+Predicate-isTruthy.md
+Package: `effect`<br />
+Module: `Predicate`<br />
+
+## Predicate.isTruthy
+
+A predicate that checks if a value is "truthy" in JavaScript.
+Fails for `false`, `0`, `-0`, `0n`, `""`, `null`, `undefined`, and `NaN`.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { isTruthy } from "effect/Predicate"
+
+assert.strictEqual(isTruthy(1), true)
+assert.strictEqual(isTruthy("hello"), true)
+assert.strictEqual(isTruthy({}), true)
+
+assert.strictEqual(isTruthy(0), false)
+assert.strictEqual(isTruthy(""), false)
+assert.strictEqual(isTruthy(null), false)
+assert.strictEqual(isTruthy(undefined), false)
+```
+
+**Signature**
+
+```ts
+declare const isTruthy: (input: unknown) => boolean
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L275)
 
 Since v2.0.0
 Predicate-isTupleOf.md
@@ -76810,23 +76884,6 @@ declare const isFull: <A>(self: PubSub<A>) => Effect.Effect<boolean>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/PubSub.ts#L113)
 
 Since v2.0.0
-PubSub-isShutdown.md
-Package: `effect`<br />
-Module: `PubSub`<br />
-
-## PubSub.isShutdown
-
-Returns `true` if `shutdown` has been called, otherwise returns `false`.
-
-**Signature**
-
-```ts
-declare const isShutdown: <A>(self: PubSub<A>) => Effect.Effect<boolean>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/PubSub.ts#L138)
-
-Since v2.0.0
 PubSub-PubSub.md
 Package: `effect`<br />
 Module: `PubSub`<br />
@@ -76863,6 +76920,23 @@ export interface PubSub<in out A> extends Queue.Enqueue<A>, Pipeable {
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/PubSub.ts#L18)
+
+Since v2.0.0
+PubSub-isShutdown.md
+Package: `effect`<br />
+Module: `PubSub`<br />
+
+## PubSub.isShutdown
+
+Returns `true` if `shutdown` has been called, otherwise returns `false`.
+
+**Signature**
+
+```ts
+declare const isShutdown: <A>(self: PubSub<A>) => Effect.Effect<boolean>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/PubSub.ts#L138)
 
 Since v2.0.0
 PubSub-publish.md
@@ -79117,23 +79191,6 @@ declare const first: <K, V>(self: RedBlackTree<K, V>) => Option<[K, V]>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L149)
 
 Since v2.0.0
-RedBlackTree-forEach.md
-Package: `effect`<br />
-Module: `RedBlackTree`<br />
-
-## RedBlackTree.forEach
-
-Execute the specified function for each node of the tree, in order.
-
-**Signature**
-
-```ts
-declare const forEach: { <K, V>(f: (key: K, value: V) => void): (self: RedBlackTree<K, V>) => void; <K, V>(self: RedBlackTree<K, V>, f: (key: K, value: V) => void): void; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L318)
-
-Since v2.0.0
 Redacted-getEquivalence.md
 Package: `effect`<br />
 Module: `Redacted`<br />
@@ -79278,6 +79335,23 @@ export interface RedBlackTree<in out Key, out Value> extends Iterable<[Key, Valu
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L34)
+
+Since v2.0.0
+RedBlackTree-forEach.md
+Package: `effect`<br />
+Module: `RedBlackTree`<br />
+
+## RedBlackTree.forEach
+
+Execute the specified function for each node of the tree, in order.
+
+**Signature**
+
+```ts
+declare const forEach: { <K, V>(f: (key: K, value: V) => void): (self: RedBlackTree<K, V>) => void; <K, V>(self: RedBlackTree<K, V>, f: (key: K, value: V) => void): void; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L318)
 
 Since v2.0.0
 RedBlackTree-forEachBetween.md
@@ -80034,23 +80108,6 @@ type Result<T> = T extends Request<infer A, infer E> ? Exit.Exit<A, E> : never
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Request.ts#L85)
 
 Since v2.0.0
-Request-Request.Success.md
-Package: `effect`<br />
-Module: `Request`<br />
-
-## Request.Request.Success
-
-A utility type to extract the value type from a `Request`.
-
-**Signature**
-
-```ts
-type Success<T> = [T] extends [Request<infer _A, infer _E>] ? _A : never
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Request.ts#L77)
-
-Since v2.0.0
 Request-Request.md
 Package: `effect`<br />
 Module: `Request`<br />
@@ -80188,6 +80245,23 @@ declare const of: <R extends Request<any, any>>() => Request.Constructor<R>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Request.ts#L112)
+
+Since v2.0.0
+Request-Request.Success.md
+Package: `effect`<br />
+Module: `Request`<br />
+
+## Request.Request.Success
+
+A utility type to extract the value type from a `Request`.
+
+**Signature**
+
+```ts
+type Success<T> = [T] extends [Request<infer _A, infer _E>] ? _A : never
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Request.ts#L77)
 
 Since v2.0.0
 Request-TaggedClass.md
@@ -81200,27 +81274,6 @@ declare const make: (props: { readonly address: RunnerAddress; readonly groups: 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Runner.ts#L98)
 
 Since v1.0.0
-RunnerHealth-RunnerHealth.md
-Package: `@effect/cluster`<br />
-Module: `RunnerHealth`<br />
-
-## RunnerHealth.RunnerHealth
-
-Represents the service used to check if a Runner is healthy.
-
-If a Runner is responsive, shards will not be re-assigned because the Runner may
-still be processing messages. If a Runner is not responsive, then its
-associated shards can and will be re-assigned to a different Runner.
-
-**Signature**
-
-```ts
-declare class RunnerHealth
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L22)
-
-Since v1.0.0
 RunnerHealth-layer.md
 Package: `@effect/cluster`<br />
 Module: `RunnerHealth`<br />
@@ -81272,6 +81325,27 @@ declare const layerRpc: Layer.Layer<RunnerHealth, never, ShardingConfig | Runner
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L84)
+
+Since v1.0.0
+RunnerHealth-RunnerHealth.md
+Package: `@effect/cluster`<br />
+Module: `RunnerHealth`<br />
+
+## RunnerHealth.RunnerHealth
+
+Represents the service used to check if a Runner is healthy.
+
+If a Runner is responsive, shards will not be re-assigned because the Runner may
+still be processing messages. If a Runner is not responsive, then its
+associated shards can and will be re-assigned to a different Runner.
+
+**Signature**
+
+```ts
+declare class RunnerHealth
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L22)
 
 Since v1.0.0
 RunnerServer-layer.md
@@ -83539,38 +83613,6 @@ declare const mapBothEffect: { <In2, In, R2, Out, R3, Out2>(options: { readonly 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L867)
 
 Since v2.0.0
-Schedule-mapEffect.md
-Package: `effect`<br />
-Module: `Schedule`<br />
-
-## Schedule.mapEffect
-
-Returns a new schedule that applies an effectful transformation to its
-output.
-
-**Details**
-
-This function modifies an existing schedule by applying an effectful function
-`f` to its output values. The timing and recurrence behavior of the schedule
-remain unchanged, but each output is mapped to a new value within an
-`Effect`.
-
-This is useful when you need to perform side effects or asynchronous
-transformations before passing the output forward.
-
-**See**
-
-- `map` If you need to use a pure transformation function.
-
-**Signature**
-
-```ts
-declare const mapEffect: { <Out, Out2, R2>(f: (out: Out) => Effect.Effect<Out2, never, R2>): <In, R>(self: Schedule<Out, In, R>) => Schedule<Out2, In, R2 | R>; <Out, In, R, Out2, R2>(self: Schedule<Out, In, R>, f: (out: Out) => Effect.Effect<Out2, never, R2>): Schedule<Out2, In, R | R2>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1330)
-
-Since v2.0.0
 Schedule-Schedule.md
 Package: `effect`<br />
 Module: `Schedule`<br />
@@ -83642,6 +83684,38 @@ export interface Schedule<out Out, in In = unknown, out R = never> extends Sched
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L95)
+
+Since v2.0.0
+Schedule-mapEffect.md
+Package: `effect`<br />
+Module: `Schedule`<br />
+
+## Schedule.mapEffect
+
+Returns a new schedule that applies an effectful transformation to its
+output.
+
+**Details**
+
+This function modifies an existing schedule by applying an effectful function
+`f` to its output values. The timing and recurrence behavior of the schedule
+remain unchanged, but each output is mapped to a new value within an
+`Effect`.
+
+This is useful when you need to perform side effects or asynchronous
+transformations before passing the output forward.
+
+**See**
+
+- `map` If you need to use a pure transformation function.
+
+**Signature**
+
+```ts
+declare const mapEffect: { <Out, Out2, R2>(f: (out: Out) => Effect.Effect<Out2, never, R2>): <In, R>(self: Schedule<Out, In, R>) => Schedule<Out2, In, R2 | R>; <Out, In, R, Out2, R2>(self: Schedule<Out, In, R>, f: (out: Out) => Effect.Effect<Out2, never, R2>): Schedule<Out2, In, R | R2>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1330)
 
 Since v2.0.0
 Schedule-mapInput.md
@@ -84903,24 +84977,6 @@ declare const zipWith: { <Out2, In2, R2, Out, Out3>(that: Schedule<Out2, In2, R2
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L2178)
 
 Since v2.0.0
-ScheduleInterval-after.md
-Package: `effect`<br />
-Module: `ScheduleInterval`<br />
-
-## ScheduleInterval.after
-
-Construct an `Interval` that includes all time equal to and after the
-specified start time.
-
-**Signature**
-
-```ts
-declare const after: (startMilliseconds: number) => Interval
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleInterval.ts#L142)
-
-Since v2.0.0
 ScheduleInterval-Interval.md
 Package: `effect`<br />
 Module: `ScheduleInterval`<br />
@@ -84941,6 +84997,24 @@ export interface Interval {
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleInterval.ts#L27)
+
+Since v2.0.0
+ScheduleInterval-after.md
+Package: `effect`<br />
+Module: `ScheduleInterval`<br />
+
+## ScheduleInterval.after
+
+Construct an `Interval` that includes all time equal to and after the
+specified start time.
+
+**Signature**
+
+```ts
+declare const after: (startMilliseconds: number) => Interval
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleInterval.ts#L142)
 
 Since v2.0.0
 ScheduleInterval-before.md
@@ -85625,23 +85699,6 @@ declare class DateTimeUtcFromNumber
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6895)
 
 Since v3.10.0
-Schema-DateTimeUtcFromSelf.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.DateTimeUtcFromSelf
-
-Describes a schema that represents a `DateTime.Utc` instance.
-
-**Signature**
-
-```ts
-declare class DateTimeUtcFromSelf
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6871)
-
-Since v3.10.0
 Schema-annotations.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -85850,6 +85907,23 @@ declare const clampDuration: (minimum: duration_.DurationInput, maximum: duratio
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6042)
+
+Since v3.10.0
+Schema-DateTimeUtcFromSelf.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.DateTimeUtcFromSelf
+
+Describes a schema that represents a `DateTime.Utc` instance.
+
+**Signature**
+
+```ts
+declare class DateTimeUtcFromSelf
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6871)
 
 Since v3.10.0
 Schema-DateTimeZoned.md
@@ -86264,23 +86338,6 @@ declare const StringFromBase64: Schema<string, string, never>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6317)
-
-Since v3.10.0
-Schema-StringFromBase64Url.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.StringFromBase64Url
-
-Decodes a base64 (URL) encoded string into a UTF-8 string.
-
-**Signature**
-
-```ts
-declare const StringFromBase64Url: Schema<string, string, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6329)
 
 Since v3.10.0
 Schema-declare.md
@@ -86921,6 +86978,23 @@ declare const standardSchemaV1: <A, I>(schema: Schema<A, I, never>, overrideOpti
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L195)
 
 Since v3.13.0
+Schema-StringFromBase64Url.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.StringFromBase64Url
+
+Decodes a base64 (URL) encoded string into a UTF-8 string.
+
+**Signature**
+
+```ts
+declare const StringFromBase64Url: Schema<string, string, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6329)
+
+Since v3.10.0
 Schema-StringFromHex.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -87849,32 +87923,6 @@ declare const required: (ast: AST) => AST
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2511)
 
 Since v3.10.0
-Scope-CloseableScope.md
-Package: `effect`<br />
-Module: `Scope`<br />
-
-## Scope.CloseableScope
-
-A scope that can be explicitly closed with a specified exit value.
-
-**Signature**
-
-```ts
-export interface CloseableScope extends Scope, Pipeable {
-  readonly [CloseableScopeTypeId]: CloseableScopeTypeId
-
-  /**
-   * Closes this scope with the given exit value, running all finalizers.
-   *
-   * @internal
-   */
-  close(exit: Exit.Exit<unknown, unknown>): Effect.Effect<void>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L78)
-
-Since v2.0.0
 Scope-addFinalizer.md
 Package: `effect`<br />
 Module: `Scope`<br />
@@ -87937,6 +87985,32 @@ declare const close: (self: CloseableScope, exit: Exit.Exit<unknown, unknown>) =
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L152)
+
+Since v2.0.0
+Scope-CloseableScope.md
+Package: `effect`<br />
+Module: `Scope`<br />
+
+## Scope.CloseableScope
+
+A scope that can be explicitly closed with a specified exit value.
+
+**Signature**
+
+```ts
+export interface CloseableScope extends Scope, Pipeable {
+  readonly [CloseableScopeTypeId]: CloseableScopeTypeId
+
+  /**
+   * Closes this scope with the given exit value, running all finalizers.
+   *
+   * @internal
+   */
+  close(exit: Exit.Exit<unknown, unknown>): Effect.Effect<void>
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L78)
 
 Since v2.0.0
 Scope-CloseableScopeTypeId.md
@@ -89774,6 +89848,29 @@ declare const foldUntilEffect: <S, In, E, R>(s: S, max: number, f: (s: S, input:
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L780)
 
 Since v2.0.0
+Sink-Sink.md
+Package: `effect`<br />
+Module: `Sink`<br />
+
+## Sink.Sink
+
+A `Sink<A, In, L, E, R>` is used to consume elements produced by a `Stream`.
+You can think of a sink as a function that will consume a variable amount of
+`In` elements (could be 0, 1, or many), might fail with an error of type `E`,
+and will eventually yield a value of type `A` together with a remainder of
+type `L` (i.e. any leftovers).
+
+**Signature**
+
+```ts
+export interface Sink<out A, in In = unknown, out L = never, out E = never, out R = never>
+  extends Sink.Variance<A, In, L, E, R>, Pipeable
+{}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L48)
+
+Since v2.0.0
 Sink-foldWeighted.md
 Package: `effect`<br />
 Module: `Sink`<br />
@@ -89796,29 +89893,6 @@ declare const foldWeighted: <S, In>(options: { readonly initial: S; readonly max
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L799)
-
-Since v2.0.0
-Sink-Sink.md
-Package: `effect`<br />
-Module: `Sink`<br />
-
-## Sink.Sink
-
-A `Sink<A, In, L, E, R>` is used to consume elements produced by a `Stream`.
-You can think of a sink as a function that will consume a variable amount of
-`In` elements (could be 0, 1, or many), might fail with an error of type `E`,
-and will eventually yield a value of type `A` together with a remainder of
-type `L` (i.e. any leftovers).
-
-**Signature**
-
-```ts
-export interface Sink<out A, in In = unknown, out L = never, out E = never, out R = never>
-  extends Sink.Variance<A, In, L, E, R>, Pipeable
-{}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L48)
 
 Since v2.0.0
 Sink-foldWeightedDecompose.md
@@ -90706,23 +90780,6 @@ declare const zipWith: { <A2, In, In2 extends In, L2, E2, R2, A, A3>(that: Sink<
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L1449)
 
 Since v2.0.0
-SortedMap-fromIterable.md
-Package: `effect`<br />
-Module: `SortedMap`<br />
-
-## SortedMap.fromIterable
-
-Creates a new `SortedMap` from an iterable collection of key/value pairs.
-
-**Signature**
-
-```ts
-declare const fromIterable: { <B>(ord: Order<B>): <K extends B, V>(iterable: Iterable<readonly [K, V]>) => SortedMap<K, V>; <K extends B, V, B>(iterable: Iterable<readonly [K, V]>, ord: Order<B>): SortedMap<K, V>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SortedMap.ts#L100)
-
-Since v2.0.0
 STM-acquireUseRelease.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -91354,21 +91411,21 @@ declare const filterOrElse: { <A, B extends A, C, E2, R2>(refinement: Refinement
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L644)
 
 Since v2.0.0
-STM-filterOrFail.md
+SortedMap-fromIterable.md
 Package: `effect`<br />
-Module: `STM`<br />
+Module: `SortedMap`<br />
 
-## STM.filterOrFail
+## SortedMap.fromIterable
 
-Fails with the specified error if the predicate fails.
+Creates a new `SortedMap` from an iterable collection of key/value pairs.
 
 **Signature**
 
 ```ts
-declare const filterOrFail: { <A, B extends A, E2>(refinement: Refinement<NoInfer<A>, B>, orFailWith: (a: NoInfer<A>) => E2): <E, R>(self: STM<A, E, R>) => STM<B, E2 | E, R>; <A, E2>(predicate: Predicate<NoInfer<A>>, orFailWith: (a: NoInfer<A>) => E2): <E, R>(self: STM<A, E, R>) => STM<A, E2 | E, R>; <A, E, R, B extends A, E2>(self: STM<A, E, R>, refinement: Refinement<A, B>, orFailWith: (a: A) => E2): STM<B, E | E2, R>; <A, E, R, E2>(self: STM<A, E, R>, predicate: Predicate<A>, orFailWith: (a: A) => E2): STM<A, E | E2, R>; }
+declare const fromIterable: { <B>(ord: Order<B>): <K extends B, V>(iterable: Iterable<readonly [K, V]>) => SortedMap<K, V>; <K extends B, V, B>(iterable: Iterable<readonly [K, V]>, ord: Order<B>): SortedMap<K, V>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L671)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SortedMap.ts#L100)
 
 Since v2.0.0
 SortedMap-getOrder.md
@@ -91601,6 +91658,23 @@ declare const makeParser: (onParse: (event: AnyEvent) => void) => Parser
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/Sse.ts#L93)
 
 Since v1.0.0
+STM-filterOrFail.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.filterOrFail
+
+Fails with the specified error if the predicate fails.
+
+**Signature**
+
+```ts
+declare const filterOrFail: { <A, B extends A, E2>(refinement: Refinement<NoInfer<A>, B>, orFailWith: (a: NoInfer<A>) => E2): <E, R>(self: STM<A, E, R>) => STM<B, E2 | E, R>; <A, E2>(predicate: Predicate<NoInfer<A>>, orFailWith: (a: NoInfer<A>) => E2): <E, R>(self: STM<A, E, R>) => STM<A, E2 | E, R>; <A, E, R, B extends A, E2>(self: STM<A, E, R>, refinement: Refinement<A, B>, orFailWith: (a: A) => E2): STM<B, E | E2, R>; <A, E, R, E2>(self: STM<A, E, R>, predicate: Predicate<A>, orFailWith: (a: A) => E2): STM<A, E | E2, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L671)
+
+Since v2.0.0
 STM-firstSuccessOf.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -92500,25 +92574,6 @@ declare const reject: { <A, E2>(pf: (a: A) => Option.Option<E2>): <E, R>(self: S
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1570)
 
 Since v2.0.0
-STM-rejectSTM.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.rejectSTM
-
-Continue with the returned computation if the specified partial function
-matches, translating the successful match into a failure, otherwise continue
-with our held value.
-
-**Signature**
-
-```ts
-declare const rejectSTM: { <A, E2, R2>(pf: (a: A) => Option.Option<STM<E2, E2, R2>>): <E, R>(self: STM<A, E, R>) => STM<A, E2 | E, R2 | R>; <A, E, R, E2, R2>(self: STM<A, E, R>, pf: (a: A) => Option.Option<STM<E2, E2, R2>>): STM<A, E | E2, R | R2>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1583)
-
-Since v2.0.0
 STM-STM.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -92572,6 +92627,25 @@ export interface STM<out A, out E = never, out R = never>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L70)
+
+Since v2.0.0
+STM-rejectSTM.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.rejectSTM
+
+Continue with the returned computation if the specified partial function
+matches, translating the successful match into a failure, otherwise continue
+with our held value.
+
+**Signature**
+
+```ts
+declare const rejectSTM: { <A, E2, R2>(pf: (a: A) => Option.Option<STM<E2, E2, R2>>): <E, R>(self: STM<A, E, R>) => STM<A, E2 | E, R2 | R>; <A, E, R, E2, R2>(self: STM<A, E, R>, pf: (a: A) => Option.Option<STM<E2, E2, R2>>): STM<A, E | E2, R | R2>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1583)
 
 Since v2.0.0
 STM-repeatUntil.md
@@ -93697,27 +93771,6 @@ declare const broadcastDynamic: { (maximumLag: number | { readonly capacity: "un
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L605)
 
 Since v2.0.0
-Stream-broadcastedQueues.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.broadcastedQueues
-
-Converts the stream to a scoped list of queues. Every value will be
-replicated to every queue with the slowest queue being allowed to buffer
-`maximumLag` chunks before the driver is back pressured.
-
-Queues can unsubscribe from upstream by shutting down.
-
-**Signature**
-
-```ts
-declare const broadcastedQueues: { <N extends number>(n: N, maximumLag: number | { readonly capacity: "unbounded"; readonly replay?: number | undefined; } | { readonly capacity: number; readonly strategy?: "sliding" | "dropping" | "suspend" | undefined; readonly replay?: number | undefined; }): <A, E, R>(self: Stream<A, E, R>) => Effect.Effect<TupleOf<N, Queue.Dequeue<Take.Take<A, E>>>, never, Scope.Scope | R>; <A, E, R, N extends number>(self: Stream<A, E, R>, n: N, maximumLag: number | { readonly capacity: "unbounded"; readonly replay?: number | undefined; } | { readonly capacity: number; readonly strategy?: "sliding" | "dropping" | "suspend" | undefined; readonly replay?: number | undefined; }): Effect.Effect<TupleOf<N, Queue.Dequeue<Take.Take<A, E>>>, never, Scope.Scope | R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L633)
-
-Since v2.0.0
 Stream-DefaultChunkSize.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -93780,6 +93833,27 @@ declare const Do: Stream<{}, never, never>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L6246)
+
+Since v2.0.0
+Stream-broadcastedQueues.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.broadcastedQueues
+
+Converts the stream to a scoped list of queues. Every value will be
+replicated to every queue with the slowest queue being allowed to buffer
+`maximumLag` chunks before the driver is back pressured.
+
+Queues can unsubscribe from upstream by shutting down.
+
+**Signature**
+
+```ts
+declare const broadcastedQueues: { <N extends number>(n: N, maximumLag: number | { readonly capacity: "unbounded"; readonly replay?: number | undefined; } | { readonly capacity: number; readonly strategy?: "sliding" | "dropping" | "suspend" | undefined; readonly replay?: number | undefined; }): <A, E, R>(self: Stream<A, E, R>) => Effect.Effect<TupleOf<N, Queue.Dequeue<Take.Take<A, E>>>, never, Scope.Scope | R>; <A, E, R, N extends number>(self: Stream<A, E, R>, n: N, maximumLag: number | { readonly capacity: "unbounded"; readonly replay?: number | undefined; } | { readonly capacity: number; readonly strategy?: "sliding" | "dropping" | "suspend" | undefined; readonly replay?: number | undefined; }): Effect.Effect<TupleOf<N, Queue.Dequeue<Take.Take<A, E>>>, never, Scope.Scope | R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L633)
 
 Since v2.0.0
 Stream-broadcastedQueuesDynamic.md
@@ -98311,24 +98385,6 @@ declare const runForEachWhileScoped: { <A, E2, R2>(f: (a: A) => Effect.Effect<bo
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4377)
 
 Since v2.0.0
-Stream-runHead.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.runHead
-
-Runs the stream to completion and yields the first value emitted by it,
-discarding the rest of the elements.
-
-**Signature**
-
-```ts
-declare const runHead: <A, E, R>(self: Stream<A, E, R>) => Effect.Effect<Option.Option<A>, E, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4394)
-
-Since v2.0.0
 Stream-Stream.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -98362,6 +98418,24 @@ export interface Stream<out A, out E = never, out R = never> extends Stream.Vari
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L71)
+
+Since v2.0.0
+Stream-runHead.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.runHead
+
+Runs the stream to completion and yields the first value emitted by it,
+discarding the rest of the elements.
+
+**Signature**
+
+```ts
+declare const runHead: <A, E, R>(self: Stream<A, E, R>) => Effect.Effect<Option.Option<A>, E, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4394)
 
 Since v2.0.0
 Stream-runIntoPubSub.md
@@ -101361,23 +101435,6 @@ declare const collectFirstSTM: { <A, B, E, R>(pf: (a: A) => Option.Option<STM.ST
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L72)
 
 Since v2.0.0
-TArray-contains.md
-Package: `effect`<br />
-Module: `TArray`<br />
-
-## TArray.contains
-
-Determine if the array contains a specified value.
-
-**Signature**
-
-```ts
-declare const contains: { <A>(value: A): (self: TArray<A>) => STM.STM<boolean>; <A>(self: TArray<A>, value: A): STM.STM<boolean>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L84)
-
-Since v2.0.0
 Take-Take.md
 Package: `effect`<br />
 Module: `Take`<br />
@@ -101729,6 +101786,23 @@ declare const tap: { <A, X, E2, R>(f: (chunk: Chunk.Chunk<A>) => Effect.Effect<X
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Take.ts#L250)
+
+Since v2.0.0
+TArray-contains.md
+Package: `effect`<br />
+Module: `TArray`<br />
+
+## TArray.contains
+
+Determine if the array contains a specified value.
+
+**Signature**
+
+```ts
+declare const contains: { <A>(value: A): (self: TArray<A>) => STM.STM<boolean>; <A>(self: TArray<A>, value: A): STM.STM<boolean>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L84)
 
 Since v2.0.0
 TArray-count.md
@@ -102594,26 +102668,6 @@ export interface TestAnnotations {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestAnnotations.ts#L40)
 
 Since v2.0.0
-TestClock-Data.md
-Package: `effect`<br />
-Module: `TestClock`<br />
-
-## TestClock.Data
-
-`Data` represents the state of the `TestClock`, including the clock time.
-
-**Signature**
-
-```ts
-export interface Data {
-  readonly instant: number
-  readonly sleeps: Chunk.Chunk<readonly [number, Deferred.Deferred<void>]>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L89)
-
-Since v2.0.1
 TestClock-adjust.md
 Package: `effect`<br />
 Module: `TestClock`<br />
@@ -102843,23 +102897,26 @@ declare const isEmpty: <K, V>(self: TMap<K, V>) => STM.STM<boolean>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L185)
 
 Since v2.0.0
-TMap-keys.md
+TestClock-Data.md
 Package: `effect`<br />
-Module: `TMap`<br />
+Module: `TestClock`<br />
 
-## TMap.keys
+## TestClock.Data
 
-Collects all keys stored in map.
+`Data` represents the state of the `TestClock`, including the clock time.
 
 **Signature**
 
 ```ts
-declare const keys: <K, V>(self: TMap<K, V>) => STM.STM<Array<K>>
+export interface Data {
+  readonly instant: number
+  readonly sleeps: Chunk.Chunk<readonly [number, Deferred.Deferred<void>]>
+}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L193)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L89)
 
-Since v2.0.0
+Since v2.0.1
 TestClock-TestClock.md
 Package: `effect`<br />
 Module: `TestClock`<br />
@@ -103611,6 +103668,23 @@ export interface TMap<in out K, in out V> extends TMap.Variance<K, V> {}
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L33)
+
+Since v2.0.0
+TMap-keys.md
+Package: `effect`<br />
+Module: `TMap`<br />
+
+## TMap.keys
+
+Collects all keys stored in map.
+
+**Signature**
+
+```ts
+declare const keys: <K, V>(self: TMap<K, V>) => STM.STM<Array<K>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L193)
 
 Since v2.0.0
 TMap-make.md
@@ -105401,23 +105475,6 @@ declare const traverseFilterMap: <T extends TypeLambda>(T: Traversable<T> & Filt
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/TraversableFilterable.ts#L71)
 
 Since v0.24.0
-TraversableFilterable-traversePartitionMap.md
-Package: `@effect/typeclass`<br />
-Module: `TraversableFilterable`<br />
-
-## TraversableFilterable.traversePartitionMap
-
-Returns a default binary `traversePartitionMap` implementation.
-
-**Signature**
-
-```ts
-declare const traversePartitionMap: <T extends TypeLambda>(T: Traversable<T> & Covariant<T> & Filterable<T>) => <F extends TypeLambda>(F: Applicative<F>) => <TR, TO, TE, A, R, O, E, B, C>(self: Kind<T, TR, TO, TE, A>, f: (a: A) => Kind<F, R, O, E, Either<C, B>>) => Kind<F, R, O, E, [Kind<T, TR, TO, TE, B>, Kind<T, TR, TO, TE, C>]>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/TraversableFilterable.ts#L55)
-
-Since v0.24.0
 TReentrantLock-TReentrantLock.md
 Package: `effect`<br />
 Module: `TReentrantLock`<br />
@@ -105808,24 +105865,23 @@ declare const add: { <A>(value: A): (self: TSet<A>) => STM.STM<void>; <A>(self: 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSet.ts#L62)
 
 Since v2.0.0
-TSet-difference.md
-Package: `effect`<br />
-Module: `TSet`<br />
+TraversableFilterable-traversePartitionMap.md
+Package: `@effect/typeclass`<br />
+Module: `TraversableFilterable`<br />
 
-## TSet.difference
+## TraversableFilterable.traversePartitionMap
 
-Atomically transforms the set into the difference of itself and the
-provided set.
+Returns a default binary `traversePartitionMap` implementation.
 
 **Signature**
 
 ```ts
-declare const difference: { <A>(other: TSet<A>): (self: TSet<A>) => STM.STM<void>; <A>(self: TSet<A>, other: TSet<A>): STM.STM<void>; }
+declare const traversePartitionMap: <T extends TypeLambda>(T: Traversable<T> & Covariant<T> & Filterable<T>) => <F extends TypeLambda>(F: Applicative<F>) => <TR, TO, TE, A, R, O, E, B, C>(self: Kind<T, TR, TO, TE, A>, f: (a: A) => Kind<F, R, O, E, Either<C, B>>) => Kind<F, R, O, E, [Kind<T, TR, TO, TE, B>, Kind<T, TR, TO, TE, C>]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSet.ts#L74)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/TraversableFilterable.ts#L55)
 
-Since v2.0.0
+Since v0.24.0
 Trie-compact.md
 Package: `effect`<br />
 Module: `Trie`<br />
@@ -106862,6 +106918,24 @@ export interface TSet<in out A> extends TSet.Variance<A> {}
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSet.ts#L31)
+
+Since v2.0.0
+TSet-difference.md
+Package: `effect`<br />
+Module: `TSet`<br />
+
+## TSet.difference
+
+Atomically transforms the set into the difference of itself and the
+provided set.
+
+**Signature**
+
+```ts
+declare const difference: { <A>(other: TSet<A>): (self: TSet<A>) => STM.STM<void>; <A>(self: TSet<A>, other: TSet<A>): STM.STM<void>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSet.ts#L74)
 
 Since v2.0.0
 TSet-empty.md
@@ -108975,23 +109049,6 @@ declare const deepStrictEqual: <A>(actual: A, expected: A, message?: string, ...
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L31)
 
 Since v0.21.0
-utils-doesNotThrow.md
-Package: `@effect/vitest`<br />
-Module: `utils`<br />
-
-## utils.doesNotThrow
-
-Asserts that `thunk` does not throw an error.
-
-**Signature**
-
-```ts
-declare const doesNotThrow: (thunk: () => void, message?: string, ..._: Array<never>) => void
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L70)
-
-Since v0.21.0
 Utils-PCGRandom.md
 Package: `effect`<br />
 Module: `Utils`<br />
@@ -109241,6 +109298,23 @@ declare const toRpcGroup: <const Workflows extends NonEmptyReadonlyArray<Workflo
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/WorkflowProxy.ts#L45)
 
 Since v1.0.0
+utils-doesNotThrow.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.doesNotThrow
+
+Asserts that `thunk` does not throw an error.
+
+**Signature**
+
+```ts
+declare const doesNotThrow: (thunk: () => void, message?: string, ..._: Array<never>) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L70)
+
+Since v0.21.0
 utils-fail.md
 Package: `@effect/vitest`<br />
 Module: `utils`<br />
