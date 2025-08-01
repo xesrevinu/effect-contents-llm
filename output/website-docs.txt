@@ -6372,6 +6372,23 @@ Duration(1m)
 */
 ```
 
+## Conversions
+
+Converts a `Duration` to a human readable string.
+
+**Example** 
+
+```ts twoslash
+import { Duration } from "effect"
+
+Duration.format(Duration.millis(1000)) // "1s"
+Duration.format(Duration.millis(1001)) // "1s 1ms"
+```
+
+
+
+
+
 effect-vs-fp-ts.mdx
 ---
 title: Effect vs fp-ts
