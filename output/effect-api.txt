@@ -33929,7 +33929,7 @@ Effect.runPromise(runnable).then(console.log)
 **Signature**
 
 ```ts
-declare const provide: { <const Layers extends [Layer.Layer.Any, ...Array<Layer.Layer.Any>]>(layers: Layers): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E | { [k in keyof Layers]: Layer.Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Layer.Context<Layers[k]>; }[number] | Exclude<R, { [k in keyof Layers]: Layer.Layer.Success<Layers[k]>; }[number]>>; <ROut, E2, RIn>(layer: Layer.Layer<ROut, E2, RIn>): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E | E2, RIn | Exclude<R, ROut>>; <R2>(context: Context.Context<R2>): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, R2>>; <R2>(runtime: Runtime.Runtime<R2>): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, R2>>; <E2, R2>(managedRuntime: ManagedRuntime.ManagedRuntime<R2, E2>): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E | E2, Exclude<R, R2>>; <A, E, R, const Layers extends [Layer.Layer.Any, ...Array<Layer.Layer.Any>]>(self: Effect<A, E, R>, layers: Layers): Effect<A, E | { [k in keyof Layers]: Layer.Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Layer.Context<Layers[k]>; }[number] | Exclude<R, { [k in keyof Layers]: Layer.Layer.Success<Layers[k]>; }[number]>>; <A, E, R, ROut, E2, RIn>(self: Effect<A, E, R>, layer: Layer.Layer<ROut, E2, RIn>): Effect<A, E | E2, RIn | Exclude<R, ROut>>; <A, E, R, R2>(self: Effect<A, E, R>, context: Context.Context<R2>): Effect<A, E, Exclude<R, R2>>; <A, E, R, R2>(self: Effect<A, E, R>, runtime: Runtime.Runtime<R2>): Effect<A, E, Exclude<R, R2>>; <A, E, E2, R, R2>(self: Effect<A, E, R>, runtime: ManagedRuntime.ManagedRuntime<R2, E2>): Effect<A, E | E2, Exclude<R, R2>>; }
+declare const provide: { <const Layers extends readonly [Layer.Layer.Any, ...Array<Layer.Layer.Any>]>(layers: Layers): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E | { [k in keyof Layers]: Layer.Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Layer.Context<Layers[k]>; }[number] | Exclude<R, { [k in keyof Layers]: Layer.Layer.Success<Layers[k]>; }[number]>>; <ROut, E2, RIn>(layer: Layer.Layer<ROut, E2, RIn>): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E | E2, RIn | Exclude<R, ROut>>; <R2>(context: Context.Context<R2>): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, R2>>; <R2>(runtime: Runtime.Runtime<R2>): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, R2>>; <E2, R2>(managedRuntime: ManagedRuntime.ManagedRuntime<R2, E2>): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E | E2, Exclude<R, R2>>; <A, E, R, const Layers extends readonly [Layer.Layer.Any, ...Array<Layer.Layer.Any>]>(self: Effect<A, E, R>, layers: Layers): Effect<A, E | { [k in keyof Layers]: Layer.Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Layer.Context<Layers[k]>; }[number] | Exclude<R, { [k in keyof Layers]: Layer.Layer.Success<Layers[k]>; }[number]>>; <A, E, R, ROut, E2, RIn>(self: Effect<A, E, R>, layer: Layer.Layer<ROut, E2, RIn>): Effect<A, E | E2, RIn | Exclude<R, ROut>>; <A, E, R, R2>(self: Effect<A, E, R>, context: Context.Context<R2>): Effect<A, E, Exclude<R, R2>>; <A, E, R, R2>(self: Effect<A, E, R>, runtime: Runtime.Runtime<R2>): Effect<A, E, Exclude<R, R2>>; <A, E, E2, R, R2>(self: Effect<A, E, R>, runtime: ManagedRuntime.ManagedRuntime<R2, E2>): Effect<A, E | E2, Exclude<R, R2>>; }
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L7543)
@@ -59176,7 +59176,7 @@ Combines all the provided layers concurrently, creating a new layer with merged 
 **Signature**
 
 ```ts
-declare const mergeAll: <Layers extends [Layer<never, any, any>, ...Array<Layer<never, any, any>>]>(...layers: Layers) => Layer<{ [k in keyof Layers]: Layer.Success<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Context<Layers[k]>; }[number]>
+declare const mergeAll: <Layers extends readonly [Layer<never, any, any>, ...Array<Layer<never, any, any>>]>(...layers: Layers) => Layer<{ [k in keyof Layers]: Layer.Success<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Context<Layers[k]>; }[number]>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L583)
@@ -59321,7 +59321,7 @@ well as any leftover inputs, and the outputs of the specified builder.
 **Signature**
 
 ```ts
-declare const provide: { <RIn, E, ROut>(that: Layer<ROut, E, RIn>): <RIn2, E2, ROut2>(self: Layer<ROut2, E2, RIn2>) => Layer<ROut2, E | E2, RIn | Exclude<RIn2, ROut>>; <const Layers extends [Layer.Any, ...Array<Layer.Any>]>(that: Layers): <A, E, R>(self: Layer<A, E, R>) => Layer<A, E | { [k in keyof Layers]: Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Context<Layers[k]>; }[number] | Exclude<R, { [k in keyof Layers]: Layer.Success<Layers[k]>; }[number]>>; <RIn2, E2, ROut2, RIn, E, ROut>(self: Layer<ROut2, E2, RIn2>, that: Layer<ROut, E, RIn>): Layer<ROut2, E | E2, RIn | Exclude<RIn2, ROut>>; <A, E, R, const Layers extends [Layer.Any, ...Array<Layer.Any>]>(self: Layer<A, E, R>, that: Layers): Layer<A, E | { [k in keyof Layers]: Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Context<Layers[k]>; }[number] | Exclude<R, { [k in keyof Layers]: Layer.Success<Layers[k]>; }[number]>>; }
+declare const provide: { <RIn, E, ROut>(that: Layer<ROut, E, RIn>): <RIn2, E2, ROut2>(self: Layer<ROut2, E2, RIn2>) => Layer<ROut2, E | E2, RIn | Exclude<RIn2, ROut>>; <const Layers extends readonly [Layer.Any, ...Array<Layer.Any>]>(that: Layers): <A, E, R>(self: Layer<A, E, R>) => Layer<A, E | { [k in keyof Layers]: Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Context<Layers[k]>; }[number] | Exclude<R, { [k in keyof Layers]: Layer.Success<Layers[k]>; }[number]>>; <RIn2, E2, ROut2, RIn, E, ROut>(self: Layer<ROut2, E2, RIn2>, that: Layer<ROut, E, RIn>): Layer<ROut2, E | E2, RIn | Exclude<RIn2, ROut>>; <A, E, R, const Layers extends readonly [Layer.Any, ...Array<Layer.Any>]>(self: Layer<A, E, R>, that: Layers): Layer<A, E | { [k in keyof Layers]: Layer.Error<Layers[k]>; }[number], { [k in keyof Layers]: Layer.Context<Layers[k]>; }[number] | Exclude<R, { [k in keyof Layers]: Layer.Success<Layers[k]>; }[number]>>; }
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Layer.ts#L899)
@@ -81083,7 +81083,7 @@ use HTTP.
 declare const layerHttpRouter: <Rpcs extends Rpc.Any>(options: { readonly group: RpcGroup.RpcGroup<Rpcs>; readonly path: HttpRouter.PathInput; readonly protocol?: "http" | "websocket" | undefined; readonly disableTracing?: boolean | undefined; readonly spanPrefix?: string | undefined; readonly spanAttributes?: Record<string, unknown> | undefined; readonly concurrency?: number | "unbounded" | undefined; }) => Layer.Layer<never, never, RpcSerialization.RpcSerialization | HttpLayerRouter.HttpRouter | Rpc.ToHandler<Rpcs> | Rpc.Middleware<Rpcs>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L734)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L733)
 
 Since v1.0.0
 RpcServer-layerProtocolHttp.md
@@ -81100,7 +81100,7 @@ A rpc protocol that uses streaming http for communication.
 declare const layerProtocolHttp: <I = HttpRouter.Default>(options: { readonly path: HttpRouter.PathInput; readonly routerTag?: HttpRouter.HttpRouter.TagClass<I, string, any, any>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1139)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1142)
 
 Since v1.0.0
 RpcServer-layerProtocolHttpRouter.md
@@ -81119,7 +81119,7 @@ Uses a `HttpLayerRouter` to provide the http endpoint.
 declare const layerProtocolHttpRouter: (options: { readonly path: HttpRouter.PathInput; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | HttpLayerRouter.HttpRouter>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1158)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1161)
 
 Since v1.0.0
 RpcServer-layerProtocolSocketServer.md
@@ -81136,7 +81136,7 @@ A rpc protocol that uses `SocketServer` for communication.
 declare const layerProtocolSocketServer: Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | SocketServer.SocketServer>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L804)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L803)
 
 Since v1.0.0
 RpcServer-layerProtocolStdio.md
@@ -81153,7 +81153,7 @@ Create a protocol that uses the provided `Stream` and `Sink` for communication.
 declare const layerProtocolStdio: <EIn, EOut, RIn, ROut>(options: { readonly stdin: Stream.Stream<Uint8Array, EIn, RIn>; readonly stdout: Sink.Sink<void, Uint8Array | string, unknown, EOut, ROut>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | RIn | ROut>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1341)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1344)
 
 Since v1.0.0
 RpcServer-layerProtocolWebsocket.md
@@ -81170,7 +81170,7 @@ A rpc protocol that uses websockets for communication.
 declare const layerProtocolWebsocket: <I = HttpRouter.Default>(options: { readonly path: HttpRouter.PathInput; readonly routerTag?: HttpRouter.HttpRouter.TagClass<I, string, any, any>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L885)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L884)
 
 Since v1.0.0
 RpcServer-layerProtocolWebsocketRouter.md
@@ -81189,7 +81189,7 @@ Uses a `HttpLayerRouter` to provide the websocket endpoint.
 declare const layerProtocolWebsocketRouter: (options: { readonly path: HttpLayerRouter.PathInput; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | HttpLayerRouter.HttpRouter>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L904)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L903)
 
 Since v1.0.0
 RpcServer-makeProtocolStdio.md
@@ -81206,7 +81206,7 @@ Create a protocol that uses the provided `Stream` and `Sink` for communication.
 declare const makeProtocolStdio: <EIn, EOut, RIn, ROut>(options: { readonly stdin: Stream.Stream<Uint8Array, EIn, RIn>; readonly stdout: Sink.Sink<void, Uint8Array | string, unknown, EOut, ROut>; }) => Effect.Effect<{ readonly run: (f: (clientId: number, data: FromClientEncoded) => Effect.Effect<void>) => Effect.Effect<never>; readonly disconnects: Mailbox.ReadonlyMailbox<number>; readonly send: (clientId: number, response: FromServerEncoded, transferables?: ReadonlyArray<globalThis.Transferable>) => Effect.Effect<void>; readonly end: (clientId: number) => Effect.Effect<void>; readonly clientIds: Effect.Effect<Iterable<number>>; readonly initialMessage: Effect.Effect<Option.Option<unknown>>; readonly supportsAck: boolean; readonly supportsTransferables: boolean; readonly supportsSpanPropagation: boolean; }, never, Scope.Scope | RpcSerialization.RpcSerialization | RIn | Exclude<ROut, Scope.Scope>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1276)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1279)
 
 Since v1.0.0
 RpcServer-toWebHandler.md
@@ -81223,7 +81223,7 @@ Construct an http web handler from an `RpcGroup`.
 declare const toWebHandler: <Rpcs extends Rpc.Any, LE>(group: RpcGroup.RpcGroup<Rpcs>, options: { readonly layer: Layer.Layer<Rpc.ToHandler<Rpcs> | Rpc.Middleware<Rpcs> | RpcSerialization.RpcSerialization | HttpRouter.HttpRouter.DefaultServices, LE>; readonly disableTracing?: boolean | undefined; readonly spanPrefix?: string | undefined; readonly spanAttributes?: Record<string, unknown> | undefined; readonly middleware?: (httpApp: HttpApp.Default) => HttpApp.Default<never, HttpRouter.HttpRouter.DefaultServices>; readonly memoMap?: Layer.MemoMap; }) => { readonly handler: (request: globalThis.Request, context?: Context.Context<never> | undefined) => Promise<Response>; readonly dispose: () => Promise<void>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1239)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1242)
 
 Since v1.0.0
 Runner-Runner.md
