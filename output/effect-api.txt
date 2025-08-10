@@ -501,11 +501,11 @@ export interface GenerateTextOptions<Tools extends AiTool.Any> {
    * will not be auto-resolved by the framework.
    *
    * This option is useful when:
-   *   1. The user wants to include tool call definitions from an `AiToolki`
+   *   1. The user wants to include tool call definitions from an `AiToolkit`
    *      in requests to the large language model so that the model has the
-   *      capability to call tools
+   *      capability to call tools.
    *   2. The user wants to control the execution of tool call resolvers
-   *      instead of having the framework handle tool call resolution
+   *      instead of having the framework handle tool call resolution.
    */
   readonly disableToolCallResolution?: boolean | undefined
 }
@@ -557,7 +557,7 @@ output of the model.
 declare const generateObject: <A, I extends Record<string, unknown>, R>(options: GenerateObjectOptions<A, I, R>) => Effect.Effect<AiResponse.WithStructuredOutput<A>, AiError, AiLanguageModel | R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L654)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L658)
 
 Since v1.0.0
 AiLanguageModel-generateText.md
@@ -577,7 +577,7 @@ be able to perform tool calls to augment its response.
 declare const generateText: <Tools extends AiTool.Any, Options extends NoExcessProperties<GenerateTextOptions<any>, Options>>(options: Options & GenerateTextOptions<Tools>) => Effect.Effect<ExtractSuccess<Options>, ExtractError<Options>, AiLanguageModel | ExtractContext<Options>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L632)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L636)
 
 Since v1.0.0
 AiLanguageModel-streamText.md
@@ -598,7 +598,7 @@ be able to perform tool calls to augment its response.
 declare const streamText: <Tools extends AiTool.Any, Options extends NoExcessProperties<GenerateTextOptions<any>, Options>>(options: Options & GenerateTextOptions<Tools>) => Stream.Stream<ExtractSuccess<Options>, ExtractError<Options>, AiLanguageModel | ExtractContext<Options>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L672)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiLanguageModel.ts#L676)
 
 Since v1.0.0
 AiResponse-AiResponse.md
@@ -81288,7 +81288,7 @@ A layer which will ping a Runner directly to check if it is healthy.
 declare const layer: Layer.Layer<RunnerHealth, never, Runners.Runners>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L72)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L110)
 
 Since v1.0.0
 RunnerHealth-layerNoop.md
@@ -81307,7 +81307,7 @@ This is useful for testing.
 declare const layerNoop: Layer.Layer<RunnerHealth, never, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L37)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L75)
 
 Since v1.0.0
 RunnerHealth-layerRpc.md
@@ -81324,7 +81324,7 @@ A layer which will ping a Runner directly to check if it is healthy.
 declare const layerRpc: Layer.Layer<RunnerHealth, never, ShardingConfig | Runners.RpcClientProtocol>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L84)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L122)
 
 Since v1.0.0
 RunnerHealth-RunnerHealth.md
@@ -81345,7 +81345,7 @@ associated shards can and will be re-assigned to a different Runner.
 declare class RunnerHealth
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L22)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L24)
 
 Since v1.0.0
 RunnerServer-layer.md
@@ -88678,7 +88678,7 @@ The messaging protocol for the `ShardManager`.
 declare class Rpcs
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/ShardManager.ts#L275)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/ShardManager.ts#L279)
 
 Since v1.0.0
 ShardManager-ShardManagerClient.md
@@ -88696,7 +88696,7 @@ Represents a client which can be used to communicate with the
 declare class ShardManagerClient
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/ShardManager.ts#L216)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/ShardManager.ts#L218)
 
 Since v1.0.0
 ShardStorage-ShardStorage.md
