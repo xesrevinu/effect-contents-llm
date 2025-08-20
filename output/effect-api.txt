@@ -76694,7 +76694,7 @@ const allWithRecord = Prompt.all({ username, password })
 declare const all: <const Arg extends Iterable<Prompt<any>> | Record<string, Prompt<any>>>(arg: Arg) => All.Return<Arg>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Prompt.ts#L545)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Prompt.ts#L549)
 
 Since v1.0.0
 Prompt-custom.md
@@ -76732,7 +76732,7 @@ the following occurs:
 declare const custom: <State, Output>(initialState: State | Effect<State, never, Prompt.Environment>, handlers: Prompt.Handlers<State, Output>) => Prompt<Output>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Prompt.ts#L581)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Prompt.ts#L585)
 
 Since v1.0.0
 Prompt-run.md
@@ -76749,7 +76749,7 @@ Executes the specified `Prompt`.
 declare const run: <Output>(self: Prompt<Output>) => Effect<Output, QuitException, Prompt.Environment>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Prompt.ts#L654)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Prompt.ts#L658)
 
 Since v1.0.0
 Prompt-succeed.md
@@ -76769,7 +76769,7 @@ anything to the screen.
 declare const succeed: <A>(value: A) => Prompt<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Prompt.ts#L679)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Prompt.ts#L683)
 
 Since v1.0.0
 PubSub-awaitShutdown.md
