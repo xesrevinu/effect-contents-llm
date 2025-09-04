@@ -64134,7 +64134,7 @@ Create an elicitation request
 declare const elicit: <A, I extends Record<string, any>, R>(options: { readonly message: string; readonly schema: Schema.Schema<A, I, R>; }) => Effect.Effect<A, ElicitationDeclined, McpServerClient | R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L1052)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L1058)
 
 Since v1.0.0
 McpServer-layerHttp.md
@@ -64203,7 +64203,7 @@ Layer.launch(ServerLayer).pipe(NodeRuntime.runMain)
 declare const layerHttp: <I = HttpRouter.Default>(options: { readonly name: string; readonly version: string; readonly path: HttpRouter.PathInput; readonly routerTag?: HttpRouter.HttpRouter.TagClass<I, string, any, any>; }) => Layer.Layer<McpServer | McpServerClient>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L571)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L577)
 
 Since v1.0.0
 McpServer-layerHttpRouter.md
@@ -64222,7 +64222,7 @@ Uses a `HttpLayerRouter` to register the McpServer routes.
 declare const layerHttpRouter: (options: { readonly name: string; readonly version: string; readonly path: HttpRouter.PathInput; }) => Layer.Layer<McpServer | McpServerClient, never, HttpLayerRouter.HttpRouter>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L590)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L596)
 
 Since v1.0.0
 McpServer-layerStdio.md
@@ -64290,7 +64290,7 @@ Layer.launch(ServerLayer).pipe(NodeRuntime.runMain)
 declare const layerStdio: <EIn, RIn, EOut, ROut>(options: { readonly name: string; readonly version: string; readonly stdin: Stream<Uint8Array, EIn, RIn>; readonly stdout: Sink<unknown, Uint8Array | string, unknown, EOut, ROut>; }) => Layer.Layer<McpServer | McpServerClient, never, RIn | ROut>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L496)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L502)
 
 Since v1.0.0
 McpServer-prompt.md
@@ -64307,7 +64307,7 @@ Register a prompt with the McpServer.
 declare const prompt: <E, R, Params = {}, ParamsI extends Record<string, string> = {}, ParamsR = never, const Completions extends { readonly [K in keyof Params]?: (input: string) => Effect.Effect<Array<Params[K]>, any, any>; } = {}>(options: { readonly name: string; readonly description?: string | undefined; readonly parameters?: Schema.Schema<Params, ParamsI, ParamsR> | undefined; readonly completion?: ValidateCompletions<Completions, Extract<keyof Params, string>> | undefined; readonly content: (params: Params) => Effect.Effect<Array<typeof PromptMessage.Type> | string, E, R>; }) => Layer.Layer<never, never, Exclude<ParamsR | R, McpServerClient>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L1024)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L1030)
 
 Since v1.0.0
 McpServer-registerPrompt.md
@@ -64324,7 +64324,7 @@ Register a prompt with the McpServer.
 declare const registerPrompt: <E, R, Params = {}, ParamsI extends Record<string, string> = {}, ParamsR = never, const Completions extends { readonly [K in keyof Params]?: (input: string) => Effect.Effect<Array<Params[K]>, any, any>; } = {}>(options: { readonly name: string; readonly description?: string | undefined; readonly parameters?: Schema.Schema<Params, ParamsI, ParamsR> | undefined; readonly completion?: ValidateCompletions<Completions, Extract<keyof Params, string>> | undefined; readonly content: (params: Params) => Effect.Effect<Array<typeof PromptMessage.Type> | string, E, R>; }) => Effect.Effect<void, never, Exclude<ParamsR | R, McpServerClient> | McpServer>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L929)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L935)
 
 Since v1.0.0
 McpServer-registerResource.md
@@ -64341,7 +64341,7 @@ Register a resource with the McpServer.
 declare const registerResource: { <E, R>(options: { readonly uri: string; readonly name: string; readonly description?: string | undefined; readonly mimeType?: string | undefined; readonly audience?: ReadonlyArray<"user" | "assistant"> | undefined; readonly priority?: number | undefined; readonly content: Effect.Effect<typeof ReadResourceResult.Type | string | Uint8Array, E, R>; }): Effect.Effect<void, never, Exclude<R, McpServerClient> | McpServer>; <const Schemas extends ReadonlyArray<Schema.Schema.Any>>(segments: TemplateStringsArray, ...schemas: Schemas & { readonly [K in keyof Schemas]: Schema.Schema.Encoded<Schemas[K]> extends string ? unknown : "Schema must be encodable to a string"; }): <E, R, const Completions extends Partial<ResourceCompletions<Schemas>> = {}>(options: { readonly name: string; readonly description?: string | undefined; readonly mimeType?: string | undefined; readonly audience?: ReadonlyArray<"user" | "assistant"> | undefined; readonly priority?: number | undefined; readonly completion?: ValidateCompletions<Completions, keyof ResourceCompletions<Schemas>> | undefined; readonly content: (uri: string, ...params: { readonly [K in keyof Schemas]: Schemas[K]["Type"]; }) => Effect.Effect<typeof ReadResourceResult.Type | string | Uint8Array, E, R>; }) => Effect.Effect<void, never, Exclude<R | (Completions[keyof Completions] extends (input: string) => infer Ret ? Ret extends Effect.Effect<infer _A, infer _E, infer _R> ? _R : never : never), McpServerClient> | McpServer>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L709)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L715)
 
 Since v1.0.0
 McpServer-registerToolkit.md
@@ -64358,7 +64358,7 @@ Register an AiToolkit with the McpServer.
 declare const registerToolkit: <Tools extends AiTool.Any>(toolkit: AiToolkit.AiToolkit<Tools>) => Effect.Effect<void, never, McpServer | AiTool.ToHandler<Tools> | Exclude<AiTool.Context<Tools>, McpServerClient>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L606)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L612)
 
 Since v1.0.0
 McpServer-resource.md
@@ -64375,7 +64375,7 @@ Register a resource with the McpServer.
 declare const resource: { <E, R>(options: { readonly uri: string; readonly name: string; readonly description?: string | undefined; readonly mimeType?: string | undefined; readonly audience?: ReadonlyArray<"user" | "assistant"> | undefined; readonly priority?: number | undefined; readonly content: Effect.Effect<typeof ReadResourceResult.Type | string | Uint8Array, E, R>; }): Layer.Layer<never, never, Exclude<R, McpServerClient>>; <const Schemas extends ReadonlyArray<Schema.Schema.Any>>(segments: TemplateStringsArray, ...schemas: Schemas & { readonly [K in keyof Schemas]: Schema.Schema.Encoded<Schemas[K]> extends string ? unknown : "Schema must be encodable to a string"; }): <E, R, const Completions extends Partial<ResourceCompletions<Schemas>> = {}>(options: { readonly name: string; readonly description?: string | undefined; readonly mimeType?: string | undefined; readonly audience?: ReadonlyArray<"user" | "assistant"> | undefined; readonly priority?: number | undefined; readonly completion?: ValidateCompletions<Completions, keyof ResourceCompletions<Schemas>> | undefined; readonly content: (uri: string, ...params: { readonly [K in keyof Schemas]: Schemas[K]["Type"]; }) => Effect.Effect<typeof ReadResourceResult.Type | string | Uint8Array, E, R>; }) => Layer.Layer<never, never, Exclude<R | (Completions[keyof Completions] extends (input: string) => infer Ret ? Ret extends Effect.Effect<infer _A, infer _E, infer _R> ? _R : never : never), McpServerClient>>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L861)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L867)
 
 Since v1.0.0
 McpServer-toolkit.md
@@ -64392,7 +64392,7 @@ Register an AiToolkit with the McpServer.
 declare const toolkit: <Tools extends AiTool.Any>(toolkit: AiToolkit.AiToolkit<Tools>) => Layer.Layer<never, never, AiTool.ToHandler<Tools> | Exclude<AiTool.Context<Tools>, McpServerClient>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L673)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpServer.ts#L679)
 
 Since v1.0.0
 MergeDecision-isMergeDecision.md
@@ -74561,7 +74561,7 @@ the two iterables (predicates or values).
 declare const all: <A>(collection: Iterable<Predicate<A>>) => Predicate<ReadonlyArray<A>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L953)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L954)
 
 Since v2.0.0
 Predicate-and.md
@@ -74607,7 +74607,7 @@ assert.strictEqual(isPersonAndEmployee({ id: 456 }), false) // Missing name
 declare const and: { <A, C extends A>(that: Refinement<A, C>): <B extends A>(self: Refinement<A, B>) => Refinement<A, B & C>; <A, B extends A, C extends A>(self: Refinement<A, B>, that: Refinement<A, C>): Refinement<A, B & C>; <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1177)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1178)
 
 Since v2.0.0
 Predicate-compose.md
@@ -74650,7 +74650,7 @@ assert.strictEqual(isLongString("hi"), false)
 declare const compose: { <A, B extends A, C extends B, D extends C>(bc: Refinement<C, D>): (ab: Refinement<A, B>) => Refinement<A, D>; <A, B extends A>(bc: Predicate<NoInfer<B>>): (ab: Refinement<A, B>) => Refinement<A, B>; <A, B extends A, C extends B, D extends C>(ab: Refinement<A, B>, bc: Refinement<C, D>): Refinement<A, D>; <A, B extends A>(ab: Refinement<A, B>, bc: Predicate<NoInfer<B>>): Refinement<A, B>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L921)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L922)
 
 Since v2.0.0
 Predicate-eqv.md
@@ -74685,7 +74685,7 @@ assert.strictEqual(isPositiveEqvEven(-1), true)  // both false -> true
 declare const eqv: { <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1235)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1236)
 
 Since v2.0.0
 Predicate-every.md
@@ -74725,7 +74725,7 @@ assert.strictEqual(isPositiveAndEven(-2), false)
 declare const every: <A>(collection: Iterable<Predicate<A>>) => Predicate<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1364)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1365)
 
 Since v2.0.0
 Predicate-hasProperty.md
@@ -74830,7 +74830,7 @@ assert.strictEqual(isValidUserPermission({ isStaff: false, isAdmin: true }), fal
 declare const implies: { <A>(consequent: Predicate<A>): (antecedent: Predicate<A>) => Predicate<A>; <A>(antecedent: Predicate<A>, consequent: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1299)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1300)
 
 Since v2.0.0
 Predicate-isBigInt.md
@@ -75325,7 +75325,7 @@ assert.strictEqual(isPromise({}), false)
 declare const isPromise: (input: unknown) => input is Promise<unknown>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L844)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L845)
 
 Since v2.0.0
 Predicate-isPromiseLike.md
@@ -75359,7 +75359,7 @@ assert.strictEqual(isPromiseLike({}), false)
 declare const isPromiseLike: (input: unknown) => input is PromiseLike<unknown>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L868)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L869)
 
 Since v2.0.0
 Predicate-isReadonlyRecord.md
@@ -75392,7 +75392,7 @@ assert.strictEqual(isReadonlyRecord(null), false)
 declare const isReadonlyRecord: (input: unknown) => input is { readonly [x: string | symbol]: unknown; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L820)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L821)
 
 Since v2.0.0
 Predicate-isRecord.md
@@ -75429,7 +75429,7 @@ assert.strictEqual(isRecord(() => null), false)
 declare const isRecord: (input: unknown) => input is { [x: string | symbol]: unknown; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L796)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L797)
 
 Since v2.0.0
 Predicate-isRegExp.md
@@ -75458,7 +75458,7 @@ assert.strictEqual(Predicate.isRegExp("/a/"), false)
 declare const isRegExp: (input: unknown) => input is RegExp
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L889)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L890)
 
 Since v3.9.0
 Predicate-isSet.md
@@ -76041,7 +76041,7 @@ This is equivalent to `not(and(p, q))`.
 declare const nand: { <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1331)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1332)
 
 Since v2.0.0
 Predicate-nor.md
@@ -76060,7 +76060,7 @@ This is equivalent to `not(or(p, q))`.
 declare const nor: { <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1315)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1316)
 
 Since v2.0.0
 Predicate-not.md
@@ -76093,7 +76093,7 @@ assert.strictEqual(isNonPositive(1), false)
 declare const not: <A>(self: Predicate<A>) => Predicate<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1103)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1104)
 
 Since v2.0.0
 Predicate-or.md
@@ -76136,7 +76136,7 @@ if (isStringOrNumber(value)) {
 declare const or: { <A, C extends A>(that: Refinement<A, C>): <B extends A>(self: Refinement<A, B>) => Refinement<A, B | C>; <A, B extends A, C extends A>(self: Refinement<A, B>, that: Refinement<A, C>): Refinement<A, B | C>; <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1136)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1137)
 
 Since v2.0.0
 Predicate-product.md
@@ -76154,7 +76154,7 @@ first element of the tuple, and the second predicate tests the second element.
 declare const product: <A, B>(self: Predicate<A>, that: Predicate<B>) => Predicate<readonly [A, B]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L939)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L940)
 
 Since v2.0.0
 Predicate-productMany.md
@@ -76172,7 +76172,7 @@ Useful for checking the head and tail of an array separately.
 declare const productMany: <A>(self: Predicate<A>, collection: Iterable<Predicate<A>>) => Predicate<readonly [A, ...Array<A>]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L978)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L979)
 
 Since v2.0.0
 Predicate-some.md
@@ -76212,7 +76212,7 @@ assert.strictEqual(isNegativeOrOdd(4), false) // both are false
 declare const some: <A>(collection: Iterable<Predicate<A>>) => Predicate<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1398)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1399)
 
 Since v2.0.0
 Predicate-struct.md
@@ -76258,7 +76258,7 @@ assert.strictEqual(personPredicate({ name: "Bob", age: "40" }), false)
 declare const struct: <R extends Record<string, Predicate.Any>>(fields: R) => [Extract<R[keyof R], Refinement.Any>] extends [never] ? Predicate<{ readonly [K in keyof R]: Predicate.In<R[K]>; }> : Refinement<{ readonly [K in keyof R]: R[K] extends Refinement.Any ? Refinement.In<R[K]> : Predicate.In<R[K]>; }, { readonly [K in keyof R]: R[K] extends Refinement.Any ? Refinement.Out<R[K]> : Predicate.In<R[K]>; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1061)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1062)
 
 Since v2.0.0
 Predicate-tuple.md
@@ -76303,7 +76303,7 @@ assert.strictEqual(isStringNumberTuple(["hello", "123"]), false)
 declare const tuple: <T extends ReadonlyArray<Predicate.Any>>(...elements: T) => [Extract<T[number], Refinement.Any>] extends [never] ? Predicate<{ readonly [I in keyof T]: Predicate.In<T[I]>; }> : Refinement<{ readonly [I in keyof T]: T[I] extends Refinement.Any ? Refinement.In<T[I]> : Predicate.In<T[I]>; }, { readonly [I in keyof T]: T[I] extends Refinement.Any ? Refinement.Out<T[I]> : Predicate.In<T[I]>; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1018)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1019)
 
 Since v2.0.0
 Predicate-xor.md
@@ -76338,7 +76338,7 @@ assert.strictEqual(isPositiveXorEven(-1), false) // both false -> false
 declare const xor: { <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1207)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1208)
 
 Since v2.0.0
 Primitive-Primitive.md
@@ -81103,7 +81103,7 @@ A rpc protocol that uses streaming http for communication.
 declare const layerProtocolHttp: <I = HttpRouter.Default>(options: { readonly path: HttpRouter.PathInput; readonly routerTag?: HttpRouter.HttpRouter.TagClass<I, string, any, any>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1145)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1149)
 
 Since v1.0.0
 RpcServer-layerProtocolHttpRouter.md
@@ -81122,7 +81122,7 @@ Uses a `HttpLayerRouter` to provide the http endpoint.
 declare const layerProtocolHttpRouter: (options: { readonly path: HttpRouter.PathInput; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | HttpLayerRouter.HttpRouter>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1164)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1168)
 
 Since v1.0.0
 RpcServer-layerProtocolSocketServer.md
@@ -81156,7 +81156,7 @@ Create a protocol that uses the provided `Stream` and `Sink` for communication.
 declare const layerProtocolStdio: <EIn, EOut, RIn, ROut>(options: { readonly stdin: Stream.Stream<Uint8Array, EIn, RIn>; readonly stdout: Sink.Sink<void, Uint8Array | string, unknown, EOut, ROut>; }) => Layer.Layer<Protocol, never, RpcSerialization.RpcSerialization | RIn | ROut>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1346)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1350)
 
 Since v1.0.0
 RpcServer-layerProtocolWebsocket.md
@@ -81206,10 +81206,10 @@ Create a protocol that uses the provided `Stream` and `Sink` for communication.
 **Signature**
 
 ```ts
-declare const makeProtocolStdio: <EIn, EOut, RIn, ROut>(options: { readonly stdin: Stream.Stream<Uint8Array, EIn, RIn>; readonly stdout: Sink.Sink<void, Uint8Array | string, unknown, EOut, ROut>; }) => Effect.Effect<{ readonly run: (f: (clientId: number, data: FromClientEncoded) => Effect.Effect<void>) => Effect.Effect<never>; readonly disconnects: Mailbox.ReadonlyMailbox<number>; readonly send: (clientId: number, response: FromServerEncoded, transferables?: ReadonlyArray<globalThis.Transferable>) => Effect.Effect<void>; readonly end: (clientId: number) => Effect.Effect<void>; readonly clientIds: Effect.Effect<Iterable<number>>; readonly initialMessage: Effect.Effect<Option.Option<unknown>>; readonly supportsAck: boolean; readonly supportsTransferables: boolean; readonly supportsSpanPropagation: boolean; }, never, Scope.Scope | RpcSerialization.RpcSerialization | RIn | Exclude<ROut, Scope.Scope>>
+declare const makeProtocolStdio: <EIn, EOut, RIn, ROut>(options: { readonly stdin: Stream.Stream<Uint8Array, EIn, RIn>; readonly stdout: Sink.Sink<void, Uint8Array | string, unknown, EOut, ROut>; }) => Effect.Effect<{ readonly run: (f: (clientId: number, data: FromClientEncoded) => Effect.Effect<void>) => Effect.Effect<never>; readonly disconnects: Mailbox.ReadonlyMailbox<number>; readonly send: (clientId: number, response: FromServerEncoded, transferables?: ReadonlyArray<globalThis.Transferable>) => Effect.Effect<void>; readonly end: (clientId: number) => Effect.Effect<void>; readonly clientIds: Effect.Effect<ReadonlySet<number>>; readonly initialMessage: Effect.Effect<Option.Option<unknown>>; readonly supportsAck: boolean; readonly supportsTransferables: boolean; readonly supportsSpanPropagation: boolean; }, never, Scope.Scope | RpcSerialization.RpcSerialization | RIn | Exclude<ROut, Scope.Scope>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1282)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1286)
 
 Since v1.0.0
 RpcServer-toWebHandler.md
@@ -81226,7 +81226,7 @@ Construct an http web handler from an `RpcGroup`.
 declare const toWebHandler: <Rpcs extends Rpc.Any, LE>(group: RpcGroup.RpcGroup<Rpcs>, options: { readonly layer: Layer.Layer<Rpc.ToHandler<Rpcs> | Rpc.Middleware<Rpcs> | RpcSerialization.RpcSerialization | HttpRouter.HttpRouter.DefaultServices, LE>; readonly disableTracing?: boolean | undefined; readonly spanPrefix?: string | undefined; readonly spanAttributes?: Record<string, unknown> | undefined; readonly middleware?: (httpApp: HttpApp.Default) => HttpApp.Default<never, HttpRouter.HttpRouter.DefaultServices>; readonly memoMap?: Layer.MemoMap; }) => { readonly handler: (request: globalThis.Request, context?: Context.Context<never> | undefined) => Promise<Response>; readonly dispose: () => Promise<void>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1245)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1249)
 
 Since v1.0.0
 Runner-Runner.md
