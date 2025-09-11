@@ -44451,7 +44451,7 @@ Create a no-op file system that can be used for testing.
 declare const layerNoop: (fileSystem: Partial<FileSystem>) => Layer<FileSystem>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L480)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L481)
 
 Since v1.0.0
 FileSystem-makeNoop.md
@@ -44468,7 +44468,7 @@ Create a no-op file system that can be used for testing.
 declare const makeNoop: (fileSystem: Partial<FileSystem>) => FileSystem
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L472)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/FileSystem.ts#L473)
 
 Since v1.0.0
 Filterable-filterMapComposition.md
@@ -74561,7 +74561,7 @@ the two iterables (predicates or values).
 declare const all: <A>(collection: Iterable<Predicate<A>>) => Predicate<ReadonlyArray<A>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L954)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L953)
 
 Since v2.0.0
 Predicate-and.md
@@ -74607,7 +74607,7 @@ assert.strictEqual(isPersonAndEmployee({ id: 456 }), false) // Missing name
 declare const and: { <A, C extends A>(that: Refinement<A, C>): <B extends A>(self: Refinement<A, B>) => Refinement<A, B & C>; <A, B extends A, C extends A>(self: Refinement<A, B>, that: Refinement<A, C>): Refinement<A, B & C>; <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1178)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1177)
 
 Since v2.0.0
 Predicate-compose.md
@@ -74650,7 +74650,7 @@ assert.strictEqual(isLongString("hi"), false)
 declare const compose: { <A, B extends A, C extends B, D extends C>(bc: Refinement<C, D>): (ab: Refinement<A, B>) => Refinement<A, D>; <A, B extends A>(bc: Predicate<NoInfer<B>>): (ab: Refinement<A, B>) => Refinement<A, B>; <A, B extends A, C extends B, D extends C>(ab: Refinement<A, B>, bc: Refinement<C, D>): Refinement<A, D>; <A, B extends A>(ab: Refinement<A, B>, bc: Predicate<NoInfer<B>>): Refinement<A, B>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L922)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L921)
 
 Since v2.0.0
 Predicate-eqv.md
@@ -74685,7 +74685,7 @@ assert.strictEqual(isPositiveEqvEven(-1), true)  // both false -> true
 declare const eqv: { <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1236)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1235)
 
 Since v2.0.0
 Predicate-every.md
@@ -74725,7 +74725,7 @@ assert.strictEqual(isPositiveAndEven(-2), false)
 declare const every: <A>(collection: Iterable<Predicate<A>>) => Predicate<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1365)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1364)
 
 Since v2.0.0
 Predicate-hasProperty.md
@@ -74759,7 +74759,7 @@ if (hasProperty(value, "name")) {
 declare const hasProperty: { <P extends PropertyKey>(property: P): (self: unknown) => self is { [K in P]: unknown; }; <P extends PropertyKey>(self: unknown, property: P): self is { [K in P]: unknown; }; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L605)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L604)
 
 Since v2.0.0
 Predicate-implies.md
@@ -74830,7 +74830,7 @@ assert.strictEqual(isValidUserPermission({ isStaff: false, isAdmin: true }), fal
 declare const implies: { <A>(consequent: Predicate<A>): (antecedent: Predicate<A>) => Predicate<A>; <A>(antecedent: Predicate<A>, consequent: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1300)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1299)
 
 Since v2.0.0
 Predicate-isBigInt.md
@@ -74859,7 +74859,7 @@ assert.strictEqual(isBigInt("1"), false)
 declare const isBigInt: (input: unknown) => input is bigint
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L395)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L394)
 
 Since v2.0.0
 Predicate-isBoolean.md
@@ -74889,7 +74889,7 @@ assert.strictEqual(isBoolean(0), false)
 declare const isBoolean: (input: unknown) => input is boolean
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L376)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L375)
 
 Since v2.0.0
 Predicate-isDate.md
@@ -74918,7 +74918,7 @@ assert.strictEqual(isDate("2023-01-01"), false)
 declare const isDate: (input: unknown) => input is Date
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L750)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L749)
 
 Since v2.0.0
 Predicate-isError.md
@@ -74948,7 +74948,7 @@ assert.strictEqual(isError("boom"), false)
 declare const isError: (input: unknown) => input is Error
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L712)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L711)
 
 Since v2.0.0
 Predicate-isFunction.md
@@ -74977,7 +74977,7 @@ assert.strictEqual(isFunction("function"), false)
 declare const isFunction: (input: unknown) => input is Function
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L439)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L438)
 
 Since v2.0.0
 Predicate-isIterable.md
@@ -75009,7 +75009,7 @@ assert.strictEqual(isIterable(123), false)
 declare const isIterable: (input: unknown) => input is Iterable<unknown>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L772)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L771)
 
 Since v2.0.0
 Predicate-isMap.md
@@ -75066,7 +75066,7 @@ assert.strictEqual(isNever({}), false)
 declare const isNever: (input: unknown) => input is never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L533)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L532)
 
 Since v2.0.0
 Predicate-isNotNull.md
@@ -75095,7 +75095,7 @@ assert.strictEqual(isNotNull(null), false)
 declare const isNotNull: <A>(input: A) => input is Exclude<A, null>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L515)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L514)
 
 Since v2.0.0
 Predicate-isNotNullable.md
@@ -75130,7 +75130,7 @@ assert.strictEqual(isNotNullable(undefined), false)
 declare const isNotNullable: <A>(input: A) => input is NonNullable<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L692)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L691)
 
 Since v2.0.0
 Predicate-isNotUndefined.md
@@ -75159,7 +75159,7 @@ assert.strictEqual(isNotUndefined(undefined), false)
 declare const isNotUndefined: <A>(input: A) => input is Exclude<A, undefined>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L477)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L476)
 
 Since v2.0.0
 Predicate-isNull.md
@@ -75188,7 +75188,7 @@ assert.strictEqual(isNull("null"), false)
 declare const isNull: (input: unknown) => input is null
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L496)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L495)
 
 Since v2.0.0
 Predicate-isNullable.md
@@ -75222,7 +75222,7 @@ assert.strictEqual(isNullable(""), false)
 declare const isNullable: <A>(input: A) => input is Extract<A, null | undefined>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L670)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L669)
 
 Since v2.0.0
 Predicate-isNumber.md
@@ -75231,8 +75231,7 @@ Module: `Predicate`<br />
 
 ## Predicate.isNumber
 
-A refinement that checks if a value is a `number`. Note that this
-check returns `false` for `NaN`.
+A refinement that checks if a value is a `number`.
 
 **Example**
 
@@ -75243,9 +75242,9 @@ import { isNumber } from "effect/Predicate"
 assert.strictEqual(isNumber(123), true)
 assert.strictEqual(isNumber(0), true)
 assert.strictEqual(isNumber(-1.5), true)
+assert.strictEqual(isNumber(NaN), true)
 
 assert.strictEqual(isNumber("123"), false)
-assert.strictEqual(isNumber(NaN), false) // Special case: NaN is a number type but returns false
 ```
 
 **Signature**
@@ -75254,7 +75253,7 @@ assert.strictEqual(isNumber(NaN), false) // Special case: NaN is a number type b
 declare const isNumber: (input: unknown) => input is number
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L356)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L355)
 
 Since v2.0.0
 Predicate-isObject.md
@@ -75290,7 +75289,7 @@ assert.strictEqual(isObject("hello"), false)
 declare const isObject: (input: unknown) => input is object
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L581)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L580)
 
 Since v2.0.0
 Predicate-isPromise.md
@@ -75325,7 +75324,7 @@ assert.strictEqual(isPromise({}), false)
 declare const isPromise: (input: unknown) => input is Promise<unknown>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L845)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L844)
 
 Since v2.0.0
 Predicate-isPromiseLike.md
@@ -75359,7 +75358,7 @@ assert.strictEqual(isPromiseLike({}), false)
 declare const isPromiseLike: (input: unknown) => input is PromiseLike<unknown>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L869)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L868)
 
 Since v2.0.0
 Predicate-isReadonlyRecord.md
@@ -75392,7 +75391,7 @@ assert.strictEqual(isReadonlyRecord(null), false)
 declare const isReadonlyRecord: (input: unknown) => input is { readonly [x: string | symbol]: unknown; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L821)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L820)
 
 Since v2.0.0
 Predicate-isRecord.md
@@ -75429,7 +75428,7 @@ assert.strictEqual(isRecord(() => null), false)
 declare const isRecord: (input: unknown) => input is { [x: string | symbol]: unknown; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L797)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L796)
 
 Since v2.0.0
 Predicate-isRegExp.md
@@ -75458,7 +75457,7 @@ assert.strictEqual(Predicate.isRegExp("/a/"), false)
 declare const isRegExp: (input: unknown) => input is RegExp
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L890)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L889)
 
 Since v3.9.0
 Predicate-isSet.md
@@ -75546,7 +75545,7 @@ assert.strictEqual(isSymbol("a"), false)
 declare const isSymbol: (input: unknown) => input is symbol
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L413)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L412)
 
 Since v2.0.0
 Predicate-isTagged.md
@@ -75587,7 +75586,7 @@ if (isCircle(shape1)) {
 declare const isTagged: { <K extends string>(tag: K): (self: unknown) => self is { _tag: K; }; <K extends string>(self: unknown, tag: K): self is { _tag: K; }; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L643)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L642)
 
 Since v2.0.0
 Predicate-Predicate.Any.md
@@ -75927,7 +75926,7 @@ assert.strictEqual(isUint8Array([1, 2, 3]), false)
 declare const isUint8Array: (input: unknown) => input is Uint8Array
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L731)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L730)
 
 Since v2.0.0
 Predicate-isUndefined.md
@@ -75956,7 +75955,7 @@ assert.strictEqual(isUndefined("undefined"), false)
 declare const isUndefined: (input: unknown) => input is undefined
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L458)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L457)
 
 Since v2.0.0
 Predicate-isUnknown.md
@@ -75984,7 +75983,7 @@ assert.strictEqual(isUnknown({}), true)
 declare const isUnknown: (input: unknown) => input is unknown
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L551)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L550)
 
 Since v2.0.0
 Predicate-mapInput.md
@@ -76041,7 +76040,7 @@ This is equivalent to `not(and(p, q))`.
 declare const nand: { <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1332)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1331)
 
 Since v2.0.0
 Predicate-nor.md
@@ -76060,7 +76059,7 @@ This is equivalent to `not(or(p, q))`.
 declare const nor: { <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1316)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1315)
 
 Since v2.0.0
 Predicate-not.md
@@ -76093,7 +76092,7 @@ assert.strictEqual(isNonPositive(1), false)
 declare const not: <A>(self: Predicate<A>) => Predicate<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1104)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1103)
 
 Since v2.0.0
 Predicate-or.md
@@ -76136,7 +76135,7 @@ if (isStringOrNumber(value)) {
 declare const or: { <A, C extends A>(that: Refinement<A, C>): <B extends A>(self: Refinement<A, B>) => Refinement<A, B | C>; <A, B extends A, C extends A>(self: Refinement<A, B>, that: Refinement<A, C>): Refinement<A, B | C>; <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1137)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1136)
 
 Since v2.0.0
 Predicate-product.md
@@ -76154,7 +76153,7 @@ first element of the tuple, and the second predicate tests the second element.
 declare const product: <A, B>(self: Predicate<A>, that: Predicate<B>) => Predicate<readonly [A, B]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L940)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L939)
 
 Since v2.0.0
 Predicate-productMany.md
@@ -76172,7 +76171,7 @@ Useful for checking the head and tail of an array separately.
 declare const productMany: <A>(self: Predicate<A>, collection: Iterable<Predicate<A>>) => Predicate<readonly [A, ...Array<A>]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L979)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L978)
 
 Since v2.0.0
 Predicate-some.md
@@ -76212,7 +76211,7 @@ assert.strictEqual(isNegativeOrOdd(4), false) // both are false
 declare const some: <A>(collection: Iterable<Predicate<A>>) => Predicate<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1399)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1398)
 
 Since v2.0.0
 Predicate-struct.md
@@ -76258,7 +76257,7 @@ assert.strictEqual(personPredicate({ name: "Bob", age: "40" }), false)
 declare const struct: <R extends Record<string, Predicate.Any>>(fields: R) => [Extract<R[keyof R], Refinement.Any>] extends [never] ? Predicate<{ readonly [K in keyof R]: Predicate.In<R[K]>; }> : Refinement<{ readonly [K in keyof R]: R[K] extends Refinement.Any ? Refinement.In<R[K]> : Predicate.In<R[K]>; }, { readonly [K in keyof R]: R[K] extends Refinement.Any ? Refinement.Out<R[K]> : Predicate.In<R[K]>; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1062)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1061)
 
 Since v2.0.0
 Predicate-tuple.md
@@ -76303,7 +76302,7 @@ assert.strictEqual(isStringNumberTuple(["hello", "123"]), false)
 declare const tuple: <T extends ReadonlyArray<Predicate.Any>>(...elements: T) => [Extract<T[number], Refinement.Any>] extends [never] ? Predicate<{ readonly [I in keyof T]: Predicate.In<T[I]>; }> : Refinement<{ readonly [I in keyof T]: T[I] extends Refinement.Any ? Refinement.In<T[I]> : Predicate.In<T[I]>; }, { readonly [I in keyof T]: T[I] extends Refinement.Any ? Refinement.Out<T[I]> : Predicate.In<T[I]>; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1019)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1018)
 
 Since v2.0.0
 Predicate-xor.md
@@ -76338,7 +76337,7 @@ assert.strictEqual(isPositiveXorEven(-1), false) // both false -> false
 declare const xor: { <A>(that: Predicate<A>): (self: Predicate<A>) => Predicate<A>; <A>(self: Predicate<A>, that: Predicate<A>): Predicate<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1208)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L1207)
 
 Since v2.0.0
 Primitive-Primitive.md
@@ -109167,7 +109166,7 @@ By default, this is set to `true`, meaning that defects will be captured.
 declare class CaptureDefects
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L601)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L625)
 
 Since v1.0.0
 Workflow-SuspendOnFailure.md
@@ -109188,7 +109187,7 @@ You can then manually resume the workflow later with
 declare class SuspendOnFailure
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L615)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L639)
 
 Since v1.0.0
 Workflow-withCompensation.md
@@ -109210,7 +109209,7 @@ finalizers are only registered for top-level effects in the workflow.
 declare const withCompensation: { <A, R2>(compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): <E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; <A, E, R, R2>(effect: Effect.Effect<A, E, R>, compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L564)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L588)
 
 Since v1.0.0
 WorkflowProxy-toHttpApiGroup.md
