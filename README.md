@@ -63,8 +63,8 @@ This will:
 ### Summary
 
 - Total Files: 14
-- Total Size: 12 MB
-- Total Tokens: 3,387,063
+- Total Size: 12.5 MB
+- Total Tokens: 3,502,545
 
 #### website-docs
 
@@ -76,13 +76,13 @@ This will:
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/effect-api.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-api.txt) | 2.99 MB | 858,319 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-api.txt) |
+| [output/effect-api.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-api.txt) | 3.18 MB | 905,244 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-api.txt) |
 
 #### effect-modules
 
 | File | Size | Tokens | Raw |
 | --- | --- | --- | --- |
-| [output/effect-modules.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-modules.txt) | 7.18 MB | 2,096,092 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-modules.txt) |
+| [output/effect-modules.txt](https://github.com/xesrevinu/effect-contents-llm/blob/main/output/effect-modules.txt) | 7.44 MB | 2,164,649 | [Raw](https://raw.githubusercontent.com/xesrevinu/effect-contents-llm/main/output/effect-modules.txt) |
 
 #### effect-core
 
