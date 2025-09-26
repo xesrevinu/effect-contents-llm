@@ -40349,7 +40349,7 @@ sidebar:
 
 import { Aside } from "@astrojs/starlight/components"
 
-The `Effect` type is an **immutable** description of a workflow or operation that is **lazily** executed. This means that when you create an `Effect`, it doesn't run immediately, but instead defines a program that can succeed, fail, or require some additional context to complete.
+The `Effect` type is a description of a workflow or operation that is **lazily** executed. This means that when you create an `Effect`, it doesn't run immediately, but instead defines a program that can succeed, fail, or require some additional context to complete.
 
 Here is the general form of an `Effect`:
 
@@ -43900,7 +43900,7 @@ In this case, the type of `name` is widened to `string | undefined`, which means
 
 ## The Schema Type
 
-The `Schema` type represents an **immutable** value that describes the structure of your data.
+A schema is an immutable value that describes the structure of your data, and it is represented by the `Schema` type.
 
 Here is the general form of a `Schema`:
 
@@ -43914,10 +43914,10 @@ Schema<Type, Encoded, Requirements>
 
 The `Schema` type has three type parameters with the following meanings:
 
-| Parameter        | Description                                                                                                                                                                                                                                                                                                        |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Type**         | Represents the type of value that a schema can succeed with during decoding.                                                                                                                                                                                                                                       |
-| **Encoded**      | Represents the type of value that a schema can succeed with during encoding. By default, it's equal to `Type` if not explicitly provided.                                                                                                                                                                          |
+| Parameter        | Description                                                                                                                                                                                                                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Type**         | Represents the type of value that a schema can succeed with during decoding.                                                                                                                                                                                                                                  |
+| **Encoded**      | Represents the type of value that a schema can succeed with during encoding. By default, it's equal to `Type` if not explicitly provided.                                                                                                                                                                     |
 | **Requirements** | Similar to the [`Effect`](https://effect.website/docs/getting-started/the-effect-type) type, it represents the contextual data required by the schema to execute both decoding and encoding. If this type parameter is `never` (default if not explicitly provided), it means the schema has no requirements. |
 
 **Examples**
