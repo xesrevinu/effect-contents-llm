@@ -44,7 +44,7 @@ type AiError = | HttpRequestError
   | UnknownError
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L709)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L706)
 
 Since v1.0.0
 AiError-HttpRequestDetails.md
@@ -69,10 +69,7 @@ const requestDetails: typeof AiError.HttpRequestDetails.Type = {
   url: "https://api.openai.com/v1/completions",
   urlParams: [["model", "gpt-4"], ["stream", "false"]],
   hash: Option.some("#section1"),
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer sk-..."
-  }
+  headers: { "Content-Type": "application/json" }
 }
 ```
 
@@ -82,7 +79,7 @@ const requestDetails: typeof AiError.HttpRequestDetails.Type = {
 declare const HttpRequestDetails: Schema.Struct<{ method: Schema.Literal<["GET", "POST", "PATCH", "PUT", "DELETE", "HEAD", "OPTIONS"]>; url: typeof Schema.String; urlParams: Schema.Array$<Schema.Tuple2<typeof Schema.String, typeof Schema.String>>; hash: Schema.Option<typeof Schema.String>; headers: Schema.Record$<typeof Schema.String, typeof Schema.String>; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L150)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L147)
 
 Since v1.0.0
 AiError-HttpRequestError.md
@@ -129,7 +126,7 @@ const handleNetworkError = Effect.gen(function* () {
 declare class HttpRequestError
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L193)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L190)
 
 Since v1.0.0
 AiError-HttpResponseDetails.md
@@ -164,7 +161,7 @@ const responseDetails: typeof AiError.HttpResponseDetails.Type = {
 declare const HttpResponseDetails: Schema.Struct<{ status: typeof Schema.Number; headers: Schema.Record$<typeof Schema.String, typeof Schema.String>; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L310)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L307)
 
 Since v1.0.0
 AiError-HttpResponseError.md
@@ -194,7 +191,7 @@ const responseError = new AiError.HttpResponseError({
     url: "https://api.openai.com/v1/completions",
     urlParams: [],
     hash: Option.none(),
-    headers: { "Authorization": "Bearer sk-..." }
+    headers: { "Content-Type": "application/json" }
   },
   response: {
     status: 429,
@@ -213,7 +210,7 @@ console.log(responseError.message)
 declare class HttpResponseError
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L352)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L349)
 
 Since v1.0.0
 AiError-MalformedInput.md
@@ -256,7 +253,7 @@ const program = validateInput("").pipe(
 declare class MalformedInput
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L494)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L491)
 
 Since v1.0.0
 AiError-MalformedOutput.md
@@ -307,7 +304,7 @@ const program = parseResponse({ invalid: "data" }).pipe(
 declare class MalformedOutput
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L551)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L548)
 
 Since v1.0.0
 AiError-TypeId.md
@@ -374,7 +371,7 @@ const program = riskyOperation().pipe(
 declare class UnknownError
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L648)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/AiError.ts#L645)
 
 Since v1.0.0
 AiError-isAiError.md
@@ -12328,7 +12325,7 @@ const useChat = Effect.gen(function* () {
 declare class Chat
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L91)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L94)
 
 Since v1.0.0
 Chat-ChatNotFoundError.md
@@ -12346,7 +12343,7 @@ does not exist in the backing persistence store.
 declare class ChatNotFoundError
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L587)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L590)
 
 Since v1.0.0
 Chat-Persisted.md
@@ -12369,10 +12366,15 @@ export interface Persisted extends Service {
    * The identifier for the chat in the backing persistence store.
    */
   readonly id: string
+
+  /**
+   * Saves the current chat history into the backing persistence store.
+   */
+  readonly save: Effect.Effect<void, AiError.MalformedOutput | PersistenceBackingError>
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L649)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L656)
 
 Since v1.0.0
 Chat-Persistence.Service.md
@@ -12393,7 +12395,9 @@ export interface Service {
      * store with the specified chat identifer. If the chat does not exist in
      * the persistence store, a `ChatNotFoundError` will be returned.
      */
-    readonly get: (chatId: string) => Effect.Effect<
+    readonly get: (chatId: string, options?: {
+      readonly timeToLive?: Duration.DurationInput | undefined
+    }) => Effect.Effect<
       Persisted,
       ChatNotFoundError | PersistenceBackingError
     >
@@ -12404,14 +12408,16 @@ export interface Service {
      * the persistence store, an empty chat will be created, saved, and
      * returned.
      */
-    readonly getOrCreate: (chatId: string) => Effect.Effect<
+    readonly getOrCreate: (chatId: string, options?: {
+      readonly timeToLive?: Duration.DurationInput | undefined
+    }) => Effect.Effect<
       Persisted,
       AiError.MalformedOutput | PersistenceBackingError
     >
   }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L615)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L618)
 
 Since v1.0.0
 Chat-Persistence.md
@@ -12428,7 +12434,7 @@ The context tag for chat persistence.
 declare class Persistence
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L598)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L601)
 
 Since v1.0.0
 Chat-Service.md
@@ -12633,7 +12639,7 @@ export interface Service {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L102)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L105)
 
 Since v1.0.0
 Chat-empty.md
@@ -12672,7 +12678,7 @@ const freshChat = Effect.gen(function* () {
 declare const empty: Effect.Effect<Service, never, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L323)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L326)
 
 Since v1.0.0
 Chat-fromExport.md
@@ -12719,7 +12725,7 @@ const restoreChat = Effect.gen(function* () {
 declare const fromExport: (data: unknown) => Effect.Effect<Service, ParseError, LanguageModel.LanguageModel>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L532)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L535)
 
 Since v1.0.0
 Chat-fromJson.md
@@ -12767,7 +12773,7 @@ const restoreFromJson = Effect.gen(function* () {
 declare const fromJson: (data: string) => Effect.Effect<Service, ParseError, LanguageModel.LanguageModel>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L573)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L576)
 
 Since v1.0.0
 Chat-fromPrompt.md
@@ -12829,7 +12835,7 @@ const existingChat = Effect.gen(function* () {
 declare const fromPrompt: (prompt: Prompt.RawInput) => Effect.Effect<Service, never, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L487)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L490)
 
 Since v1.0.0
 Chat-layerPersisted.md
@@ -12849,7 +12855,7 @@ backing persistence should load chats from.
 declare const layerPersisted: (options: { readonly storeId: string; }) => Layer.Layer<Persistence, never, BackingPersistence>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L768)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L848)
 
 Since v1.0.0
 Chat-makePersisted.md
@@ -12869,7 +12875,7 @@ backing persistence should load chats from.
 declare const makePersisted: (options: { readonly storeId: string; }) => Effect.Effect<Persistence.Service, never, Scope | BackingPersistence>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L665)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Chat.ts#L677)
 
 Since v1.0.0
 ChildExecutorDecision-Close.md
@@ -49204,7 +49210,7 @@ const aiOperation = Effect.gen(function* () {
       url: "https://api.openai.com/v1/completions",
       urlParams: [],
       hash: Option.none(),
-      headers: { "Authorization": "Bearer ***" }
+      headers: { "Content-Type": "application/json" }
     }
   })
 })
@@ -78377,7 +78383,7 @@ export interface AssistantMessage extends BaseMessage<"assistant", AssistantMess
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L949)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L950)
 
 Since v1.0.0
 Prompt-AssistantMessageEncoded.md
@@ -78396,7 +78402,7 @@ export interface AssistantMessageEncoded extends BaseMessageEncoded<"assistant",
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L975)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L976)
 
 Since v1.0.0
 Prompt-AssistantMessageOptions.md
@@ -78414,7 +78420,7 @@ Represents provider-specific options that can be associated with a
 export interface AssistantMessageOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L999)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1000)
 
 Since v1.0.0
 Prompt-AssistantMessagePart.md
@@ -78435,7 +78441,7 @@ type AssistantMessagePart = | TextPart
   | ToolResultPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L962)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L963)
 
 Since v1.0.0
 Prompt-AssistantMessagePartEncoded.md
@@ -78456,7 +78462,7 @@ type AssistantMessagePartEncoded = | TextPartEncoded
   | ToolResultPartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L985)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L986)
 
 Since v1.0.0
 Prompt-BaseMessage.md
@@ -78485,7 +78491,7 @@ export interface BaseMessage<Role extends string, Options extends ProviderOption
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L670)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L671)
 
 Since v1.0.0
 Prompt-BaseMessageEncoded.md
@@ -78511,7 +78517,7 @@ export interface BaseMessageEncoded<Role extends string, Options extends Provide
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L690)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L691)
 
 Since v1.0.0
 Prompt-BasePart.md
@@ -78540,7 +78546,7 @@ export interface BasePart<Type extends string, Options extends ProviderOptions> 
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L162)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L163)
 
 Since v1.0.0
 Prompt-BasePartEncoded.md
@@ -78566,7 +78572,7 @@ export interface BasePartEncoded<Type extends string, Options extends ProviderOp
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L180)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L181)
 
 Since v1.0.0
 Prompt-FilePart.md
@@ -78617,7 +78623,7 @@ export interface FilePart extends BasePart<"file", FilePartOptions> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L392)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L393)
 
 Since v1.0.0
 Prompt-FilePartEncoded.md
@@ -78647,7 +78653,7 @@ export interface FilePartEncoded extends BasePartEncoded<"file", FilePartOptions
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L413)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L414)
 
 Since v1.0.0
 Prompt-FilePartOptions.md
@@ -78665,7 +78671,7 @@ Represents provider-specific options that can be associated with a
 export interface FilePartOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L435)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L436)
 
 Since v1.0.0
 Prompt-FromJson.md
@@ -78682,7 +78688,7 @@ Schema for parsing a Prompt from JSON strings.
 declare const FromJson: Schema.transform<Schema.SchemaClass<unknown, string, never>, Schema.Schema<Prompt, PromptEncoded, never>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1265)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1270)
 
 Since v1.0.0
 Prompt-Message.md
@@ -78702,7 +78708,7 @@ type Message = | SystemMessage
   | ToolMessage
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1120)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1121)
 
 Since v1.0.0
 Prompt-MessageContentFromString.md
@@ -78720,7 +78726,7 @@ Schema for decoding message content (i.e. an array containing a single
 declare const MessageContentFromString: Schema.Schema<readonly [TextPart, ...TextPart[]], string, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L740)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L741)
 
 Since v1.0.0
 Prompt-all.md
@@ -78805,7 +78811,7 @@ const replaced = Prompt.appendSystem(
 declare const appendSystem: { (content: string): (self: Prompt) => Prompt; (self: Prompt, content: string): Prompt; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1708)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1728)
 
 Since v1.0.0
 Prompt-custom.md
@@ -78869,7 +78875,7 @@ console.log(emptyPrompt.content) // []
 declare const empty: Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1327)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1332)
 
 Since v1.0.0
 Prompt-fromMessages.md
@@ -78903,7 +78909,7 @@ const prompt = Prompt.fromMessages(messages)
 declare const fromMessages: (messages: ReadonlyArray<Message>) => Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1394)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1399)
 
 Since v1.0.0
 Prompt-fromResponseParts.md
@@ -78952,7 +78958,7 @@ const prompt = Prompt.fromResponseParts(responseParts)
 declare const fromResponseParts: (parts: ReadonlyArray<Response.AnyPart>) => Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1465)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1470)
 
 Since v1.0.0
 Prompt-isMessage.md
@@ -78969,7 +78975,7 @@ Type guard to check if a value is a Message.
 declare const isMessage: (u: unknown) => u is Message
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L660)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L661)
 
 Since v1.0.0
 Prompt-isPart.md
@@ -78986,7 +78992,7 @@ Type guard to check if a value is a Part.
 declare const isPart: (u: unknown) => u is Part
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L128)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L129)
 
 Since v1.0.0
 Prompt-isPrompt.md
@@ -79003,7 +79009,7 @@ Type guard to check if a value is a Prompt.
 declare const isPrompt: (u: unknown) => u is Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1177)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1178)
 
 Since v1.0.0
 Prompt-make.md
@@ -79042,7 +79048,7 @@ const copiedPrompt = Prompt.make(existingPrompt)
 declare const make: (input: RawInput) => Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1356)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1361)
 
 Since v1.0.0
 Prompt-makeMessage.md
@@ -79073,7 +79079,7 @@ const filePart = Prompt.makeMessage("user", {
 declare const makeMessage: <const Role extends Message["role"]>(role: Role, params: Omit<Extract<Message, { role: Role; }>, MessageTypeId | "role" | "options"> & { readonly options?: Extract<Message, { role: Role; }>["options"]; }) => Extract<Message, { role: Role; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L720)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L721)
 
 Since v1.0.0
 Prompt-makePart.md
@@ -79106,7 +79112,7 @@ const filePart = Prompt.makePart("file", {
 declare const makePart: <const Type extends Part["type"]>(type: Type, params: Omit<Extract<Part, { type: Type; }>, PartTypeId | "type" | "options"> & { readonly options?: Extract<Part, { type: Type; }>["options"] | undefined; }) => Extract<Part, { type: Type; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L212)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L213)
 
 Since v1.0.0
 Prompt-merge.md
@@ -79136,10 +79142,10 @@ const merged = Prompt.merge(systemPrompt, "Hello, world!")
 **Signature**
 
 ```ts
-declare const merge: { (other: RawInput): (self: Prompt) => Prompt; (self: Prompt, other: RawInput): Prompt; }
+declare const merge: { (input: RawInput): (self: Prompt) => Prompt; (self: Prompt, input: RawInput): Prompt; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1577)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1592)
 
 Since v1.0.0
 Prompt-MessageEncoded.md
@@ -79159,7 +79165,7 @@ type MessageEncoded = | SystemMessageEncoded
   | ToolMessageEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1132)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1133)
 
 Since v1.0.0
 Prompt-MessageTypeId.md
@@ -79176,7 +79182,7 @@ Type-level representation of the Message identifier.
 type MessageTypeId = typeof MessageTypeId
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L652)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L653)
 
 Since v1.0.0
 Prompt-Part.md
@@ -79196,7 +79202,7 @@ reasoning, tool calls, and tool results.
 type Part = TextPart | ReasoningPart | FilePart | ToolCallPart | ToolResultPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L139)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L140)
 
 Since v1.0.0
 Prompt-PartEncoded.md
@@ -79217,7 +79223,7 @@ type PartEncoded = | TextPartEncoded
   | ToolResultPartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L147)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L148)
 
 Since v1.0.0
 Prompt-PartTypeId.md
@@ -79234,7 +79240,7 @@ Type-level representation of the Part identifier.
 type PartTypeId = typeof PartTypeId
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L120)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L121)
 
 Since v1.0.0
 Prompt-Prompt.Action.md
@@ -79375,7 +79381,7 @@ export interface Prompt extends Pipeable {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1186)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1187)
 
 Since v1.0.0
 Prompt-PromptEncoded.md
@@ -79397,7 +79403,7 @@ export interface PromptEncoded {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1200)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1201)
 
 Since v1.0.0
 Prompt-PromptFromSelf.md
@@ -79414,7 +79420,7 @@ Describes a schema that represents a `Prompt` instance.
 declare class PromptFromSelf
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1213)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1214)
 
 Since v1.0.0
 Prompt-ProviderOptions.md
@@ -79442,7 +79448,7 @@ Provider-specific options are namespaced by provider and have the structure:
 declare const ProviderOptions: Schema.Record$<typeof Schema.String, Schema.UndefinedOr<Schema.Record$<typeof Schema.String, typeof Schema.Unknown>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L86)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L87)
 
 Since v1.0.0
 Prompt-RawInput.md
@@ -79483,7 +79489,7 @@ type RawInput = | string
   | Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1294)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1299)
 
 Since v1.0.0
 Prompt-ReasoningPart.md
@@ -79515,7 +79521,7 @@ export interface ReasoningPart extends BasePart<"reasoning", ReasoningPartOption
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L318)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L319)
 
 Since v1.0.0
 Prompt-ReasoningPartEncoded.md
@@ -79537,7 +79543,7 @@ export interface ReasoningPartEncoded extends BasePartEncoded<"reasoning", Reaso
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L331)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L332)
 
 Since v1.0.0
 Prompt-ReasoningPartOptions.md
@@ -79555,7 +79561,7 @@ Represents provider-specific options that can be associated with a
 export interface ReasoningPartOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L345)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L346)
 
 Since v1.0.0
 Prompt-SystemMessage.md
@@ -79588,7 +79594,7 @@ export interface SystemMessage extends BaseMessage<"system", SystemMessageOption
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L769)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L770)
 
 Since v1.0.0
 Prompt-SystemMessageEncoded.md
@@ -79610,7 +79616,7 @@ export interface SystemMessageEncoded extends BaseMessageEncoded<"system", Syste
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L782)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L783)
 
 Since v1.0.0
 Prompt-SystemMessageOptions.md
@@ -79628,7 +79634,7 @@ Represents provider-specific options that can be associated with a
 export interface SystemMessageOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L796)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L797)
 
 Since v1.0.0
 Prompt-TextPart.md
@@ -79662,7 +79668,7 @@ export interface TextPart extends BasePart<"text", TextPartOptions> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L255)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L256)
 
 Since v1.0.0
 Prompt-TextPartEncoded.md
@@ -79684,7 +79690,7 @@ export interface TextPartEncoded extends BasePartEncoded<"text", TextPartOptions
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L268)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L269)
 
 Since v1.0.0
 Prompt-TextPartOptions.md
@@ -79702,7 +79708,7 @@ Represents provider-specific options that can be associated with a
 export interface TextPartOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L282)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L283)
 
 Since v1.0.0
 Prompt-ToolCallPart.md
@@ -79749,7 +79755,7 @@ export interface ToolCallPart extends BasePart<"tool-call", ToolCallPartOptions>
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L476)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L477)
 
 Since v1.0.0
 Prompt-ToolCallPartEncoded.md
@@ -79783,7 +79789,7 @@ export interface ToolCallPartEncoded extends BasePartEncoded<"tool-call", ToolCa
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L501)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L502)
 
 Since v1.0.0
 Prompt-ToolCallPartOptions.md
@@ -79801,7 +79807,7 @@ Represents provider-specific options that can be associated with a
 export interface ToolCallPartOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L527)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L528)
 
 Since v1.0.0
 Prompt-ToolMessage.md
@@ -79845,7 +79851,7 @@ export interface ToolMessage extends BaseMessage<"tool", ToolMessageOptions> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1050)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1051)
 
 Since v1.0.0
 Prompt-ToolMessageEncoded.md
@@ -79867,7 +79873,7 @@ export interface ToolMessageEncoded extends BaseMessageEncoded<"tool", ToolMessa
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1071)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1072)
 
 Since v1.0.0
 Prompt-ToolMessageOptions.md
@@ -79885,7 +79891,7 @@ Represents provider-specific options that can be associated with a
 export interface ToolMessageOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1093)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1094)
 
 Since v1.0.0
 Prompt-ToolMessagePart.md
@@ -79902,7 +79908,7 @@ Union type of content parts allowed in tool messages.
 type ToolMessagePart = ToolResultPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1063)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1064)
 
 Since v1.0.0
 Prompt-ToolMessagePartEncoded.md
@@ -79919,7 +79925,7 @@ Union type of encoded content parts for tool messages.
 type ToolMessagePartEncoded = ToolResultPartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1084)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1085)
 
 Since v1.0.0
 Prompt-ToolResultPart.md
@@ -79965,7 +79971,7 @@ export interface ToolResultPart extends BasePart<"tool-result", ToolResultPartOp
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L572)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L573)
 
 Since v1.0.0
 Prompt-ToolResultPartEncoded.md
@@ -79995,7 +80001,7 @@ export interface ToolResultPartEncoded extends BasePartEncoded<"tool-result", To
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L593)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L594)
 
 Since v1.0.0
 Prompt-ToolResultPartOptions.md
@@ -80013,7 +80019,7 @@ Represents provider-specific options that can be associated with a
 export interface ToolResultPartOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L615)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L616)
 
 Since v1.0.0
 Prompt-TypeId.md
@@ -80030,7 +80036,7 @@ Type-level representation of the Prompt identifier.
 type TypeId = typeof TypeId
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1169)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1170)
 
 Since v1.0.0
 Prompt-UserMessage.md
@@ -80079,7 +80085,7 @@ export interface UserMessage extends BaseMessage<"user", UserMessageOptions> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L849)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L850)
 
 Since v1.0.0
 Prompt-UserMessageEncoded.md
@@ -80101,7 +80107,7 @@ export interface UserMessageEncoded extends BaseMessageEncoded<"user", UserMessa
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L870)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L871)
 
 Since v1.0.0
 Prompt-UserMessageOptions.md
@@ -80119,7 +80125,7 @@ Represents provider-specific options that can be associated with a
 export interface UserMessageOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L892)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L893)
 
 Since v1.0.0
 Prompt-UserMessagePart.md
@@ -80136,7 +80142,7 @@ Union type of content parts allowed in user messages.
 type UserMessagePart = TextPart | FilePart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L862)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L863)
 
 Since v1.0.0
 Prompt-UserMessagePartEncoded.md
@@ -80153,7 +80159,7 @@ Union type of encoded content parts for user messages.
 type UserMessagePartEncoded = TextPartEncoded | FilePartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L883)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L884)
 
 Since v1.0.0
 Prompt-prependSystem.md
@@ -80194,7 +80200,7 @@ const replaced = Prompt.prependSystem(
 declare const prependSystem: { (content: string): (self: Prompt) => Prompt; (self: Prompt, content: string): Prompt; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1661)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1681)
 
 Since v1.0.0
 Prompt-run.md
@@ -80252,7 +80258,7 @@ const replaced = Prompt.setSystem(
 declare const setSystem: { (content: string): (self: Prompt) => Prompt; (self: Prompt, content: string): Prompt; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1619)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1639)
 
 Since v1.0.0
 Prompt-succeed.md
@@ -84492,7 +84498,7 @@ export interface BasePart<Type extends string, Metadata extends ProviderMetadata
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L473)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L470)
 
 Since v1.0.0
 Response-BasePartEncoded.md
@@ -84518,7 +84524,7 @@ export interface BasePartEncoded<Type extends string, Metadata extends ProviderM
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L493)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L490)
 
 Since v1.0.0
 Response-DocumentSourcePart.md
@@ -84558,7 +84564,7 @@ export interface DocumentSourcePart extends BasePart<"source", DocumentSourcePar
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1669)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1666)
 
 Since v1.0.0
 Response-DocumentSourcePartEncoded.md
@@ -84596,7 +84602,7 @@ export interface DocumentSourcePartEncoded extends BasePartEncoded<"source", Doc
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1698)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1695)
 
 Since v1.0.0
 Response-DocumentSourcePartMetadata.md
@@ -84614,7 +84620,7 @@ Represents provider-specific metadata that can be associated with a
 export interface DocumentSourcePartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1728)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1725)
 
 Since v1.0.0
 Response-ErrorPart.md
@@ -84643,7 +84649,7 @@ export interface ErrorPart extends BasePart<"error", ErrorPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2095)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2092)
 
 Since v1.0.0
 Response-ErrorPartEncoded.md
@@ -84662,7 +84668,7 @@ export interface ErrorPartEncoded extends BasePartEncoded<"error", ErrorPartMeta
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2105)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2102)
 
 Since v1.0.0
 Response-ErrorPartMetadata.md
@@ -84680,7 +84686,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ErrorPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2116)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2113)
 
 Since v1.0.0
 Response-FilePart.md
@@ -84719,7 +84725,7 @@ export interface FilePart extends BasePart<"file", FilePartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1604)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1601)
 
 Since v1.0.0
 Response-FilePartEncoded.md
@@ -84745,7 +84751,7 @@ export interface FilePartEncoded extends BasePartEncoded<"file", FilePartMetadat
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1621)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1618)
 
 Since v1.0.0
 Response-FilePartMetadata.md
@@ -84763,7 +84769,7 @@ Represents provider-specific metadata that can be associated with a
 export interface FilePartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1639)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1636)
 
 Since v1.0.0
 Response-FinishPart.md
@@ -84804,7 +84810,7 @@ export interface FinishPart extends BasePart<"finish", FinishPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2023)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2020)
 
 Since v1.0.0
 Response-FinishPartEncoded.md
@@ -84830,7 +84836,7 @@ export interface FinishPartEncoded extends BasePartEncoded<"finish", FinishPartM
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2040)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2037)
 
 Since v1.0.0
 Response-FinishPartMetadata.md
@@ -84848,7 +84854,7 @@ Represents provider-specific metadata that can be associated with a
 export interface FinishPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2058)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2055)
 
 Since v1.0.0
 Response-FinishReason.md
@@ -84875,7 +84881,7 @@ Possible finish reasons:
 declare const FinishReason: Schema.Literal<["stop", "length", "content-filter", "tool-calls", "error", "pause", "other", "unknown"]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1938)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1935)
 
 Since v1.0.0
 Response-Part.md
@@ -84901,7 +84907,7 @@ type Part<Tools> = | TextPart
   | FinishPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L249)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L246)
 
 Since v1.0.0
 Response-isPart.md
@@ -84952,7 +84958,7 @@ const toolCallPart = Response.makePart("tool-call", {
 declare const makePart: <const Type extends AnyPart["type"]>(type: Type, params: Omit<Extract<AnyPart, { type: Type; }>, PartTypeId | "type" | "metadata"> & { readonly metadata?: Extract<AnyPart, { type: Type; }>["metadata"] | undefined; }) => Extract<AnyPart, { type: Type; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L526)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L523)
 
 Since v1.0.0
 Response-PartEncoded.md
@@ -84979,7 +84985,7 @@ type PartEncoded = | TextPartEncoded
   | FinishPartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L266)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L263)
 
 Since v1.0.0
 Response-PartTypeId.md
@@ -85023,7 +85029,7 @@ Provider-specific metadata is namespaced by provider and has the structure:
 declare const ProviderMetadata: Schema.Record$<typeof Schema.String, Schema.UndefinedOr<Schema.Record$<typeof Schema.String, typeof Schema.Unknown>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L449)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L446)
 
 Since v1.0.0
 Response-ReasoningDeltaPart.md
@@ -85050,7 +85056,7 @@ export interface ReasoningDeltaPart extends BasePart<"reasoning-delta", Reasonin
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L920)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L917)
 
 Since v1.0.0
 Response-ReasoningDeltaPartEncoded.md
@@ -85076,7 +85082,7 @@ export interface ReasoningDeltaPartEncoded extends BasePartEncoded<"reasoning-de
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L937)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L934)
 
 Since v1.0.0
 Response-ReasoningDeltaPartMetadata.md
@@ -85094,7 +85100,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ReasoningDeltaPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L955)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L952)
 
 Since v1.0.0
 Response-ReasoningEndPart.md
@@ -85118,7 +85124,7 @@ export interface ReasoningEndPart extends BasePart<"reasoning-end", ReasoningEnd
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L985)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L982)
 
 Since v1.0.0
 Response-ReasoningEndPartEncoded.md
@@ -85140,7 +85146,7 @@ export interface ReasoningEndPartEncoded extends BasePartEncoded<"reasoning-end"
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L998)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L995)
 
 Since v1.0.0
 Response-ReasoningEndPartMetadata.md
@@ -85158,7 +85164,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ReasoningEndPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1012)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1009)
 
 Since v1.0.0
 Response-ReasoningPart.md
@@ -85193,7 +85199,7 @@ export interface ReasoningPart extends BasePart<"reasoning", ReasoningPartMetada
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L809)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L806)
 
 Since v1.0.0
 Response-ReasoningPartEncoded.md
@@ -85215,7 +85221,7 @@ export interface ReasoningPartEncoded extends BasePartEncoded<"reasoning", Reaso
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L822)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L819)
 
 Since v1.0.0
 Response-ReasoningPartMetadata.md
@@ -85233,7 +85239,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ReasoningPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L836)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L833)
 
 Since v1.0.0
 Response-ReasoningStartPart.md
@@ -85257,7 +85263,7 @@ export interface ReasoningStartPart extends BasePart<"reasoning-start", Reasonin
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L865)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L862)
 
 Since v1.0.0
 Response-ReasoningStartPartEncoded.md
@@ -85279,7 +85285,7 @@ export interface ReasoningStartPartEncoded extends BasePartEncoded<"reasoning-st
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L878)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L875)
 
 Since v1.0.0
 Response-ReasoningStartPartMetadata.md
@@ -85297,7 +85303,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ReasoningStartPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L892)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L889)
 
 Since v1.0.0
 Response-ResponseMetadataPart.md
@@ -85340,7 +85346,7 @@ export interface ResponseMetadataPart extends BasePart<"response-metadata", Resp
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1854)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1851)
 
 Since v1.0.0
 Response-ResponseMetadataPartEncoded.md
@@ -85372,7 +85378,7 @@ export interface ResponseMetadataPartEncoded
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1875)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1872)
 
 Since v1.0.0
 Response-ResponseMetadataPartMetadata.md
@@ -85390,7 +85396,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ResponseMetadataPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1899)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1896)
 
 Since v1.0.0
 Response-StreamPart.md
@@ -85423,7 +85429,7 @@ type StreamPart<Tools> = | TextStartPart
   | ErrorPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L319)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L316)
 
 Since v1.0.0
 Response-StreamPartEncoded.md
@@ -85456,7 +85462,7 @@ type StreamPartEncoded = | TextStartPartEncoded
   | ErrorPartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L344)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L341)
 
 Since v1.0.0
 Response-TextDeltaPart.md
@@ -85483,7 +85489,7 @@ export interface TextDeltaPart extends BasePart<"text-delta", TextDeltaPartMetad
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L678)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L675)
 
 Since v1.0.0
 Response-TextDeltaPartEncoded.md
@@ -85509,7 +85515,7 @@ export interface TextDeltaPartEncoded extends BasePartEncoded<"text-delta", Text
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L695)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L692)
 
 Since v1.0.0
 Response-TextDeltaPartMetadata.md
@@ -85527,7 +85533,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextDeltaPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L713)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L710)
 
 Since v1.0.0
 Response-TextEndPart.md
@@ -85551,7 +85557,7 @@ export interface TextEndPart extends BasePart<"text-end", TextEndPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L743)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L740)
 
 Since v1.0.0
 Response-TextEndPartEncoded.md
@@ -85573,7 +85579,7 @@ export interface TextEndPartEncoded extends BasePartEncoded<"text-end", TextEndP
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L756)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L753)
 
 Since v1.0.0
 Response-TextEndPartMetadata.md
@@ -85591,7 +85597,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextEndPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L770)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L767)
 
 Since v1.0.0
 Response-TextPart.md
@@ -85623,7 +85629,7 @@ export interface TextPart extends BasePart<"text", TextPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L567)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L564)
 
 Since v1.0.0
 Response-TextPartEncoded.md
@@ -85645,7 +85651,7 @@ export interface TextPartEncoded extends BasePartEncoded<"text", TextPartMetadat
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L580)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L577)
 
 Since v1.0.0
 Response-TextPartMetadata.md
@@ -85663,7 +85669,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L594)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L591)
 
 Since v1.0.0
 Response-TextStartPart.md
@@ -85687,7 +85693,7 @@ export interface TextStartPart extends BasePart<"text-start", TextStartPartMetad
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L623)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L620)
 
 Since v1.0.0
 Response-TextStartPartEncoded.md
@@ -85709,7 +85715,7 @@ export interface TextStartPartEncoded extends BasePartEncoded<"text-start", Text
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L636)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L633)
 
 Since v1.0.0
 Response-TextStartPartMetadata.md
@@ -85727,7 +85733,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextStartPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L650)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L647)
 
 Since v1.0.0
 Response-ToolCallPart.md
@@ -85795,7 +85801,7 @@ export interface ToolCallPart<Name extends string, Params extends Schema.Struct.
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1282)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1279)
 
 Since v1.0.0
 Response-ToolCallPartEncoded.md
@@ -85839,7 +85845,7 @@ export interface ToolCallPartEncoded extends BasePartEncoded<"tool-call", ToolCa
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1319)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1316)
 
 Since v1.0.0
 Response-ToolCallPartMetadata.md
@@ -85857,7 +85863,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolCallPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1355)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1352)
 
 Since v1.0.0
 Response-ToolCallParts.md
@@ -85877,7 +85883,7 @@ type ToolCallParts<Tools> = {
 }[keyof Tools]
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L411)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L408)
 
 Since v1.0.0
 Response-ToolParamsDeltaPart.md
@@ -85906,7 +85912,7 @@ export interface ToolParamsDeltaPart extends BasePart<"tool-params-delta", ToolP
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1138)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1135)
 
 Since v1.0.0
 Response-ToolParamsDeltaPartEncoded.md
@@ -85932,7 +85938,7 @@ export interface ToolParamsDeltaPartEncoded extends BasePartEncoded<"tool-params
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1155)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1152)
 
 Since v1.0.0
 Response-ToolParamsDeltaPartMetadata.md
@@ -85950,7 +85956,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolParamsDeltaPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1173)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1170)
 
 Since v1.0.0
 Response-ToolParamsEndPart.md
@@ -85975,7 +85981,7 @@ export interface ToolParamsEndPart extends BasePart<"tool-params-end", ToolParam
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1204)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1201)
 
 Since v1.0.0
 Response-ToolParamsEndPartEncoded.md
@@ -85997,7 +86003,7 @@ export interface ToolParamsEndPartEncoded extends BasePartEncoded<"tool-params-e
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1217)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1214)
 
 Since v1.0.0
 Response-ToolParamsEndPartMetadata.md
@@ -86015,7 +86021,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolParamsEndPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1231)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1228)
 
 Since v1.0.0
 Response-ToolParamsStartPart.md
@@ -86058,7 +86064,7 @@ export interface ToolParamsStartPart extends BasePart<"tool-params-start", ToolP
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1042)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1039)
 
 Since v1.0.0
 Response-ToolParamsStartPartEncoded.md
@@ -86098,7 +86104,7 @@ export interface ToolParamsStartPartEncoded extends BasePartEncoded<"tool-params
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1073)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1070)
 
 Since v1.0.0
 Response-ToolParamsStartPartMetadata.md
@@ -86116,7 +86122,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolParamsStartPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1105)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1102)
 
 Since v1.0.0
 Response-ToolResultPart.md
@@ -86195,7 +86201,7 @@ export interface ToolResultPart<Name extends string, Result> extends BasePart<"t
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1429)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1426)
 
 Since v1.0.0
 Response-ToolResultPartEncoded.md
@@ -86239,7 +86245,7 @@ export interface ToolResultPartEncoded extends BasePartEncoded<"tool-result", To
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1468)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1465)
 
 Since v1.0.0
 Response-ToolResultPartMetadata.md
@@ -86257,7 +86263,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolResultPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1504)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1501)
 
 Since v1.0.0
 Response-ToolResultParts.md
@@ -86277,7 +86283,7 @@ type ToolResultParts<Tools> = {
 }[keyof Tools]
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L424)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L421)
 
 Since v1.0.0
 Response-UrlSourcePart.md
@@ -86313,7 +86319,7 @@ export interface UrlSourcePart extends BasePart<"source", UrlSourcePartMetadata>
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1761)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1758)
 
 Since v1.0.0
 Response-UrlSourcePartEncoded.md
@@ -86347,7 +86353,7 @@ export interface UrlSourcePartEncoded extends BasePartEncoded<"source", UrlSourc
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1786)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1783)
 
 Since v1.0.0
 Response-UrlSourcePartMetadata.md
@@ -86365,7 +86371,7 @@ Represents provider-specific metadata that can be associated with a
 export interface UrlSourcePartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1812)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1809)
 
 Since v1.0.0
 Response-Usage.md
@@ -86386,7 +86392,7 @@ metadata of the finish part of the response.
 declare class Usage
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1974)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1971)
 
 Since v1.0.0
 Rpc-Handler.md
