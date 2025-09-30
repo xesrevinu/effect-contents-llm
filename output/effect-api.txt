@@ -40108,7 +40108,7 @@ A Context.Tag to access the current entity address.
 declare class CurrentAddress
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L410)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L411)
 
 Since v1.0.0
 Entity-CurrentRunnerAddress.md
@@ -40125,7 +40125,7 @@ A Context.Tag to access the current Runner address.
 declare class CurrentRunnerAddress
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L421)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L422)
 
 Since v1.0.0
 Entity-fromRpcGroup.md
@@ -40143,7 +40143,7 @@ that adhere to the provided `RpcGroup`.
 declare const fromRpcGroup: <const Type extends string, Rpcs extends Rpc.Any>(type: Type, protocol: RpcGroup.RpcGroup<Rpcs>) => Entity<Type, Rpcs>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L367)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L368)
 
 Since v1.0.0
 Entity-make.md
@@ -40161,7 +40161,7 @@ that adhere to the provided schemas.
 declare const make: <const Type extends string, Rpcs extends ReadonlyArray<Rpc.Any>>(type: Type, protocol: Rpcs) => Entity<Type, Rpcs[number]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L392)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L393)
 
 Since v1.0.0
 EntityAddress-EntityAddress.md
@@ -86641,6 +86641,23 @@ declare const layerNdjson: Layer.Layer<RpcSerialization, never, never>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcSerialization.ts#L413)
 
 Since v1.0.0
+RpcServer-fiberIdClientInterrupt.md
+Package: `@effect/rpc`<br />
+Module: `RpcServer`<br />
+
+## RpcServer.fiberIdClientInterrupt
+
+Fiber id used for client interruptions.
+
+**Signature**
+
+```ts
+declare const fiberIdClientInterrupt: FiberId.FiberId
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/RpcServer.ts#L1378)
+
+Since v1.0.0
 RpcServer-layerHttpRouter.md
 Package: `@effect/rpc`<br />
 Module: `RpcServer`<br />
@@ -87351,24 +87368,6 @@ declare const isEnabled: { (flag: RuntimeFlag): (self: RuntimeFlags) => boolean;
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L255)
 
 Since v2.0.0
-RuntimeFlags-opSupervision.md
-Package: `effect`<br />
-Module: `RuntimeFlags`<br />
-
-## RuntimeFlags.opSupervision
-
-Returns `true` if the `OpSupervision` `RuntimeFlag` is enabled, `false`
-otherwise.
-
-**Signature**
-
-```ts
-declare const opSupervision: (self: RuntimeFlags) => boolean
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L290)
-
-Since v2.0.0
 RuntimeFlags-OpSupervision.md
 Package: `effect`<br />
 Module: `RuntimeFlags`<br />
@@ -87469,6 +87468,24 @@ declare const WindDown: RuntimeFlag
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L83)
+
+Since v2.0.0
+RuntimeFlags-opSupervision.md
+Package: `effect`<br />
+Module: `RuntimeFlags`<br />
+
+## RuntimeFlags.opSupervision
+
+Returns `true` if the `OpSupervision` `RuntimeFlag` is enabled, `false`
+otherwise.
+
+**Signature**
+
+```ts
+declare const opSupervision: (self: RuntimeFlags) => boolean
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L290)
 
 Since v2.0.0
 RuntimeFlags-patch.md
@@ -89841,33 +89858,6 @@ declare const resetAfter: { (duration: Duration.DurationInput): <Out, In, R>(sel
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1695)
 
 Since v2.0.0
-Schedule-resetWhen.md
-Package: `effect`<br />
-Module: `Schedule`<br />
-
-## Schedule.resetWhen
-
-Resets the schedule when the specified predicate on the schedule output
-evaluates to `true`.
-
-**Details**
-
-This function modifies a schedule so that it resets to its initial state
-whenever the provided predicate `f` returns `true` for an output value.
-
-**See**
-
-- `resetAfter` If you need to reset based on inactivity.
-
-**Signature**
-
-```ts
-declare const resetWhen: { <Out>(f: Predicate<Out>): <In, R>(self: Schedule<Out, In, R>) => Schedule<Out, In, R>; <Out, In, R>(self: Schedule<Out, In, R>, f: Predicate<Out>): Schedule<Out, In, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1714)
-
-Since v2.0.0
 Schedule-Schedule.md
 Package: `effect`<br />
 Module: `Schedule`<br />
@@ -89939,6 +89929,33 @@ export interface Schedule<out Out, in In = unknown, out R = never> extends Sched
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L95)
+
+Since v2.0.0
+Schedule-resetWhen.md
+Package: `effect`<br />
+Module: `Schedule`<br />
+
+## Schedule.resetWhen
+
+Resets the schedule when the specified predicate on the schedule output
+evaluates to `true`.
+
+**Details**
+
+This function modifies a schedule so that it resets to its initial state
+whenever the provided predicate `f` returns `true` for an output value.
+
+**See**
+
+- `resetAfter` If you need to reset based on inactivity.
+
+**Signature**
+
+```ts
+declare const resetWhen: { <Out>(f: Predicate<Out>): <In, R>(self: Schedule<Out, In, R>) => Schedule<Out, In, R>; <Out, In, R>(self: Schedule<Out, In, R>, f: Predicate<Out>): Schedule<Out, In, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1714)
 
 Since v2.0.0
 Schedule-run.md
@@ -90978,24 +90995,6 @@ declare const union: { (that: Intervals): (self: Intervals) => Intervals; (self:
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleIntervals.ts#L61)
 
 Since v2.0.0
-Schema-annotations.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.annotations
-
-Merges a set of new annotations with existing ones, potentially overwriting
-any duplicates.
-
-**Signature**
-
-```ts
-declare const annotations: { <S extends Annotable.All>(annotations: Annotations.GenericSchema<Schema.Type<S>>): (self: S) => Annotable.Self<S>; <S extends Annotable.All>(self: S, annotations: Annotations.GenericSchema<Schema.Type<S>>): Annotable.Self<S>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4187)
-
-Since v3.10.0
 Schema-BigDecimalFromNumber.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -91451,6 +91450,24 @@ declare class JsonNumber
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5425)
+
+Since v3.10.0
+Schema-annotations.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.annotations
+
+Merges a set of new annotations with existing ones, potentially overwriting
+any duplicates.
+
+**Signature**
+
+```ts
+declare const annotations: { <S extends Annotable.All>(annotations: Annotations.GenericSchema<Schema.Type<S>>): (self: S) => Annotable.Self<S>; <S extends Annotable.All>(self: S, annotations: Annotations.GenericSchema<Schema.Type<S>>): Annotable.Self<S>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4187)
 
 Since v3.10.0
 Schema-asserts.md
@@ -91964,23 +91981,6 @@ declare const lessThan: <S extends Schema.Any>(exclusiveMaximum: number, annotat
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5132)
-
-Since v3.10.0
-Schema-lessThanOrEqualTo.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.lessThanOrEqualTo
-
-This schema checks whether the provided number is less than or equal to the specified maximum.
-
-**Signature**
-
-```ts
-declare const lessThanOrEqualTo: <S extends Schema.Any>(maximum: number, annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5163)
 
 Since v3.10.0
 Schema-Lowercase.md
@@ -92593,21 +92593,21 @@ declare const Uint8ArrayFromHex: Schema<Uint8Array<ArrayBufferLike>, string, nev
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6286)
 
 Since v3.10.0
-Schema-Uncapitalize.md
+Schema-lessThanOrEqualTo.md
 Package: `effect`<br />
 Module: `Schema`<br />
 
-## Schema.Uncapitalize
+## Schema.lessThanOrEqualTo
 
-This schema converts a string to uncapitalized one.
+This schema checks whether the provided number is less than or equal to the specified maximum.
 
 **Signature**
 
 ```ts
-declare class Uncapitalize
+declare const lessThanOrEqualTo: <S extends Schema.Any>(maximum: number, annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4718)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5163)
 
 Since v3.10.0
 Schema-lowercased.md
@@ -93136,6 +93136,23 @@ declare class UUID
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4874)
+
+Since v3.10.0
+Schema-Uncapitalize.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.Uncapitalize
+
+This schema converts a string to uncapitalized one.
+
+**Signature**
+
+```ts
+declare class Uncapitalize
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4718)
 
 Since v3.10.0
 Schema-Uppercase.md
@@ -94040,23 +94057,6 @@ declare const intercalate: { <A>(separator: A): (S: Semigroup<A>) => Semigroup<A
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Semigroup.ts#L95)
 
 Since v0.24.0
-Semigroup-last.md
-Package: `@effect/typeclass`<br />
-Module: `Semigroup`<br />
-
-## Semigroup.last
-
-Always return the last argument.
-
-**Signature**
-
-```ts
-declare const last: <A = never>() => Semigroup<A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Semigroup.ts#L117)
-
-Since v0.24.0
 SemiProduct-appendElement.md
 Package: `@effect/typeclass`<br />
 Module: `SemiProduct`<br />
@@ -94123,6 +94123,23 @@ declare const productManyComposition: <F extends TypeLambda, G extends TypeLambd
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/SemiProduct.ts#L75)
+
+Since v0.24.0
+Semigroup-last.md
+Package: `@effect/typeclass`<br />
+Module: `Semigroup`<br />
+
+## Semigroup.last
+
+Always return the last argument.
+
+**Signature**
+
+```ts
+declare const last: <A = never>() => Semigroup<A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Semigroup.ts#L117)
 
 Since v0.24.0
 Semigroup-make.md
@@ -95896,23 +95913,6 @@ declare const mapInputEffect: { <In0, In, E2, R2>(f: (input: In0) => Effect.Effe
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L280)
 
 Since v2.0.0
-Sink-mapLeftover.md
-Package: `effect`<br />
-Module: `Sink`<br />
-
-## Sink.mapLeftover
-
-Transforms the leftovers emitted by this sink using `f`.
-
-**Signature**
-
-```ts
-declare const mapLeftover: { <L, L2>(f: (leftover: L) => L2): <A, In, E, R>(self: Sink<A, In, L, E, R>) => Sink<A, In, L2, E, R>; <A, In, L, E, R, L2>(self: Sink<A, In, L, E, R>, f: (leftover: L) => L2): Sink<A, In, L2, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L1119)
-
-Since v2.0.0
 STM-acquireUseRelease.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -96092,23 +96092,6 @@ declare const catchTag: { <K extends E["_tag"] & string, E extends { _tag: strin
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L336)
 
 Since v2.0.0
-STM-catchTags.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.catchTags
-
-Recovers from multiple tagged errors.
-
-**Signature**
-
-```ts
-declare const catchTags: { <E extends { _tag: string; }, Cases extends { [K in E["_tag"]]+?: ((error: Extract<E, { _tag: K; }>) => STM<any, any, any>); }>(cases: Cases): <A, R>(self: STM<A, E, R>) => STM<A | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<infer A, any, any> ? A : never; }[keyof Cases], Exclude<E, { _tag: keyof Cases; }> | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, infer E, any> ? E : never; }[keyof Cases], R | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, any, infer R> ? R : never; }[keyof Cases]>; <R, E extends { _tag: string; }, A, Cases extends { [K in E["_tag"]]+?: ((error: Extract<E, { _tag: K; }>) => STM<any, any, any>); }>(self: STM<A, E, R>, cases: Cases): STM<A | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<infer A, any, any> ? A : never; }[keyof Cases], Exclude<E, { _tag: keyof Cases; }> | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, infer E, any> ? E : never; }[keyof Cases], R | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, any, infer R> ? R : never; }[keyof Cases]>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L354)
-
-Since v2.0.0
 Sink-Sink.md
 Package: `effect`<br />
 Module: `Sink`<br />
@@ -96130,6 +96113,23 @@ export interface Sink<out A, in In = unknown, out L = never, out E = never, out 
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L48)
+
+Since v2.0.0
+Sink-mapLeftover.md
+Package: `effect`<br />
+Module: `Sink`<br />
+
+## Sink.mapLeftover
+
+Transforms the leftovers emitted by this sink using `f`.
+
+**Signature**
+
+```ts
+declare const mapLeftover: { <L, L2>(f: (leftover: L) => L2): <A, In, E, R>(self: Sink<A, In, L, E, R>) => Sink<A, In, L2, E, R>; <A, In, L, E, R, L2>(self: Sink<A, In, L, E, R>, f: (leftover: L) => L2): Sink<A, In, L2, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L1119)
 
 Since v2.0.0
 Sink-mkString.md
@@ -96800,6 +96800,23 @@ declare const makeParser: (onParse: (event: AnyEvent) => void) => Parser
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/Sse.ts#L93)
 
 Since v1.0.0
+STM-catchTags.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.catchTags
+
+Recovers from multiple tagged errors.
+
+**Signature**
+
+```ts
+declare const catchTags: { <E extends { _tag: string; }, Cases extends { [K in E["_tag"]]+?: ((error: Extract<E, { _tag: K; }>) => STM<any, any, any>); }>(cases: Cases): <A, R>(self: STM<A, E, R>) => STM<A | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<infer A, any, any> ? A : never; }[keyof Cases], Exclude<E, { _tag: keyof Cases; }> | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, infer E, any> ? E : never; }[keyof Cases], R | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, any, infer R> ? R : never; }[keyof Cases]>; <R, E extends { _tag: string; }, A, Cases extends { [K in E["_tag"]]+?: ((error: Extract<E, { _tag: K; }>) => STM<any, any, any>); }>(self: STM<A, E, R>, cases: Cases): STM<A | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<infer A, any, any> ? A : never; }[keyof Cases], Exclude<E, { _tag: keyof Cases; }> | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, infer E, any> ? E : never; }[keyof Cases], R | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, any, infer R> ? R : never; }[keyof Cases]>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L354)
+
+Since v2.0.0
 STM-check.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -97688,24 +97705,6 @@ declare const mapInputContext: { <R0, R>(f: (context: Context.Context<R0>) => Co
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L477)
 
 Since v2.0.0
-STM-match.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.match
-
-Folds over the `STM` effect, handling both failure and success, but not
-retry.
-
-**Signature**
-
-```ts
-declare const match: { <E, A2, A, A3>(options: { readonly onFailure: (error: E) => A2; readonly onSuccess: (value: A) => A3; }): <R>(self: STM<A, E, R>) => STM<A2 | A3, never, R>; <A, E, R, A2, A3>(self: STM<A, E, R>, options: { readonly onFailure: (error: E) => A2; readonly onSuccess: (value: A) => A3; }): STM<A2 | A3, never, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L737)
-
-Since v2.0.0
 STM-STM.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -97759,6 +97758,24 @@ export interface STM<out A, out E = never, out R = never>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L70)
+
+Since v2.0.0
+STM-match.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.match
+
+Folds over the `STM` effect, handling both failure and success, but not
+retry.
+
+**Signature**
+
+```ts
+declare const match: { <E, A2, A, A3>(options: { readonly onFailure: (error: E) => A2; readonly onSuccess: (value: A) => A3; }): <R>(self: STM<A, E, R>) => STM<A2 | A3, never, R>; <A, E, R, A2, A3>(self: STM<A, E, R>, options: { readonly onFailure: (error: E) => A2; readonly onSuccess: (value: A) => A3; }): STM<A2 | A3, never, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L737)
 
 Since v2.0.0
 STM-matchSTM.md
@@ -99899,27 +99916,6 @@ declare const cross: { <AR, ER, RR>(right: Stream<AR, ER, RR>): <AL, EL, RL>(lef
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L1126)
 
 Since v2.0.0
-Stream-crossLeft.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.crossLeft
-
-Composes this stream with the specified stream to create a cartesian
-product of elements, but keeps only elements from `left` stream. The `right`
-stream would be run multiple times, for every element in the `left` stream.
-
-See also `Stream.zipLeft` for the more common point-wise variant.
-
-**Signature**
-
-```ts
-declare const crossLeft: { <AR, ER, RR>(right: Stream<AR, ER, RR>): <AL, EL, RL>(left: Stream<AL, EL, RL>) => Stream<AL, EL | ER, RL | RR>; <AL, EL, RL, AR, ER, RR>(left: Stream<AL, EL, RL>, right: Stream<AR, ER, RR>): Stream<AL, EL | ER, RL | RR>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L1141)
-
-Since v2.0.0
 Stream-DefaultChunkSize.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -99982,6 +99978,27 @@ declare const Do: Stream<{}, never, never>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L6246)
+
+Since v2.0.0
+Stream-crossLeft.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.crossLeft
+
+Composes this stream with the specified stream to create a cartesian
+product of elements, but keeps only elements from `left` stream. The `right`
+stream would be run multiple times, for every element in the `left` stream.
+
+See also `Stream.zipLeft` for the more common point-wise variant.
+
+**Signature**
+
+```ts
+declare const crossLeft: { <AR, ER, RR>(right: Stream<AR, ER, RR>): <AL, EL, RL>(left: Stream<AL, EL, RL>) => Stream<AL, EL | ER, RL | RR>; <AL, EL, RL, AR, ER, RR>(left: Stream<AL, EL, RL>, right: Stream<AR, ER, RR>): Stream<AL, EL | ER, RL | RR>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L1141)
 
 Since v2.0.0
 Stream-crossRight.md
@@ -104447,23 +104464,6 @@ declare const splitLines: <E, R>(self: Stream<string, E, R>) => Stream<string, E
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4751)
 
 Since v2.0.0
-Stream-splitOnChunk.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.splitOnChunk
-
-Splits elements on a delimiter and transforms the splits into desired output.
-
-**Signature**
-
-```ts
-declare const splitOnChunk: { <A>(delimiter: Chunk.Chunk<A>): <E, R>(self: Stream<A, E, R>) => Stream<Chunk.Chunk<A>, E, R>; <A, E, R>(self: Stream<A, E, R>, delimiter: Chunk.Chunk<A>): Stream<Chunk.Chunk<A>, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4739)
-
-Since v2.0.0
 Stream-Stream.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -104497,6 +104497,23 @@ export interface Stream<out A, out E = never, out R = never> extends Stream.Vari
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L71)
+
+Since v2.0.0
+Stream-splitOnChunk.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.splitOnChunk
+
+Splits elements on a delimiter and transforms the splits into desired output.
+
+**Signature**
+
+```ts
+declare const splitOnChunk: { <A>(delimiter: Chunk.Chunk<A>): <E, R>(self: Stream<A, E, R>) => Stream<Chunk.Chunk<A>, E, R>; <A, E, R>(self: Stream<A, E, R>, delimiter: Chunk.Chunk<A>): Stream<Chunk.Chunk<A>, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4739)
 
 Since v2.0.0
 Stream-succeed.md
@@ -107427,23 +107444,6 @@ declare const make: <Elements extends [any, ...Array<any>]>(...elements: Element
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L341)
 
 Since v2.0.0
-TArray-maxOption.md
-Package: `effect`<br />
-Module: `TArray`<br />
-
-## TArray.maxOption
-
-Atomically compute the greatest element in the array, if it exists.
-
-**Signature**
-
-```ts
-declare const maxOption: { <A>(order: Order.Order<A>): (self: TArray<A>) => STM.STM<Option.Option<A>>; <A>(self: TArray<A>, order: Order.Order<A>): STM.STM<Option.Option<A>>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L351)
-
-Since v2.0.0
 Take-Take.md
 Package: `effect`<br />
 Module: `Take`<br />
@@ -107795,6 +107795,23 @@ declare const tap: { <A, X, E2, R>(f: (chunk: Chunk.Chunk<A>) => Effect.Effect<X
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Take.ts#L250)
+
+Since v2.0.0
+TArray-maxOption.md
+Package: `effect`<br />
+Module: `TArray`<br />
+
+## TArray.maxOption
+
+Atomically compute the greatest element in the array, if it exists.
+
+**Signature**
+
+```ts
+declare const maxOption: { <A>(order: Order.Order<A>): (self: TArray<A>) => STM.STM<Option.Option<A>>; <A>(self: TArray<A>, order: Order.Order<A>): STM.STM<Option.Option<A>>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L351)
 
 Since v2.0.0
 TArray-minOption.md
@@ -109042,24 +109059,6 @@ declare const testClock: () => Effect.Effect<TestClock>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L536)
 
 Since v2.0.0
-TestClock-testClockWith.md
-Package: `effect`<br />
-Module: `TestClock`<br />
-
-## TestClock.testClockWith
-
-Retrieves the `TestClock` service for this test and uses it to run the
-specified workflow.
-
-**Signature**
-
-```ts
-declare const testClockWith: <A, E, R>(f: (testClock: TestClock) => Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L544)
-
-Since v2.0.0
 TMap-empty.md
 Package: `effect`<br />
 Module: `TMap`<br />
@@ -109373,22 +109372,22 @@ declare const removeAll: { <K>(keys: Iterable<K>): <V>(self: TMap<K, V>) => STM.
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L255)
 
 Since v2.0.0
-TMap-removeIf.md
+TestClock-testClockWith.md
 Package: `effect`<br />
-Module: `TMap`<br />
+Module: `TestClock`<br />
 
-## TMap.removeIf
+## TestClock.testClockWith
 
-Removes entries from a `TMap` that satisfy the specified predicate and returns the removed entries
-(or `void` if `discard = true`).
+Retrieves the `TestClock` service for this test and uses it to run the
+specified workflow.
 
 **Signature**
 
 ```ts
-declare const removeIf: { <K, V>(predicate: (key: K, value: V) => boolean, options: { readonly discard: true; }): (self: TMap<K, V>) => STM.STM<void>; <K, V>(predicate: (key: K, value: V) => boolean, options?: { readonly discard: false; }): (self: TMap<K, V>) => STM.STM<Array<[K, V]>>; <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean, options: { readonly discard: true; }): STM.STM<void>; <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean, options?: { readonly discard: false; }): STM.STM<Array<[K, V]>>; }
+declare const testClockWith: <A, E, R>(f: (testClock: TestClock) => Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L267)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L544)
 
 Since v2.0.0
 TestConfig-TestConfig.md
@@ -109976,6 +109975,24 @@ export interface TMap<in out K, in out V> extends TMap.Variance<K, V> {}
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L33)
+
+Since v2.0.0
+TMap-removeIf.md
+Package: `effect`<br />
+Module: `TMap`<br />
+
+## TMap.removeIf
+
+Removes entries from a `TMap` that satisfy the specified predicate and returns the removed entries
+(or `void` if `discard = true`).
+
+**Signature**
+
+```ts
+declare const removeIf: { <K, V>(predicate: (key: K, value: V) => boolean, options: { readonly discard: true; }): (self: TMap<K, V>) => STM.STM<void>; <K, V>(predicate: (key: K, value: V) => boolean, options?: { readonly discard: false; }): (self: TMap<K, V>) => STM.STM<Array<[K, V]>>; <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean, options: { readonly discard: true; }): STM.STM<void>; <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean, options?: { readonly discard: false; }): STM.STM<Array<[K, V]>>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L267)
 
 Since v2.0.0
 TMap-retainIf.md
@@ -110965,28 +110982,6 @@ type RequiresHandler<Tool> = Tool extends
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L701)
 
 Since v1.0.0
-Tool-Success.md
-Package: `@effect/ai`<br />
-Module: `Tool`<br />
-
-## Tool.Success
-
-A utility type to extract the type of the tool call result when it succeeds.
-
-**Signature**
-
-```ts
-type Success<T> = T extends Tool<
-  infer _Name,
-  infer _Config,
-  infer _Requirements
-> ? Schema.Schema.Type<_Config["success"]> :
-  never
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L575)
-
-Since v1.0.0
 Tool-fromTaggedRequest.md
 Package: `@effect/ai`<br />
 Module: `Tool`<br />
@@ -111827,26 +111822,28 @@ declare const size: <A>(self: TPubSub<A>) => STM.STM<number>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L159)
 
 Since v2.0.0
-TPubSub-sliding.md
-Package: `effect`<br />
-Module: `TPubSub`<br />
+Tool-Success.md
+Package: `@effect/ai`<br />
+Module: `Tool`<br />
 
-## TPubSub.sliding
+## Tool.Success
 
-Creates a bounded `TPubSub` with the sliding strategy. The `TPubSub` will add new
-messages and drop old messages if the `TPubSub` is at capacity.
-
-For best performance use capacities that are powers of two.
+A utility type to extract the type of the tool call result when it succeeds.
 
 **Signature**
 
 ```ts
-declare const sliding: <A>(requestedCapacity: number) => STM.STM<TPubSub<A>>
+type Success<T> = T extends Tool<
+  infer _Name,
+  infer _Config,
+  infer _Requirements
+> ? Schema.Schema.Type<_Config["success"]> :
+  never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L170)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L575)
 
-Since v2.0.0
+Since v1.0.0
 Tool-SuccessEncoded.md
 Package: `@effect/ai`<br />
 Module: `Tool`<br />
@@ -112524,6 +112521,26 @@ declare const merge: <const Toolkits extends ReadonlyArray<Any>>(...toolkits: To
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L503)
 
 Since v1.0.0
+TPubSub-sliding.md
+Package: `effect`<br />
+Module: `TPubSub`<br />
+
+## TPubSub.sliding
+
+Creates a bounded `TPubSub` with the sliding strategy. The `TPubSub` will add new
+messages and drop old messages if the `TPubSub` is at capacity.
+
+For best performance use capacities that are powers of two.
+
+**Signature**
+
+```ts
+declare const sliding: <A>(requestedCapacity: number) => STM.STM<TPubSub<A>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L170)
+
+Since v2.0.0
 TPubSub-subscribe.md
 Package: `effect`<br />
 Module: `TPubSub`<br />
@@ -113349,23 +113366,6 @@ declare const locked: (self: TReentrantLock) => STM.STM<boolean>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TReentrantLock.ts#L117)
 
 Since v2.0.0
-TReentrantLock-make.md
-Package: `effect`<br />
-Module: `TReentrantLock`<br />
-
-## TReentrantLock.make
-
-Makes a new reentrant read/write lock.
-
-**Signature**
-
-```ts
-declare const make: STM.STM<TReentrantLock, never, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TReentrantLock.ts#L125)
-
-Since v2.0.0
 Tracer-withSpanContext.md
 Package: `@effect/opentelemetry`<br />
 Module: `Tracer`<br />
@@ -113502,6 +113502,23 @@ export interface TReentrantLock extends TReentrantLock.Proto {}
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TReentrantLock.ts#L41)
+
+Since v2.0.0
+TReentrantLock-make.md
+Package: `effect`<br />
+Module: `TReentrantLock`<br />
+
+## TReentrantLock.make
+
+Makes a new reentrant read/write lock.
+
+**Signature**
+
+```ts
+declare const make: STM.STM<TReentrantLock, never, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TReentrantLock.ts#L125)
 
 Since v2.0.0
 TReentrantLock-readLock.md
@@ -113857,23 +113874,6 @@ declare const isEmpty: <A>(self: TSet<A>) => STM.STM<boolean>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSet.ts#L135)
-
-Since v2.0.0
-TSet-make.md
-Package: `effect`<br />
-Module: `TSet`<br />
-
-## TSet.make
-
-Makes a new `TSet` that is initialized with specified values.
-
-**Signature**
-
-```ts
-declare const make: <Elements extends Array<any>>(...elements: Elements) => STM.STM<TSet<Elements[number]>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSet.ts#L143)
 
 Since v2.0.0
 Trie-compact.md
@@ -114912,6 +114912,23 @@ export interface TSet<in out A> extends TSet.Variance<A> {}
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSet.ts#L31)
+
+Since v2.0.0
+TSet-make.md
+Package: `effect`<br />
+Module: `TSet`<br />
+
+## TSet.make
+
+Makes a new `TSet` that is initialized with specified values.
+
+**Signature**
+
+```ts
+declare const make: <Elements extends Array<any>>(...elements: Elements) => STM.STM<TSet<Elements[number]>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSet.ts#L143)
 
 Since v2.0.0
 TSet-reduce.md
@@ -117031,23 +117048,6 @@ declare const strictEqual: <A>(actual: A, expected: A, message?: string, ..._: A
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L49)
 
 Since v0.21.0
-utils-throws.md
-Package: `@effect/vitest`<br />
-Module: `utils`<br />
-
-## utils.throws
-
-Asserts that `thunk` throws an error.
-
-**Signature**
-
-```ts
-declare const throws: (thunk: () => void, error?: Error | ((u: unknown) => undefined), ..._: Array<never>) => void
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L140)
-
-Since v0.21.0
 WorkerRunner-CloseLatch.md
 Package: `@effect/platform`<br />
 Module: `WorkerRunner`<br />
@@ -117239,6 +117239,23 @@ declare const toRpcGroup: <const Workflows extends NonEmptyReadonlyArray<Workflo
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/WorkflowProxy.ts#L45)
 
 Since v1.0.0
+utils-throws.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.throws
+
+Asserts that `thunk` throws an error.
+
+**Signature**
+
+```ts
+declare const throws: (thunk: () => void, error?: Error | ((u: unknown) => undefined), ..._: Array<never>) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L140)
+
+Since v0.21.0
 utils-throwsAsync.md
 Package: `@effect/vitest`<br />
 Module: `utils`<br />
