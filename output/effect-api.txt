@@ -1286,7 +1286,7 @@ type AnthropicTools = | typeof Generated.BetaTool.Encoded
   | typeof Generated.BetaTextEditor20250728.Encoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/anthropic/src/AnthropicLanguageModel.ts#L1410)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/anthropic/src/AnthropicLanguageModel.ts#L1397)
 
 Since v1.0.0
 AnthropicLanguageModel-prepareTools.md
@@ -1309,7 +1309,7 @@ integrations which can utilize Anthropic models (i.e. Amazon Bedrock).
 declare const prepareTools: (options: LanguageModel.ProviderOptions, config: Config.Service) => Effect.Effect<{ readonly betas: ReadonlySet<string>; readonly tools: ReadonlyArray<AnthropicTools> | undefined; readonly toolChoice: typeof Generated.BetaToolChoice.Encoded | undefined; }, AiError.AiError>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/anthropic/src/AnthropicLanguageModel.ts#L1433)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/anthropic/src/AnthropicLanguageModel.ts#L1420)
 
 Since v1.0.0
 AnthropicTool-ComputerUse_20241022.md
@@ -80713,9 +80713,10 @@ const assistantMessage: Prompt.AssistantMessage = Prompt.makeMessage("assistant"
     Prompt.makePart("tool-result", {
       id: "call_123",
       name: "get_weather",
+      isFailure: false,
       result: {
-        _tag: "Right",
-        right: { temperature: 72, condition: "sunny" }
+        temperature: 72,
+        condition: "sunny"
       }
     }),
     Prompt.makePart("text", {
@@ -80736,7 +80737,7 @@ export interface AssistantMessage extends BaseMessage<"assistant", AssistantMess
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1046)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1051)
 
 Since v1.0.0
 Prompt-AssistantMessageEncoded.md
@@ -80755,7 +80756,7 @@ export interface AssistantMessageEncoded extends BaseMessageEncoded<"assistant",
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1072)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1077)
 
 Since v1.0.0
 Prompt-all.md
@@ -80840,7 +80841,7 @@ const replaced = Prompt.appendSystem(
 declare const appendSystem: { (content: string): (self: Prompt) => Prompt; (self: Prompt, content: string): Prompt; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1838)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1843)
 
 Since v1.0.0
 Prompt-assistantMessage.md
@@ -80857,7 +80858,7 @@ Constructs a new assistant message.
 declare const assistantMessage: (params: MessageConstructorParams<AssistantMessage>) => AssistantMessage
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1122)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1127)
 
 Since v1.0.0
 Prompt-AssistantMessageOptions.md
@@ -80875,7 +80876,7 @@ Represents provider-specific options that can be associated with a
 export interface AssistantMessageOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1096)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1101)
 
 Since v1.0.0
 Prompt-AssistantMessagePart.md
@@ -80896,7 +80897,7 @@ type AssistantMessagePart = | TextPart
   | ToolResultPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1059)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1064)
 
 Since v1.0.0
 Prompt-AssistantMessagePartEncoded.md
@@ -80917,7 +80918,7 @@ type AssistantMessagePartEncoded = | TextPartEncoded
   | ToolResultPartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1082)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1087)
 
 Since v1.0.0
 Prompt-BaseMessage.md
@@ -80946,7 +80947,7 @@ export interface BaseMessage<Role extends string, Options extends ProviderOption
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L733)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L737)
 
 Since v1.0.0
 Prompt-BaseMessageEncoded.md
@@ -80972,7 +80973,7 @@ export interface BaseMessageEncoded<Role extends string, Options extends Provide
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L753)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L757)
 
 Since v1.0.0
 Prompt-BasePart.md
@@ -81143,7 +81144,7 @@ Schema for parsing a Prompt from JSON strings.
 declare const FromJson: Schema.transform<Schema.SchemaClass<unknown, string, never>, Schema.Schema<Prompt, PromptEncoded, never>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1379)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1382)
 
 Since v1.0.0
 Prompt-Message.md
@@ -81163,7 +81164,7 @@ type Message = | SystemMessage
   | ToolMessage
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1237)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1240)
 
 Since v1.0.0
 Prompt-MessageConstructorParams.md
@@ -81186,7 +81187,7 @@ type MessageConstructorParams<M> = Omit<M, MessageTypeId | "role" | "options"> &
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L803)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L807)
 
 Since v1.0.0
 Prompt-MessageContentFromString.md
@@ -81204,7 +81205,7 @@ Schema for decoding message content (i.e. an array containing a single
 declare const MessageContentFromString: Schema.Schema<readonly [TextPart, ...TextPart[]], string, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L817)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L821)
 
 Since v1.0.0
 Prompt-MessageEncoded.md
@@ -81224,7 +81225,7 @@ type MessageEncoded = | SystemMessageEncoded
   | ToolMessageEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1249)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1252)
 
 Since v1.0.0
 Prompt-MessageTypeId.md
@@ -81241,7 +81242,7 @@ Type-level representation of the Message identifier.
 type MessageTypeId = typeof MessageTypeId
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L715)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L719)
 
 Since v1.0.0
 Prompt-Part.md
@@ -81463,7 +81464,7 @@ export interface Prompt extends Pipeable {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1303)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1306)
 
 Since v1.0.0
 Prompt-PromptEncoded.md
@@ -81485,7 +81486,7 @@ export interface PromptEncoded {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1317)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1320)
 
 Since v1.0.0
 Prompt-PromptFromSelf.md
@@ -81502,7 +81503,7 @@ Describes a schema that represents a `Prompt` instance.
 declare class PromptFromSelf
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1330)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1333)
 
 Since v1.0.0
 Prompt-ProviderOptions.md
@@ -81571,7 +81572,7 @@ type RawInput = | string
   | Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1408)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1411)
 
 Since v1.0.0
 Prompt-ReasoningPart.md
@@ -81707,7 +81708,7 @@ console.log(emptyPrompt.content) // []
 declare const empty: Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1441)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1444)
 
 Since v1.0.0
 Prompt-filePart.md
@@ -81758,7 +81759,7 @@ const prompt = Prompt.fromMessages(messages)
 declare const fromMessages: (messages: ReadonlyArray<Message>) => Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1508)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1511)
 
 Since v1.0.0
 Prompt-fromResponseParts.md
@@ -81792,8 +81793,9 @@ const responseParts: ReadonlyArray<Response.AnyPart> = [
   Response.makePart("tool-result", {
     id: "call_1",
     name: "get_time",
-    result: Either.right("10:30 AM"),
-    encodedResult: { _tag: "Right", right: "10:30 AM" },
+    isFailure: false,
+    result: "10:30 AM",
+    encodedResult: "10:30 AM",
     providerExecuted: false
   })
 ]
@@ -81808,7 +81810,7 @@ const prompt = Prompt.fromResponseParts(responseParts)
 declare const fromResponseParts: (parts: ReadonlyArray<Response.AnyPart>) => Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1580)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1584)
 
 Since v1.0.0
 Prompt-isMessage.md
@@ -81825,7 +81827,7 @@ Type guard to check if a value is a Message.
 declare const isMessage: (u: unknown) => u is Message
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L723)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L727)
 
 Since v1.0.0
 Prompt-isPart.md
@@ -81859,7 +81861,7 @@ Type guard to check if a value is a Prompt.
 declare const isPrompt: (u: unknown) => u is Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1294)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1297)
 
 Since v1.0.0
 Prompt-make.md
@@ -81898,7 +81900,7 @@ const copiedPrompt = Prompt.make(existingPrompt)
 declare const make: (input: RawInput) => Prompt
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1470)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1473)
 
 Since v1.0.0
 Prompt-makeMessage.md
@@ -81929,7 +81931,7 @@ const filePart = Prompt.makeMessage("user", {
 declare const makeMessage: <const Role extends Message["role"]>(role: Role, params: Omit<Extract<Message, { role: Role; }>, MessageTypeId | "role" | "options"> & { readonly options?: Extract<Message, { role: Role; }>["options"]; }) => Extract<Message, { role: Role; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L783)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L787)
 
 Since v1.0.0
 Prompt-makePart.md
@@ -81995,7 +81997,7 @@ const merged = Prompt.merge(systemPrompt, "Hello, world!")
 declare const merge: { (input: RawInput): (self: Prompt) => Prompt; (self: Prompt, input: RawInput): Prompt; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1702)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1707)
 
 Since v1.0.0
 Prompt-prependSystem.md
@@ -82036,7 +82038,7 @@ const replaced = Prompt.prependSystem(
 declare const prependSystem: { (content: string): (self: Prompt) => Prompt; (self: Prompt, content: string): Prompt; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1791)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1796)
 
 Since v1.0.0
 Prompt-reasoningPart.md
@@ -82111,7 +82113,7 @@ const replaced = Prompt.setSystem(
 declare const setSystem: { (content: string): (self: Prompt) => Prompt; (self: Prompt, content: string): Prompt; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1749)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1754)
 
 Since v1.0.0
 Prompt-succeed.md
@@ -82148,7 +82150,7 @@ Constructs a new system message.
 declare const systemMessage: (params: MessageConstructorParams<SystemMessage>) => SystemMessage
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L896)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L900)
 
 Since v1.0.0
 Prompt-SystemMessage.md
@@ -82181,7 +82183,7 @@ export interface SystemMessage extends BaseMessage<"system", SystemMessageOption
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L846)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L850)
 
 Since v1.0.0
 Prompt-SystemMessageEncoded.md
@@ -82203,7 +82205,7 @@ export interface SystemMessageEncoded extends BaseMessageEncoded<"system", Syste
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L859)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L863)
 
 Since v1.0.0
 Prompt-SystemMessageOptions.md
@@ -82221,7 +82223,7 @@ Represents provider-specific options that can be associated with a
 export interface SystemMessageOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L873)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L877)
 
 Since v1.0.0
 Prompt-TextPart.md
@@ -82415,15 +82417,13 @@ const toolMessage: Prompt.ToolMessage = Prompt.makeMessage("tool", {
     Prompt.makePart("tool-result", {
       id: "call_123",
       name: "search_web",
+      isFailure: false,
       result: {
-        _tag: "Right",
-        right: {
-          query: "TypeScript best practices",
-          results: [
-            { title: "TypeScript Handbook", url: "https://..." },
-            { title: "Effective TypeScript", url: "https://..." }
-          ]
-        }
+        query: "TypeScript best practices",
+        results: [
+          { title: "TypeScript Handbook", url: "https://..." },
+          { title: "Effective TypeScript", url: "https://..." }
+        ]
       }
     })
   ]
@@ -82441,7 +82441,7 @@ export interface ToolMessage extends BaseMessage<"tool", ToolMessageOptions> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1159)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1162)
 
 Since v1.0.0
 Prompt-ToolMessageEncoded.md
@@ -82463,7 +82463,7 @@ export interface ToolMessageEncoded extends BaseMessageEncoded<"tool", ToolMessa
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1180)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1183)
 
 Since v1.0.0
 Prompt-ToolMessageOptions.md
@@ -82481,7 +82481,7 @@ Represents provider-specific options that can be associated with a
 export interface ToolMessageOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1202)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1205)
 
 Since v1.0.0
 Prompt-ToolMessagePart.md
@@ -82498,7 +82498,7 @@ Union type of content parts allowed in tool messages.
 type ToolMessagePart = ToolResultPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1172)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1175)
 
 Since v1.0.0
 Prompt-ToolMessagePartEncoded.md
@@ -82515,7 +82515,7 @@ Union type of encoded content parts for tool messages.
 type ToolMessagePartEncoded = ToolResultPartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1193)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1196)
 
 Since v1.0.0
 Prompt-ToolResultPart.md
@@ -82534,13 +82534,11 @@ import { Prompt } from "@effect/ai"
 const toolResultPart: Prompt.ToolResultPart = Prompt.makePart("tool-result", {
   id: "call_123",
   name: "get_weather",
+  isFailure: false,
   result: {
-    _tag: "Right",
-    right: {
-      temperature: 22,
-      condition: "sunny",
-      humidity: 65
-    }
+    temperature: 22,
+    condition: "sunny",
+    humidity: 65
   }
 })
 ```
@@ -82558,13 +82556,17 @@ export interface ToolResultPart extends BasePart<"tool-result", ToolResultPartOp
    */
   readonly name: string
   /**
+   * Whether or not the result of executing the tool call handler was an error.
+   */
+  readonly isFailure: boolean
+  /**
    * The result returned by the tool execution.
    */
-  readonly result: Schema.EitherEncoded<unknown, unknown>
+  readonly result: unknown
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L623)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L621)
 
 Since v1.0.0
 Prompt-ToolResultPartEncoded.md
@@ -82588,13 +82590,17 @@ export interface ToolResultPartEncoded extends BasePartEncoded<"tool-result", To
    */
   readonly name: string
   /**
+   * Whether or not the result of executing the tool call handler was an error.
+   */
+  readonly isFailure: boolean
+  /**
    * The result returned by the tool execution.
    */
-  readonly result: Schema.EitherEncoded<unknown, unknown>
+  readonly result: unknown
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L644)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L646)
 
 Since v1.0.0
 Prompt-ToolResultPartOptions.md
@@ -82612,7 +82618,7 @@ Represents provider-specific options that can be associated with a
 export interface ToolResultPartOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L666)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L672)
 
 Since v1.0.0
 Prompt-TypeId.md
@@ -82629,7 +82635,7 @@ Type-level representation of the Prompt identifier.
 type TypeId = typeof TypeId
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1286)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1289)
 
 Since v1.0.0
 Prompt-UserMessage.md
@@ -82678,7 +82684,7 @@ export interface UserMessage extends BaseMessage<"user", UserMessageOptions> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L935)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L939)
 
 Since v1.0.0
 Prompt-UserMessageEncoded.md
@@ -82700,7 +82706,7 @@ export interface UserMessageEncoded extends BaseMessageEncoded<"user", UserMessa
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L956)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L960)
 
 Since v1.0.0
 Prompt-UserMessageOptions.md
@@ -82718,7 +82724,7 @@ Represents provider-specific options that can be associated with a
 export interface UserMessageOptions extends ProviderOptions {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L978)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L982)
 
 Since v1.0.0
 Prompt-UserMessagePart.md
@@ -82735,7 +82741,7 @@ Union type of content parts allowed in user messages.
 type UserMessagePart = TextPart | FilePart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L948)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L952)
 
 Since v1.0.0
 Prompt-UserMessagePartEncoded.md
@@ -82752,7 +82758,7 @@ Union type of encoded content parts for user messages.
 type UserMessagePartEncoded = TextPartEncoded | FilePartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L969)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L973)
 
 Since v1.0.0
 Prompt-textPart.md
@@ -82803,7 +82809,7 @@ Constructs a new tool message.
 declare const toolMessage: (params: MessageConstructorParams<ToolMessage>) => ToolMessage
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1225)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1228)
 
 Since v1.0.0
 Prompt-toolResultPart.md
@@ -82820,7 +82826,7 @@ Constructs a new tool result part.
 declare const toolResultPart: (params: PartConstructorParams<ToolResultPart>) => ToolResultPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L694)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L698)
 
 Since v1.0.0
 Prompt-userMessage.md
@@ -82837,7 +82843,7 @@ Constructs a new user message.
 declare const userMessage: (params: MessageConstructorParams<UserMessage>) => UserMessage
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1004)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1008)
 
 Since v1.0.0
 PubSub-PubSub.md
@@ -86923,7 +86929,7 @@ type AllParts<Tools> = | TextPart
   | ErrorPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L130)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L129)
 
 Since v1.0.0
 Response-AllPartsEncoded.md
@@ -86958,7 +86964,7 @@ type AllPartsEncoded = | TextPartEncoded
   | ErrorPartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L157)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L156)
 
 Since v1.0.0
 Response-AnyPart.md
@@ -86993,7 +86999,7 @@ type AnyPart = | TextPart
   | ErrorPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L76)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L75)
 
 Since v1.0.0
 Response-AnyPartEncoded.md
@@ -87028,7 +87034,7 @@ type AnyPartEncoded = | TextPartEncoded
   | ErrorPartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L103)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L102)
 
 Since v1.0.0
 Response-BasePart.md
@@ -87057,7 +87063,7 @@ export interface BasePart<Type extends string, Metadata extends ProviderMetadata
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L476)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L475)
 
 Since v1.0.0
 Response-BasePartEncoded.md
@@ -87083,7 +87089,51 @@ export interface BasePartEncoded<Type extends string, Metadata extends ProviderM
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L496)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L495)
+
+Since v1.0.0
+Response-BaseToolResult.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.BaseToolResult
+
+The base fields of a tool result part.
+
+**Signature**
+
+```ts
+export interface BaseToolResult<Name extends string> extends BasePart<"tool-result", ToolResultPartMetadata> {
+  /**
+   * Unique identifier matching the original tool call.
+   */
+  readonly id: string
+  /**
+   * Name of the tool being called, which corresponds to the name of the tool
+   * in the `Toolkit` included with the request.
+   */
+  readonly name: Name
+  /**
+   * The encoded result for serialization purposes.
+   */
+  readonly encodedResult: unknown
+  /**
+   * Optional provider-specific name for the tool, which can be useful when the
+   * name of the tool in the `Toolkit` and the name of the tool used by the
+   * model are different.
+   *
+   * This is usually happens only with provider-defined tools which require a
+   * user-space handler.
+   */
+  readonly providerName?: string | undefined
+  /**
+   * Whether the tool was executed by the provider (true) or framework (false).
+   */
+  readonly providerExecuted: boolean
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1514)
 
 Since v1.0.0
 Response-ConstructorParams.md
@@ -87106,7 +87156,7 @@ type ConstructorParams<Part> = Omit<Part, PartTypeId | "type" | "sourceType" | "
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L558)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L557)
 
 Since v1.0.0
 Response-DocumentSourcePart.md
@@ -87146,7 +87196,7 @@ export interface DocumentSourcePart extends BasePart<"source", DocumentSourcePar
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1813)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1860)
 
 Since v1.0.0
 Response-DocumentSourcePartEncoded.md
@@ -87184,7 +87234,7 @@ export interface DocumentSourcePartEncoded extends BasePartEncoded<"source", Doc
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1842)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1889)
 
 Since v1.0.0
 Response-DocumentSourcePartMetadata.md
@@ -87202,7 +87252,7 @@ Represents provider-specific metadata that can be associated with a
 export interface DocumentSourcePartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1872)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1919)
 
 Since v1.0.0
 Response-ErrorPart.md
@@ -87231,7 +87281,7 @@ export interface ErrorPart extends BasePart<"error", ErrorPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2274)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2321)
 
 Since v1.0.0
 Response-ErrorPartEncoded.md
@@ -87250,7 +87300,7 @@ export interface ErrorPartEncoded extends BasePartEncoded<"error", ErrorPartMeta
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2284)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2331)
 
 Since v1.0.0
 Response-ErrorPartMetadata.md
@@ -87268,7 +87318,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ErrorPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2295)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2342)
 
 Since v1.0.0
 Response-FilePart.md
@@ -87307,7 +87357,7 @@ export interface FilePart extends BasePart<"file", FilePartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1740)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1787)
 
 Since v1.0.0
 Response-FilePartEncoded.md
@@ -87333,7 +87383,7 @@ export interface FilePartEncoded extends BasePartEncoded<"file", FilePartMetadat
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1757)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1804)
 
 Since v1.0.0
 Response-FilePartMetadata.md
@@ -87351,7 +87401,7 @@ Represents provider-specific metadata that can be associated with a
 export interface FilePartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1775)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1822)
 
 Since v1.0.0
 Response-FinishPart.md
@@ -87392,7 +87442,7 @@ export interface FinishPart extends BasePart<"finish", FinishPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2194)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2241)
 
 Since v1.0.0
 Response-FinishPartEncoded.md
@@ -87418,7 +87468,7 @@ export interface FinishPartEncoded extends BasePartEncoded<"finish", FinishPartM
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2211)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2258)
 
 Since v1.0.0
 Response-FinishPartMetadata.md
@@ -87436,7 +87486,7 @@ Represents provider-specific metadata that can be associated with a
 export interface FinishPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2229)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2276)
 
 Since v1.0.0
 Response-FinishReason.md
@@ -87463,7 +87513,7 @@ Possible finish reasons:
 declare const FinishReason: Schema.Literal<["stop", "length", "content-filter", "tool-calls", "error", "pause", "other", "unknown"]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2109)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2156)
 
 Since v1.0.0
 Response-Part.md
@@ -87489,7 +87539,7 @@ type Part<Tools> = | TextPart
   | FinishPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L247)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L246)
 
 Since v1.0.0
 Response-PartEncoded.md
@@ -87516,7 +87566,7 @@ type PartEncoded = | TextPartEncoded
   | FinishPartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L264)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L263)
 
 Since v1.0.0
 Response-PartTypeId.md
@@ -87533,7 +87583,7 @@ Type-level representation of the Response Part identifier.
 type PartTypeId = typeof PartTypeId
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L60)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L59)
 
 Since v1.0.0
 Response-ProviderMetadata.md
@@ -87560,7 +87610,7 @@ Provider-specific metadata is namespaced by provider and has the structure:
 declare const ProviderMetadata: Schema.Record$<typeof Schema.String, Schema.UndefinedOr<Schema.Record$<typeof Schema.String, typeof Schema.Unknown>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L452)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L451)
 
 Since v1.0.0
 Response-ReasoningDeltaPart.md
@@ -87587,7 +87637,7 @@ export interface ReasoningDeltaPart extends BasePart<"reasoning-delta", Reasonin
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L986)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L985)
 
 Since v1.0.0
 Response-ReasoningDeltaPartEncoded.md
@@ -87613,7 +87663,7 @@ export interface ReasoningDeltaPartEncoded extends BasePartEncoded<"reasoning-de
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1003)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1002)
 
 Since v1.0.0
 Response-ReasoningDeltaPartMetadata.md
@@ -87631,7 +87681,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ReasoningDeltaPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1021)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1020)
 
 Since v1.0.0
 Response-ReasoningEndPart.md
@@ -87655,7 +87705,7 @@ export interface ReasoningEndPart extends BasePart<"reasoning-end", ReasoningEnd
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1060)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1059)
 
 Since v1.0.0
 Response-ReasoningEndPartEncoded.md
@@ -87677,25 +87727,7 @@ export interface ReasoningEndPartEncoded extends BasePartEncoded<"reasoning-end"
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1073)
-
-Since v1.0.0
-Response-ReasoningEndPartMetadata.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.ReasoningEndPartMetadata
-
-Represents provider-specific metadata that can be associated with a
-`ReasoningEndPart` through module augmentation.
-
-**Signature**
-
-```ts
-export interface ReasoningEndPartMetadata extends ProviderMetadata {}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1087)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1072)
 
 Since v1.0.0
 Response-documentSourcePart.md
@@ -87712,7 +87744,7 @@ Constructs a new document source part.
 declare const documentSourcePart: (params: ConstructorParams<DocumentSourcePart>) => DocumentSourcePart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1899)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1946)
 
 Since v1.0.0
 Response-errorPart.md
@@ -87729,7 +87761,7 @@ Constructs a new error part.
 declare const errorPart: (params: ConstructorParams<ErrorPart>) => ErrorPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2318)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2365)
 
 Since v1.0.0
 Response-filePart.md
@@ -87746,7 +87778,7 @@ Constructs a new file part.
 declare const filePart: (params: ConstructorParams<FilePart>) => FilePart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1799)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1846)
 
 Since v1.0.0
 Response-finishPart.md
@@ -87763,7 +87795,7 @@ Constructs a new finish part.
 declare const finishPart: (params: ConstructorParams<FinishPart>) => FinishPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2253)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2300)
 
 Since v1.0.0
 Response-isPart.md
@@ -87780,7 +87812,7 @@ Type guard to check if a value is a Response Part.
 declare const isPart: (u: unknown) => u is AnyPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L68)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L67)
 
 Since v1.0.0
 Response-makePart.md
@@ -87814,7 +87846,7 @@ const toolCallPart = Response.makePart("tool-call", {
 declare const makePart: <const Type extends AnyPart["type"]>(type: Type, params: Omit<Extract<AnyPart, { type: Type; }>, PartTypeId | "type" | "metadata"> & { readonly metadata?: Extract<AnyPart, { type: Type; }>["metadata"] | undefined; }) => Extract<AnyPart, { type: Type; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L529)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L528)
 
 Since v1.0.0
 Response-reasoningDeltaPart.md
@@ -87831,7 +87863,7 @@ Constructs a new reasoning delta part.
 declare const reasoningDeltaPart: (params: ConstructorParams<ReasoningDeltaPart>) => ReasoningDeltaPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1045)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1044)
 
 Since v1.0.0
 Response-reasoningEndPart.md
@@ -87848,7 +87880,25 @@ Constructs a new reasoning end part.
 declare const reasoningEndPart: (params: ConstructorParams<ReasoningEndPart>) => ReasoningEndPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1110)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1109)
+
+Since v1.0.0
+Response-ReasoningEndPartMetadata.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.ReasoningEndPartMetadata
+
+Represents provider-specific metadata that can be associated with a
+`ReasoningEndPart` through module augmentation.
+
+**Signature**
+
+```ts
+export interface ReasoningEndPartMetadata extends ProviderMetadata {}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1086)
 
 Since v1.0.0
 Response-ReasoningPart.md
@@ -87883,7 +87933,7 @@ export interface ReasoningPart extends BasePart<"reasoning", ReasoningPartMetada
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L858)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L857)
 
 Since v1.0.0
 Response-ReasoningPartEncoded.md
@@ -87905,7 +87955,7 @@ export interface ReasoningPartEncoded extends BasePartEncoded<"reasoning", Reaso
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L871)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L870)
 
 Since v1.0.0
 Response-ReasoningPartMetadata.md
@@ -87923,7 +87973,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ReasoningPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L885)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L884)
 
 Since v1.0.0
 Response-ReasoningStartPart.md
@@ -87947,7 +87997,7 @@ export interface ReasoningStartPart extends BasePart<"reasoning-start", Reasonin
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L922)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L921)
 
 Since v1.0.0
 Response-ReasoningStartPartEncoded.md
@@ -87969,7 +88019,7 @@ export interface ReasoningStartPartEncoded extends BasePartEncoded<"reasoning-st
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L935)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L934)
 
 Since v1.0.0
 Response-ReasoningStartPartMetadata.md
@@ -87987,7 +88037,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ReasoningStartPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L949)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L948)
 
 Since v1.0.0
 Response-ResponseMetadataPart.md
@@ -88030,7 +88080,7 @@ export interface ResponseMetadataPart extends BasePart<"response-metadata", Resp
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2016)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2063)
 
 Since v1.0.0
 Response-ResponseMetadataPartEncoded.md
@@ -88062,7 +88112,7 @@ export interface ResponseMetadataPartEncoded
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2037)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2084)
 
 Since v1.0.0
 Response-ResponseMetadataPartMetadata.md
@@ -88080,7 +88130,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ResponseMetadataPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2061)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2108)
 
 Since v1.0.0
 Response-StreamPart.md
@@ -88113,7 +88163,7 @@ type StreamPart<Tools> = | TextStartPart
   | ErrorPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L317)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L316)
 
 Since v1.0.0
 Response-StreamPartEncoded.md
@@ -88146,7 +88196,7 @@ type StreamPartEncoded = | TextStartPartEncoded
   | ErrorPartEncoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L342)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L341)
 
 Since v1.0.0
 Response-TextDeltaPart.md
@@ -88173,7 +88223,7 @@ export interface TextDeltaPart extends BasePart<"text-delta", TextDeltaPartMetad
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L711)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L710)
 
 Since v1.0.0
 Response-TextDeltaPartEncoded.md
@@ -88199,7 +88249,7 @@ export interface TextDeltaPartEncoded extends BasePartEncoded<"text-delta", Text
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L728)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L727)
 
 Since v1.0.0
 Response-TextDeltaPartMetadata.md
@@ -88217,7 +88267,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextDeltaPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L746)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L745)
 
 Since v1.0.0
 Response-TextEndPart.md
@@ -88241,7 +88291,7 @@ export interface TextEndPart extends BasePart<"text-end", TextEndPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L784)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L783)
 
 Since v1.0.0
 Response-TextEndPartEncoded.md
@@ -88263,7 +88313,7 @@ export interface TextEndPartEncoded extends BasePartEncoded<"text-end", TextEndP
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L797)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L796)
 
 Since v1.0.0
 Response-TextEndPartMetadata.md
@@ -88281,7 +88331,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextEndPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L811)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L810)
 
 Since v1.0.0
 Response-TextPart.md
@@ -88313,7 +88363,7 @@ export interface TextPart extends BasePart<"text", TextPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L584)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L583)
 
 Since v1.0.0
 Response-TextPartEncoded.md
@@ -88335,7 +88385,7 @@ export interface TextPartEncoded extends BasePartEncoded<"text", TextPartMetadat
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L597)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L596)
 
 Since v1.0.0
 Response-TextPartMetadata.md
@@ -88353,7 +88403,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L611)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L610)
 
 Since v1.0.0
 Response-TextStartPart.md
@@ -88377,7 +88427,7 @@ export interface TextStartPart extends BasePart<"text-start", TextStartPartMetad
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L648)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L647)
 
 Since v1.0.0
 Response-TextStartPartEncoded.md
@@ -88399,7 +88449,7 @@ export interface TextStartPartEncoded extends BasePartEncoded<"text-start", Text
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L661)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L660)
 
 Since v1.0.0
 Response-TextStartPartMetadata.md
@@ -88417,7 +88467,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextStartPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L675)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L674)
 
 Since v1.0.0
 Response-ToolCallPart.md
@@ -88483,7 +88533,7 @@ export interface ToolCallPart<Name extends string, Params> extends BasePart<"too
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1393)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1392)
 
 Since v1.0.0
 Response-ToolCallPartEncoded.md
@@ -88527,7 +88577,7 @@ export interface ToolCallPartEncoded extends BasePartEncoded<"tool-call", ToolCa
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1428)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1427)
 
 Since v1.0.0
 Response-ToolCallPartMetadata.md
@@ -88545,7 +88595,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolCallPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1464)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1463)
 
 Since v1.0.0
 Response-ToolCallParts.md
@@ -88566,7 +88616,7 @@ type ToolCallParts<Tools> = {
 }[keyof Tools]
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L409)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L408)
 
 Since v1.0.0
 Response-ToolParamsDeltaPart.md
@@ -88595,7 +88645,7 @@ export interface ToolParamsDeltaPart extends BasePart<"tool-params-delta", ToolP
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1231)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1230)
 
 Since v1.0.0
 Response-ToolParamsDeltaPartEncoded.md
@@ -88621,7 +88671,7 @@ export interface ToolParamsDeltaPartEncoded extends BasePartEncoded<"tool-params
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1248)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1247)
 
 Since v1.0.0
 Response-ToolParamsDeltaPartMetadata.md
@@ -88639,7 +88689,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolParamsDeltaPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1266)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1265)
 
 Since v1.0.0
 Response-ToolParamsEndPart.md
@@ -88664,7 +88714,7 @@ export interface ToolParamsEndPart extends BasePart<"tool-params-end", ToolParam
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1306)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1305)
 
 Since v1.0.0
 Response-ToolParamsEndPartEncoded.md
@@ -88686,7 +88736,7 @@ export interface ToolParamsEndPartEncoded extends BasePartEncoded<"tool-params-e
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1319)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1318)
 
 Since v1.0.0
 Response-ToolParamsEndPartMetadata.md
@@ -88704,7 +88754,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolParamsEndPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1333)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1332)
 
 Since v1.0.0
 Response-ToolParamsStartPart.md
@@ -88747,7 +88797,7 @@ export interface ToolParamsStartPart extends BasePart<"tool-params-start", ToolP
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1126)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1125)
 
 Since v1.0.0
 Response-ToolParamsStartPartEncoded.md
@@ -88787,7 +88837,7 @@ export interface ToolParamsStartPartEncoded extends BasePartEncoded<"tool-params
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1157)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1156)
 
 Since v1.0.0
 Response-ToolParamsStartPartMetadata.md
@@ -88805,7 +88855,237 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolParamsStartPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1189)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1188)
+
+Since v1.0.0
+Response-ToolResultFailure.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.ToolResultFailure
+
+Represents a failed tool call result.
+
+**Signature**
+
+```ts
+export interface ToolResultFailure<Name extends string, Failure> extends BaseToolResult<Name> {
+  /**
+   * The decoded failure returned by the tool execution.
+   */
+  readonly result: Failure
+  /**
+   * Whether or not the result of executing the tool call handler was an error.
+   */
+  readonly isFailure: true
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1566)
+
+Since v1.0.0
+Response-reasoningPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.reasoningPart
+
+Constructs a new reasoning part.
+
+**Signature**
+
+```ts
+declare const reasoningPart: (params: ConstructorParams<ReasoningPart>) => ReasoningPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L907)
+
+Since v1.0.0
+Response-reasoningStartPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.reasoningStartPart
+
+Constructs a new reasoning start part.
+
+**Signature**
+
+```ts
+declare const reasoningStartPart: (params: ConstructorParams<ReasoningStartPart>) => ReasoningStartPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L971)
+
+Since v1.0.0
+Response-responseMetadataPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.responseMetadataPart
+
+Constructs a new response metadata part.
+
+**Signature**
+
+```ts
+declare const responseMetadataPart: (params: ConstructorParams<ResponseMetadataPart>) => ResponseMetadataPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2133)
+
+Since v1.0.0
+Response-textDeltaPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.textDeltaPart
+
+Constructs a new text delta part.
+
+**Signature**
+
+```ts
+declare const textDeltaPart: (params: ConstructorParams<TextDeltaPart>) => TextDeltaPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L769)
+
+Since v1.0.0
+Response-textEndPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.textEndPart
+
+Constructs a new text end part.
+
+**Signature**
+
+```ts
+declare const textEndPart: (params: ConstructorParams<TextEndPart>) => TextEndPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L833)
+
+Since v1.0.0
+Response-textPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.textPart
+
+Constructs a new text part.
+
+**Signature**
+
+```ts
+declare const textPart: (params: ConstructorParams<TextPart>) => TextPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L633)
+
+Since v1.0.0
+Response-textStartPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.textStartPart
+
+Constructs a new text start part.
+
+**Signature**
+
+```ts
+declare const textStartPart: (params: ConstructorParams<TextStartPart>) => TextStartPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L697)
+
+Since v1.0.0
+Response-toolCallPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.toolCallPart
+
+Constructs a new tool call part.
+
+**Signature**
+
+```ts
+declare const toolCallPart: <const Name extends string, Params>(params: ConstructorParams<ToolCallPart<Name, Params>>) => ToolCallPart<Name, Params>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1500)
+
+Since v1.0.0
+Response-toolParamsDeltaPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.toolParamsDeltaPart
+
+Constructs a new tool params delta part.
+
+**Signature**
+
+```ts
+declare const toolParamsDeltaPart: (params: ConstructorParams<ToolParamsDeltaPart>) => ToolParamsDeltaPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1289)
+
+Since v1.0.0
+Response-toolParamsEndPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.toolParamsEndPart
+
+Constructs a new tool params end part.
+
+**Signature**
+
+```ts
+declare const toolParamsEndPart: (params: ConstructorParams<ToolParamsEndPart>) => ToolParamsEndPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1355)
+
+Since v1.0.0
+Response-toolParamsStartPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.toolParamsStartPart
+
+Constructs a new tool params start part.
+
+**Signature**
+
+```ts
+declare const toolParamsStartPart: (params: ConstructorParams<ToolParamsStartPart>) => ToolParamsStartPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1214)
+
+Since v1.0.0
+Response-toolResultPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.toolResultPart
+
+Constructs a new tool result part.
+
+**Signature**
+
+```ts
+declare const toolResultPart: <const Params extends ConstructorParams<ToolResultPart<string, any, any>>>(params: Params) => Params extends { readonly name: infer Name extends string; readonly isFailure: false; readonly result: infer Success; } ? ToolResultPart<Name, Success, never> : Params extends { readonly name: infer Name extends string; readonly isFailure: true; readonly result: infer Failure; } ? ToolResultPart<Name, never, Failure> : never
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1749)
 
 Since v1.0.0
 Response-ToolResultPart.md
@@ -88835,18 +89115,16 @@ const toolResultPart: Response.ToolResultPart<
 > = Response.toolResultPart({
   id: "call_123",
   name: "get_weather",
-  result: Either.right({
+  isFailure: false,
+  result: {
     temperature: 22,
     condition: "sunny",
     humidity: 65
-  }),
+  },
   encodedResult: {
-    _tag: "Right",
-    right: {
-      temperature: 22,
-      condition: "sunny",
-      humidity: 65
-    }
+    temperature: 22,
+    condition: "sunny",
+    humidity: 65
   },
   providerExecuted: false
 })
@@ -88855,43 +89133,11 @@ const toolResultPart: Response.ToolResultPart<
 **Signature**
 
 ```ts
-export interface ToolResultPart<Name extends string, Success, Failure>
-  extends BasePart<"tool-result", ToolResultPartMetadata>
-{
-  /**
-   * Unique identifier matching the original tool call.
-   */
-  readonly id: string
-  /**
-   * Name of the tool being called, which corresponds to the name of the tool
-   * in the `Toolkit` included with the request.
-   */
-  readonly name: Name
-  /**
-   * The decoded result returned by the tool execution.
-   */
-  readonly result: Either.Either<Success, Failure>
-  /**
-   * The encoded result for serialization purposes.
-   */
-  readonly encodedResult: Schema.EitherEncoded<unknown, unknown>
-  /**
-   * Optional provider-specific name for the tool, which can be useful when the
-   * name of the tool in the `Toolkit` and the name of the tool used by the
-   * model are different.
-   *
-   * This is usually happens only with provider-defined tools which require a
-   * user-space handler.
-   */
-  readonly providerName?: string | undefined
-  /**
-   * Whether the tool was executed by the provider (true) or framework (false).
-   */
-  readonly providerExecuted: boolean
-}
+type ToolResultPart<Name, Success, Failure> = | ToolResultSuccess<Name, Success>
+  | ToolResultFailure<Name, Failure>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1550)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1616)
 
 Since v1.0.0
 Response-ToolResultPartEncoded.md
@@ -88918,7 +89164,11 @@ export interface ToolResultPartEncoded extends BasePartEncoded<"tool-result", To
   /**
    * The result returned by the tool execution.
    */
-  readonly result: Schema.EitherEncoded<unknown, unknown>
+  readonly result: unknown
+  /**
+   * Whether or not the result of executing the tool call handler was an error.
+   */
+  readonly isFailure: boolean
   /**
    * Optional provider-specific name for the tool, which can be useful when the
    * name of the tool in the `Toolkit` and the name of the tool used by the
@@ -88935,211 +89185,7 @@ export interface ToolResultPartEncoded extends BasePartEncoded<"tool-result", To
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1591)
-
-Since v1.0.0
-Response-reasoningPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.reasoningPart
-
-Constructs a new reasoning part.
-
-**Signature**
-
-```ts
-declare const reasoningPart: (params: ConstructorParams<ReasoningPart>) => ReasoningPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L908)
-
-Since v1.0.0
-Response-reasoningStartPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.reasoningStartPart
-
-Constructs a new reasoning start part.
-
-**Signature**
-
-```ts
-declare const reasoningStartPart: (params: ConstructorParams<ReasoningStartPart>) => ReasoningStartPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L972)
-
-Since v1.0.0
-Response-responseMetadataPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.responseMetadataPart
-
-Constructs a new response metadata part.
-
-**Signature**
-
-```ts
-declare const responseMetadataPart: (params: ConstructorParams<ResponseMetadataPart>) => ResponseMetadataPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2086)
-
-Since v1.0.0
-Response-textDeltaPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.textDeltaPart
-
-Constructs a new text delta part.
-
-**Signature**
-
-```ts
-declare const textDeltaPart: (params: ConstructorParams<TextDeltaPart>) => TextDeltaPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L770)
-
-Since v1.0.0
-Response-textEndPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.textEndPart
-
-Constructs a new text end part.
-
-**Signature**
-
-```ts
-declare const textEndPart: (params: ConstructorParams<TextEndPart>) => TextEndPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L834)
-
-Since v1.0.0
-Response-textPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.textPart
-
-Constructs a new text part.
-
-**Signature**
-
-```ts
-declare const textPart: (params: ConstructorParams<TextPart>) => TextPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L634)
-
-Since v1.0.0
-Response-textStartPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.textStartPart
-
-Constructs a new text start part.
-
-**Signature**
-
-```ts
-declare const textStartPart: (params: ConstructorParams<TextStartPart>) => TextStartPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L698)
-
-Since v1.0.0
-Response-toolCallPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.toolCallPart
-
-Constructs a new tool call part.
-
-**Signature**
-
-```ts
-declare const toolCallPart: <const Name extends string, Params>(params: ConstructorParams<ToolCallPart<Name, Params>>) => ToolCallPart<Name, Params>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1501)
-
-Since v1.0.0
-Response-toolParamsDeltaPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.toolParamsDeltaPart
-
-Constructs a new tool params delta part.
-
-**Signature**
-
-```ts
-declare const toolParamsDeltaPart: (params: ConstructorParams<ToolParamsDeltaPart>) => ToolParamsDeltaPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1290)
-
-Since v1.0.0
-Response-toolParamsEndPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.toolParamsEndPart
-
-Constructs a new tool params end part.
-
-**Signature**
-
-```ts
-declare const toolParamsEndPart: (params: ConstructorParams<ToolParamsEndPart>) => ToolParamsEndPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1356)
-
-Since v1.0.0
-Response-toolParamsStartPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.toolParamsStartPart
-
-Constructs a new tool params start part.
-
-**Signature**
-
-```ts
-declare const toolParamsStartPart: (params: ConstructorParams<ToolParamsStartPart>) => ToolParamsStartPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1215)
-
-Since v1.0.0
-Response-toolResultPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.toolResultPart
-
-Constructs a new tool result part.
-
-**Signature**
-
-```ts
-declare const toolResultPart: <const Name extends string, Success, Failure>(params: ConstructorParams<ToolResultPart<Name, Success, Failure>>) => ToolResultPart<Name, Success, Failure>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1714)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1626)
 
 Since v1.0.0
 Response-ToolResultPartMetadata.md
@@ -89157,7 +89203,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolResultPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1627)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1666)
 
 Since v1.0.0
 Response-ToolResultParts.md
@@ -89181,7 +89227,33 @@ type ToolResultParts<Tools> = {
 }[keyof Tools]
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L423)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L422)
+
+Since v1.0.0
+Response-ToolResultSuccess.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.ToolResultSuccess
+
+Represents a successful tool call result.
+
+**Signature**
+
+```ts
+export interface ToolResultSuccess<Name extends string, Success> extends BaseToolResult<Name> {
+  /**
+   * The decoded success returned by the tool execution.
+   */
+  readonly result: Success
+  /**
+   * Whether or not the result of executing the tool call handler was an error.
+   */
+  readonly isFailure: false
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1549)
 
 Since v1.0.0
 Response-UrlSourcePart.md
@@ -89217,7 +89289,7 @@ export interface UrlSourcePart extends BasePart<"source", UrlSourcePartMetadata>
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1914)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1961)
 
 Since v1.0.0
 Response-UrlSourcePartEncoded.md
@@ -89251,7 +89323,7 @@ export interface UrlSourcePartEncoded extends BasePartEncoded<"source", UrlSourc
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1939)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1986)
 
 Since v1.0.0
 Response-UrlSourcePartMetadata.md
@@ -89269,7 +89341,7 @@ Represents provider-specific metadata that can be associated with a
 export interface UrlSourcePartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1965)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2012)
 
 Since v1.0.0
 Response-Usage.md
@@ -89290,7 +89362,7 @@ metadata of the finish part of the response.
 declare class Usage
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2145)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2192)
 
 Since v1.0.0
 Response-urlSourcePart.md
@@ -89307,7 +89379,7 @@ Constructs a new URL source part.
 declare const urlSourcePart: (params: ConstructorParams<UrlSourcePart>) => UrlSourcePart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1991)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2038)
 
 Since v1.0.0
 Rpc-Handler.md
@@ -90158,62 +90230,6 @@ declare const disableAll: { (flags: RuntimeFlags): (self: RuntimeFlags) => Runti
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L140)
 
 Since v2.0.0
-RuntimeFlags-enable.md
-Package: `effect`<br />
-Module: `RuntimeFlags`<br />
-
-## RuntimeFlags.enable
-
-Enables the specified `RuntimeFlag`.
-
-**Signature**
-
-```ts
-declare const enable: { (flag: RuntimeFlag): (self: RuntimeFlags) => RuntimeFlags; (self: RuntimeFlags, flag: RuntimeFlag): RuntimeFlags; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L181)
-
-Since v2.0.0
-RuntimeFlags-enableAll.md
-Package: `effect`<br />
-Module: `RuntimeFlags`<br />
-
-## RuntimeFlags.enableAll
-
-Enables all of the `RuntimeFlag`s in the specified set of `RuntimeFlags`.
-
-**Signature**
-
-```ts
-declare const enableAll: { (flags: RuntimeFlags): (self: RuntimeFlags) => RuntimeFlags; (self: RuntimeFlags, flags: RuntimeFlags): RuntimeFlags; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L192)
-
-Since v2.0.0
-RuntimeFlags-interruptible.md
-Package: `effect`<br />
-Module: `RuntimeFlags`<br />
-
-## RuntimeFlags.interruptible
-
-Returns true only if the `Interruption` flag is **enabled** and the
-`WindDown` flag is **disabled**.
-
-A fiber is said to be interruptible if interruption is enabled and the fiber
-is not in its wind-down phase, in which it takes care of cleanup activities
-related to fiber shutdown.
-
-**Signature**
-
-```ts
-declare const interruptible: (self: RuntimeFlags) => boolean
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L238)
-
-Since v2.0.0
 RuntimeFlags-Interruption.md
 Package: `effect`<br />
 Module: `RuntimeFlags`<br />
@@ -90349,6 +90365,62 @@ declare const WindDown: RuntimeFlag
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L83)
+
+Since v2.0.0
+RuntimeFlags-enable.md
+Package: `effect`<br />
+Module: `RuntimeFlags`<br />
+
+## RuntimeFlags.enable
+
+Enables the specified `RuntimeFlag`.
+
+**Signature**
+
+```ts
+declare const enable: { (flag: RuntimeFlag): (self: RuntimeFlags) => RuntimeFlags; (self: RuntimeFlags, flag: RuntimeFlag): RuntimeFlags; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L181)
+
+Since v2.0.0
+RuntimeFlags-enableAll.md
+Package: `effect`<br />
+Module: `RuntimeFlags`<br />
+
+## RuntimeFlags.enableAll
+
+Enables all of the `RuntimeFlag`s in the specified set of `RuntimeFlags`.
+
+**Signature**
+
+```ts
+declare const enableAll: { (flags: RuntimeFlags): (self: RuntimeFlags) => RuntimeFlags; (self: RuntimeFlags, flags: RuntimeFlags): RuntimeFlags; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L192)
+
+Since v2.0.0
+RuntimeFlags-interruptible.md
+Package: `effect`<br />
+Module: `RuntimeFlags`<br />
+
+## RuntimeFlags.interruptible
+
+Returns true only if the `Interruption` flag is **enabled** and the
+`WindDown` flag is **disabled**.
+
+A fiber is said to be interruptible if interruption is enabled and the fiber
+is not in its wind-down phase, in which it takes care of cleanup activities
+related to fiber shutdown.
+
+**Signature**
+
+```ts
+declare const interruptible: (self: RuntimeFlags) => boolean
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L238)
 
 Since v2.0.0
 RuntimeFlags-interruption.md
@@ -92559,87 +92631,6 @@ declare const recurUntilOption: <A, B>(pf: (a: A) => Option.Option<B>) => Schedu
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1538)
 
 Since v2.0.0
-Schedule-recurUpTo.md
-Package: `effect`<br />
-Module: `Schedule`<br />
-
-## Schedule.recurUpTo
-
-A schedule that recurs until the specified duration has elapsed.
-
-**Details**
-
-This schedule continues executing for the given `duration`, after which it
-stops. The schedule outputs the elapsed time on each recurrence.
-
-This is useful for limiting the duration of retries, enforcing time-based
-constraints, or ensuring that an operation does not run indefinitely.
-
-**Signature**
-
-```ts
-declare const recurUpTo: (duration: Duration.DurationInput) => Schedule<Duration.Duration>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1555)
-
-Since v2.0.0
-Schedule-recurWhile.md
-Package: `effect`<br />
-Module: `Schedule`<br />
-
-## Schedule.recurWhile
-
-A schedule that recurs as long as the given predicate evaluates to true.
-
-**Details*
-
-This schedule continues executing as long as the provided predicate `f`
-returns `true` for the input value. Once `f` evaluates to `false`, the
-schedule stops recurring.
-
-**See**
-
-- `recurWhileEffect` If you need to use an effectful predicate.
-
-**Signature**
-
-```ts
-declare const recurWhile: <A>(f: Predicate<A>) => Schedule<A, A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1571)
-
-Since v2.0.0
-Schedule-recurWhileEffect.md
-Package: `effect`<br />
-Module: `Schedule`<br />
-
-## Schedule.recurWhileEffect
-
-A schedule that recurs as long as the given effectful predicate evaluates to
-true.
-
-**Details**
-
-This schedule continues executing as long as the provided effectful predicate
-`f` returns `true`. Once `f` evaluates to `false`, the schedule stops
-recurring. Unlike `recurWhile`, this function allows the condition to
-be computed dynamically using an effectful computation.
-
-**See**
-
-- `recurWhile` If you need to use a pure predicate.
-
-**Signature**
-
-```ts
-declare const recurWhileEffect: <A, R>(f: (a: A) => Effect.Effect<boolean, never, R>) => Schedule<A, A, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1589)
-
-Since v2.0.0
 Schedule-recurs.md
 Package: `effect`<br />
 Module: `Schedule`<br />
@@ -92734,6 +92725,87 @@ export interface Schedule<out Out, in In = unknown, out R = never> extends Sched
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L95)
+
+Since v2.0.0
+Schedule-recurUpTo.md
+Package: `effect`<br />
+Module: `Schedule`<br />
+
+## Schedule.recurUpTo
+
+A schedule that recurs until the specified duration has elapsed.
+
+**Details**
+
+This schedule continues executing for the given `duration`, after which it
+stops. The schedule outputs the elapsed time on each recurrence.
+
+This is useful for limiting the duration of retries, enforcing time-based
+constraints, or ensuring that an operation does not run indefinitely.
+
+**Signature**
+
+```ts
+declare const recurUpTo: (duration: Duration.DurationInput) => Schedule<Duration.Duration>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1555)
+
+Since v2.0.0
+Schedule-recurWhile.md
+Package: `effect`<br />
+Module: `Schedule`<br />
+
+## Schedule.recurWhile
+
+A schedule that recurs as long as the given predicate evaluates to true.
+
+**Details*
+
+This schedule continues executing as long as the provided predicate `f`
+returns `true` for the input value. Once `f` evaluates to `false`, the
+schedule stops recurring.
+
+**See**
+
+- `recurWhileEffect` If you need to use an effectful predicate.
+
+**Signature**
+
+```ts
+declare const recurWhile: <A>(f: Predicate<A>) => Schedule<A, A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1571)
+
+Since v2.0.0
+Schedule-recurWhileEffect.md
+Package: `effect`<br />
+Module: `Schedule`<br />
+
+## Schedule.recurWhileEffect
+
+A schedule that recurs as long as the given effectful predicate evaluates to
+true.
+
+**Details**
+
+This schedule continues executing as long as the provided effectful predicate
+`f` returns `true`. Once `f` evaluates to `false`, the schedule stops
+recurring. Unlike `recurWhile`, this function allows the condition to
+be computed dynamically using an effectful computation.
+
+**See**
+
+- `recurWhile` If you need to use a pure predicate.
+
+**Signature**
+
+```ts
+declare const recurWhileEffect: <A, R>(f: (a: A) => Effect.Effect<boolean, never, R>) => Schedule<A, A, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1589)
 
 Since v2.0.0
 Schedule-reduce.md
@@ -93737,26 +93809,6 @@ declare const union: { (that: Interval): (self: Interval) => Option.Option<Inter
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleInterval.ts#L130)
 
 Since v2.0.0
-ScheduleIntervals-Intervals.md
-Package: `effect`<br />
-Module: `ScheduleIntervals`<br />
-
-## ScheduleIntervals.Intervals
-
-An `Intervals` represents a list of several `Interval`s.
-
-**Signature**
-
-```ts
-export interface Intervals {
-  readonly [IntervalsTypeId]: IntervalsTypeId
-  readonly intervals: Check.Chunk<Interval.Interval>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleIntervals.ts#L26)
-
-Since v2.0.0
 ScheduleIntervals-empty.md
 Package: `effect`<br />
 Module: `ScheduleIntervals`<br />
@@ -93806,6 +93858,26 @@ declare const fromIterable: (intervals: Iterable<Interval.Interval>) => Interval
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleIntervals.ts#L53)
+
+Since v2.0.0
+ScheduleIntervals-Intervals.md
+Package: `effect`<br />
+Module: `ScheduleIntervals`<br />
+
+## ScheduleIntervals.Intervals
+
+An `Intervals` represents a list of several `Interval`s.
+
+**Signature**
+
+```ts
+export interface Intervals {
+  readonly [IntervalsTypeId]: IntervalsTypeId
+  readonly intervals: Check.Chunk<Interval.Interval>
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleIntervals.ts#L26)
 
 Since v2.0.0
 ScheduleIntervals-intersect.md
@@ -94762,59 +94834,6 @@ declare const greaterThanOrEqualTo: <S extends Schema.Any>(minimum: number, anno
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5041)
 
 Since v3.10.0
-Schema-head.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.head
-
-Get the first element of a `ReadonlyArray`, or `None` if the array is empty.
-
-**Signature**
-
-```ts
-declare const head: <S extends Schema.Any, A extends ReadonlyArray<unknown>>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, OptionFromSelf<SchemaClass<A[number]>>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6525)
-
-Since v3.10.0
-Schema-headNonEmpty.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.headNonEmpty
-
-Get the first element of a `NonEmptyReadonlyArray`.
-
-**Signature**
-
-```ts
-declare const headNonEmpty: <S extends Schema.Any, A extends array_.NonEmptyReadonlyArray<unknown>>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, SchemaClass<A[number]>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6549)
-
-Since v3.12.0
-Schema-headOrElse.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.headOrElse
-
-Retrieves the first element of a `ReadonlyArray`.
-
-If the array is empty, it returns the `fallback` argument if provided; otherwise, it fails.
-
-**Signature**
-
-```ts
-declare const headOrElse: { <S extends Schema.Any, A extends ReadonlyArray<unknown>>(fallback?: LazyArg<A[number]>): (self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, SchemaClass<A[number]>>; <S extends Schema.Any, A extends ReadonlyArray<unknown>>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>, fallback?: LazyArg<A[number]>): transform<S, SchemaClass<A[number]>>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6571)
-
-Since v3.10.0
 Schema-JsonNumber.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -95353,21 +95372,57 @@ declare class TimeZoneOffsetFromSelf
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6948)
 
 Since v3.10.0
-Schema-Trim.md
+Schema-head.md
 Package: `effect`<br />
 Module: `Schema`<br />
 
-## Schema.Trim
+## Schema.head
 
-This schema allows removing whitespaces from the beginning and end of a string.
+Get the first element of a `ReadonlyArray`, or `None` if the array is empty.
 
 **Signature**
 
 ```ts
-declare class Trim
+declare const head: <S extends Schema.Any, A extends ReadonlyArray<unknown>>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, OptionFromSelf<SchemaClass<A[number]>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4762)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6525)
+
+Since v3.10.0
+Schema-headNonEmpty.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.headNonEmpty
+
+Get the first element of a `NonEmptyReadonlyArray`.
+
+**Signature**
+
+```ts
+declare const headNonEmpty: <S extends Schema.Any, A extends array_.NonEmptyReadonlyArray<unknown>>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, SchemaClass<A[number]>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6549)
+
+Since v3.12.0
+Schema-headOrElse.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.headOrElse
+
+Retrieves the first element of a `ReadonlyArray`.
+
+If the array is empty, it returns the `fallback` argument if provided; otherwise, it fails.
+
+**Signature**
+
+```ts
+declare const headOrElse: { <S extends Schema.Any, A extends ReadonlyArray<unknown>>(fallback?: LazyArg<A[number]>): (self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, SchemaClass<A[number]>>; <S extends Schema.Any, A extends ReadonlyArray<unknown>>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>, fallback?: LazyArg<A[number]>): transform<S, SchemaClass<A[number]>>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6571)
 
 Since v3.10.0
 Schema-int.md
@@ -95889,44 +95944,21 @@ declare const transformOrFail: { <To extends Schema.Any, From extends Schema.Any
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3829)
 
 Since v3.10.0
-Schema-trimmed.md
+Schema-Trim.md
 Package: `effect`<br />
 Module: `Schema`<br />
 
-## Schema.trimmed
+## Schema.Trim
 
-Verifies that a string contains no leading or trailing whitespaces.
-
-Note. This combinator does not make any transformations, it only validates.
-If what you were looking for was a combinator to trim strings, then check out the `trim` combinator.
+This schema allows removing whitespaces from the beginning and end of a string.
 
 **Signature**
 
 ```ts
-declare const trimmed: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
+declare class Trim
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4258)
-
-Since v3.10.0
-Schema-typeSchema.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.typeSchema
-
-The `typeSchema` function allows you to extract the `Type` portion of a
-schema, creating a new schema that conforms to the properties defined in the
-original schema without considering the initial encoding or transformation
-processes.
-
-**Signature**
-
-```ts
-declare const typeSchema: <A, I, R>(schema: Schema<A, I, R>) => SchemaClass<A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L413)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4762)
 
 Since v3.10.0
 Schema-ULID.md
@@ -96149,6 +96181,46 @@ export interface WithResult<Success, SuccessEncoded, Failure, FailureEncoded, Re
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10236)
+
+Since v3.10.0
+Schema-trimmed.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.trimmed
+
+Verifies that a string contains no leading or trailing whitespaces.
+
+Note. This combinator does not make any transformations, it only validates.
+If what you were looking for was a combinator to trim strings, then check out the `trim` combinator.
+
+**Signature**
+
+```ts
+declare const trimmed: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4258)
+
+Since v3.10.0
+Schema-typeSchema.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.typeSchema
+
+The `typeSchema` function allows you to extract the `Type` portion of a
+schema, creating a new schema that conforms to the properties defined in the
+original schema without considering the initial encoding or transformation
+processes.
+
+**Signature**
+
+```ts
+declare const typeSchema: <A, I, R>(schema: Schema<A, I, R>) => SchemaClass<A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L413)
 
 Since v3.10.0
 Schema-uncapitalized.md
@@ -96777,34 +96849,6 @@ declare const makeWith: <Key, Value, Error = never, Environment = never>(options
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScopedCache.ts#L135)
 
 Since v2.0.0
-ScopedRef-ScopedRef.md
-Package: `effect`<br />
-Module: `ScopedRef`<br />
-
-## ScopedRef.ScopedRef
-
-A `ScopedRef` is a reference whose value is associated with resources,
-which must be released properly. You can both get the current value of any
-`ScopedRef`, as well as set it to a new value (which may require new
-resources). The reference itself takes care of properly releasing resources
-for the old value whenever a new value is obtained.
-
-**Signature**
-
-```ts
-export interface ScopedRef<in out A> extends Effect.Effect<A>, ScopedRef.Variance<A>, Pipeable {
-  /** @internal */
-  readonly ref: Synchronized.SynchronizedRef<readonly [Scope.Scope.Closeable, A]>
-
-  readonly [Unify.typeSymbol]?: unknown
-  readonly [Unify.unifySymbol]?: ScopedRefUnify<this>
-  readonly [Unify.ignoreSymbol]?: ScopedRefUnifyIgnore
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScopedRef.ts#L35)
-
-Since v2.0.0
 ScopedRef-fromAcquire.md
 Package: `effect`<br />
 Module: `ScopedRef`<br />
@@ -96856,6 +96900,34 @@ declare const make: <A>(evaluate: LazyArg<A>) => Effect.Effect<ScopedRef<A>, nev
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScopedRef.ts#L101)
+
+Since v2.0.0
+ScopedRef-ScopedRef.md
+Package: `effect`<br />
+Module: `ScopedRef`<br />
+
+## ScopedRef.ScopedRef
+
+A `ScopedRef` is a reference whose value is associated with resources,
+which must be released properly. You can both get the current value of any
+`ScopedRef`, as well as set it to a new value (which may require new
+resources). The reference itself takes care of properly releasing resources
+for the old value whenever a new value is obtained.
+
+**Signature**
+
+```ts
+export interface ScopedRef<in out A> extends Effect.Effect<A>, ScopedRef.Variance<A>, Pipeable {
+  /** @internal */
+  readonly ref: Synchronized.SynchronizedRef<readonly [Scope.Scope.Closeable, A]>
+
+  readonly [Unify.typeSymbol]?: unknown
+  readonly [Unify.unifySymbol]?: ScopedRefUnify<this>
+  readonly [Unify.ignoreSymbol]?: ScopedRefUnifyIgnore
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScopedRef.ts#L35)
 
 Since v2.0.0
 ScopedRef-set.md
@@ -98708,6 +98780,70 @@ declare const last: <In>() => Sink<Option.Option<In>, In, In>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L1064)
 
 Since v2.0.0
+STM-acquireUseRelease.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.acquireUseRelease
+
+Treats the specified `acquire` transaction as the acquisition of a
+resource. The `acquire` transaction will be executed interruptibly. If it
+is a success and is committed the specified `release` workflow will be
+executed uninterruptibly as soon as the `use` workflow completes execution.
+
+**Signature**
+
+```ts
+declare const acquireUseRelease: { <A, A2, E2, R2, A3, E3, R3>(use: (resource: A) => STM<A2, E2, R2>, release: (resource: A) => STM<A3, E3, R3>): <E, R>(acquire: STM<A, E, R>) => Effect.Effect<A2, E2 | E3 | E, R2 | R3 | R>; <A, E, R, A2, E2, R2, A3, E3, R3>(acquire: STM<A, E, R>, use: (resource: A) => STM<A2, E2, R2>, release: (resource: A) => STM<A3, E3, R3>): Effect.Effect<A2, E | E2 | E3, R | R2 | R3>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L173)
+
+Since v2.0.0
+STM-all.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.all
+
+Runs all the provided transactional effects in sequence respecting the
+structure provided in input.
+
+Supports multiple arguments, a single argument tuple / array or record /
+struct.
+
+**Signature**
+
+```ts
+declare const all: All.Signature
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L256)
+
+Since v2.0.0
+Sink-Sink.md
+Package: `effect`<br />
+Module: `Sink`<br />
+
+## Sink.Sink
+
+A `Sink<A, In, L, E, R>` is used to consume elements produced by a `Stream`.
+You can think of a sink as a function that will consume a variable amount of
+`In` elements (could be 0, 1, or many), might fail with an error of type `E`,
+and will eventually yield a value of type `A` together with a remainder of
+type `L` (i.e. any leftovers).
+
+**Signature**
+
+```ts
+export interface Sink<out A, in In = unknown, out L = never, out E = never, out R = never>
+  extends Sink.Variance<A, In, L, E, R>, Pipeable
+{}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L48)
+
+Since v2.0.0
 Sink-leftover.md
 Package: `effect`<br />
 Module: `Sink`<br />
@@ -98758,121 +98894,6 @@ declare const mapEffect: { <A, A2, E2, R2>(f: (a: A) => Effect.Effect<A2, E2, R2
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L1092)
-
-Since v2.0.0
-STM-acquireUseRelease.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.acquireUseRelease
-
-Treats the specified `acquire` transaction as the acquisition of a
-resource. The `acquire` transaction will be executed interruptibly. If it
-is a success and is committed the specified `release` workflow will be
-executed uninterruptibly as soon as the `use` workflow completes execution.
-
-**Signature**
-
-```ts
-declare const acquireUseRelease: { <A, A2, E2, R2, A3, E3, R3>(use: (resource: A) => STM<A2, E2, R2>, release: (resource: A) => STM<A3, E3, R3>): <E, R>(acquire: STM<A, E, R>) => Effect.Effect<A2, E2 | E3 | E, R2 | R3 | R>; <A, E, R, A2, E2, R2, A3, E3, R3>(acquire: STM<A, E, R>, use: (resource: A) => STM<A2, E2, R2>, release: (resource: A) => STM<A3, E3, R3>): Effect.Effect<A2, E | E2 | E3, R | R2 | R3>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L173)
-
-Since v2.0.0
-STM-all.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.all
-
-Runs all the provided transactional effects in sequence respecting the
-structure provided in input.
-
-Supports multiple arguments, a single argument tuple / array or record /
-struct.
-
-**Signature**
-
-```ts
-declare const all: All.Signature
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L256)
-
-Since v2.0.0
-STM-as.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.as
-
-Maps the success value of this effect to the specified constant value.
-
-**Signature**
-
-```ts
-declare const as: { <A2>(value: A2): <A, E, R>(self: STM<A, E, R>) => STM<A2, E, R>; <A, E, R, A2>(self: STM<A, E, R>, value: A2): STM<A2, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L264)
-
-Since v2.0.0
-STM-asSome.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.asSome
-
-Maps the success value of this effect to an optional value.
-
-**Signature**
-
-```ts
-declare const asSome: <A, E, R>(self: STM<A, E, R>) => STM<Option.Option<A>, E, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L275)
-
-Since v2.0.0
-STM-asSomeError.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.asSomeError
-
-Maps the error value of this effect to an optional value.
-
-**Signature**
-
-```ts
-declare const asSomeError: <A, E, R>(self: STM<A, E, R>) => STM<A, Option.Option<E>, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L283)
-
-Since v2.0.0
-Sink-Sink.md
-Package: `effect`<br />
-Module: `Sink`<br />
-
-## Sink.Sink
-
-A `Sink<A, In, L, E, R>` is used to consume elements produced by a `Stream`.
-You can think of a sink as a function that will consume a variable amount of
-`In` elements (could be 0, 1, or many), might fail with an error of type `E`,
-and will eventually yield a value of type `A` together with a remainder of
-type `L` (i.e. any leftovers).
-
-**Signature**
-
-```ts
-export interface Sink<out A, in In = unknown, out L = never, out E = never, out R = never>
-  extends Sink.Variance<A, In, L, E, R>, Pipeable
-{}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L48)
 
 Since v2.0.0
 Sink-mapError.md
@@ -99646,6 +99667,57 @@ declare const makeParser: (onParse: (event: AnyEvent) => void) => Parser
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/Sse.ts#L93)
 
 Since v1.0.0
+STM-as.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.as
+
+Maps the success value of this effect to the specified constant value.
+
+**Signature**
+
+```ts
+declare const as: { <A2>(value: A2): <A, E, R>(self: STM<A, E, R>) => STM<A2, E, R>; <A, E, R, A2>(self: STM<A, E, R>, value: A2): STM<A2, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L264)
+
+Since v2.0.0
+STM-asSome.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.asSome
+
+Maps the success value of this effect to an optional value.
+
+**Signature**
+
+```ts
+declare const asSome: <A, E, R>(self: STM<A, E, R>) => STM<Option.Option<A>, E, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L275)
+
+Since v2.0.0
+STM-asSomeError.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.asSomeError
+
+Maps the error value of this effect to an optional value.
+
+**Signature**
+
+```ts
+declare const asSomeError: <A, E, R>(self: STM<A, E, R>) => STM<A, Option.Option<E>, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L283)
+
+Since v2.0.0
 STM-asVoid.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -100474,6 +100546,61 @@ declare const isSTM: (u: unknown) => u is STM<unknown, unknown, unknown>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L162)
 
 Since v2.0.0
+STM-STM.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.STM
+
+`STM<A, E, R>` represents an effect that can be performed transactionally,
+ resulting in a failure `E` or a value `A` that may require an environment
+ `R` to execute.
+
+Software Transactional Memory is a technique which allows composition of
+arbitrary atomic operations.  It is the software analog of transactions in
+database systems.
+
+The API is lifted directly from the Haskell package Control.Concurrent.STM
+although the implementation does not resemble the Haskell one at all.
+
+See http://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM.html
+
+STM in Haskell was introduced in:
+
+Composable memory transactions, by Tim Harris, Simon Marlow, Simon Peyton
+Jones, and Maurice Herlihy, in ACM Conference on Principles and Practice of
+Parallel Programming 2005.
+
+See https://www.microsoft.com/en-us/research/publication/composable-memory-transactions/
+
+See also:
+ Lock Free Data Structures using STMs in Haskell, by Anthony Discolo, Tim
+ Harris, Simon Marlow, Simon Peyton Jones, Satnam Singh) FLOPS 2006: Eighth
+ International Symposium on Functional and Logic Programming, Fuji Susono,
+ JAPAN, April 2006
+
+ https://www.microsoft.com/en-us/research/publication/lock-free-data-structures-using-stms-in-haskell/
+
+The implemtation is based on the ZIO STM module, while JS environments have
+no race conditions from multiple threads STM provides greater benefits for
+synchronization of Fibers and transactional data-types can be quite useful.
+
+**Signature**
+
+```ts
+export interface STM<out A, out E = never, out R = never>
+  extends Effect.Effect<A, E, R>, STM.Variance<A, E, R>, Pipeable
+{
+  [Unify.typeSymbol]?: unknown
+  [Unify.unifySymbol]?: STMUnify<this>
+  [Unify.ignoreSymbol]?: STMUnifyIgnore
+  [Symbol.iterator](): Effect.EffectGenerator<STM<A, E, R>>
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L70)
+
+Since v2.0.0
 STM-isSuccess.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -100547,61 +100674,6 @@ declare const loop: { <Z, A, E, R>(initial: Z, options: { readonly while: (z: Z)
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1209)
-
-Since v2.0.0
-STM-STM.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.STM
-
-`STM<A, E, R>` represents an effect that can be performed transactionally,
- resulting in a failure `E` or a value `A` that may require an environment
- `R` to execute.
-
-Software Transactional Memory is a technique which allows composition of
-arbitrary atomic operations.  It is the software analog of transactions in
-database systems.
-
-The API is lifted directly from the Haskell package Control.Concurrent.STM
-although the implementation does not resemble the Haskell one at all.
-
-See http://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM.html
-
-STM in Haskell was introduced in:
-
-Composable memory transactions, by Tim Harris, Simon Marlow, Simon Peyton
-Jones, and Maurice Herlihy, in ACM Conference on Principles and Practice of
-Parallel Programming 2005.
-
-See https://www.microsoft.com/en-us/research/publication/composable-memory-transactions/
-
-See also:
- Lock Free Data Structures using STMs in Haskell, by Anthony Discolo, Tim
- Harris, Simon Marlow, Simon Peyton Jones, Satnam Singh) FLOPS 2006: Eighth
- International Symposium on Functional and Logic Programming, Fuji Susono,
- JAPAN, April 2006
-
- https://www.microsoft.com/en-us/research/publication/lock-free-data-structures-using-stms-in-haskell/
-
-The implemtation is based on the ZIO STM module, while JS environments have
-no race conditions from multiple threads STM provides greater benefits for
-synchronization of Fibers and transactional data-types can be quite useful.
-
-**Signature**
-
-```ts
-export interface STM<out A, out E = never, out R = never>
-  extends Effect.Effect<A, E, R>, STM.Variance<A, E, R>, Pipeable
-{
-  [Unify.typeSymbol]?: unknown
-  [Unify.unifySymbol]?: STMUnify<this>
-  [Unify.ignoreSymbol]?: STMUnifyIgnore
-  [Symbol.iterator](): Effect.EffectGenerator<STM<A, E, R>>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L70)
 
 Since v2.0.0
 STM-map.md
@@ -102649,6 +102721,70 @@ declare const combine: { <A2, E2, R2, S, R3, E, A, R4, R5, A3>(that: Stream<A2, 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L990)
 
 Since v2.0.0
+Stream-DefaultChunkSize.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.DefaultChunkSize
+
+The default chunk size used by the various combinators and constructors of
+`Stream`.
+
+**Signature**
+
+```ts
+declare const DefaultChunkSize: number
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L173)
+
+Since v2.0.0
+Stream-Do.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.Do
+
+The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
+
+Here's how the do simulation works:
+
+1. Start the do simulation using the `Do` value
+2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Stream` values
+3. You can accumulate multiple `bind` statements to define multiple variables within the scope
+4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Chunk, Effect, pipe, Stream } from "effect"
+
+const result = pipe(
+  Stream.Do,
+  Stream.bind("x", () => Stream.succeed(2)),
+  Stream.bind("y", () => Stream.succeed(3)),
+  Stream.let("sum", ({ x, y }) => x + y)
+)
+assert.deepStrictEqual(Effect.runSync(Stream.runCollect(result)), Chunk.of({ x: 2, y: 3, sum: 5 }))
+```
+
+**See**
+
+- `bindTo`
+- `bind`
+- `bindEffect`
+- `let`
+
+**Signature**
+
+```ts
+declare const Do: Stream<{}, never, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L6246)
+
+Since v2.0.0
 Stream-combineChunks.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -102739,70 +102875,6 @@ declare const concatAll: <A, E, R>(streams: Chunk.Chunk<Stream<A, E, R>>) => Str
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L1096)
-
-Since v2.0.0
-Stream-DefaultChunkSize.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.DefaultChunkSize
-
-The default chunk size used by the various combinators and constructors of
-`Stream`.
-
-**Signature**
-
-```ts
-declare const DefaultChunkSize: number
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L173)
-
-Since v2.0.0
-Stream-Do.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.Do
-
-The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
-
-Here's how the do simulation works:
-
-1. Start the do simulation using the `Do` value
-2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Stream` values
-3. You can accumulate multiple `bind` statements to define multiple variables within the scope
-4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Chunk, Effect, pipe, Stream } from "effect"
-
-const result = pipe(
-  Stream.Do,
-  Stream.bind("x", () => Stream.succeed(2)),
-  Stream.bind("y", () => Stream.succeed(3)),
-  Stream.let("sum", ({ x, y }) => x + y)
-)
-assert.deepStrictEqual(Effect.runSync(Stream.runCollect(result)), Chunk.of({ x: 2, y: 3, sum: 5 }))
-```
-
-**See**
-
-- `bindTo`
-- `bind`
-- `bindEffect`
-- `let`
-
-**Signature**
-
-```ts
-declare const Do: Stream<{}, never, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L6246)
 
 Since v2.0.0
 Stream-context.md
@@ -107236,6 +107308,41 @@ declare const scopedWith: <A, E, R>(f: (scope: Scope.Scope) => Effect.Effect<A, 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4641)
 
 Since v3.11.0
+Stream-Stream.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.Stream
+
+A `Stream<A, E, R>` is a description of a program that, when evaluated, may
+emit zero or more values of type `A`, may fail with errors of type `E`, and
+uses an context of type `R`. One way to think of `Stream` is as a
+`Effect` program that could emit multiple values.
+
+`Stream` is a purely functional *pull* based stream. Pull based streams offer
+inherent laziness and backpressure, relieving users of the need to manage
+buffers between operators. As an optimization, `Stream` does not emit
+single values, but rather an array of values. This allows the cost of effect
+evaluation to be amortized.
+
+`Stream` forms a monad on its `A` type parameter, and has error management
+facilities for its `E` type parameter, modeled similarly to `Effect` (with
+some adjustments for the multiple-valued nature of `Stream`). These aspects
+allow for rich and expressive composition of streams.
+
+**Signature**
+
+```ts
+export interface Stream<out A, out E = never, out R = never> extends Stream.Variance<A, E, R>, Pipeable {
+  [Unify.typeSymbol]?: unknown
+  [Unify.unifySymbol]?: StreamUnify<this>
+  [Unify.ignoreSymbol]?: StreamUnifyIgnore
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L71)
+
+Since v2.0.0
 Stream-share.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -107298,41 +107405,6 @@ declare const slidingSize: { (chunkSize: number, stepSize: number): <A, E, R>(se
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4672)
-
-Since v2.0.0
-Stream-Stream.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.Stream
-
-A `Stream<A, E, R>` is a description of a program that, when evaluated, may
-emit zero or more values of type `A`, may fail with errors of type `E`, and
-uses an context of type `R`. One way to think of `Stream` is as a
-`Effect` program that could emit multiple values.
-
-`Stream` is a purely functional *pull* based stream. Pull based streams offer
-inherent laziness and backpressure, relieving users of the need to manage
-buffers between operators. As an optimization, `Stream` does not emit
-single values, but rather an array of values. This allows the cost of effect
-evaluation to be amortized.
-
-`Stream` forms a monad on its `A` type parameter, and has error management
-facilities for its `E` type parameter, modeled similarly to `Effect` (with
-some adjustments for the multiple-valued nature of `Stream`). These aspects
-allow for rich and expressive composition of streams.
-
-**Signature**
-
-```ts
-export interface Stream<out A, out E = never, out R = never> extends Stream.Variance<A, E, R>, Pipeable {
-  [Unify.typeSymbol]?: unknown
-  [Unify.unifySymbol]?: StreamUnify<this>
-  [Unify.ignoreSymbol]?: StreamUnifyIgnore
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L71)
 
 Since v2.0.0
 Stream-some.md
@@ -110240,58 +110312,6 @@ declare const findLastIndex: { <A>(value: A): (self: TArray<A>) => STM.STM<Optio
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L261)
 
 Since v2.0.0
-TArray-findLastIndexFrom.md
-Package: `effect`<br />
-Module: `TArray`<br />
-
-## TArray.findLastIndexFrom
-
-Get the last index of a specific value in the array bounded above by a
-specific index.
-
-**Signature**
-
-```ts
-declare const findLastIndexFrom: { <A>(value: A, end: number): (self: TArray<A>) => STM.STM<Option.Option<number>>; <A>(self: TArray<A>, value: A, end: number): STM.STM<Option.Option<number>>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L273)
-
-Since v2.0.0
-TArray-findLastSTM.md
-Package: `effect`<br />
-Module: `TArray`<br />
-
-## TArray.findLastSTM
-
-Find the last element in the array matching a transactional predicate.
-
-**Signature**
-
-```ts
-declare const findLastSTM: { <A, R, E>(predicate: (value: A) => STM.STM<boolean, E, R>): (self: TArray<A>) => STM.STM<Option.Option<A>, E, R>; <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<boolean, E, R>): STM.STM<Option.Option<A>, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L284)
-
-Since v2.0.0
-TArray-forEach.md
-Package: `effect`<br />
-Module: `TArray`<br />
-
-## TArray.forEach
-
-Atomically performs transactional effect for each item in array.
-
-**Signature**
-
-```ts
-declare const forEach: { <A, R, E>(f: (value: A) => STM.STM<void, E, R>): (self: TArray<A>) => STM.STM<void, E, R>; <A, R, E>(self: TArray<A>, f: (value: A) => STM.STM<void, E, R>): STM.STM<void, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L295)
-
-Since v2.0.0
 Take-Take.md
 Package: `effect`<br />
 Module: `Take`<br />
@@ -110643,6 +110663,58 @@ declare const tap: { <A, X, E2, R>(f: (chunk: Chunk.Chunk<A>) => Effect.Effect<X
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Take.ts#L250)
+
+Since v2.0.0
+TArray-findLastIndexFrom.md
+Package: `effect`<br />
+Module: `TArray`<br />
+
+## TArray.findLastIndexFrom
+
+Get the last index of a specific value in the array bounded above by a
+specific index.
+
+**Signature**
+
+```ts
+declare const findLastIndexFrom: { <A>(value: A, end: number): (self: TArray<A>) => STM.STM<Option.Option<number>>; <A>(self: TArray<A>, value: A, end: number): STM.STM<Option.Option<number>>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L273)
+
+Since v2.0.0
+TArray-findLastSTM.md
+Package: `effect`<br />
+Module: `TArray`<br />
+
+## TArray.findLastSTM
+
+Find the last element in the array matching a transactional predicate.
+
+**Signature**
+
+```ts
+declare const findLastSTM: { <A, R, E>(predicate: (value: A) => STM.STM<boolean, E, R>): (self: TArray<A>) => STM.STM<Option.Option<A>, E, R>; <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<boolean, E, R>): STM.STM<Option.Option<A>, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L284)
+
+Since v2.0.0
+TArray-forEach.md
+Package: `effect`<br />
+Module: `TArray`<br />
+
+## TArray.forEach
+
+Atomically performs transactional effect for each item in array.
+
+**Signature**
+
+```ts
+declare const forEach: { <A, R, E>(f: (value: A) => STM.STM<void, E, R>): (self: TArray<A>) => STM.STM<void, E, R>; <A, R, E>(self: TArray<A>, f: (value: A) => STM.STM<void, E, R>): STM.STM<void, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L295)
 
 Since v2.0.0
 TArray-fromIterable.md
@@ -111787,26 +111859,6 @@ export interface TestAnnotations {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestAnnotations.ts#L40)
 
 Since v2.0.0
-TestClock-Data.md
-Package: `effect`<br />
-Module: `TestClock`<br />
-
-## TestClock.Data
-
-`Data` represents the state of the `TestClock`, including the clock time.
-
-**Signature**
-
-```ts
-export interface Data {
-  readonly instant: number
-  readonly sleeps: Chunk.Chunk<readonly [number, Deferred.Deferred<void>]>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L89)
-
-Since v2.0.1
 TestClock-adjust.md
 Package: `effect`<br />
 Module: `TestClock`<br />
@@ -111824,43 +111876,6 @@ declare const adjust: (durationInput: Duration.DurationInput) => Effect.Effect<v
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L470)
-
-Since v2.0.0
-TestClock-currentTimeMillis.md
-Package: `effect`<br />
-Module: `TestClock`<br />
-
-## TestClock.currentTimeMillis
-
-Accesses the current time of a `TestClock` instance in the context in
-milliseconds.
-
-**Signature**
-
-```ts
-declare const currentTimeMillis: Effect.Effect<number, never, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L556)
-
-Since v2.0.0
-TestClock-save.md
-Package: `effect`<br />
-Module: `TestClock`<br />
-
-## TestClock.save
-
-Accesses a `TestClock` instance in the context and saves the clock
-state in an effect which, when run, will restore the `TestClock` to the
-saved state.
-
-**Signature**
-
-```ts
-declare const save: () => Effect.Effect<Effect.Effect<void>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L493)
 
 Since v2.0.0
 TMap-empty.md
@@ -112038,57 +112053,26 @@ declare const has: { <K>(key: K): <V>(self: TMap<K, V>) => STM.STM<boolean>; <K,
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L174)
 
 Since v2.0.0
-TMap-isEmpty.md
+TestClock-Data.md
 Package: `effect`<br />
-Module: `TMap`<br />
+Module: `TestClock`<br />
 
-## TMap.isEmpty
+## TestClock.Data
 
-Tests if the map is empty or not.
+`Data` represents the state of the `TestClock`, including the clock time.
 
 **Signature**
 
 ```ts
-declare const isEmpty: <K, V>(self: TMap<K, V>) => STM.STM<boolean>
+export interface Data {
+  readonly instant: number
+  readonly sleeps: Chunk.Chunk<readonly [number, Deferred.Deferred<void>]>
+}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L185)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L89)
 
-Since v2.0.0
-TMap-keys.md
-Package: `effect`<br />
-Module: `TMap`<br />
-
-## TMap.keys
-
-Collects all keys stored in map.
-
-**Signature**
-
-```ts
-declare const keys: <K, V>(self: TMap<K, V>) => STM.STM<Array<K>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L193)
-
-Since v2.0.0
-TMap-make.md
-Package: `effect`<br />
-Module: `TMap`<br />
-
-## TMap.make
-
-Makes a new `TMap` that is initialized with specified values.
-
-**Signature**
-
-```ts
-declare const make: <K, V>(...entries: Array<readonly [K, V]>) => STM.STM<TMap<K, V>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L201)
-
-Since v2.0.0
+Since v2.0.1
 TestClock-TestClock.md
 Package: `effect`<br />
 Module: `TestClock`<br />
@@ -112143,6 +112127,43 @@ export interface TestClock extends Clock.Clock {
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L76)
+
+Since v2.0.0
+TestClock-currentTimeMillis.md
+Package: `effect`<br />
+Module: `TestClock`<br />
+
+## TestClock.currentTimeMillis
+
+Accesses the current time of a `TestClock` instance in the context in
+milliseconds.
+
+**Signature**
+
+```ts
+declare const currentTimeMillis: Effect.Effect<number, never, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L556)
+
+Since v2.0.0
+TestClock-save.md
+Package: `effect`<br />
+Module: `TestClock`<br />
+
+## TestClock.save
+
+Accesses a `TestClock` instance in the context and saves the clock
+state in an effect which, when run, will restore the `TestClock` to the
+saved state.
+
+**Signature**
+
+```ts
+declare const save: () => Effect.Effect<Effect.Effect<void>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L493)
 
 Since v2.0.0
 TestClock-setTime.md
@@ -112823,6 +112844,57 @@ export interface TMap<in out K, in out V> extends TMap.Variance<K, V> {}
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L33)
 
 Since v2.0.0
+TMap-isEmpty.md
+Package: `effect`<br />
+Module: `TMap`<br />
+
+## TMap.isEmpty
+
+Tests if the map is empty or not.
+
+**Signature**
+
+```ts
+declare const isEmpty: <K, V>(self: TMap<K, V>) => STM.STM<boolean>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L185)
+
+Since v2.0.0
+TMap-keys.md
+Package: `effect`<br />
+Module: `TMap`<br />
+
+## TMap.keys
+
+Collects all keys stored in map.
+
+**Signature**
+
+```ts
+declare const keys: <K, V>(self: TMap<K, V>) => STM.STM<Array<K>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L193)
+
+Since v2.0.0
+TMap-make.md
+Package: `effect`<br />
+Module: `TMap`<br />
+
+## TMap.make
+
+Makes a new `TMap` that is initialized with specified values.
+
+**Signature**
+
+```ts
+declare const make: <K, V>(...entries: Array<readonly [K, V]>) => STM.STM<TMap<K, V>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L201)
+
+Since v2.0.0
 TMap-merge.md
 Package: `effect`<br />
 Module: `TMap`<br />
@@ -113395,13 +113467,12 @@ export interface Any extends Pipeable {
   readonly parametersSchema: AnyStructSchema
   readonly successSchema: Schema.Schema.Any
   readonly failureSchema: Schema.Schema.All
-  readonly resultSchema: Schema.Either<any, any>
   readonly failureMode: FailureMode
   readonly annotations: Context.Context<never>
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L502)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L489)
 
 Since v1.0.0
 Tool-AnyProviderDefined.md
@@ -113426,7 +113497,7 @@ export interface AnyProviderDefined extends Any {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L523)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L509)
 
 Since v1.0.0
 Tool-Destructive.md
@@ -113452,7 +113523,7 @@ const safeTool = Tool.make("search_database")
 declare class Destructive
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1417)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1377)
 
 Since v1.0.0
 Tool-Failure.md
@@ -113474,7 +113545,7 @@ type Failure<T> = T extends Tool<
   : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L676)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L662)
 
 Since v1.0.0
 Tool-FailureEncoded.md
@@ -113497,7 +113568,7 @@ type FailureEncoded<T> = T extends Tool<
   : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L690)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L676)
 
 Since v1.0.0
 Tool-FailureMode.md
@@ -113521,7 +113592,7 @@ will be captured and returned as part of the tool call result.
 type FailureMode = "error" | "return"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L365)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L352)
 
 Since v1.0.0
 Tool-FromTaggedRequest.md
@@ -113548,7 +113619,7 @@ export interface FromTaggedRequest<S extends AnyTaggedRequestSchema> extends
 {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L564)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L550)
 
 Since v1.0.0
 Tool-Handler.md
@@ -113570,7 +113641,7 @@ export interface Handler<Name extends string> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L748)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L734)
 
 Since v1.0.0
 Tool-HandlerError.md
@@ -113589,12 +113660,12 @@ type HandlerError<T> = T extends Tool<
   infer _Name,
   infer _Config,
   infer _Requirements
-> ? _Config["failureMode"] extends "error" ? Schema.Schema.Type<_Config["failure"]>
+> ? _Config["failureMode"] extends "error" ? _Config["failure"]["Type"]
   : never
   : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L781)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L771)
 
 Since v1.0.0
 Tool-HandlerResult.md
@@ -113610,6 +113681,10 @@ Represents the result of calling the handler for a particular `Tool`.
 ```ts
 export interface HandlerResult<Tool extends Any> {
   /**
+   * Whether the result of executing the tool call handler was an error or not.
+   */
+  readonly isFailure: boolean
+  /**
    * The result of executing the handler for a particular tool.
    */
   readonly result: Result<Tool>
@@ -113618,11 +113693,11 @@ export interface HandlerResult<Tool extends Any> {
    * tool as a JSON-serializable value. The encoded result can be incorporated
    * into subsequent requests to the large language model.
    */
-  readonly encodedResult: Schema.EitherEncoded<unknown, unknown>
+  readonly encodedResult: unknown
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L761)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L747)
 
 Since v1.0.0
 Tool-HandlersFor.md
@@ -113643,7 +113718,7 @@ type HandlersFor<Tools> = {
 }[keyof Tools]
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L796)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L786)
 
 Since v1.0.0
 Tool-Idempotent.md
@@ -113669,7 +113744,7 @@ const idempotentTool = Tool.make("get_current_time")
 declare class Idempotent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1438)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1398)
 
 Since v1.0.0
 Tool-Name.md
@@ -113691,77 +113766,7 @@ type Name<T> = T extends Tool<
   : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L582)
-
-Since v1.0.0
-Tool-OpenWorld.md
-Package: `@effect/ai`<br />
-Module: `Tool`<br />
-
-## Tool.OpenWorld
-
-Annotation indicating whether a tool can handle arbitrary external data.
-
-**Example**
-
-```ts
-import { Tool } from "@effect/ai"
-
-const restrictedTool = Tool.make("internal_operation")
-  .annotate(Tool.OpenWorld, false)
-```
-
-**Signature**
-
-```ts
-declare class OpenWorld
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1459)
-
-Since v1.0.0
-Tool-Parameters.md
-Package: `@effect/ai`<br />
-Module: `Tool`<br />
-
-## Tool.Parameters
-
-A utility type to extract the type of the tool call parameters.
-
-**Signature**
-
-```ts
-type Parameters<T> = T extends Tool<
-  infer _Name,
-  infer _Config,
-  infer _Requirements
-> ? Schema.Struct.Type<_Config["parameters"]["fields"]>
-  : never
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L595)
-
-Since v1.0.0
-Tool-ParametersEncoded.md
-Package: `@effect/ai`<br />
-Module: `Tool`<br />
-
-## Tool.ParametersEncoded
-
-A utility type to extract the encoded type of the tool call parameters.
-
-**Signature**
-
-```ts
-type ParametersEncoded<T> = T extends Tool<
-  infer _Name,
-  infer _Config,
-  infer _Requirements
-> ? Schema.Schema.Encoded<_Config["parameters"]>
-  : never
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L608)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L568)
 
 Since v1.0.0
 Tool-fromTaggedRequest.md
@@ -113808,7 +113813,7 @@ const getUserTool = Tool.fromTaggedRequest(GetUser)
 declare const fromTaggedRequest: <S extends AnyTaggedRequestSchema>(schema: S) => FromTaggedRequest<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1205)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1169)
 
 Since v1.0.0
 Tool-getDescription.md
@@ -113841,7 +113846,7 @@ console.log(description) // "This is an example tool"
 declare const getDescription: <Name extends string, Config extends { readonly parameters: AnyStructSchema; readonly success: Schema.Schema.Any; readonly failure: Schema.Schema.All; readonly failureMode: FailureMode; }>(tool: Tool<Name, Config>) => string | undefined
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1249)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1209)
 
 Since v1.0.0
 Tool-getJsonSchema.md
@@ -113887,7 +113892,7 @@ console.log(jsonSchema)
 declare const getJsonSchema: <Name extends string, Config extends { readonly parameters: AnyStructSchema; readonly success: Schema.Schema.Any; readonly failure: Schema.Schema.All; readonly failureMode: FailureMode; }>(tool: Tool<Name, Config>) => JsonSchema.JsonSchema7
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1321)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1281)
 
 Since v1.0.0
 Tool-isProviderDefined.md
@@ -113940,7 +113945,7 @@ console.log(Tool.isUserDefined(ProviderDefinedTool))  // true
 declare const isProviderDefined: (u: unknown) => u is ProviderDefined<string, any>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L488)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L475)
 
 Since v1.0.0
 Tool-isUserDefined.md
@@ -113993,7 +113998,7 @@ console.log(Tool.isUserDefined(ProviderDefinedTool))  // false
 declare const isUserDefined: (u: unknown) => u is Tool<string, any, any>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L441)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L428)
 
 Since v1.0.0
 Tool-make.md
@@ -114027,30 +114032,9 @@ const GetCurrentTime = Tool.make("GetCurrentTime", {
 declare const make: <const Name extends string, Parameters extends Schema.Struct.Fields = {}, Success extends Schema.Schema.Any = typeof Schema.Void, Failure extends Schema.Schema.All = typeof Schema.Never, Mode extends FailureMode | undefined = undefined, Dependencies extends Array<Context.Tag<any, any>> = []>(name: Name, options?: { readonly description?: string | undefined; readonly parameters?: Parameters | undefined; readonly success?: Success | undefined; readonly failure?: Failure | undefined; readonly failureMode?: Mode; readonly dependencies?: Dependencies | undefined; }) => Tool<Name, { readonly parameters: Schema.Struct<Parameters>; readonly success: Success; readonly failure: Failure; readonly failureMode: Mode extends undefined ? "error" : Mode; }, Context.Tag.Identifier<Dependencies[number]>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L968)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L942)
 
 Since v1.0.0
-TPriorityQueue-TPriorityQueue.md
-Package: `effect`<br />
-Module: `TPriorityQueue`<br />
-
-## TPriorityQueue.TPriorityQueue
-
-A `TPriorityQueue` contains values of type `A` that an `Order` is defined
-on. Unlike a `TQueue`, `take` returns the highest priority value (the value
-that is first in the specified ordering) as opposed to the first value
-offered to the queue. The ordering that elements with the same priority will
-be taken from the queue is not guaranteed.
-
-**Signature**
-
-```ts
-export interface TPriorityQueue<in out A> extends TPriorityQueue.Variance<A> {}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L36)
-
-Since v2.0.0
 TPriorityQueue-empty.md
 Package: `effect`<br />
 Module: `TPriorityQueue`<br />
@@ -114360,44 +114344,76 @@ declare const toChunk: <A>(self: TPriorityQueue<A>) => STM.STM<Chunk.Chunk<A>>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L215)
 
 Since v2.0.0
-TPubSub-awaitShutdown.md
-Package: `effect`<br />
-Module: `TPubSub`<br />
+Tool-OpenWorld.md
+Package: `@effect/ai`<br />
+Module: `Tool`<br />
 
-## TPubSub.awaitShutdown
+## Tool.OpenWorld
 
-Waits until the `TPubSub` is shutdown. The `STM` returned by this method will
-not resume until the queue has been shutdown. If the `TPubSub` is already
-shutdown, the `STM` will resume right away.
+Annotation indicating whether a tool can handle arbitrary external data.
+
+**Example**
+
+```ts
+import { Tool } from "@effect/ai"
+
+const restrictedTool = Tool.make("internal_operation")
+  .annotate(Tool.OpenWorld, false)
+```
 
 **Signature**
 
 ```ts
-declare const awaitShutdown: <A>(self: TPubSub<A>) => STM.STM<void>
+declare class OpenWorld
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L64)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1419)
 
-Since v2.0.0
-TPubSub-bounded.md
-Package: `effect`<br />
-Module: `TPubSub`<br />
+Since v1.0.0
+Tool-Parameters.md
+Package: `@effect/ai`<br />
+Module: `Tool`<br />
 
-## TPubSub.bounded
+## Tool.Parameters
 
-Creates a bounded `TPubSub` with the back pressure strategy. The `TPubSub` will retain
-messages until they have been taken by all subscribers, applying back
-pressure to publishers if the `TPubSub` is at capacity.
+A utility type to extract the type of the tool call parameters.
 
 **Signature**
 
 ```ts
-declare const bounded: <A>(requestedCapacity: number) => STM.STM<TPubSub<A>>
+type Parameters<T> = T extends Tool<
+  infer _Name,
+  infer _Config,
+  infer _Requirements
+> ? Schema.Struct.Type<_Config["parameters"]["fields"]>
+  : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L74)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L581)
 
-Since v2.0.0
+Since v1.0.0
+Tool-ParametersEncoded.md
+Package: `@effect/ai`<br />
+Module: `Tool`<br />
+
+## Tool.ParametersEncoded
+
+A utility type to extract the encoded type of the tool call parameters.
+
+**Signature**
+
+```ts
+type ParametersEncoded<T> = T extends Tool<
+  infer _Name,
+  infer _Config,
+  infer _Requirements
+> ? Schema.Schema.Encoded<_Config["parameters"]>
+  : never
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L594)
+
+Since v1.0.0
 Tool-ParametersSchema.md
 Package: `@effect/ai`<br />
 Module: `Tool`<br />
@@ -114418,7 +114434,7 @@ type ParametersSchema<T> = T extends Tool<
   : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L622)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L608)
 
 Since v1.0.0
 Tool-ProviderDefined.md
@@ -114511,17 +114527,10 @@ export interface ProviderDefined<
    * this tool into a `Layer`.
    */
   readonly requiresHandler: RequiresHandler
-
-  /**
-   * Decodes the result received after the provider-defined tool is called.
-   */
-  decodeResult(
-    args: unknown
-  ): Effect.Effect<Config["success"]["Type"], AiError.AiError>
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L293)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L287)
 
 Since v1.0.0
 Tool-ProviderDefinedTypeId.md
@@ -114564,7 +114573,7 @@ const readOnlyTool = Tool.make("get_user_info")
 declare class Readonly
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1396)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1356)
 
 Since v1.0.0
 Tool-Requirements.md
@@ -114590,7 +114599,7 @@ type Requirements<T> = T extends Tool<
   : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L731)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L717)
 
 Since v1.0.0
 Tool-RequiresHandler.md
@@ -114613,7 +114622,7 @@ type RequiresHandler<Tool> = Tool extends ProviderDefined<
   : true
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L808)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L798)
 
 Since v1.0.0
 Tool-Result.md
@@ -114632,11 +114641,11 @@ type Result<T> = T extends Tool<
   infer _Name,
   infer _Config,
   infer _Requirements
-> ? Schema.Either<_Config["success"], _Config["failure"]>["Type"] :
-  never
+> ? Success<T> | Failure<T>
+  : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L704)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L690)
 
 Since v1.0.0
 Tool-ResultEncoded.md
@@ -114655,11 +114664,11 @@ type ResultEncoded<T> = T extends Tool<
   infer _Name,
   infer _Config,
   infer _Requirements
-> ? Schema.Either<_Config["success"], _Config["failure"]>["Encoded"] :
-  never
+> ? SuccessEncoded<T> | FailureEncoded<T>
+  : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L718)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L704)
 
 Since v1.0.0
 Tool-Success.md
@@ -114681,7 +114690,7 @@ type Success<T> = T extends Tool<
   : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L635)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L621)
 
 Since v1.0.0
 Tool-SuccessEncoded.md
@@ -114704,7 +114713,7 @@ type SuccessEncoded<T> = T extends Tool<
   : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L649)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L635)
 
 Since v1.0.0
 Tool-SuccessSchema.md
@@ -114727,7 +114736,7 @@ type SuccessSchema<T> = T extends Tool<
   : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L663)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L649)
 
 Since v1.0.0
 Tool-Title.md
@@ -114753,7 +114762,7 @@ const myTool = Tool.make("calculate_tip")
 declare class Title
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1377)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1337)
 
 Since v1.0.0
 Tool-Tool.md
@@ -114846,12 +114855,6 @@ export interface Tool<
    * it fails.
    */
   readonly failureSchema: Config["failure"]
-
-  /**
-   * A `Schema` representing the result of a tool call, whether it succeeds or
-   * fails.
-   */
-  readonly resultSchema: Schema.Either<Config["success"], Config["failure"]>
 
   /**
    * A `Context` object containing tool annotations which can store metadata
@@ -115003,7 +115006,7 @@ const WebSearch = Tool.providerDefined({
 declare const providerDefined: <const Name extends string, Args extends Schema.Struct.Fields = {}, Parameters extends Schema.Struct.Fields = {}, Success extends Schema.Schema.Any = typeof Schema.Void, Failure extends Schema.Schema.All = typeof Schema.Never, RequiresHandler extends boolean = false>(options: { readonly id: `${string}.${string}`; readonly toolkitName: Name; readonly providerName: string; readonly args: Args; readonly requiresHandler?: RequiresHandler | undefined; readonly parameters?: Parameters | undefined; readonly success?: Success | undefined; readonly failure?: Failure | undefined; }) => <Mode extends FailureMode | undefined = undefined>(args: RequiresHandler extends true ? Schema.Simplify<Schema.Struct.Encoded<Args> & { readonly failureMode?: Mode; }> : Schema.Simplify<Schema.Struct.Encoded<Args>>) => ProviderDefined<Name, { readonly args: Schema.Struct<Args>; readonly parameters: Schema.Struct<Parameters>; readonly success: Success; readonly failure: Failure; readonly failureMode: Mode extends undefined ? "error" : Mode; }, RequiresHandler>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1077)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1046)
 
 Since v1.0.0
 Tool-unsafeSecureJsonParse.md
@@ -115021,7 +115024,7 @@ found in the parsed JSON or if the provided JSON text is not parseable.
 declare const unsafeSecureJsonParse: (text: string) => unknown
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1549)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1509)
 
 Since v1.0.0
 Toolkit-Any.md
@@ -115041,7 +115044,7 @@ export interface Any {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L161)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L160)
 
 Since v1.0.0
 Toolkit-HandlersFrom.md
@@ -115066,7 +115069,7 @@ type HandlersFrom<Tools> = {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L193)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L192)
 
 Since v1.0.0
 Toolkit-MergeRecords.md
@@ -115088,7 +115091,7 @@ type MergeRecords<U> = {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L445)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L447)
 
 Since v1.0.0
 Toolkit-MergedTools.md
@@ -115108,7 +115111,7 @@ type { [K in keyof MergeRecords<Tools<Toolkits[number]>>]: MergeRecords<Tools<To
 >
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L459)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L461)
 
 Since v1.0.0
 Toolkit-SimplifyRecord.md
@@ -115125,7 +115128,7 @@ A utility type which simplifies a record type.
 type { [K in keyof T]: T[K]; } = { [K in keyof T]: T[K] } & {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L437)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L439)
 
 Since v1.0.0
 Toolkit-Toolkit.md
@@ -115217,7 +115220,7 @@ export interface Toolkit<in out Tools extends Record<string, Tool.Any>> extends
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L112)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L111)
 
 Since v1.0.0
 Toolkit-Tools.md
@@ -115235,7 +115238,7 @@ toolkit.
 type Tools<T> = T extends Toolkit<infer Tools> ? Tools : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L173)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L172)
 
 Since v1.0.0
 Toolkit-ToolsByName.md
@@ -115256,7 +115259,7 @@ type ToolsByName<Tools> = Tools extends Record<string, Tool.Any> ?
   : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L182)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L181)
 
 Since v1.0.0
 Toolkit-TypeId.md
@@ -115273,7 +115276,7 @@ Type-level representation of the toolkit identifier.
 type TypeId = typeof TypeId
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L71)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L70)
 
 Since v1.0.0
 Toolkit-WithHandler.md
@@ -115316,7 +115319,7 @@ export interface WithHandler<in out Tools extends Record<string, Tool.Any>> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L209)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L208)
 
 Since v1.0.0
 Toolkit-empty.md
@@ -115336,7 +115339,7 @@ be extended using the merge function to add tools.
 declare const empty: Toolkit<{}>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L393)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L395)
 
 Since v1.0.0
 Toolkit-make.md
@@ -115380,7 +115383,7 @@ const toolkit = Toolkit.make(GetCurrentTime, GetWeather)
 declare const make: <Tools extends ReadonlyArray<Tool.Any>>(...tools: Tools) => Toolkit<ToolsByName<Tools>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L427)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L429)
 
 Since v1.0.0
 Toolkit-merge.md
@@ -115434,9 +115437,68 @@ const extendedToolkit = Toolkit.merge(
 declare const merge: <const Toolkits extends ReadonlyArray<Any>>(...toolkits: Toolkits) => Toolkit<MergedTools<Toolkits>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L504)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L506)
 
 Since v1.0.0
+TPriorityQueue-TPriorityQueue.md
+Package: `effect`<br />
+Module: `TPriorityQueue`<br />
+
+## TPriorityQueue.TPriorityQueue
+
+A `TPriorityQueue` contains values of type `A` that an `Order` is defined
+on. Unlike a `TQueue`, `take` returns the highest priority value (the value
+that is first in the specified ordering) as opposed to the first value
+offered to the queue. The ordering that elements with the same priority will
+be taken from the queue is not guaranteed.
+
+**Signature**
+
+```ts
+export interface TPriorityQueue<in out A> extends TPriorityQueue.Variance<A> {}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L36)
+
+Since v2.0.0
+TPubSub-awaitShutdown.md
+Package: `effect`<br />
+Module: `TPubSub`<br />
+
+## TPubSub.awaitShutdown
+
+Waits until the `TPubSub` is shutdown. The `STM` returned by this method will
+not resume until the queue has been shutdown. If the `TPubSub` is already
+shutdown, the `STM` will resume right away.
+
+**Signature**
+
+```ts
+declare const awaitShutdown: <A>(self: TPubSub<A>) => STM.STM<void>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L64)
+
+Since v2.0.0
+TPubSub-bounded.md
+Package: `effect`<br />
+Module: `TPubSub`<br />
+
+## TPubSub.bounded
+
+Creates a bounded `TPubSub` with the back pressure strategy. The `TPubSub` will retain
+messages until they have been taken by all subscribers, applying back
+pressure to publishers if the `TPubSub` is at capacity.
+
+**Signature**
+
+```ts
+declare const bounded: <A>(requestedCapacity: number) => STM.STM<TPubSub<A>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L74)
+
+Since v2.0.0
 TPubSub-capacity.md
 Package: `effect`<br />
 Module: `TPubSub`<br />
@@ -116195,23 +116257,6 @@ declare const unbounded: <A>() => STM.STM<TQueue<A>>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TQueue.ts#L432)
 
 Since v2.0.0
-TRandom-Tag.md
-Package: `effect`<br />
-Module: `TRandom`<br />
-
-## TRandom.Tag
-
-The service tag used to access `TRandom` in the environment of an effect.
-
-**Signature**
-
-```ts
-declare const Tag: Context.Tag<TRandom, TRandom>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TRandom.ts#L71)
-
-Since v2.0.0
 TRandom-live.md
 Package: `effect`<br />
 Module: `TRandom`<br />
@@ -116353,40 +116398,23 @@ declare const withSpanContext: { (spanContext: Otel.SpanContext): <A, E, R>(effe
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/opentelemetry/src/Tracer.ts#L133)
 
 Since v1.0.0
-Traversable-sequence.md
-Package: `@effect/typeclass`<br />
-Module: `Traversable`<br />
+TRandom-Tag.md
+Package: `effect`<br />
+Module: `TRandom`<br />
 
-## Traversable.sequence
+## TRandom.Tag
 
-Returns a default `sequence` implementation.
-
-**Signature**
-
-```ts
-declare const sequence: <T extends TypeLambda>(T: Traversable<T>) => <F extends TypeLambda>(F: Applicative<F>) => <TR, TO, TE, R, O, E, A>(self: Kind<T, TR, TO, TE, Kind<F, R, O, E, A>>) => Kind<F, R, O, E, Kind<T, TR, TO, TE, A>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Traversable.ts#L46)
-
-Since v0.24.0
-Traversable-traverseComposition.md
-Package: `@effect/typeclass`<br />
-Module: `Traversable`<br />
-
-## Traversable.traverseComposition
-
-Returns a default binary `traverse` composition.
+The service tag used to access `TRandom` in the environment of an effect.
 
 **Signature**
 
 ```ts
-declare const traverseComposition: <T extends TypeLambda, G extends TypeLambda>(T: Traversable<T>, G: Traversable<G>) => <F extends TypeLambda>(F: Applicative<F>) => <TR, TO, TE, GR, GO, GE, A, R, O, E, B>(self: Kind<T, TR, TO, TE, Kind<G, GR, GO, GE, A>>, f: (a: A) => Kind<F, R, O, E, B>) => Kind<F, R, O, E, Kind<T, TR, TO, TE, Kind<G, GR, GO, GE, B>>>
+declare const Tag: Context.Tag<TRandom, TRandom>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Traversable.ts#L31)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TRandom.ts#L71)
 
-Since v0.24.0
+Since v2.0.0
 TReentrantLock-TReentrantLock.md
 Package: `effect`<br />
 Module: `TReentrantLock`<br />
@@ -116760,6 +116788,40 @@ export interface TRef<in out A> extends TRef.Variance<A>, Pipeable {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TRef.ts#L38)
 
 Since v2.0.0
+Traversable-sequence.md
+Package: `@effect/typeclass`<br />
+Module: `Traversable`<br />
+
+## Traversable.sequence
+
+Returns a default `sequence` implementation.
+
+**Signature**
+
+```ts
+declare const sequence: <T extends TypeLambda>(T: Traversable<T>) => <F extends TypeLambda>(F: Applicative<F>) => <TR, TO, TE, R, O, E, A>(self: Kind<T, TR, TO, TE, Kind<F, R, O, E, A>>) => Kind<F, R, O, E, Kind<T, TR, TO, TE, A>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Traversable.ts#L46)
+
+Since v0.24.0
+Traversable-traverseComposition.md
+Package: `@effect/typeclass`<br />
+Module: `Traversable`<br />
+
+## Traversable.traverseComposition
+
+Returns a default binary `traverse` composition.
+
+**Signature**
+
+```ts
+declare const traverseComposition: <T extends TypeLambda, G extends TypeLambda>(T: Traversable<T>, G: Traversable<G>) => <F extends TypeLambda>(F: Applicative<F>) => <TR, TO, TE, GR, GO, GE, A, R, O, E, B>(self: Kind<T, TR, TO, TE, Kind<G, GR, GO, GE, A>>, f: (a: A) => Kind<F, R, O, E, B>) => Kind<F, R, O, E, Kind<T, TR, TO, TE, Kind<G, GR, GO, GE, B>>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Traversable.ts#L31)
+
+Since v0.24.0
 Traversable-traverseTap.md
 Package: `@effect/typeclass`<br />
 Module: `Traversable`<br />
@@ -117694,110 +117756,6 @@ declare const toEntries: <V>(self: Trie<V>) => Array<[string, V]>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L229)
 
 Since v2.0.0
-Trie-toEntriesWithPrefix.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.toEntriesWithPrefix
-
-Returns `Array<[K, V]>` of the entries within the `Trie`
-that have `prefix` as prefix (`prefix` included if it exists).
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("sea", 2),
-  Trie.insert("she", 3)
-)
-
-const result = Trie.toEntriesWithPrefix(trie, "she")
-assert.deepStrictEqual(result, [["she", 3], ["shells", 0]])
-```
-
-**Signature**
-
-```ts
-declare const toEntriesWithPrefix: { (prefix: string): <V>(self: Trie<V>) => Array<[string, V]>; <V>(self: Trie<V>, prefix: string): Array<[string, V]>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L340)
-
-Since v2.0.0
-Trie-unsafeGet.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.unsafeGet
-
-Unsafely lookup the value for the specified key in the `Trie`.
-
-`unsafeGet` will throw if the key is not found. Use `get` instead to safely
-get a value from the `Trie`.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1)
-)
-
-assert.throws(() => Trie.unsafeGet(trie, "mae"))
-```
-
-**Signature**
-
-```ts
-declare const unsafeGet: { (key: string): <V>(self: Trie<V>) => V; <V>(self: Trie<V>, key: string): V; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L503)
-
-Since v2.0.0
-Trie-values.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.values
-
-Returns an `IterableIterator` of the values within the `Trie`.
-
-Values are ordered based on their key in alphabetical order, regardless of insertion order.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1),
-  Trie.insert("and", 2)
-)
-
-const result = Array.from(Trie.values(trie))
-assert.deepStrictEqual(result, [2, 0, 1])
-```
-
-**Signature**
-
-```ts
-declare const values: <V>(self: Trie<V>) => IterableIterator<V>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L181)
-
-Since v2.0.0
 TSet-TSet.md
 Package: `effect`<br />
 Module: `TSet`<br />
@@ -118310,6 +118268,110 @@ export interface TSubscriptionRef<in out A> extends TSubscriptionRef.Variance<A>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSubscriptionRef.ts#L34)
 
 Since v3.10.0
+Trie-toEntriesWithPrefix.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.toEntriesWithPrefix
+
+Returns `Array<[K, V]>` of the entries within the `Trie`
+that have `prefix` as prefix (`prefix` included if it exists).
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie } from "effect"
+
+const trie = Trie.empty<number>().pipe(
+  Trie.insert("shells", 0),
+  Trie.insert("sells", 1),
+  Trie.insert("sea", 2),
+  Trie.insert("she", 3)
+)
+
+const result = Trie.toEntriesWithPrefix(trie, "she")
+assert.deepStrictEqual(result, [["she", 3], ["shells", 0]])
+```
+
+**Signature**
+
+```ts
+declare const toEntriesWithPrefix: { (prefix: string): <V>(self: Trie<V>) => Array<[string, V]>; <V>(self: Trie<V>, prefix: string): Array<[string, V]>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L340)
+
+Since v2.0.0
+Trie-unsafeGet.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.unsafeGet
+
+Unsafely lookup the value for the specified key in the `Trie`.
+
+`unsafeGet` will throw if the key is not found. Use `get` instead to safely
+get a value from the `Trie`.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie } from "effect"
+
+const trie = Trie.empty<number>().pipe(
+  Trie.insert("call", 0),
+  Trie.insert("me", 1)
+)
+
+assert.throws(() => Trie.unsafeGet(trie, "mae"))
+```
+
+**Signature**
+
+```ts
+declare const unsafeGet: { (key: string): <V>(self: Trie<V>) => V; <V>(self: Trie<V>, key: string): V; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L503)
+
+Since v2.0.0
+Trie-values.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.values
+
+Returns an `IterableIterator` of the values within the `Trie`.
+
+Values are ordered based on their key in alphabetical order, regardless of insertion order.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie } from "effect"
+
+const trie = Trie.empty<number>().pipe(
+  Trie.insert("call", 0),
+  Trie.insert("me", 1),
+  Trie.insert("and", 2)
+)
+
+const result = Array.from(Trie.values(trie))
+assert.deepStrictEqual(result, [2, 0, 1])
+```
+
+**Signature**
+
+```ts
+declare const values: <V>(self: Trie<V>) => IterableIterator<V>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L181)
+
+Since v2.0.0
 Trie-valuesWithPrefix.md
 Package: `effect`<br />
 Module: `Trie`<br />
@@ -119913,57 +119975,6 @@ declare const assertNone: <A>(option: Option.Option<A>, ..._: Array<never>) => a
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L188)
 
 Since v0.21.0
-utils-assertRight.md
-Package: `@effect/vitest`<br />
-Module: `utils`<br />
-
-## utils.assertRight
-
-Asserts that `either` is `Right`.
-
-**Signature**
-
-```ts
-declare const assertRight: <R, L>(either: Either.Either<R, L>, expected: R, ..._: Array<never>) => asserts either is Either.Right<never, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L227)
-
-Since v0.21.0
-utils-assertSome.md
-Package: `@effect/vitest`<br />
-Module: `utils`<br />
-
-## utils.assertSome
-
-Asserts that `option` is `Some`.
-
-**Signature**
-
-```ts
-declare const assertSome: <A>(option: Option.Option<A>, expected: A, ..._: Array<never>) => asserts option is Option.Some<A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L197)
-
-Since v0.21.0
-utils-assertSuccess.md
-Package: `@effect/vitest`<br />
-Module: `utils`<br />
-
-## utils.assertSuccess
-
-Asserts that `exit` is a success.
-
-**Signature**
-
-```ts
-declare const assertSuccess: <A, E>(exit: Exit.Exit<A, E>, expected: A, ..._: Array<never>) => asserts exit is Exit.Success<A, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L257)
-
-Since v0.21.0
 Utils-PCGRandom.md
 Package: `effect`<br />
 Module: `Utils`<br />
@@ -120213,6 +120224,57 @@ declare const toRpcGroup: <const Workflows extends NonEmptyReadonlyArray<Workflo
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/WorkflowProxy.ts#L45)
 
 Since v1.0.0
+utils-assertRight.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertRight
+
+Asserts that `either` is `Right`.
+
+**Signature**
+
+```ts
+declare const assertRight: <R, L>(either: Either.Either<R, L>, expected: R, ..._: Array<never>) => asserts either is Either.Right<never, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L227)
+
+Since v0.21.0
+utils-assertSome.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertSome
+
+Asserts that `option` is `Some`.
+
+**Signature**
+
+```ts
+declare const assertSome: <A>(option: Option.Option<A>, expected: A, ..._: Array<never>) => asserts option is Option.Some<A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L197)
+
+Since v0.21.0
+utils-assertSuccess.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertSuccess
+
+Asserts that `exit` is a success.
+
+**Signature**
+
+```ts
+declare const assertSuccess: <A, E>(exit: Exit.Exit<A, E>, expected: A, ..._: Array<never>) => asserts exit is Exit.Success<A, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L257)
+
+Since v0.21.0
 utils-assertTrue.md
 Package: `@effect/vitest`<br />
 Module: `utils`<br />
