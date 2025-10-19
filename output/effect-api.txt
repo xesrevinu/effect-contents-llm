@@ -1286,7 +1286,7 @@ type AnthropicTools = | typeof Generated.BetaTool.Encoded
   | typeof Generated.BetaTextEditor20250728.Encoded
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/anthropic/src/AnthropicLanguageModel.ts#L1397)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/anthropic/src/AnthropicLanguageModel.ts#L1398)
 
 Since v1.0.0
 AnthropicLanguageModel-prepareTools.md
@@ -1309,7 +1309,7 @@ integrations which can utilize Anthropic models (i.e. Amazon Bedrock).
 declare const prepareTools: (options: LanguageModel.ProviderOptions, config: Config.Service) => Effect.Effect<{ readonly betas: ReadonlySet<string>; readonly tools: ReadonlyArray<AnthropicTools> | undefined; readonly toolChoice: typeof Generated.BetaToolChoice.Encoded | undefined; }, AiError.AiError>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/anthropic/src/AnthropicLanguageModel.ts#L1420)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/anthropic/src/AnthropicLanguageModel.ts#L1421)
 
 Since v1.0.0
 AnthropicTool-ComputerUse_20241022.md
