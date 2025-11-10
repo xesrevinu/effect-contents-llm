@@ -87056,7 +87056,7 @@ export interface BasePart<Type extends string, Metadata extends ProviderMetadata
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L475)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L480)
 
 Since v1.0.0
 Response-BasePartEncoded.md
@@ -87082,7 +87082,7 @@ export interface BasePartEncoded<Type extends string, Metadata extends ProviderM
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L495)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L500)
 
 Since v1.0.0
 Response-BaseToolResult.md
@@ -87126,7 +87126,7 @@ export interface BaseToolResult<Name extends string> extends BasePart<"tool-resu
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1514)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1519)
 
 Since v1.0.0
 Response-ConstructorParams.md
@@ -87149,7 +87149,7 @@ type ConstructorParams<Part> = Omit<Part, PartTypeId | "type" | "sourceType" | "
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L557)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L562)
 
 Since v1.0.0
 Response-DocumentSourcePart.md
@@ -87189,7 +87189,7 @@ export interface DocumentSourcePart extends BasePart<"source", DocumentSourcePar
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1860)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1865)
 
 Since v1.0.0
 Response-DocumentSourcePartEncoded.md
@@ -87227,7 +87227,7 @@ export interface DocumentSourcePartEncoded extends BasePartEncoded<"source", Doc
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1889)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1894)
 
 Since v1.0.0
 Response-DocumentSourcePartMetadata.md
@@ -87245,7 +87245,7 @@ Represents provider-specific metadata that can be associated with a
 export interface DocumentSourcePartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1919)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1924)
 
 Since v1.0.0
 Response-ErrorPart.md
@@ -87274,7 +87274,7 @@ export interface ErrorPart extends BasePart<"error", ErrorPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2321)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2326)
 
 Since v1.0.0
 Response-ErrorPartEncoded.md
@@ -87293,7 +87293,7 @@ export interface ErrorPartEncoded extends BasePartEncoded<"error", ErrorPartMeta
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2331)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2336)
 
 Since v1.0.0
 Response-ErrorPartMetadata.md
@@ -87311,7 +87311,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ErrorPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2342)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2347)
 
 Since v1.0.0
 Response-FilePart.md
@@ -87350,7 +87350,7 @@ export interface FilePart extends BasePart<"file", FilePartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1787)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1792)
 
 Since v1.0.0
 Response-FilePartEncoded.md
@@ -87376,7 +87376,7 @@ export interface FilePartEncoded extends BasePartEncoded<"file", FilePartMetadat
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1804)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1809)
 
 Since v1.0.0
 Response-FilePartMetadata.md
@@ -87394,7 +87394,7 @@ Represents provider-specific metadata that can be associated with a
 export interface FilePartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1822)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1827)
 
 Since v1.0.0
 Response-FinishPart.md
@@ -87435,7 +87435,7 @@ export interface FinishPart extends BasePart<"finish", FinishPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2241)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2246)
 
 Since v1.0.0
 Response-FinishPartEncoded.md
@@ -87461,7 +87461,7 @@ export interface FinishPartEncoded extends BasePartEncoded<"finish", FinishPartM
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2258)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2263)
 
 Since v1.0.0
 Response-FinishPartMetadata.md
@@ -87479,7 +87479,7 @@ Represents provider-specific metadata that can be associated with a
 export interface FinishPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2276)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2281)
 
 Since v1.0.0
 Response-FinishReason.md
@@ -87506,7 +87506,7 @@ Possible finish reasons:
 declare const FinishReason: Schema.Literal<["stop", "length", "content-filter", "tool-calls", "error", "pause", "other", "unknown"]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2156)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2161)
 
 Since v1.0.0
 Response-Part.md
@@ -87603,7 +87603,7 @@ Provider-specific metadata is namespaced by provider and has the structure:
 declare const ProviderMetadata: Schema.Record$<typeof Schema.String, Schema.UndefinedOr<Schema.Record$<typeof Schema.String, typeof Schema.Unknown>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L451)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L456)
 
 Since v1.0.0
 Response-ReasoningDeltaPart.md
@@ -87630,7 +87630,7 @@ export interface ReasoningDeltaPart extends BasePart<"reasoning-delta", Reasonin
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L985)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L990)
 
 Since v1.0.0
 Response-ReasoningDeltaPartEncoded.md
@@ -87656,7 +87656,7 @@ export interface ReasoningDeltaPartEncoded extends BasePartEncoded<"reasoning-de
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1002)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1007)
 
 Since v1.0.0
 Response-ReasoningDeltaPartMetadata.md
@@ -87674,7 +87674,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ReasoningDeltaPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1020)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1025)
 
 Since v1.0.0
 Response-ReasoningEndPart.md
@@ -87698,7 +87698,7 @@ export interface ReasoningEndPart extends BasePart<"reasoning-end", ReasoningEnd
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1059)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1064)
 
 Since v1.0.0
 Response-ReasoningEndPartEncoded.md
@@ -87720,7 +87720,7 @@ export interface ReasoningEndPartEncoded extends BasePartEncoded<"reasoning-end"
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1072)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1077)
 
 Since v1.0.0
 Response-ReasoningEndPartMetadata.md
@@ -87738,7 +87738,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ReasoningEndPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1086)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1091)
 
 Since v1.0.0
 Response-documentSourcePart.md
@@ -87755,7 +87755,7 @@ Constructs a new document source part.
 declare const documentSourcePart: (params: ConstructorParams<DocumentSourcePart>) => DocumentSourcePart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1946)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1951)
 
 Since v1.0.0
 Response-errorPart.md
@@ -87772,7 +87772,7 @@ Constructs a new error part.
 declare const errorPart: (params: ConstructorParams<ErrorPart>) => ErrorPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2365)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2370)
 
 Since v1.0.0
 Response-filePart.md
@@ -87789,7 +87789,7 @@ Constructs a new file part.
 declare const filePart: (params: ConstructorParams<FilePart>) => FilePart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1846)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1851)
 
 Since v1.0.0
 Response-finishPart.md
@@ -87806,7 +87806,7 @@ Constructs a new finish part.
 declare const finishPart: (params: ConstructorParams<FinishPart>) => FinishPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2300)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2305)
 
 Since v1.0.0
 Response-isPart.md
@@ -87857,7 +87857,7 @@ const toolCallPart = Response.makePart("tool-call", {
 declare const makePart: <const Type extends AnyPart["type"]>(type: Type, params: Omit<Extract<AnyPart, { type: Type; }>, PartTypeId | "type" | "metadata"> & { readonly metadata?: Extract<AnyPart, { type: Type; }>["metadata"] | undefined; }) => Extract<AnyPart, { type: Type; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L528)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L533)
 
 Since v1.0.0
 Response-reasoningDeltaPart.md
@@ -87874,7 +87874,7 @@ Constructs a new reasoning delta part.
 declare const reasoningDeltaPart: (params: ConstructorParams<ReasoningDeltaPart>) => ReasoningDeltaPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1044)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1049)
 
 Since v1.0.0
 Response-reasoningEndPart.md
@@ -87891,7 +87891,7 @@ Constructs a new reasoning end part.
 declare const reasoningEndPart: (params: ConstructorParams<ReasoningEndPart>) => ReasoningEndPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1109)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1114)
 
 Since v1.0.0
 Response-reasoningPart.md
@@ -87908,7 +87908,7 @@ Constructs a new reasoning part.
 declare const reasoningPart: (params: ConstructorParams<ReasoningPart>) => ReasoningPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L907)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L912)
 
 Since v1.0.0
 Response-ReasoningPart.md
@@ -87943,7 +87943,7 @@ export interface ReasoningPart extends BasePart<"reasoning", ReasoningPartMetada
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L857)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L862)
 
 Since v1.0.0
 Response-ReasoningPartEncoded.md
@@ -87965,7 +87965,7 @@ export interface ReasoningPartEncoded extends BasePartEncoded<"reasoning", Reaso
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L870)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L875)
 
 Since v1.0.0
 Response-ReasoningPartMetadata.md
@@ -87983,7 +87983,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ReasoningPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L884)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L889)
 
 Since v1.0.0
 Response-ReasoningStartPart.md
@@ -88007,7 +88007,7 @@ export interface ReasoningStartPart extends BasePart<"reasoning-start", Reasonin
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L921)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L926)
 
 Since v1.0.0
 Response-ReasoningStartPartEncoded.md
@@ -88029,7 +88029,7 @@ export interface ReasoningStartPartEncoded extends BasePartEncoded<"reasoning-st
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L934)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L939)
 
 Since v1.0.0
 Response-ReasoningStartPartMetadata.md
@@ -88047,7 +88047,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ReasoningStartPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L948)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L953)
 
 Since v1.0.0
 Response-ResponseMetadataPart.md
@@ -88090,7 +88090,7 @@ export interface ResponseMetadataPart extends BasePart<"response-metadata", Resp
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2063)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2068)
 
 Since v1.0.0
 Response-ResponseMetadataPartEncoded.md
@@ -88122,7 +88122,7 @@ export interface ResponseMetadataPartEncoded
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2084)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2089)
 
 Since v1.0.0
 Response-ResponseMetadataPartMetadata.md
@@ -88140,7 +88140,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ResponseMetadataPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2108)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2113)
 
 Since v1.0.0
 Response-StreamPart.md
@@ -88233,7 +88233,7 @@ export interface TextDeltaPart extends BasePart<"text-delta", TextDeltaPartMetad
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L710)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L715)
 
 Since v1.0.0
 Response-TextDeltaPartEncoded.md
@@ -88259,7 +88259,7 @@ export interface TextDeltaPartEncoded extends BasePartEncoded<"text-delta", Text
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L727)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L732)
 
 Since v1.0.0
 Response-TextDeltaPartMetadata.md
@@ -88277,7 +88277,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextDeltaPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L745)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L750)
 
 Since v1.0.0
 Response-TextEndPart.md
@@ -88301,7 +88301,7 @@ export interface TextEndPart extends BasePart<"text-end", TextEndPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L783)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L788)
 
 Since v1.0.0
 Response-TextEndPartEncoded.md
@@ -88323,7 +88323,7 @@ export interface TextEndPartEncoded extends BasePartEncoded<"text-end", TextEndP
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L796)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L801)
 
 Since v1.0.0
 Response-TextEndPartMetadata.md
@@ -88341,7 +88341,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextEndPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L810)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L815)
 
 Since v1.0.0
 Response-TextPart.md
@@ -88373,7 +88373,7 @@ export interface TextPart extends BasePart<"text", TextPartMetadata> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L583)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L588)
 
 Since v1.0.0
 Response-TextPartEncoded.md
@@ -88395,7 +88395,7 @@ export interface TextPartEncoded extends BasePartEncoded<"text", TextPartMetadat
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L596)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L601)
 
 Since v1.0.0
 Response-TextPartMetadata.md
@@ -88413,7 +88413,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L610)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L615)
 
 Since v1.0.0
 Response-TextStartPart.md
@@ -88437,7 +88437,7 @@ export interface TextStartPart extends BasePart<"text-start", TextStartPartMetad
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L647)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L652)
 
 Since v1.0.0
 Response-TextStartPartEncoded.md
@@ -88459,7 +88459,7 @@ export interface TextStartPartEncoded extends BasePartEncoded<"text-start", Text
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L660)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L665)
 
 Since v1.0.0
 Response-TextStartPartMetadata.md
@@ -88477,7 +88477,7 @@ Represents provider-specific metadata that can be associated with a
 export interface TextStartPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L674)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L679)
 
 Since v1.0.0
 Response-ToolCallPart.md
@@ -88543,7 +88543,7 @@ export interface ToolCallPart<Name extends string, Params> extends BasePart<"too
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1392)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1397)
 
 Since v1.0.0
 Response-ToolCallPartEncoded.md
@@ -88587,7 +88587,7 @@ export interface ToolCallPartEncoded extends BasePartEncoded<"tool-call", ToolCa
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1427)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1432)
 
 Since v1.0.0
 Response-ToolCallPartMetadata.md
@@ -88605,7 +88605,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolCallPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1463)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1468)
 
 Since v1.0.0
 Response-ToolCallParts.md
@@ -88626,7 +88626,7 @@ type ToolCallParts<Tools> = {
 }[keyof Tools]
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L408)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L413)
 
 Since v1.0.0
 Response-ToolParamsDeltaPart.md
@@ -88655,7 +88655,7 @@ export interface ToolParamsDeltaPart extends BasePart<"tool-params-delta", ToolP
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1230)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1235)
 
 Since v1.0.0
 Response-ToolParamsDeltaPartEncoded.md
@@ -88681,7 +88681,7 @@ export interface ToolParamsDeltaPartEncoded extends BasePartEncoded<"tool-params
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1247)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1252)
 
 Since v1.0.0
 Response-ToolParamsDeltaPartMetadata.md
@@ -88699,7 +88699,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolParamsDeltaPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1265)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1270)
 
 Since v1.0.0
 Response-ToolParamsEndPart.md
@@ -88724,7 +88724,7 @@ export interface ToolParamsEndPart extends BasePart<"tool-params-end", ToolParam
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1305)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1310)
 
 Since v1.0.0
 Response-ToolParamsEndPartEncoded.md
@@ -88746,7 +88746,7 @@ export interface ToolParamsEndPartEncoded extends BasePartEncoded<"tool-params-e
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1318)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1323)
 
 Since v1.0.0
 Response-ToolParamsEndPartMetadata.md
@@ -88764,7 +88764,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolParamsEndPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1332)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1337)
 
 Since v1.0.0
 Response-ToolParamsStartPart.md
@@ -88807,7 +88807,7 @@ export interface ToolParamsStartPart extends BasePart<"tool-params-start", ToolP
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1125)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1130)
 
 Since v1.0.0
 Response-ToolParamsStartPartEncoded.md
@@ -88847,7 +88847,7 @@ export interface ToolParamsStartPartEncoded extends BasePartEncoded<"tool-params
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1156)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1161)
 
 Since v1.0.0
 Response-ToolParamsStartPartMetadata.md
@@ -88865,7 +88865,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolParamsStartPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1188)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1193)
 
 Since v1.0.0
 Response-ToolResultFailure.md
@@ -88891,7 +88891,7 @@ export interface ToolResultFailure<Name extends string, Failure> extends BaseToo
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1566)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1571)
 
 Since v1.0.0
 Response-ToolResultPart.md
@@ -88943,7 +88943,7 @@ type ToolResultPart<Name, Success, Failure> = | ToolResultSuccess<Name, Success>
   | ToolResultFailure<Name, Failure>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1616)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1621)
 
 Since v1.0.0
 Response-ToolResultPartEncoded.md
@@ -88991,7 +88991,7 @@ export interface ToolResultPartEncoded extends BasePartEncoded<"tool-result", To
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1626)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1631)
 
 Since v1.0.0
 Response-reasoningStartPart.md
@@ -89008,7 +89008,7 @@ Constructs a new reasoning start part.
 declare const reasoningStartPart: (params: ConstructorParams<ReasoningStartPart>) => ReasoningStartPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L971)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L976)
 
 Since v1.0.0
 Response-responseMetadataPart.md
@@ -89025,7 +89025,7 @@ Constructs a new response metadata part.
 declare const responseMetadataPart: (params: ConstructorParams<ResponseMetadataPart>) => ResponseMetadataPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2133)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2138)
 
 Since v1.0.0
 Response-textDeltaPart.md
@@ -89042,7 +89042,7 @@ Constructs a new text delta part.
 declare const textDeltaPart: (params: ConstructorParams<TextDeltaPart>) => TextDeltaPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L769)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L774)
 
 Since v1.0.0
 Response-textEndPart.md
@@ -89059,7 +89059,7 @@ Constructs a new text end part.
 declare const textEndPart: (params: ConstructorParams<TextEndPart>) => TextEndPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L833)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L838)
 
 Since v1.0.0
 Response-textPart.md
@@ -89076,7 +89076,7 @@ Constructs a new text part.
 declare const textPart: (params: ConstructorParams<TextPart>) => TextPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L633)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L638)
 
 Since v1.0.0
 Response-textStartPart.md
@@ -89093,7 +89093,7 @@ Constructs a new text start part.
 declare const textStartPart: (params: ConstructorParams<TextStartPart>) => TextStartPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L697)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L702)
 
 Since v1.0.0
 Response-toolCallPart.md
@@ -89110,7 +89110,7 @@ Constructs a new tool call part.
 declare const toolCallPart: <const Name extends string, Params>(params: ConstructorParams<ToolCallPart<Name, Params>>) => ToolCallPart<Name, Params>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1500)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1505)
 
 Since v1.0.0
 Response-toolParamsDeltaPart.md
@@ -89127,7 +89127,7 @@ Constructs a new tool params delta part.
 declare const toolParamsDeltaPart: (params: ConstructorParams<ToolParamsDeltaPart>) => ToolParamsDeltaPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1289)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1294)
 
 Since v1.0.0
 Response-toolParamsEndPart.md
@@ -89144,7 +89144,7 @@ Constructs a new tool params end part.
 declare const toolParamsEndPart: (params: ConstructorParams<ToolParamsEndPart>) => ToolParamsEndPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1355)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1360)
 
 Since v1.0.0
 Response-toolParamsStartPart.md
@@ -89161,7 +89161,7 @@ Constructs a new tool params start part.
 declare const toolParamsStartPart: (params: ConstructorParams<ToolParamsStartPart>) => ToolParamsStartPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1214)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1219)
 
 Since v1.0.0
 Response-toolResultPart.md
@@ -89178,7 +89178,7 @@ Constructs a new tool result part.
 declare const toolResultPart: <const Params extends ConstructorParams<ToolResultPart<string, any, any>>>(params: Params) => Params extends { readonly name: infer Name extends string; readonly isFailure: false; readonly result: infer Success; } ? ToolResultPart<Name, Success, never> : Params extends { readonly name: infer Name extends string; readonly isFailure: true; readonly result: infer Failure; } ? ToolResultPart<Name, never, Failure> : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1749)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1754)
 
 Since v1.0.0
 Response-ToolResultPartMetadata.md
@@ -89196,7 +89196,7 @@ Represents provider-specific metadata that can be associated with a
 export interface ToolResultPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1666)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1671)
 
 Since v1.0.0
 Response-ToolResultParts.md
@@ -89220,7 +89220,7 @@ type ToolResultParts<Tools> = {
 }[keyof Tools]
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L422)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L427)
 
 Since v1.0.0
 Response-ToolResultSuccess.md
@@ -89246,7 +89246,7 @@ export interface ToolResultSuccess<Name extends string, Success> extends BaseToo
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1549)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1554)
 
 Since v1.0.0
 Response-UrlSourcePart.md
@@ -89282,7 +89282,7 @@ export interface UrlSourcePart extends BasePart<"source", UrlSourcePartMetadata>
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1961)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1966)
 
 Since v1.0.0
 Response-UrlSourcePartEncoded.md
@@ -89316,7 +89316,7 @@ export interface UrlSourcePartEncoded extends BasePartEncoded<"source", UrlSourc
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1986)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1991)
 
 Since v1.0.0
 Response-UrlSourcePartMetadata.md
@@ -89334,7 +89334,7 @@ Represents provider-specific metadata that can be associated with a
 export interface UrlSourcePartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2012)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2017)
 
 Since v1.0.0
 Response-Usage.md
@@ -89355,7 +89355,7 @@ metadata of the finish part of the response.
 declare class Usage
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2192)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2197)
 
 Since v1.0.0
 Response-urlSourcePart.md
@@ -89372,7 +89372,7 @@ Constructs a new URL source part.
 declare const urlSourcePart: (params: ConstructorParams<UrlSourcePart>) => UrlSourcePart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2038)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2043)
 
 Since v1.0.0
 Rpc-Handler.md
@@ -94049,7 +94049,7 @@ When encoding, this Schema will produce incorrect results if the BigDecimal exce
 declare class BigDecimalFromNumber
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7932)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7934)
 
 Since v3.10.0
 Schema-BigInt.md
@@ -94068,7 +94068,7 @@ It returns an error if the value can't be converted (for example when non-numeri
 declare const BigInt: typeof BigInt$
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5712)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5713)
 
 Since v3.10.0
 Schema-BigIntFromNumber.md
@@ -94087,7 +94087,7 @@ It returns an error if the value can't be safely encoded as a `number` due to be
 declare class BigIntFromNumber
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5787)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5788)
 
 Since v3.10.0
 Schema-BooleanFromString.md
@@ -94105,7 +94105,7 @@ Converts an `string` value into its corresponding `boolean`
 declare class BooleanFromString
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10107)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10111)
 
 Since v3.11.0
 Schema-BooleanFromUnknown.md
@@ -94127,7 +94127,7 @@ Uses `!!val` to coerce the value to a `boolean`.
 declare class BooleanFromUnknown
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10090)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10094)
 
 Since v3.10.0
 Schema-Capitalize.md
@@ -94144,7 +94144,7 @@ This schema converts a string to capitalized one.
 declare class Capitalize
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4702)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4703)
 
 Since v3.10.0
 Schema-Char.md
@@ -94161,7 +94161,7 @@ A schema representing a single character.
 declare class Char
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4649)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4650)
 
 Since v3.10.0
 Schema-Data.md
@@ -94179,7 +94179,7 @@ ReadonlyArray<any>` to be compatible with this API.
 declare const Data: <S extends Schema.Any, A extends Readonly<Record<string, unknown>> | ReadonlyArray<unknown>, I extends Readonly<Record<string, unknown>> | ReadonlyArray<unknown>>(value: S & Schema<A & Schema.Type<S>, I & Schema.Encoded<S>, Schema.Context<S>>) => Data<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L8446)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L8448)
 
 Since v3.10.0
 Schema-DataFromSelf.md
@@ -94197,7 +94197,7 @@ ReadonlyArray<any>` to be compatible with this API.
 declare const DataFromSelf: <S extends Schema.Any, A extends Readonly<Record<string, unknown>> | ReadonlyArray<unknown>, I extends Readonly<Record<string, unknown>> | ReadonlyArray<unknown>>(value: S & Schema<A & Schema.Type<S>, I & Schema.Encoded<S>, Schema.Context<S>>) => DataFromSelf<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L8412)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L8414)
 
 Since v3.10.0
 Schema-Date.md
@@ -94217,7 +94217,7 @@ Date("Invalid Date")`.
 declare const Date: typeof Date$
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6844)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6845)
 
 Since v3.10.0
 Schema-DateFromNumber.md
@@ -94238,7 +94238,7 @@ any invalid `Date` object will be encoded to `NaN`.
 declare class DateFromNumber
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6857)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6858)
 
 Since v3.10.0
 Schema-DateFromSelf.md
@@ -94256,7 +94256,7 @@ such as `new Date("Invalid Date")`, without rejection.
 declare class DateFromSelf
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6780)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6781)
 
 Since v3.10.0
 Schema-DateFromString.md
@@ -94276,7 +94276,7 @@ Date")` results in a `Date` object, despite being invalid).
 declare class DateFromString
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6819)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6820)
 
 Since v3.10.0
 Schema-DateTimeUtc.md
@@ -94293,7 +94293,7 @@ Defines a schema that attempts to convert a `string` to a `DateTime.Utc` instanc
 declare class DateTimeUtc
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6929)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6931)
 
 Since v3.10.0
 Schema-DateTimeUtcFromDate.md
@@ -94310,7 +94310,7 @@ Defines a schema that attempts to convert a `Date` to a `DateTime.Utc` instance 
 declare class DateTimeUtcFromDate
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6913)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6915)
 
 Since v3.12.0
 Schema-DateTimeUtcFromNumber.md
@@ -94327,7 +94327,7 @@ Defines a schema that attempts to convert a `number` to a `DateTime.Utc` instanc
 declare class DateTimeUtcFromNumber
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6897)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6899)
 
 Since v3.10.0
 Schema-DateTimeUtcFromSelf.md
@@ -94344,7 +94344,7 @@ Describes a schema that represents a `DateTime.Utc` instance.
 declare class DateTimeUtcFromSelf
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6873)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6874)
 
 Since v3.10.0
 Schema-DateTimeZoned.md
@@ -94361,7 +94361,7 @@ Defines a schema that attempts to convert a `string` to a `DateTime.Zoned` insta
 declare class DateTimeZoned
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7077)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7079)
 
 Since v3.10.0
 Schema-DateTimeZonedFromSelf.md
@@ -94378,7 +94378,7 @@ Describes a schema that represents a `DateTime.Zoned` instance.
 declare class DateTimeZonedFromSelf
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7052)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7054)
 
 Since v3.10.0
 Schema-Defect.md
@@ -94402,7 +94402,7 @@ This is useful for serializing and deserializing errors across network boundarie
 declare class Defect
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L9507)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L9511)
 
 Since v3.10.0
 Schema-Duration.md
@@ -94419,7 +94419,7 @@ A schema that converts a JSON-compatible tagged union into a `Duration`.
 declare class Duration
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6006)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6007)
 
 Since v3.10.0
 Schema-DurationFromMillis.md
@@ -94437,7 +94437,7 @@ A schema that transforms a (possibly Infinite) non negative number into a
 declare class DurationFromMillis
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5941)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5942)
 
 Since v3.10.0
 Schema-DurationFromNanos.md
@@ -94455,7 +94455,7 @@ the value as the number of nanoseconds.
 declare class DurationFromNanos
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5912)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5913)
 
 Since v3.10.0
 Schema-annotations.md
@@ -94473,7 +94473,7 @@ any duplicates.
 declare const annotations: { <S extends Annotable.All>(annotations: Annotations.GenericSchema<Schema.Type<S>>): (self: S) => Annotable.Self<S>; <S extends Annotable.All>(self: S, annotations: Annotations.GenericSchema<Schema.Type<S>>): Annotable.Self<S>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4187)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4188)
 
 Since v3.10.0
 Schema-asserts.md
@@ -94494,7 +94494,7 @@ By default the option `exact` is set to `true`.
 declare const asserts: <A, I, R>(schema: Schema<A, I, R>, options?: AST.ParseOptions) => (u: unknown, overrideOptions?: AST.ParseOptions) => asserts u is A
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L424)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L425)
 
 Since v3.10.0
 Schema-attachPropertySignature.md
@@ -94533,7 +94533,7 @@ assert.deepStrictEqual(S.decodeSync(Shape)({ radius: 10 }), {
 declare const attachPropertySignature: { <K extends PropertyKey, V extends AST.LiteralValue | symbol, A>(key: K, value: V, annotations?: Annotations.Schema<A & { readonly [k in K]: V; }>): <I, R>(schema: Schema<A, I, R>) => SchemaClass<A & { readonly [k in K]: V; }, I, R>; <A, I, R, K extends PropertyKey, V extends AST.LiteralValue | symbol>(schema: Schema<A, I, R>, key: K, value: V, annotations?: Annotations.Schema<A & { readonly [k in K]: V; }>): SchemaClass<A & { readonly [k in K]: V; }, I, R>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4084)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4085)
 
 Since v3.10.0
 Schema-between.md
@@ -94550,7 +94550,7 @@ This filter checks whether the provided number falls within the specified minimu
 declare const between: <S extends Schema.Any>(minimum: number, maximum: number, annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5196)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5197)
 
 Since v3.10.0
 Schema-brand.md
@@ -94580,7 +94580,7 @@ type Int = Schema.Schema.Type<typeof Int> // number & Brand<"Int">
 declare const brand: <S extends Schema.Any, B extends string | symbol>(brand: B, annotations?: Annotations.Schema<Schema.Type<S> & Brand<B>>) => (self: S) => brand<S, B>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3195)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3196)
 
 Since v3.10.0
 Schema-capitalized.md
@@ -94597,7 +94597,7 @@ Verifies that a string is capitalized.
 declare const capitalized: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4589)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4590)
 
 Since v3.10.0
 Schema-clamp.md
@@ -94614,7 +94614,7 @@ Clamps a number between a minimum and a maximum value.
 declare const clamp: (minimum: number, maximum: number) => <S extends Schema.Any, A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, filter<SchemaClass<A>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5282)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5283)
 
 Since v3.10.0
 Schema-clampBigDecimal.md
@@ -94631,7 +94631,7 @@ Clamps a `BigDecimal` between a minimum and a maximum value.
 declare const clampBigDecimal: (minimum: bigDecimal_.BigDecimal, maximum: bigDecimal_.BigDecimal) => <S extends Schema.Any, A extends bigDecimal_.BigDecimal>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, filter<SchemaClass<A>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L8209)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L8211)
 
 Since v3.10.0
 Schema-clampBigInt.md
@@ -94648,7 +94648,7 @@ Clamps a bigint between a minimum and a maximum value.
 declare const clampBigInt: (minimum: bigint, maximum: bigint) => <S extends Schema.Any, A extends bigint>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, filter<SchemaClass<A>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5674)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5675)
 
 Since v3.10.0
 Schema-clampDuration.md
@@ -94665,7 +94665,7 @@ Clamps a `Duration` between a minimum and a maximum value.
 declare const clampDuration: (minimum: duration_.DurationInput, maximum: duration_.DurationInput) => <S extends Schema.Any, A extends duration_.Duration>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, filter<SchemaClass<A>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6044)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6045)
 
 Since v3.10.0
 Schema-declare.md
@@ -94683,7 +94683,7 @@ This ensures that when you call `Schema.to` or `Schema.from`, you receive a sche
 declare const declare: { <A>(is: (input: unknown) => input is A, annotations?: Annotations.Schema<A>): declare<A>; <A, I, const P extends ReadonlyArray<Schema.All>>(typeParameters: P, options: { readonly decode: (...typeParameters: { readonly [K in keyof P]: Schema<Schema.Type<P[K]>, Schema.Encoded<P[K]>, never>; }) => (input: unknown, options: ParseOptions, ast: AST.Declaration) => Effect.Effect<A, ParseResult.ParseIssue, never>; readonly encode: (...typeParameters: { readonly [K in keyof P]: Schema<Schema.Type<P[K]>, Schema.Encoded<P[K]>, never>; }) => (input: unknown, options: ParseOptions, ast: AST.Declaration) => Effect.Effect<I, ParseResult.ParseIssue, never>; }, annotations?: Annotations.Schema<A, { readonly [K in keyof P]: Schema.Type<P[K]>; }>): declare<A, I, P>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L1064)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L1065)
 
 Since v3.10.0
 Schema-encodedBoundSchema.md
@@ -94701,7 +94701,7 @@ the refinements up to the first transformation point in the original schema.
 declare const encodedBoundSchema: <A, I, R>(schema: Schema<A, I, R>) => SchemaClass<I>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L402)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L403)
 
 Since v3.10.0
 Schema-encodedSchema.md
@@ -94721,7 +94721,7 @@ were applied previously.
 declare const encodedSchema: <A, I, R>(schema: Schema<A, I, R>) => SchemaClass<I>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L394)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L395)
 
 Since v3.10.0
 Schema-equivalence.md
@@ -94738,7 +94738,7 @@ Given a schema `Schema<A, I, R>`, returns an `Equivalence` instance for `A`.
 declare const equivalence: <A, I, R>(schema: Schema<A, I, R>) => Equivalence.Equivalence<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10655)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10659)
 
 Since v3.10.0
 Schema-extend.md
@@ -94797,7 +94797,7 @@ const extended = Schema.asSchema(schema.pipe(
 declare const extend: { <That extends Schema.Any>(that: That): <Self extends Schema.Any>(self: Self) => extend<Self, That>; <Self extends Schema.Any, That extends Schema.Any>(self: Self, that: That): extend<Self, That>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3504)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3505)
 
 Since v3.10.0
 Schema-finite.md
@@ -94814,7 +94814,7 @@ Ensures that the provided value is a finite number (excluding NaN, +Infinity, an
 declare const finite: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4977)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4978)
 
 Since v3.10.0
 Schema-fromKey.md
@@ -94831,7 +94831,7 @@ Enhances a property signature by specifying a different key for it in the Encode
 declare const fromKey: { <Key extends PropertyKey>(key: Key): <TypeToken extends PropertySignature.Token, Type, EncodedToken extends PropertySignature.Token, Encoded, HasDefault extends boolean, R>(self: PropertySignature<TypeToken, Type, PropertyKey, EncodedToken, Encoded, HasDefault, R>) => PropertySignature<TypeToken, Type, Key, EncodedToken, Encoded, HasDefault, R>; <Type, TypeToken extends PropertySignature.Token, Encoded, EncodedToken extends PropertySignature.Token, HasDefault extends boolean, R, Key extends PropertyKey>(self: PropertySignature<TypeToken, Type, PropertyKey, EncodedToken, Encoded, HasDefault, R>, key: Key): PropertySignature<TypeToken, Type, Key, EncodedToken, Encoded, HasDefault, R>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2167)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2168)
 
 Since v3.10.0
 Schema-greaterThan.md
@@ -94848,7 +94848,7 @@ This filter checks whether the provided number is greater than the specified min
 declare const greaterThan: <S extends Schema.Any>(exclusiveMinimum: number, annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5008)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5009)
 
 Since v3.10.0
 Schema-greaterThanOrEqualTo.md
@@ -94865,7 +94865,7 @@ This filter checks whether the provided number is greater than or equal to the s
 declare const greaterThanOrEqualTo: <S extends Schema.Any>(minimum: number, annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5041)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5042)
 
 Since v3.10.0
 Schema-JsonNumber.md
@@ -94898,7 +94898,7 @@ assert.deepStrictEqual(is(Number.NEGATIVE_INFINITY), false)
 declare class JsonNumber
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5425)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5426)
 
 Since v3.10.0
 Schema-Lowercase.md
@@ -94915,7 +94915,7 @@ This schema converts a string to lowercase.
 declare class Lowercase
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4670)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4671)
 
 Since v3.10.0
 Schema-NonEmptyTrimmedString.md
@@ -94943,7 +94943,7 @@ console.log(Schema.decodeOption(Schema.NonEmptyTrimmedString)("a")) // Option.so
 declare class NonEmptyTrimmedString
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4752)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4753)
 
 Since v3.10.0
 Schema-NonNegativeInt.md
@@ -94960,7 +94960,7 @@ A non-negative integer. +Infinity is excluded.
 declare const NonNegativeInt: refine<number, typeof NonNegative>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5932)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5933)
 
 Since v3.11.10
 Schema-NumberFromString.md
@@ -94981,7 +94981,7 @@ The following special string values are supported: "NaN", "Infinity", "-Infinity
 declare class NumberFromString
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5338)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5339)
 
 Since v3.10.0
 Schema-OptionFromNonEmptyTrimmedString.md
@@ -95010,7 +95010,7 @@ console.log(Schema.decodeSync(Schema.OptionFromNonEmptyTrimmedString)("a")) // O
 declare class OptionFromNonEmptyTrimmedString
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7316)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7318)
 
 Since v3.10.0
 Schema-Redacted.md
@@ -95028,7 +95028,7 @@ A transformation that transform a `Schema<A, I, R>` into a
 declare const Redacted: <Value extends Schema.Any>(value: Value) => Redacted<Value>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5874)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5875)
 
 Since v3.10.0
 Schema-Schema.All.md
@@ -95048,7 +95048,7 @@ type All = | Any
     | Schema<never, never, unknown>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L372)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L373)
 
 Since v3.10.0
 Schema-Schema.Any.md
@@ -95065,7 +95065,7 @@ Any schema, except for `never`.
 type Any = Schema<any, any, unknown>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L358)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L359)
 
 Since v3.10.0
 Schema-Schema.AnyNoContext.md
@@ -95082,7 +95082,7 @@ Any schema with `Context = never`, except for `never`.
 type AnyNoContext = Schema<any, any, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L365)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L366)
 
 Since v3.10.0
 Schema-Schema.AsSchema.md
@@ -95099,7 +95099,7 @@ Type-level counterpart of `Schema.asSchema` function.
 type AsSchema<S> = Schema<Type<S>, Encoded<S>, Context<S>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L383)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L384)
 
 Since v3.10.0
 Schema-Serializable.md
@@ -95119,7 +95119,7 @@ export interface Serializable<A, I, R> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10151)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10155)
 
 Since v3.10.0
 Schema-SerializableWithResult.md
@@ -95151,7 +95151,7 @@ export interface SerializableWithResult<
 > extends Serializable<A, I, R>, WithResult<Success, SuccessEncoded, Failure, FailureEncoded, ResultR> {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10456)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10460)
 
 Since v3.10.0
 Schema-StringFromBase64.md
@@ -95168,7 +95168,7 @@ Decodes a base64 (RFC4648) encoded string into a UTF-8 string.
 declare const StringFromBase64: Schema<string, string, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6319)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6320)
 
 Since v3.10.0
 Schema-StringFromBase64Url.md
@@ -95185,7 +95185,7 @@ Decodes a base64 (URL) encoded string into a UTF-8 string.
 declare const StringFromBase64Url: Schema<string, string, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6331)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6332)
 
 Since v3.10.0
 Schema-StringFromHex.md
@@ -95202,7 +95202,7 @@ Decodes a hex encoded string into a UTF-8 string.
 declare const StringFromHex: Schema<string, string, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6343)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6344)
 
 Since v3.10.0
 Schema-StringFromUriComponent.md
@@ -95236,7 +95236,7 @@ console.log(Schema.encodeSync(UrlSchema)({ maxItemPerPage: 10, page: 1 }))
 declare const StringFromUriComponent: transformOrFail<SchemaClass<string, string, never>, typeof String$, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6371)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6372)
 
 Since v3.12.0
 Schema-Struct.Field.md
@@ -95268,7 +95268,7 @@ type Field = | Schema.All
     | PropertySignature.All
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2585)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2586)
 
 Since v3.13.11
 Schema-Symbol.md
@@ -95285,7 +95285,7 @@ Converts a string key into a globally shared symbol.
 declare const Symbol: typeof Symbol$
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5471)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5472)
 
 Since v3.10.0
 Schema-TaggedStruct.md
@@ -95318,7 +95318,7 @@ assert.deepStrictEqual(User.make({ name: "John", age: 44 }), { _tag: "User", nam
 declare const TaggedStruct: <Tag extends AST.LiteralValue, Fields extends Struct.Fields>(value: Tag, fields: Fields) => TaggedStruct<Tag, Fields>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3007)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3008)
 
 Since v3.10.0
 Schema-TimeZone.md
@@ -95335,7 +95335,7 @@ Defines a schema that attempts to convert a `string` to a `TimeZone` using the `
 declare class TimeZone
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7025)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7027)
 
 Since v3.10.0
 Schema-TimeZoneNamed.md
@@ -95352,7 +95352,7 @@ Defines a schema that attempts to convert a `string` to a `TimeZone.Named` insta
 declare class TimeZoneNamed
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6999)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7001)
 
 Since v3.10.0
 Schema-TimeZoneNamedFromSelf.md
@@ -95369,7 +95369,7 @@ Describes a schema that represents a `TimeZone.Named` instance.
 declare class TimeZoneNamedFromSelf
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6983)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6985)
 
 Since v3.10.0
 Schema-TimeZoneOffset.md
@@ -95386,7 +95386,7 @@ Defines a schema that converts a `number` to a `TimeZone.Offset` instance using 
 declare class TimeZoneOffset
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6964)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6966)
 
 Since v3.10.0
 Schema-TimeZoneOffsetFromSelf.md
@@ -95403,7 +95403,7 @@ Describes a schema that represents a `TimeZone.Offset` instance.
 declare class TimeZoneOffsetFromSelf
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6948)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6950)
 
 Since v3.10.0
 Schema-head.md
@@ -95420,7 +95420,7 @@ Get the first element of a `ReadonlyArray`, or `None` if the array is empty.
 declare const head: <S extends Schema.Any, A extends ReadonlyArray<unknown>>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, OptionFromSelf<SchemaClass<A[number]>>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6525)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6526)
 
 Since v3.10.0
 Schema-headNonEmpty.md
@@ -95437,7 +95437,7 @@ Get the first element of a `NonEmptyReadonlyArray`.
 declare const headNonEmpty: <S extends Schema.Any, A extends array_.NonEmptyReadonlyArray<unknown>>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, SchemaClass<A[number]>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6549)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6550)
 
 Since v3.12.0
 Schema-headOrElse.md
@@ -95456,7 +95456,7 @@ If the array is empty, it returns the `fallback` argument if provided; otherwise
 declare const headOrElse: { <S extends Schema.Any, A extends ReadonlyArray<unknown>>(fallback?: LazyArg<A[number]>): (self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transform<S, SchemaClass<A[number]>>; <S extends Schema.Any, A extends ReadonlyArray<unknown>>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>, fallback?: LazyArg<A[number]>): transform<S, SchemaClass<A[number]>>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6571)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6572)
 
 Since v3.10.0
 Schema-int.md
@@ -95473,7 +95473,7 @@ Ensures that the provided value is an integer number (excluding NaN, +Infinity, 
 declare const int: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5101)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5102)
 
 Since v3.10.0
 Schema-is.md
@@ -95490,7 +95490,7 @@ By default the option `exact` is set to `true`.
 declare const is: <A, I, R>(schema: Schema<A, I, R>, options?: AST.ParseOptions) => (u: unknown, overrideOptions?: AST.ParseOptions | number) => u is A
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L475)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L476)
 
 Since v3.10.0
 Schema-isSchema.md
@@ -95507,7 +95507,7 @@ Tests if a value is a `Schema`.
 declare const isSchema: (u: unknown) => u is Schema.Any
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L664)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L665)
 
 Since v3.10.0
 Schema-lessThan.md
@@ -95524,7 +95524,7 @@ This filter checks whether the provided number is less than the specified maximu
 declare const lessThan: <S extends Schema.Any>(exclusiveMaximum: number, annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5132)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5133)
 
 Since v3.10.0
 Schema-lessThanOrEqualTo.md
@@ -95541,7 +95541,7 @@ This schema checks whether the provided number is less than or equal to the spec
 declare const lessThanOrEqualTo: <S extends Schema.Any>(maximum: number, annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5163)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5164)
 
 Since v3.10.0
 Schema-lowercased.md
@@ -95558,7 +95558,7 @@ Verifies that a string is lowercased.
 declare const lowercased: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4523)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4524)
 
 Since v3.10.0
 Schema-mutable.md
@@ -95575,7 +95575,7 @@ Creates a new schema with shallow mutability applied to its properties.
 declare const mutable: <S extends Schema.Any>(schema: S) => mutable<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3267)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3268)
 
 Since v3.10.0
 Schema-optionalToOptional.md
@@ -95599,7 +95599,7 @@ Converts an optional property to another optional property through a transformat
 declare const optionalToOptional: <FA, FI, FR, TA, TI, TR>(from: Schema<FA, FI, FR>, to: Schema<TA, TI, TR>, options: { readonly decode: (o: option_.Option<FA>) => option_.Option<TI>; readonly encode: (o: option_.Option<TI>) => option_.Option<FA>; }) => PropertySignature<"?:", TA, never, "?:", FI, false, FR | TR>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2303)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2304)
 
 Since v3.10.0
 Schema-optionalToRequired.md
@@ -95619,7 +95619,7 @@ Converts an optional property to a required one through a transformation `Option
 declare const optionalToRequired: <FA, FI, FR, TA, TI, TR>(from: Schema<FA, FI, FR>, to: Schema<TA, TI, TR>, options: { readonly decode: (o: option_.Option<FA>) => TI; readonly encode: (ti: TI) => option_.Option<FA>; }) => PropertySignature<":", TA, never, "?:", FI, false, FR | TR>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2247)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2248)
 
 Since v3.10.0
 Schema-parseJson.md
@@ -95651,7 +95651,7 @@ assert.deepStrictEqual(Schema.decodeUnknownSync(Schema.parseJson(Schema.Struct({
 declare const parseJson: { <S extends Schema.Any>(schema: S, options?: ParseJsonOptions): transform<SchemaClass<unknown, string>, S>; (options?: ParseJsonOptions): SchemaClass<unknown, string>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4842)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4843)
 
 Since v3.10.0
 Schema-parseNumber.md
@@ -95675,7 +95675,7 @@ The following special string values are supported: "NaN", "Infinity",
 declare const parseNumber: <S extends Schema.Any, A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => transformOrFail<S, typeof Number$>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5310)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5311)
 
 Since v3.10.0
 Schema-pickLiteral.md
@@ -95705,7 +95705,7 @@ assert.strictEqual(Either.isLeft(Schema.decodeUnknownEither(schema)("c")), true)
 declare const pickLiteral: <A extends AST.LiteralValue, L extends array_.NonEmptyReadonlyArray<A>>(...literals: L) => <I, R>(_schema: Schema<A, I, R>) => Literal<[...L]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L732)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L733)
 
 Since v3.10.0
 Schema-pluck.md
@@ -95747,7 +95747,7 @@ console.log(Schema.decodeUnknownEither(Schema.Array(pullOutColumn))([{ column1: 
 declare const pluck: { <A, I, K extends keyof A & keyof I>(key: K): <R>(schema: Schema<A, I, R>) => SchemaClass<A[K], Simplify<Pick<I, K>>, R>; <A, I, R, K extends keyof A & keyof I>(schema: Schema<A, I, R>, key: K): SchemaClass<A[K], Simplify<Pick<I, K>>, R>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3110)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3111)
 
 Since v3.10.0
 Schema-propertySignature.md
@@ -95764,7 +95764,7 @@ Lifts a `Schema` into a `PropertySignature`.
 declare const propertySignature: <S extends Schema.All>(self: S) => propertySignature<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L1975)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L1976)
 
 Since v3.10.0
 Schema-requiredToOptional.md
@@ -95784,7 +95784,7 @@ Converts an optional property to a required one through a transformation `Type -
 declare const requiredToOptional: <FA, FI, FR, TA, TI, TR>(from: Schema<FA, FI, FR>, to: Schema<TA, TI, TR>, options: { readonly decode: (fa: FA) => option_.Option<TI>; readonly encode: (o: option_.Option<TI>) => FA; }) => PropertySignature<"?:", TA, never, ":", FI, false, FR | TR>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2273)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2274)
 
 Since v3.10.0
 Schema-split.md
@@ -95801,7 +95801,7 @@ Returns a schema that allows splitting a string into an array of strings.
 declare const split: (separator: string) => transform<SchemaClass<string>, Array$<typeof String$>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4778)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4779)
 
 Since v3.10.0
 Schema-standardSchemaV1.md
@@ -95841,7 +95841,7 @@ const standardSchema = Schema.standardSchemaV1(schema)
 declare const standardSchemaV1: <A, I>(schema: Schema<A, I, never>, overrideOptions?: AST.ParseOptions) => StandardSchemaV1<I, A> & SchemaClass<A, I, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L195)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L196)
 
 Since v3.13.0
 Schema-tag.md
@@ -95879,7 +95879,7 @@ assert.deepStrictEqual(User.make({ name: "John", age: 44 }), { _tag: "User", nam
 declare const tag: <Tag extends AST.LiteralValue>(tag: Tag) => tag<Tag>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2975)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2976)
 
 Since v3.10.0
 Schema-transform.md
@@ -95897,7 +95897,7 @@ using the provided mapping functions.
 declare const transform: { <To extends Schema.Any, From extends Schema.Any>(to: To, options: { readonly decode: (fromA: Schema.Type<From>, fromI: Schema.Encoded<From>) => Schema.Encoded<To>; readonly encode: (toI: Schema.Encoded<To>, toA: Schema.Type<To>) => Schema.Type<From>; readonly strict?: true; } | { readonly decode: (fromA: Schema.Type<From>, fromI: Schema.Encoded<From>) => unknown; readonly encode: (toI: Schema.Encoded<To>, toA: Schema.Type<To>) => unknown; readonly strict: false; }): (from: From) => transform<From, To>; <To extends Schema.Any, From extends Schema.Any>(from: From, to: To, options: { readonly decode: (fromA: Schema.Type<From>, fromI: Schema.Encoded<From>) => Schema.Encoded<To>; readonly encode: (toI: Schema.Encoded<To>, toA: Schema.Type<To>) => Schema.Type<From>; readonly strict?: true; } | { readonly decode: (fromA: Schema.Type<From>, fromI: Schema.Encoded<From>) => unknown; readonly encode: (toI: Schema.Encoded<To>, toA: Schema.Type<To>) => unknown; readonly strict: false; }): transform<From, To>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3938)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3939)
 
 Since v3.10.0
 Schema-transformLiteral.md
@@ -95925,7 +95925,7 @@ assert.deepStrictEqual(S.decodeSync(schema)(0), "a")
 declare const transformLiteral: <Encoded extends AST.LiteralValue, Type extends AST.LiteralValue>(from: Encoded, to: Type) => transformLiteral<Type, Encoded>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4011)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4012)
 
 Since v3.10.0
 Schema-transformLiterals.md
@@ -95957,7 +95957,7 @@ assert.deepStrictEqual(S.decodeSync(Animal)(1), "dog")
 declare const transformLiterals: { <const A extends AST.Members<readonly [from: AST.LiteralValue, to: AST.LiteralValue]>>(...pairs: A): Union<{ -readonly [I in keyof A]: transformLiteral<A[I][1], A[I][0]>; }>; <Encoded extends AST.LiteralValue, Type extends AST.LiteralValue>(pairs: [Encoded, Type]): transformLiteral<Type, Encoded>; <const A extends ReadonlyArray<readonly [from: AST.LiteralValue, to: AST.LiteralValue]>>(...pairs: A): Schema<A[number][1], A[number][0]>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4051)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4052)
 
 Since v3.10.0
 Schema-transformOrFail.md
@@ -95975,7 +95975,7 @@ using the provided decoding functions.
 declare const transformOrFail: { <To extends Schema.Any, From extends Schema.Any, RD, RE>(to: To, options: { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<Schema.Encoded<To>, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<Schema.Type<From>, ParseResult.ParseIssue, RE>; readonly strict?: true; } | { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<unknown, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<unknown, ParseResult.ParseIssue, RE>; readonly strict: false; }): (from: From) => transformOrFail<From, To, RD | RE>; <To extends Schema.Any, From extends Schema.Any, RD, RE>(from: From, to: To, options: { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<Schema.Encoded<To>, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<Schema.Type<From>, ParseResult.ParseIssue, RE>; readonly strict?: true; } | { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<unknown, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<unknown, ParseResult.ParseIssue, RE>; readonly strict: false; }): transformOrFail<From, To, RD | RE>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3829)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3830)
 
 Since v3.10.0
 Schema-Trim.md
@@ -95992,7 +95992,7 @@ This schema allows removing whitespaces from the beginning and end of a string.
 declare class Trim
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4762)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4763)
 
 Since v3.10.0
 Schema-ULID.md
@@ -96012,7 +96012,7 @@ This schema ensures that the provided string adheres to the standard ULID format
 declare class ULID
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4904)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4905)
 
 Since v3.10.0
 Schema-URL.md
@@ -96030,7 +96030,7 @@ the `new URL` constructor.
 declare const URL: typeof URL$
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4956)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4957)
 
 Since v3.11.0
 Schema-URLFromSelf.md
@@ -96047,7 +96047,7 @@ Defines a schema that represents a `URL` object.
 declare class URLFromSelf
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4919)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4920)
 
 Since v3.11.0
 Schema-UUID.md
@@ -96066,7 +96066,7 @@ This schema ensures that the provided string adheres to the standard UUID format
 declare class UUID
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4874)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4875)
 
 Since v3.10.0
 Schema-Uint8Array.md
@@ -96083,7 +96083,7 @@ A schema that transforms an array of numbers into a `Uint8Array`.
 declare const Uint8Array: typeof Uint8Array$
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6234)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6235)
 
 Since v3.10.0
 Schema-Uint8ArrayFromBase64.md
@@ -96100,7 +96100,7 @@ Decodes a base64 (RFC4648) encoded string into a `Uint8Array`.
 declare const Uint8ArrayFromBase64: Schema<Uint8Array<ArrayBufferLike>, string, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6262)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6263)
 
 Since v3.10.0
 Schema-Uint8ArrayFromBase64Url.md
@@ -96117,7 +96117,7 @@ Decodes a base64 (URL) encoded string into a `Uint8Array`.
 declare const Uint8ArrayFromBase64Url: Schema<Uint8Array<ArrayBufferLike>, string, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6274)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6275)
 
 Since v3.10.0
 Schema-Uint8ArrayFromHex.md
@@ -96134,7 +96134,7 @@ Decodes a hex encoded string into a `Uint8Array`.
 declare const Uint8ArrayFromHex: Schema<Uint8Array<ArrayBufferLike>, string, never>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6286)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6287)
 
 Since v3.10.0
 Schema-Uncapitalize.md
@@ -96151,7 +96151,7 @@ This schema converts a string to uncapitalized one.
 declare class Uncapitalize
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4718)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4719)
 
 Since v3.10.0
 Schema-Uppercase.md
@@ -96168,7 +96168,7 @@ This schema converts a string to uppercase.
 declare class Uppercase
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4686)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4687)
 
 Since v3.10.0
 Schema-ValidDateFromSelf.md
@@ -96189,7 +96189,7 @@ represent real dates.
 declare class ValidDateFromSelf
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6803)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6804)
 
 Since v3.10.0
 Schema-WithResult.md
@@ -96214,7 +96214,7 @@ export interface WithResult<Success, SuccessEncoded, Failure, FailureEncoded, Re
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10236)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10240)
 
 Since v3.10.0
 Schema-trimmed.md
@@ -96234,7 +96234,7 @@ If what you were looking for was a combinator to trim strings, then check out th
 declare const trimmed: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4258)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4259)
 
 Since v3.10.0
 Schema-typeSchema.md
@@ -96254,7 +96254,7 @@ processes.
 declare const typeSchema: <A, I, R>(schema: Schema<A, I, R>) => SchemaClass<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L413)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L414)
 
 Since v3.10.0
 Schema-uncapitalized.md
@@ -96271,7 +96271,7 @@ Verifies that a string is uncapitalized.
 declare const uncapitalized: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4622)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4623)
 
 Since v3.10.0
 Schema-uppercased.md
@@ -96288,7 +96288,7 @@ Verifies that a string is uppercased.
 declare const uppercased: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends string>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4556)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4557)
 
 Since v3.10.0
 Schema-validDate.md
@@ -96308,7 +96308,7 @@ erroneous date values from being processed.
 declare const validDate: <S extends Schema.Any>(annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends Date>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6618)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6619)
 
 Since v3.10.0
 Schema-withConstructorDefault.md
@@ -96325,7 +96325,7 @@ Enhances a property signature with a default constructor value.
 declare const withConstructorDefault: { <Type>(defaultValue: () => Types.NoInfer<Type>): <TypeToken extends PropertySignature.Token, Key extends PropertyKey, EncodedToken extends PropertySignature.Token, Encoded, R>(self: PropertySignature<TypeToken, Type, Key, EncodedToken, Encoded, boolean, R>) => PropertySignature<TypeToken, Type, Key, EncodedToken, Encoded, true, R>; <TypeToken extends PropertySignature.Token, Type, Key extends PropertyKey, EncodedToken extends PropertySignature.Token, Encoded, R>(self: PropertySignature<TypeToken, Type, Key, EncodedToken, Encoded, boolean, R>, defaultValue: () => Types.NoInfer<Type>): PropertySignature<TypeToken, Type, Key, EncodedToken, Encoded, true, R>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L1989)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L1990)
 
 Since v3.10.0
 Schema-withDecodingDefault.md
@@ -96342,7 +96342,7 @@ Enhances a property signature with a default decoding value.
 declare const withDecodingDefault: { <Type>(defaultValue: () => Types.NoInfer<Exclude<Type, undefined>>): <Key extends PropertyKey, Encoded, R>(self: PropertySignature<"?:", Type, Key, "?:", Encoded, false, R>) => PropertySignature<":", Exclude<Type, undefined>, Key, "?:", Encoded, false, R>; <Type, Key extends PropertyKey, Encoded, R>(self: PropertySignature<"?:", Type, Key, "?:", Encoded, false, R>, defaultValue: () => Types.NoInfer<Exclude<Type, undefined>>): PropertySignature<":", Exclude<Type, undefined>, Key, "?:", Encoded, false, R>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2059)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2060)
 
 Since v3.10.0
 Schema-withDefaults.md
@@ -96359,7 +96359,7 @@ Enhances a property signature with a default decoding value and a default constr
 declare const withDefaults: { <Type>(defaults: { constructor: () => Types.NoInfer<Exclude<Type, undefined>>; decoding: () => Types.NoInfer<Exclude<Type, undefined>>; }): <Key extends PropertyKey, Encoded, R>(self: PropertySignature<"?:", Type, Key, "?:", Encoded, boolean, R>) => PropertySignature<":", Exclude<Type, undefined>, Key, "?:", Encoded, true, R>; <Type, Key extends PropertyKey, Encoded, R>(self: PropertySignature<"?:", Type, Key, "?:", Encoded, boolean, R>, defaults: { constructor: () => Types.NoInfer<Exclude<Type, undefined>>; decoding: () => Types.NoInfer<Exclude<Type, undefined>>; }): PropertySignature<":", Exclude<Type, undefined>, Key, "?:", Encoded, true, R>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2124)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L2125)
 
 Since v3.10.0
 SchemaAST-PropertySignatureTransformation.md
@@ -96389,7 +96389,7 @@ declare class PropertySignatureTransformation { constructor(
   ) }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2022)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2023)
 
 Since v3.10.0
 SchemaAST-annotations.md
@@ -96409,7 +96409,7 @@ Any previously existing identifier annotations are deleted.
 declare const annotations: (ast: AST, overrides: Annotations) => AST
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2085)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2086)
 
 Since v3.10.0
 SchemaAST-getTemplateLiteralCapturingRegExp.md
@@ -96430,7 +96430,7 @@ Generates a regular expression that captures the pattern defined by the given `T
 declare const getTemplateLiteralCapturingRegExp: (ast: TemplateLiteral) => RegExp
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2175)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2176)
 
 Since v3.10.0
 SchemaAST-getTemplateLiteralRegExp.md
@@ -96451,7 +96451,7 @@ Generates a regular expression from a `TemplateLiteral` AST node.
 declare const getTemplateLiteralRegExp: (ast: TemplateLiteral) => RegExp
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2165)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2166)
 
 Since v3.10.0
 SchemaAST-keyof.md
@@ -96468,7 +96468,7 @@ Equivalent at runtime to the TypeScript type-level `keyof` operator.
 declare const keyof: (ast: AST) => AST
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2103)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2104)
 
 Since v3.10.0
 SchemaAST-mutable.md
@@ -96485,7 +96485,7 @@ Creates a new AST with shallow mutability applied to its properties.
 declare const mutable: (ast: AST) => AST
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2553)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2554)
 
 Since v3.10.0
 SchemaAST-omit.md
@@ -96502,7 +96502,7 @@ Equivalent at runtime to the built-in TypeScript utility type `Omit`.
 declare const omit: (ast: AST, keys: ReadonlyArray<PropertyKey>) => TypeLiteral | Transformation
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2452)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2453)
 
 Since v3.10.0
 SchemaAST-partial.md
@@ -96519,7 +96519,7 @@ Equivalent at runtime to the built-in TypeScript utility type `Partial`.
 declare const partial: (ast: AST, options?: { readonly exact: true; }) => AST
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2471)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2472)
 
 Since v3.10.0
 SchemaAST-pick.md
@@ -96536,7 +96536,7 @@ Equivalent at runtime to the built-in TypeScript utility type `Pick`.
 declare const pick: (ast: AST, keys: ReadonlyArray<PropertyKey>) => TypeLiteral | Transformation
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2382)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2383)
 
 Since v3.10.0
 SchemaAST-required.md
@@ -96553,7 +96553,7 @@ Equivalent at runtime to the built-in TypeScript utility type `Required`.
 declare const required: (ast: AST) => AST
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2515)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2516)
 
 Since v3.10.0
 Scope-CloseableScope.md
@@ -114435,25 +114435,6 @@ declare const awaitShutdown: <A>(self: TPubSub<A>) => STM.STM<void>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L64)
 
 Since v2.0.0
-TPubSub-bounded.md
-Package: `effect`<br />
-Module: `TPubSub`<br />
-
-## TPubSub.bounded
-
-Creates a bounded `TPubSub` with the back pressure strategy. The `TPubSub` will retain
-messages until they have been taken by all subscribers, applying back
-pressure to publishers if the `TPubSub` is at capacity.
-
-**Signature**
-
-```ts
-declare const bounded: <A>(requestedCapacity: number) => STM.STM<TPubSub<A>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L74)
-
-Since v2.0.0
 Tool-ParametersSchema.md
 Package: `@effect/ai`<br />
 Module: `Tool`<br />
@@ -115131,7 +115112,7 @@ type MergeRecords<U> = {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L447)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L456)
 
 Since v1.0.0
 Toolkit-MergedTools.md
@@ -115151,7 +115132,7 @@ type { [K in keyof MergeRecords<Tools<Toolkits[number]>>]: MergeRecords<Tools<To
 >
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L461)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L470)
 
 Since v1.0.0
 Toolkit-SimplifyRecord.md
@@ -115168,7 +115149,7 @@ A utility type which simplifies a record type.
 type { [K in keyof T]: T[K]; } = { [K in keyof T]: T[K] } & {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L439)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L448)
 
 Since v1.0.0
 Toolkit-Toolkit.md
@@ -115359,7 +115340,24 @@ export interface WithHandler<in out Tools extends Record<string, Tool.Any>> {
 }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L208)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L217)
+
+Since v1.0.0
+Toolkit-WithHandlerTools.md
+Package: `@effect/ai`<br />
+Module: `Toolkit`<br />
+
+## Toolkit.WithHandlerTools
+
+A utility type which can be used to extract the tools from a toolkit with handlers.
+
+**Signature**
+
+```ts
+type WithHandlerTools<T> = T extends WithHandler<infer Tools> ? Tools : never
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L209)
 
 Since v1.0.0
 Toolkit-empty.md
@@ -115379,7 +115377,7 @@ be extended using the merge function to add tools.
 declare const empty: Toolkit<{}>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L395)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L404)
 
 Since v1.0.0
 Toolkit-make.md
@@ -115423,7 +115421,7 @@ const toolkit = Toolkit.make(GetCurrentTime, GetWeather)
 declare const make: <Tools extends ReadonlyArray<Tool.Any>>(...tools: Tools) => Toolkit<ToolsByName<Tools>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L429)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L438)
 
 Since v1.0.0
 Toolkit-merge.md
@@ -115477,9 +115475,28 @@ const extendedToolkit = Toolkit.merge(
 declare const merge: <const Toolkits extends ReadonlyArray<Any>>(...toolkits: Toolkits) => Toolkit<MergedTools<Toolkits>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L506)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L515)
 
 Since v1.0.0
+TPubSub-bounded.md
+Package: `effect`<br />
+Module: `TPubSub`<br />
+
+## TPubSub.bounded
+
+Creates a bounded `TPubSub` with the back pressure strategy. The `TPubSub` will retain
+messages until they have been taken by all subscribers, applying back
+pressure to publishers if the `TPubSub` is at capacity.
+
+**Signature**
+
+```ts
+declare const bounded: <A>(requestedCapacity: number) => STM.STM<TPubSub<A>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L74)
+
+Since v2.0.0
 TPubSub-capacity.md
 Package: `effect`<br />
 Module: `TPubSub`<br />
@@ -116413,23 +116430,6 @@ declare const sequence: <T extends TypeLambda>(T: Traversable<T>) => <F extends 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Traversable.ts#L46)
 
 Since v0.24.0
-Traversable-traverseComposition.md
-Package: `@effect/typeclass`<br />
-Module: `Traversable`<br />
-
-## Traversable.traverseComposition
-
-Returns a default binary `traverse` composition.
-
-**Signature**
-
-```ts
-declare const traverseComposition: <T extends TypeLambda, G extends TypeLambda>(T: Traversable<T>, G: Traversable<G>) => <F extends TypeLambda>(F: Applicative<F>) => <TR, TO, TE, GR, GO, GE, A, R, O, E, B>(self: Kind<T, TR, TO, TE, Kind<G, GR, GO, GE, A>>, f: (a: A) => Kind<F, R, O, E, B>) => Kind<F, R, O, E, Kind<T, TR, TO, TE, Kind<G, GR, GO, GE, B>>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Traversable.ts#L31)
-
-Since v0.24.0
 TReentrantLock-TReentrantLock.md
 Package: `effect`<br />
 Module: `TReentrantLock`<br />
@@ -116803,6 +116803,23 @@ export interface TRef<in out A> extends TRef.Variance<A>, Pipeable {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TRef.ts#L38)
 
 Since v2.0.0
+Traversable-traverseComposition.md
+Package: `@effect/typeclass`<br />
+Module: `Traversable`<br />
+
+## Traversable.traverseComposition
+
+Returns a default binary `traverse` composition.
+
+**Signature**
+
+```ts
+declare const traverseComposition: <T extends TypeLambda, G extends TypeLambda>(T: Traversable<T>, G: Traversable<G>) => <F extends TypeLambda>(F: Applicative<F>) => <TR, TO, TE, GR, GO, GE, A, R, O, E, B>(self: Kind<T, TR, TO, TE, Kind<G, GR, GO, GE, A>>, f: (a: A) => Kind<F, R, O, E, B>) => Kind<F, R, O, E, Kind<T, TR, TO, TE, Kind<G, GR, GO, GE, B>>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Traversable.ts#L31)
+
+Since v0.24.0
 Traversable-traverseTap.md
 Package: `@effect/typeclass`<br />
 Module: `Traversable`<br />
@@ -117806,41 +117823,6 @@ declare const unsafeGet: { (key: string): <V>(self: Trie<V>) => V; <V>(self: Tri
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L503)
 
 Since v2.0.0
-Trie-values.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.values
-
-Returns an `IterableIterator` of the values within the `Trie`.
-
-Values are ordered based on their key in alphabetical order, regardless of insertion order.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1),
-  Trie.insert("and", 2)
-)
-
-const result = Array.from(Trie.values(trie))
-assert.deepStrictEqual(result, [2, 0, 1])
-```
-
-**Signature**
-
-```ts
-declare const values: <V>(self: Trie<V>) => IterableIterator<V>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L181)
-
-Since v2.0.0
 TSet-TSet.md
 Package: `effect`<br />
 Module: `TSet`<br />
@@ -118353,6 +118335,41 @@ export interface TSubscriptionRef<in out A> extends TSubscriptionRef.Variance<A>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSubscriptionRef.ts#L34)
 
 Since v3.10.0
+Trie-values.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.values
+
+Returns an `IterableIterator` of the values within the `Trie`.
+
+Values are ordered based on their key in alphabetical order, regardless of insertion order.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie } from "effect"
+
+const trie = Trie.empty<number>().pipe(
+  Trie.insert("call", 0),
+  Trie.insert("me", 1),
+  Trie.insert("and", 2)
+)
+
+const result = Array.from(Trie.values(trie))
+assert.deepStrictEqual(result, [2, 0, 1])
+```
+
+**Signature**
+
+```ts
+declare const values: <V>(self: Trie<V>) => IterableIterator<V>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L181)
+
+Since v2.0.0
 Trie-valuesWithPrefix.md
 Package: `effect`<br />
 Module: `Trie`<br />
@@ -119990,23 +120007,6 @@ declare const assertSome: <A>(option: Option.Option<A>, expected: A, ..._: Array
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L197)
 
 Since v0.21.0
-utils-assertSuccess.md
-Package: `@effect/vitest`<br />
-Module: `utils`<br />
-
-## utils.assertSuccess
-
-Asserts that `exit` is a success.
-
-**Signature**
-
-```ts
-declare const assertSuccess: <A, E>(exit: Exit.Exit<A, E>, expected: A, ..._: Array<never>) => asserts exit is Exit.Success<A, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L257)
-
-Since v0.21.0
 Utils-PCGRandom.md
 Package: `effect`<br />
 Module: `Utils`<br />
@@ -120313,6 +120313,23 @@ declare const toRpcGroup: <const Workflows extends NonEmptyReadonlyArray<Workflo
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/WorkflowProxy.ts#L45)
 
 Since v1.0.0
+utils-assertSuccess.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertSuccess
+
+Asserts that `exit` is a success.
+
+**Signature**
+
+```ts
+declare const assertSuccess: <A, E>(exit: Exit.Exit<A, E>, expected: A, ..._: Array<never>) => asserts exit is Exit.Success<A, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L257)
+
+Since v0.21.0
 utils-assertTrue.md
 Package: `@effect/vitest`<br />
 Module: `utils`<br />
