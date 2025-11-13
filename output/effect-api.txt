@@ -119800,7 +119800,7 @@ Effect.gen(function* () {
 declare const schemaStruct: <A, I extends Record<string, string | ReadonlyArray<string> | undefined>, R>(schema: Schema.Schema<A, I, R>, options?: ParseOptions | undefined) => (self: UrlParams) => Effect.Effect<A, ParseResult.ParseError, R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/UrlParams.ts#L325)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/UrlParams.ts#L329)
 
 Since v1.0.0
 UrlParams-toRecord.md
@@ -119834,7 +119834,7 @@ assert.deepStrictEqual(
 declare const toRecord: (self: UrlParams) => Record<string, string | Arr.NonEmptyArray<string>>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/UrlParams.ts#L263)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/UrlParams.ts#L267)
 
 Since v1.0.0
 utils-assertEquals.md
