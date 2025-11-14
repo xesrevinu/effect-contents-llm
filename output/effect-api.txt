@@ -53441,6 +53441,23 @@ export * as DurableDeferred from "./DurableDeferred.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L14)
 
 Since v1.0.0
+index-DurableRateLimiter.md
+Package: `@effect/workflow`<br />
+Module: `index`<br />
+
+## index.DurableRateLimiter
+
+Re-exports all named exports from the "./DurableRateLimiter.js" module as `DurableRateLimiter`.
+
+**Signature**
+
+```ts
+export * as DurableRateLimiter from "./DurableRateLimiter.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L19)
+
+Since v1.0.0
 index-Duration.md
 Package: `effect`<br />
 Module: `index`<br />
@@ -55572,23 +55589,6 @@ export * as MergeDecision from "./MergeDecision.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L762)
 
 Since v2.0.0
-index-MergeState.md
-Package: `effect`<br />
-Module: `index`<br />
-
-## index.MergeState
-
-Re-exports all named exports from the "./MergeState.js" module as `MergeState`.
-
-**Signature**
-
-```ts
-export * as MergeState from "./MergeState.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L767)
-
-Since v2.0.0
 index-layer.md
 Package: `@effect/vitest`<br />
 Module: `index`<br />
@@ -55643,6 +55643,23 @@ layer(Foo.Live)("layer", (it) => {
   })
 })
 ```
+index-MergeState.md
+Package: `effect`<br />
+Module: `index`<br />
+
+## index.MergeState
+
+Re-exports all named exports from the "./MergeState.js" module as `MergeState`.
+
+**Signature**
+
+```ts
+export * as MergeState from "./MergeState.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L767)
+
+Since v2.0.0
 index-MergeStrategy.md
 Package: `effect`<br />
 Module: `index`<br />
@@ -57530,7 +57547,7 @@ Re-exports all named exports from the "./Reactivity.js" module as `Reactivity`.
 export * as Reactivity from "./Reactivity.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/index.ts#L59)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/index.ts#L64)
 
 Since v1.0.0
 index-Readable.md
@@ -58266,23 +58283,6 @@ export * as ScopedCache from "./ScopedCache.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1292)
 
 Since v2.0.0
-index-ScopedRef.md
-Package: `effect`<br />
-Module: `index`<br />
-
-## index.ScopedRef
-
-Re-exports all named exports from the "./ScopedRef.js" module as `ScopedRef`.
-
-**Signature**
-
-```ts
-export * as ScopedRef from "./ScopedRef.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1297)
-
-Since v2.0.0
 index-STM.md
 Package: `effect`<br />
 Module: `index`<br />
@@ -58298,6 +58298,23 @@ export * as STM from "./STM.js"
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1247)
+
+Since v2.0.0
+index-ScopedRef.md
+Package: `effect`<br />
+Module: `index`<br />
+
+## index.ScopedRef
+
+Re-exports all named exports from the "./ScopedRef.js" module as `ScopedRef`.
+
+**Signature**
+
+```ts
+export * as ScopedRef from "./ScopedRef.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1297)
 
 Since v2.0.0
 index-Secret.md
@@ -58875,7 +58892,7 @@ Re-exports all named exports from the "./Sse.js" module as `Sse`.
 export * as Sse from "./Sse.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/index.ts#L69)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/index.ts#L74)
 
 Since v1.0.0
 index-Statement.md
@@ -59099,23 +59116,6 @@ export * as TArray from "./TArray.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1392)
 
 Since v2.0.0
-index-TDeferred.md
-Package: `effect`<br />
-Module: `index`<br />
-
-## index.TDeferred
-
-Re-exports all named exports from the "./TDeferred.js" module as `TDeferred`.
-
-**Signature**
-
-```ts
-export * as TDeferred from "./TDeferred.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1397)
-
-Since v2.0.0
 index-Take.md
 Package: `effect`<br />
 Module: `index`<br />
@@ -59131,6 +59131,23 @@ export * as Take from "./Take.js"
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1452)
+
+Since v2.0.0
+index-TDeferred.md
+Package: `effect`<br />
+Module: `index`<br />
+
+## index.TDeferred
+
+Re-exports all named exports from the "./TDeferred.js" module as `TDeferred`.
+
+**Signature**
+
+```ts
+export * as TDeferred from "./TDeferred.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1397)
 
 Since v2.0.0
 index-TMap.md
@@ -59950,7 +59967,7 @@ Re-exports all named exports from the "./VariantSchema.js" module as `VariantSch
 export * as VariantSchema from "./VariantSchema.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/index.ts#L74)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/index.ts#L79)
 
 Since v1.0.0
 index-WebSdk.md
@@ -60035,7 +60052,7 @@ Re-exports all named exports from the "./Workflow.js" module as `Workflow`.
 export * as Workflow from "./Workflow.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L19)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L24)
 
 Since v1.0.0
 index-WorkflowEngine.md
@@ -60052,7 +60069,7 @@ Re-exports all named exports from the "./WorkflowEngine.js" module as `WorkflowE
 export * as WorkflowEngine from "./WorkflowEngine.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L24)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L29)
 
 Since v1.0.0
 index-WorkflowProxy.md
@@ -60067,23 +60084,6 @@ Re-exports all named exports from the "./WorkflowProxy.js" module as `WorkflowPr
 
 ```ts
 export * as WorkflowProxy from "./WorkflowProxy.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L29)
-
-Since v1.0.0
-index-WorkflowProxyServer.md
-Package: `@effect/workflow`<br />
-Module: `index`<br />
-
-## index.WorkflowProxyServer
-
-Re-exports all named exports from the "./WorkflowProxyServer.js" module as `WorkflowProxyServer`.
-
-**Signature**
-
-```ts
-export * as WorkflowProxyServer from "./WorkflowProxyServer.js"
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L34)
@@ -61093,6 +61093,44 @@ declare const makeWith: <K, A, E, R>(options: { readonly acquire: (key: K) => Ef
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/KeyedPool.ts#L91)
 
 Since v2.0.0
+index-WorkflowProxyServer.md
+Package: `@effect/workflow`<br />
+Module: `index`<br />
+
+## index.WorkflowProxyServer
+
+Re-exports all named exports from the "./WorkflowProxyServer.js" module as `WorkflowProxyServer`.
+
+**Signature**
+
+```ts
+export * as WorkflowProxyServer from "./WorkflowProxyServer.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L39)
+
+Since v1.0.0
+KeyValueStore-layerStorage.md
+Package: `@effect/platform`<br />
+Module: `KeyValueStore`<br />
+
+## KeyValueStore.layerStorage
+
+Creates an KeyValueStorage from an instance of the `Storage` api.
+
+**See**
+
+- https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API
+
+**Signature**
+
+```ts
+declare const layerStorage: (evaluate: LazyArg<Storage>) => Layer.Layer<KeyValueStore>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/KeyValueStore.ts#L243)
+
+Since v1.0.0
 KeyedPool-makeWithTTL.md
 Package: `effect`<br />
 Module: `KeyedPool`<br />
@@ -61117,27 +61155,6 @@ declare const makeWithTTL: <K, A, E, R>(options: { readonly acquire: (key: K) =>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/KeyedPool.ts#L111)
 
 Since v2.0.0
-KeyValueStore-layerStorage.md
-Package: `@effect/platform`<br />
-Module: `KeyValueStore`<br />
-
-## KeyValueStore.layerStorage
-
-Creates an KeyValueStorage from an instance of the `Storage` api.
-
-**See**
-
-- https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API
-
-**Signature**
-
-```ts
-declare const layerStorage: (evaluate: LazyArg<Storage>) => Layer.Layer<KeyValueStore>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/KeyValueStore.ts#L243)
-
-Since v1.0.0
 KeyedPool-makeWithTTLBy.md
 Package: `effect`<br />
 Module: `KeyedPool`<br />
@@ -63423,24 +63440,6 @@ declare const fromIterable: <A>(prefix: Iterable<A>) => List<A>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L285)
 
 Since v2.0.0
-List-head.md
-Package: `effect`<br />
-Module: `List`<br />
-
-## List.head
-
-Returns the first element of the specified list, or `None` if the list is
-empty.
-
-**Signature**
-
-```ts
-declare const head: <A>(self: List<A>) => Option.Option<A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L702)
-
-Since v2.0.0
 List-List.md
 Package: `effect`<br />
 Module: `List`<br />
@@ -63460,6 +63459,24 @@ type List<A> = Cons<A> | Nil<A>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L49)
+
+Since v2.0.0
+List-head.md
+Package: `effect`<br />
+Module: `List`<br />
+
+## List.head
+
+Returns the first element of the specified list, or `None` if the list is
+empty.
+
+**Signature**
+
+```ts
+declare const head: <A>(self: List<A>) => Option.Option<A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L702)
 
 Since v2.0.0
 List-isCons.md
@@ -64590,23 +64607,6 @@ export * as serializable from "./Machine/SerializableProcedureList.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/Machine.ts#L44)
 
 Since v1.0.0
-Mailbox-fromStream.md
-Package: `effect`<br />
-Module: `Mailbox`<br />
-
-## Mailbox.fromStream
-
-Create a `ReadonlyMailbox` from a `Stream`.
-
-**Signature**
-
-```ts
-declare const fromStream: { (options?: { readonly capacity?: number | undefined; readonly strategy?: "suspend" | "dropping" | "sliding" | undefined; }): <A, E, R>(self: Stream<A, E, R>) => Effect<ReadonlyMailbox<A, E>, never, R | Scope>; <A, E, R>(self: Stream<A, E, R>, options?: { readonly capacity?: number | undefined; readonly strategy?: "suspend" | "dropping" | "sliding" | undefined; }): Effect<ReadonlyMailbox<A, E>, never, R | Scope>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Mailbox.ts#L254)
-
-Since v3.11.0
 Mailbox-Mailbox.md
 Package: `effect`<br />
 Module: `Mailbox`<br />
@@ -64737,6 +64737,23 @@ export interface ReadonlyMailbox<out A, out E = never>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Mailbox.ts#L126)
 
 Since v3.8.0
+Mailbox-fromStream.md
+Package: `effect`<br />
+Module: `Mailbox`<br />
+
+## Mailbox.fromStream
+
+Create a `ReadonlyMailbox` from a `Stream`.
+
+**Signature**
+
+```ts
+declare const fromStream: { (options?: { readonly capacity?: number | undefined; readonly strategy?: "suspend" | "dropping" | "sliding" | undefined; }): <A, E, R>(self: Stream<A, E, R>) => Effect<ReadonlyMailbox<A, E>, never, R | Scope>; <A, E, R>(self: Stream<A, E, R>, options?: { readonly capacity?: number | undefined; readonly strategy?: "suspend" | "dropping" | "sliding" | undefined; }): Effect<ReadonlyMailbox<A, E>, never, R | Scope>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Mailbox.ts#L254)
+
+Since v3.11.0
 Mailbox-into.md
 Package: `effect`<br />
 Module: `Mailbox`<br />
@@ -67095,23 +67112,6 @@ declare class RootsListChangedNotification
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L1669)
 
 Since v1.0.0
-McpSchema-SamplingMessage.md
-Package: `@effect/ai`<br />
-Module: `McpSchema`<br />
-
-## McpSchema.SamplingMessage
-
-Describes a message issued to or received from an LLM API.
-
-**Signature**
-
-```ts
-declare class SamplingMessage
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L1340)
-
-Since v1.0.0
 McpSchema-param.md
 Package: `@effect/ai`<br />
 Module: `McpSchema`<br />
@@ -67127,6 +67127,23 @@ declare const param: <const Id extends string, S extends Schema.Schema.Any>(id: 
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L2027)
+
+Since v1.0.0
+McpSchema-SamplingMessage.md
+Package: `@effect/ai`<br />
+Module: `McpSchema`<br />
+
+## McpSchema.SamplingMessage
+
+Describes a message issued to or received from an LLM API.
+
+**Signature**
+
+```ts
+declare class SamplingMessage
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L1340)
 
 Since v1.0.0
 McpSchema-ServerCapabilities.md
@@ -69150,25 +69167,6 @@ declare const die: (defect: unknown) => Micro<never>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L970)
 
 Since v3.4.0
-Micro-either.md
-Package: `effect`<br />
-Module: `Micro`<br />
-
-## Micro.either
-
-Replace the success value of the given `Micro` effect with an `Either`,
-wrapping the success value in `Right` and wrapping any expected errors with
-a `Left`.
-
-**Signature**
-
-```ts
-declare const either: <A, E, R>(self: Micro<A, E, R>) => Micro<Either.Either<A, E>, never, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2934)
-
-Since v3.4.0
 Micro-Micro.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -69279,6 +69277,25 @@ declare class NoSuchElementException
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L4396)
 
 Since v3.4.4
+Micro-either.md
+Package: `effect`<br />
+Module: `Micro`<br />
+
+## Micro.either
+
+Replace the success value of the given `Micro` effect with an `Either`,
+wrapping the success value in `Right` and wrapping any expected errors with
+a `Left`.
+
+**Signature**
+
+```ts
+declare const either: <A, E, R>(self: Micro<A, E, R>) => Micro<Either.Either<A, E>, never, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2934)
+
+Since v3.4.0
 Micro-ensuring.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -70087,6 +70104,23 @@ declare const raceAll: <Eff extends Micro<any, any, any>>(all: Iterable<Eff>) =>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L1410)
 
 Since v3.4.0
+Micro-TimeoutException.md
+Package: `effect`<br />
+Module: `Micro`<br />
+
+## Micro.TimeoutException
+
+Represents a checked exception which occurs when a timeout occurs.
+
+**Signature**
+
+```ts
+declare class TimeoutException
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L4405)
+
+Since v3.4.4
 Micro-raceAllFirst.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -70106,23 +70140,6 @@ declare const raceAllFirst: <Eff extends Micro<any, any, any>>(all: Iterable<Eff
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L1457)
 
 Since v3.4.0
-Micro-TimeoutException.md
-Package: `effect`<br />
-Module: `Micro`<br />
-
-## Micro.TimeoutException
-
-Represents a checked exception which occurs when a timeout occurs.
-
-**Signature**
-
-```ts
-declare class TimeoutException
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L4405)
-
-Since v3.4.4
 Micro-raceFirst.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -74696,6 +74713,26 @@ export interface RequestAttributes {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiTelemetry.ts#L42)
 
 Since v1.0.0
+OpenAiTelemetry-addGenAIAnnotations.md
+Package: `@effect/ai-openai`<br />
+Module: `OpenAiTelemetry`<br />
+
+## OpenAiTelemetry.addGenAIAnnotations
+
+Applies the specified OpenAi GenAI telemetry attributes to the provided
+`Span`.
+
+**NOTE**: This method will mutate the `Span` **in-place**.
+
+**Signature**
+
+```ts
+declare const addGenAIAnnotations: ((options: OpenAiTelemetryAttributeOptions) => (span: Span) => void) & ((span: Span, options: OpenAiTelemetryAttributeOptions) => void)
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiTelemetry.ts#L123)
+
+Since v1.0.0, Utilities
 OpenAiTelemetry-ResponseAttributes.md
 Package: `@effect/ai-openai`<br />
 Module: `OpenAiTelemetry`<br />
@@ -74724,26 +74761,6 @@ export interface ResponseAttributes {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiTelemetry.ts#L60)
 
 Since v1.0.0
-OpenAiTelemetry-addGenAIAnnotations.md
-Package: `@effect/ai-openai`<br />
-Module: `OpenAiTelemetry`<br />
-
-## OpenAiTelemetry.addGenAIAnnotations
-
-Applies the specified OpenAi GenAI telemetry attributes to the provided
-`Span`.
-
-**NOTE**: This method will mutate the `Span` **in-place**.
-
-**Signature**
-
-```ts
-declare const addGenAIAnnotations: ((options: OpenAiTelemetryAttributeOptions) => (span: Span) => void) & ((span: Span, options: OpenAiTelemetryAttributeOptions) => void)
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiTelemetry.ts#L123)
-
-Since v1.0.0, Utilities
 OpenAiTelemetry-WellKnownResponseFormat.md
 Package: `@effect/ai-openai`<br />
 Module: `OpenAiTelemetry`<br />
@@ -76670,52 +76687,6 @@ declare const liftThrowable: <A extends ReadonlyArray<unknown>, B>(f: (...a: A) 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L812)
 
 Since v2.0.0
-Option-map.md
-Package: `effect`<br />
-Module: `Option`<br />
-
-## Option.map
-
-Transforms the value inside a `Some` to a new value using the provided
-function, while leaving `None` unchanged.
-
-**Details**
-
-This function applies a mapping function `f` to the value inside an `Option`
-if it is a `Some`. If the `Option` is `None`, it remains unchanged. The
-result is a new `Option` with the transformed value (if it was a `Some`) or
-still `None`.
-
-This utility is particularly useful for chaining transformations in a
-functional way without needing to manually handle `None` cases.
-
-**Example**
-
-```ts
-import { Option } from "effect"
-
-// Mapping over a `Some`
-const someValue = Option.some(2)
-
-console.log(Option.map(someValue, (n) => n * 2))
-// Output: { _id: 'Option', _tag: 'Some', value: 4 }
-
-// Mapping over a `None`
-const noneValue = Option.none<number>()
-
-console.log(Option.map(noneValue, (n) => n * 2))
-// Output: { _id: 'Option', _tag: 'None' }
-```
-
-**Signature**
-
-```ts
-declare const map: { <A, B>(f: (a: A) => B): (self: Option<A>) => Option<B>; <A, B>(self: Option<A>, f: (a: A) => B): Option<B>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L923)
-
-Since v2.0.0
 Option-Option.Value.md
 Package: `effect`<br />
 Module: `Option`<br />
@@ -76775,6 +76746,52 @@ type Option<A> = None<A> | Some<A>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L40)
+
+Since v2.0.0
+Option-map.md
+Package: `effect`<br />
+Module: `Option`<br />
+
+## Option.map
+
+Transforms the value inside a `Some` to a new value using the provided
+function, while leaving `None` unchanged.
+
+**Details**
+
+This function applies a mapping function `f` to the value inside an `Option`
+if it is a `Some`. If the `Option` is `None`, it remains unchanged. The
+result is a new `Option` with the transformed value (if it was a `Some`) or
+still `None`.
+
+This utility is particularly useful for chaining transformations in a
+functional way without needing to manually handle `None` cases.
+
+**Example**
+
+```ts
+import { Option } from "effect"
+
+// Mapping over a `Some`
+const someValue = Option.some(2)
+
+console.log(Option.map(someValue, (n) => n * 2))
+// Output: { _id: 'Option', _tag: 'Some', value: 4 }
+
+// Mapping over a `None`
+const noneValue = Option.none<number>()
+
+console.log(Option.map(noneValue, (n) => n * 2))
+// Output: { _id: 'Option', _tag: 'None' }
+```
+
+**Signature**
+
+```ts
+declare const map: { <A, B>(f: (a: A) => B): (self: Option<A>) => Option<B>; <A, B>(self: Option<A>, f: (a: A) => B): Option<B>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L923)
 
 Since v2.0.0
 Option-match.md
@@ -79471,40 +79488,6 @@ declare const isPromise: (input: unknown) => input is Promise<unknown>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L844)
 
 Since v2.0.0
-Predicate-isPromiseLike.md
-Package: `effect`<br />
-Module: `Predicate`<br />
-
-## Predicate.isPromiseLike
-
-A refinement that checks if a value is `PromiseLike`. It performs a duck-typing
-check for a `.then` method.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { isPromiseLike } from "effect/Predicate"
-
-assert.strictEqual(isPromiseLike(Promise.resolve(1)), true)
-assert.strictEqual(isPromiseLike({ then: () => {} }), true)
-
-assert.strictEqual(isPromiseLike({}), false)
-```
-
-**See**
-
-- isPromise
-
-**Signature**
-
-```ts
-declare const isPromiseLike: (input: unknown) => input is PromiseLike<unknown>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L868)
-
-Since v2.0.0
 Predicate-Predicate.Any.md
 Package: `effect`<br />
 Module: `Predicate`<br />
@@ -79705,6 +79688,40 @@ export interface Refinement<in A, out B extends A> {
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L81)
+
+Since v2.0.0
+Predicate-isPromiseLike.md
+Package: `effect`<br />
+Module: `Predicate`<br />
+
+## Predicate.isPromiseLike
+
+A refinement that checks if a value is `PromiseLike`. It performs a duck-typing
+check for a `.then` method.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { isPromiseLike } from "effect/Predicate"
+
+assert.strictEqual(isPromiseLike(Promise.resolve(1)), true)
+assert.strictEqual(isPromiseLike({ then: () => {} }), true)
+
+assert.strictEqual(isPromiseLike({}), false)
+```
+
+**See**
+
+- isPromise
+
+**Signature**
+
+```ts
+declare const isPromiseLike: (input: unknown) => input is PromiseLike<unknown>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L868)
 
 Since v2.0.0
 Predicate-isReadonlyRecord.md
@@ -80770,27 +80787,6 @@ export interface AssistantMessageOptions extends ProviderOptions {}
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1101)
 
 Since v1.0.0
-Prompt-AssistantMessagePart.md
-Package: `@effect/ai`<br />
-Module: `Prompt`<br />
-
-## Prompt.AssistantMessagePart
-
-Union type of content parts allowed in assistant messages.
-
-**Signature**
-
-```ts
-type AssistantMessagePart = | TextPart
-  | FilePart
-  | ReasoningPart
-  | ToolCallPart
-  | ToolResultPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1064)
-
-Since v1.0.0
 Prompt-all.md
 Package: `@effect/cli`<br />
 Module: `Prompt`<br />
@@ -80891,6 +80887,27 @@ declare const assistantMessage: (params: MessageConstructorParams<AssistantMessa
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1127)
+
+Since v1.0.0
+Prompt-AssistantMessagePart.md
+Package: `@effect/ai`<br />
+Module: `Prompt`<br />
+
+## Prompt.AssistantMessagePart
+
+Union type of content parts allowed in assistant messages.
+
+**Signature**
+
+```ts
+type AssistantMessagePart = | TextPart
+  | FilePart
+  | ReasoningPart
+  | ToolCallPart
+  | ToolResultPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1064)
 
 Since v1.0.0
 Prompt-AssistantMessagePartEncoded.md
@@ -81673,28 +81690,6 @@ export interface SystemMessage extends BaseMessage<"system", SystemMessageOption
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L850)
 
 Since v1.0.0
-Prompt-SystemMessageEncoded.md
-Package: `@effect/ai`<br />
-Module: `Prompt`<br />
-
-## Prompt.SystemMessageEncoded
-
-Encoded representation of system messages for serialization.
-
-**Signature**
-
-```ts
-export interface SystemMessageEncoded extends BaseMessageEncoded<"system", SystemMessageOptions> {
-  /**
-   * The system instruction or context as plain text.
-   */
-  readonly content: string
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L863)
-
-Since v1.0.0
 Prompt-custom.md
 Package: `@effect/cli`<br />
 Module: `Prompt`<br />
@@ -82199,6 +82194,28 @@ declare const systemMessage: (params: MessageConstructorParams<SystemMessage>) =
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L900)
+
+Since v1.0.0
+Prompt-SystemMessageEncoded.md
+Package: `@effect/ai`<br />
+Module: `Prompt`<br />
+
+## Prompt.SystemMessageEncoded
+
+Encoded representation of system messages for serialization.
+
+**Signature**
+
+```ts
+export interface SystemMessageEncoded extends BaseMessageEncoded<"system", SystemMessageOptions> {
+  /**
+   * The system instruction or context as plain text.
+   */
+  readonly content: string
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L863)
 
 Since v1.0.0
 Prompt-SystemMessageOptions.md
@@ -85554,24 +85571,6 @@ declare const lessThan: { <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L271)
 
 Since v2.0.0
-RedBlackTree-lessThanEqual.md
-Package: `effect`<br />
-Module: `RedBlackTree`<br />
-
-## RedBlackTree.lessThanEqual
-
-Returns an iterator that traverse entries in order with keys less than or
-equal to the specified key.
-
-**Signature**
-
-```ts
-declare const lessThanEqual: { <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable<[K, V]>; <K, V>(self: RedBlackTree<K, V>, key: K): Iterable<[K, V]>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L295)
-
-Since v2.0.0
 Redacted-getEquivalence.md
 Package: `effect`<br />
 Module: `Redacted`<br />
@@ -85716,6 +85715,24 @@ export interface RedBlackTree<in out Key, out Value> extends Iterable<[Key, Valu
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L34)
+
+Since v2.0.0
+RedBlackTree-lessThanEqual.md
+Package: `effect`<br />
+Module: `RedBlackTree`<br />
+
+## RedBlackTree.lessThanEqual
+
+Returns an iterator that traverse entries in order with keys less than or
+equal to the specified key.
+
+**Signature**
+
+```ts
+declare const lessThanEqual: { <K>(key: K): <V>(self: RedBlackTree<K, V>) => Iterable<[K, V]>; <K, V>(self: RedBlackTree<K, V>, key: K): Iterable<[K, V]>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L295)
 
 Since v2.0.0
 RedBlackTree-lessThanEqualReversed.md
@@ -86652,24 +86669,6 @@ declare const makeBatched: <A extends Request.Request<any, any>, R>(run: (reques
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RequestResolver.ts#L139)
 
 Since v2.0.0
-RequestResolver-makeWithEntry.md
-Package: `effect`<br />
-Module: `RequestResolver`<br />
-
-## RequestResolver.makeWithEntry
-
-Constructs a data source with the specified identifier and method to run
-requests.
-
-**Signature**
-
-```ts
-declare const makeWithEntry: <A, R>(runAll: (requests: Array<Array<Request.Entry<A>>>) => Effect.Effect<void, never, R>) => RequestResolver<A, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RequestResolver.ts#L129)
-
-Since v2.0.0
 RequestResolver-RequestResolver.md
 Package: `effect`<br />
 Module: `RequestResolver`<br />
@@ -86714,6 +86713,24 @@ export interface RequestResolver<in A, out R = never> extends RequestResolver.Va
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RequestResolver.ts#L52)
+
+Since v2.0.0
+RequestResolver-makeWithEntry.md
+Package: `effect`<br />
+Module: `RequestResolver`<br />
+
+## RequestResolver.makeWithEntry
+
+Constructs a data source with the specified identifier and method to run
+requests.
+
+**Signature**
+
+```ts
+declare const makeWithEntry: <A, R>(runAll: (requests: Array<Array<Request.Entry<A>>>) => Effect.Effect<void, never, R>) => RequestResolver<A, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RequestResolver.ts#L129)
 
 Since v2.0.0
 RequestResolver-mapInputContext.md
@@ -87894,23 +87911,6 @@ declare const reasoningEndPart: (params: ConstructorParams<ReasoningEndPart>) =>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1114)
 
 Since v1.0.0
-Response-reasoningPart.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.reasoningPart
-
-Constructs a new reasoning part.
-
-**Signature**
-
-```ts
-declare const reasoningPart: (params: ConstructorParams<ReasoningPart>) => ReasoningPart
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L912)
-
-Since v1.0.0
 Response-ReasoningPart.md
 Package: `@effect/ai`<br />
 Module: `Response`<br />
@@ -88946,52 +88946,21 @@ type ToolResultPart<Name, Success, Failure> = | ToolResultSuccess<Name, Success>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1621)
 
 Since v1.0.0
-Response-ToolResultPartEncoded.md
+Response-reasoningPart.md
 Package: `@effect/ai`<br />
 Module: `Response`<br />
 
-## Response.ToolResultPartEncoded
+## Response.reasoningPart
 
-Encoded representation of tool result parts for serialization.
+Constructs a new reasoning part.
 
 **Signature**
 
 ```ts
-export interface ToolResultPartEncoded extends BasePartEncoded<"tool-result", ToolResultPartMetadata> {
-  /**
-   * Unique identifier matching the original tool call.
-   */
-  readonly id: string
-  /**
-   * Name of the tool being called, which corresponds to the name of the tool
-   * in the `Toolkit` included with the request.
-   */
-  readonly name: string
-  /**
-   * The result returned by the tool execution.
-   */
-  readonly result: unknown
-  /**
-   * Whether or not the result of executing the tool call handler was an error.
-   */
-  readonly isFailure: boolean
-  /**
-   * Optional provider-specific name for the tool, which can be useful when the
-   * name of the tool in the `Toolkit` and the name of the tool used by the
-   * model are different.
-   *
-   * This is usually happens only with provider-defined tools which require a
-   * user-space handler.
-   */
-  readonly providerName?: string | undefined
-  /**
-   * Whether the tool was executed by the provider (true) or framework (false).
-   */
-  readonly providerExecuted?: boolean | undefined
-}
+declare const reasoningPart: (params: ConstructorParams<ReasoningPart>) => ReasoningPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1631)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L912)
 
 Since v1.0.0
 Response-reasoningStartPart.md
@@ -89179,6 +89148,54 @@ declare const toolResultPart: <const Params extends ConstructorParams<ToolResult
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1754)
+
+Since v1.0.0
+Response-ToolResultPartEncoded.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.ToolResultPartEncoded
+
+Encoded representation of tool result parts for serialization.
+
+**Signature**
+
+```ts
+export interface ToolResultPartEncoded extends BasePartEncoded<"tool-result", ToolResultPartMetadata> {
+  /**
+   * Unique identifier matching the original tool call.
+   */
+  readonly id: string
+  /**
+   * Name of the tool being called, which corresponds to the name of the tool
+   * in the `Toolkit` included with the request.
+   */
+  readonly name: string
+  /**
+   * The result returned by the tool execution.
+   */
+  readonly result: unknown
+  /**
+   * Whether or not the result of executing the tool call handler was an error.
+   */
+  readonly isFailure: boolean
+  /**
+   * Optional provider-specific name for the tool, which can be useful when the
+   * name of the tool in the `Toolkit` and the name of the tool used by the
+   * model are different.
+   *
+   * This is usually happens only with provider-defined tools which require a
+   * user-space handler.
+   */
+  readonly providerName?: string | undefined
+  /**
+   * Whether the tool was executed by the provider (true) or framework (false).
+   */
+  readonly providerExecuted?: boolean | undefined
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1631)
 
 Since v1.0.0
 Response-ToolResultPartMetadata.md
@@ -90247,23 +90264,6 @@ declare const disable: { (flag: RuntimeFlag): (self: RuntimeFlags) => RuntimeFla
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L129)
 
 Since v2.0.0
-RuntimeFlags-disableAll.md
-Package: `effect`<br />
-Module: `RuntimeFlags`<br />
-
-## RuntimeFlags.disableAll
-
-Disables all of the `RuntimeFlag`s in the specified set of `RuntimeFlags`.
-
-**Signature**
-
-```ts
-declare const disableAll: { (flags: RuntimeFlags): (self: RuntimeFlags) => RuntimeFlags; (self: RuntimeFlags, flags: RuntimeFlags): RuntimeFlags; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L140)
-
-Since v2.0.0
 RuntimeFlags-Interruption.md
 Package: `effect`<br />
 Module: `RuntimeFlags`<br />
@@ -90399,6 +90399,23 @@ declare const WindDown: RuntimeFlag
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L83)
+
+Since v2.0.0
+RuntimeFlags-disableAll.md
+Package: `effect`<br />
+Module: `RuntimeFlags`<br />
+
+## RuntimeFlags.disableAll
+
+Disables all of the `RuntimeFlag`s in the specified set of `RuntimeFlags`.
+
+**Signature**
+
+```ts
+declare const disableAll: { (flags: RuntimeFlags): (self: RuntimeFlags) => RuntimeFlags; (self: RuntimeFlags, flags: RuntimeFlags): RuntimeFlags; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RuntimeFlags.ts#L140)
 
 Since v2.0.0
 RuntimeFlags-enable.md
@@ -92638,33 +92655,6 @@ declare const recurUntilEffect: <A, R>(f: (a: A) => Effect.Effect<boolean, never
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1519)
 
 Since v2.0.0
-Schedule-recurUntilOption.md
-Package: `effect`<br />
-Module: `Schedule`<br />
-
-## Schedule.recurUntilOption
-
-A schedule that recurs until the input value matches a partial function, then
-maps the value.
-
-**Details**
-
-This schedule continues executing until the provided partial function `pf`
-returns `Some(value)`. At that point, it stops and maps the resulting value
-to an `Option<B>`. If `pf` returns `None`, the schedule continues.
-
-This is useful when defining schedules that should stop once a certain
-condition is met and transform the final value before completion.
-
-**Signature**
-
-```ts
-declare const recurUntilOption: <A, B>(pf: (a: A) => Option.Option<B>) => Schedule<Option.Option<B>, A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1538)
-
-Since v2.0.0
 Schedule-recurs.md
 Package: `effect`<br />
 Module: `Schedule`<br />
@@ -92759,6 +92749,33 @@ export interface Schedule<out Out, in In = unknown, out R = never> extends Sched
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L95)
+
+Since v2.0.0
+Schedule-recurUntilOption.md
+Package: `effect`<br />
+Module: `Schedule`<br />
+
+## Schedule.recurUntilOption
+
+A schedule that recurs until the input value matches a partial function, then
+maps the value.
+
+**Details**
+
+This schedule continues executing until the provided partial function `pf`
+returns `Some(value)`. At that point, it stops and maps the resulting value
+to an `Option<B>`. If `pf` returns `None`, the schedule continues.
+
+This is useful when defining schedules that should stop once a certain
+condition is met and transform the final value before completion.
+
+**Signature**
+
+```ts
+declare const recurUntilOption: <A, B>(pf: (a: A) => Option.Option<B>) => Schedule<Option.Option<B>, A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L1538)
 
 Since v2.0.0
 Schedule-recurUpTo.md
@@ -93877,23 +93894,6 @@ declare const end: (self: Intervals) => number
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleIntervals.ts#L91)
 
 Since v2.0.0
-ScheduleIntervals-fromIterable.md
-Package: `effect`<br />
-Module: `ScheduleIntervals`<br />
-
-## ScheduleIntervals.fromIterable
-
-Creates `Intervals` from the specified `Iterable<Interval>`.
-
-**Signature**
-
-```ts
-declare const fromIterable: (intervals: Iterable<Interval.Interval>) => Intervals
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleIntervals.ts#L53)
-
-Since v2.0.0
 ScheduleIntervals-Intervals.md
 Package: `effect`<br />
 Module: `ScheduleIntervals`<br />
@@ -93912,6 +93912,23 @@ export interface Intervals {
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleIntervals.ts#L26)
+
+Since v2.0.0
+ScheduleIntervals-fromIterable.md
+Package: `effect`<br />
+Module: `ScheduleIntervals`<br />
+
+## ScheduleIntervals.fromIterable
+
+Creates `Intervals` from the specified `Iterable<Interval>`.
+
+**Signature**
+
+```ts
+declare const fromIterable: (intervals: Iterable<Interval.Interval>) => Intervals
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleIntervals.ts#L53)
 
 Since v2.0.0
 ScheduleIntervals-intersect.md
@@ -94851,23 +94868,6 @@ declare const greaterThan: <S extends Schema.Any>(exclusiveMinimum: number, anno
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5009)
 
 Since v3.10.0
-Schema-greaterThanOrEqualTo.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.greaterThanOrEqualTo
-
-This filter checks whether the provided number is greater than or equal to the specified minimum.
-
-**Signature**
-
-```ts
-declare const greaterThanOrEqualTo: <S extends Schema.Any>(minimum: number, annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5042)
-
-Since v3.10.0
 Schema-JsonNumber.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -95404,6 +95404,23 @@ declare class TimeZoneOffsetFromSelf
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6950)
+
+Since v3.10.0
+Schema-greaterThanOrEqualTo.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.greaterThanOrEqualTo
+
+This filter checks whether the provided number is greater than or equal to the specified minimum.
+
+**Signature**
+
+```ts
+declare const greaterThanOrEqualTo: <S extends Schema.Any>(minimum: number, annotations?: Annotations.Filter<Schema.Type<S>>) => <A extends number>(self: S & Schema<A, Schema.Encoded<S>, Schema.Context<S>>) => filter<S>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L5042)
 
 Since v3.10.0
 Schema-head.md
@@ -95960,24 +95977,6 @@ declare const transformLiterals: { <const A extends AST.Members<readonly [from: 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L4052)
 
 Since v3.10.0
-Schema-transformOrFail.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.transformOrFail
-
-Create a new `Schema` by transforming the input and output of an existing `Schema`
-using the provided decoding functions.
-
-**Signature**
-
-```ts
-declare const transformOrFail: { <To extends Schema.Any, From extends Schema.Any, RD, RE>(to: To, options: { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<Schema.Encoded<To>, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<Schema.Type<From>, ParseResult.ParseIssue, RE>; readonly strict?: true; } | { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<unknown, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<unknown, ParseResult.ParseIssue, RE>; readonly strict: false; }): (from: From) => transformOrFail<From, To, RD | RE>; <To extends Schema.Any, From extends Schema.Any, RD, RE>(from: From, to: To, options: { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<Schema.Encoded<To>, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<Schema.Type<From>, ParseResult.ParseIssue, RE>; readonly strict?: true; } | { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<unknown, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<unknown, ParseResult.ParseIssue, RE>; readonly strict: false; }): transformOrFail<From, To, RD | RE>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3830)
-
-Since v3.10.0
 Schema-Trim.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -96215,6 +96214,24 @@ export interface WithResult<Success, SuccessEncoded, Failure, FailureEncoded, Re
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10240)
+
+Since v3.10.0
+Schema-transformOrFail.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.transformOrFail
+
+Create a new `Schema` by transforming the input and output of an existing `Schema`
+using the provided decoding functions.
+
+**Signature**
+
+```ts
+declare const transformOrFail: { <To extends Schema.Any, From extends Schema.Any, RD, RE>(to: To, options: { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<Schema.Encoded<To>, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<Schema.Type<From>, ParseResult.ParseIssue, RE>; readonly strict?: true; } | { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<unknown, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<unknown, ParseResult.ParseIssue, RE>; readonly strict: false; }): (from: From) => transformOrFail<From, To, RD | RE>; <To extends Schema.Any, From extends Schema.Any, RD, RE>(from: From, to: To, options: { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<Schema.Encoded<To>, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<Schema.Type<From>, ParseResult.ParseIssue, RE>; readonly strict?: true; } | { readonly decode: (fromA: Schema.Type<From>, options: ParseOptions, ast: AST.Transformation, fromI: Schema.Encoded<From>) => Effect.Effect<unknown, ParseResult.ParseIssue, RD>; readonly encode: (toI: Schema.Encoded<To>, options: ParseOptions, ast: AST.Transformation, toA: Schema.Type<To>) => Effect.Effect<unknown, ParseResult.ParseIssue, RE>; readonly strict: false; }): transformOrFail<From, To, RD | RE>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L3830)
 
 Since v3.10.0
 Schema-trimmed.md
@@ -96918,24 +96935,6 @@ declare const get: <A>(self: ScopedRef<A>) => Effect.Effect<A>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScopedRef.ts#L92)
 
 Since v2.0.0
-ScopedRef-make.md
-Package: `effect`<br />
-Module: `ScopedRef`<br />
-
-## ScopedRef.make
-
-Creates a new `ScopedRef` from the specified value. This method should
-not be used for values whose creation require the acquisition of resources.
-
-**Signature**
-
-```ts
-declare const make: <A>(evaluate: LazyArg<A>) => Effect.Effect<ScopedRef<A>, never, Scope.Scope>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScopedRef.ts#L101)
-
-Since v2.0.0
 ScopedRef-ScopedRef.md
 Package: `effect`<br />
 Module: `ScopedRef`<br />
@@ -96962,6 +96961,24 @@ export interface ScopedRef<in out A> extends Effect.Effect<A>, ScopedRef.Varianc
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScopedRef.ts#L35)
+
+Since v2.0.0
+ScopedRef-make.md
+Package: `effect`<br />
+Module: `ScopedRef`<br />
+
+## ScopedRef.make
+
+Creates a new `ScopedRef` from the specified value. This method should
+not be used for values whose creation require the acquisition of resources.
+
+**Signature**
+
+```ts
+declare const make: <A>(evaluate: LazyArg<A>) => Effect.Effect<ScopedRef<A>, never, Scope.Scope>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScopedRef.ts#L101)
 
 Since v2.0.0
 ScopedRef-set.md
@@ -98796,23 +98813,6 @@ declare const map: { <A, A2>(f: (a: A) => A2): <In, L, E, R>(self: Sink<A, In, L
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L1081)
 
 Since v2.0.0
-Sink-mapEffect.md
-Package: `effect`<br />
-Module: `Sink`<br />
-
-## Sink.mapEffect
-
-Effectfully transforms this sink's result.
-
-**Signature**
-
-```ts
-declare const mapEffect: { <A, A2, E2, R2>(f: (a: A) => Effect.Effect<A2, E2, R2>): <In, L, E, R>(self: Sink<A, In, L, E, R>) => Sink<A2, In, L, E2 | E, R2 | R>; <A, In, L, E, R, A2, E2, R2>(self: Sink<A, In, L, E, R>, f: (a: A) => Effect.Effect<A2, E2, R2>): Sink<A2, In, L, E | E2, R | R2>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L1092)
-
-Since v2.0.0
 STM-acquireUseRelease.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -98888,23 +98888,6 @@ declare const asSome: <A, E, R>(self: STM<A, E, R>) => STM<Option.Option<A>, E, 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L275)
 
 Since v2.0.0
-STM-asSomeError.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.asSomeError
-
-Maps the error value of this effect to an optional value.
-
-**Signature**
-
-```ts
-declare const asSomeError: <A, E, R>(self: STM<A, E, R>) => STM<A, Option.Option<E>, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L283)
-
-Since v2.0.0
 Sink-Sink.md
 Package: `effect`<br />
 Module: `Sink`<br />
@@ -98926,6 +98909,23 @@ export interface Sink<out A, in In = unknown, out L = never, out E = never, out 
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L48)
+
+Since v2.0.0
+Sink-mapEffect.md
+Package: `effect`<br />
+Module: `Sink`<br />
+
+## Sink.mapEffect
+
+Effectfully transforms this sink's result.
+
+**Signature**
+
+```ts
+declare const mapEffect: { <A, A2, E2, R2>(f: (a: A) => Effect.Effect<A2, E2, R2>): <In, L, E, R>(self: Sink<A, In, L, E, R>) => Sink<A2, In, L, E2 | E, R2 | R>; <A, In, L, E, R, A2, E2, R2>(self: Sink<A, In, L, E, R>, f: (a: A) => Effect.Effect<A2, E2, R2>): Sink<A2, In, L, E | E2, R | R2>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L1092)
 
 Since v2.0.0
 Sink-mapError.md
@@ -99699,6 +99699,23 @@ declare const makeParser: (onParse: (event: AnyEvent) => void) => Parser
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/Sse.ts#L93)
 
 Since v1.0.0
+STM-asSomeError.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.asSomeError
+
+Maps the error value of this effect to an optional value.
+
+**Signature**
+
+```ts
+declare const asSomeError: <A, E, R>(self: STM<A, E, R>) => STM<A, Option.Option<E>, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L283)
+
+Since v2.0.0
 STM-asVoid.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -100572,36 +100589,6 @@ declare const iterate: <Z, E, R>(initial: Z, options: { readonly while: Predicat
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1182)
 
 Since v2.0.0
-STM-loop.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.loop
-
-Loops with the specified transactional function, collecting the results
-into a list. The moral equivalent of:
-
-```ts
-const as = []
-let s  = initial
-
-while (cont(s)) {
-  as.push(body(s))
-  s  = inc(s)
-}
-
-return as
-```
-
-**Signature**
-
-```ts
-declare const loop: { <Z, A, E, R>(initial: Z, options: { readonly while: (z: Z) => boolean; readonly step: (z: Z) => Z; readonly body: (z: Z) => STM<A, E, R>; readonly discard?: false | undefined; }): STM<Array<A>, E, R>; <Z, A, E, R>(initial: Z, options: { readonly while: (z: Z) => boolean; readonly step: (z: Z) => Z; readonly body: (z: Z) => STM<A, E, R>; readonly discard: true; }): STM<void, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1209)
-
-Since v2.0.0
 STM-STM.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -100655,6 +100642,36 @@ export interface STM<out A, out E = never, out R = never>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L70)
+
+Since v2.0.0
+STM-loop.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.loop
+
+Loops with the specified transactional function, collecting the results
+into a list. The moral equivalent of:
+
+```ts
+const as = []
+let s  = initial
+
+while (cont(s)) {
+  as.push(body(s))
+  s  = inc(s)
+}
+
+return as
+```
+
+**Signature**
+
+```ts
+declare const loop: { <Z, A, E, R>(initial: Z, options: { readonly while: (z: Z) => boolean; readonly step: (z: Z) => Z; readonly body: (z: Z) => STM<A, E, R>; readonly discard?: false | undefined; }): STM<Array<A>, E, R>; <Z, A, E, R>(initial: Z, options: { readonly while: (z: Z) => boolean; readonly step: (z: Z) => Z; readonly body: (z: Z) => STM<A, E, R>; readonly discard: true; }): STM<void, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1209)
 
 Since v2.0.0
 STM-map.md
@@ -102756,44 +102773,6 @@ declare const concat: { <A2, E2, R2>(that: Stream<A2, E2, R2>): <A, E, R>(self: 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L1065)
 
 Since v2.0.0
-Stream-concatAll.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.concatAll
-
-Concatenates all of the streams in the chunk to one stream.
-
-**Example**
-
-```ts
-import { Chunk, Effect, Stream } from "effect"
-
-const s1 = Stream.make(1, 2, 3)
-const s2 = Stream.make(4, 5)
-const s3 = Stream.make(6, 7, 8)
-
-const stream = Stream.concatAll(Chunk.make(s1, s2, s3))
-
-Effect.runPromise(Stream.runCollect(stream)).then(console.log)
-// {
-//   _id: 'Chunk',
-//   values: [
-//     1, 2, 3, 4,
-//     5, 6, 7, 8
-//   ]
-// }
-```
-
-**Signature**
-
-```ts
-declare const concatAll: <A, E, R>(streams: Chunk.Chunk<Stream<A, E, R>>) => Stream<A, E, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L1096)
-
-Since v2.0.0
 Stream-DefaultChunkSize.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -102856,6 +102835,44 @@ declare const Do: Stream<{}, never, never>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L6246)
+
+Since v2.0.0
+Stream-concatAll.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.concatAll
+
+Concatenates all of the streams in the chunk to one stream.
+
+**Example**
+
+```ts
+import { Chunk, Effect, Stream } from "effect"
+
+const s1 = Stream.make(1, 2, 3)
+const s2 = Stream.make(4, 5)
+const s3 = Stream.make(6, 7, 8)
+
+const stream = Stream.concatAll(Chunk.make(s1, s2, s3))
+
+Effect.runPromise(Stream.runCollect(stream)).then(console.log)
+// {
+//   _id: 'Chunk',
+//   values: [
+//     1, 2, 3, 4,
+//     5, 6, 7, 8
+//   ]
+// }
+```
+
+**Signature**
+
+```ts
+declare const concatAll: <A, E, R>(streams: Chunk.Chunk<Stream<A, E, R>>) => Stream<A, E, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L1096)
 
 Since v2.0.0
 Stream-context.md
@@ -107336,23 +107353,6 @@ declare const sliding: { (chunkSize: number): <A, E, R>(self: Stream<A, E, R>) =
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4661)
 
 Since v2.0.0
-Stream-slidingSize.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.slidingSize
-
-Like `sliding`, but with a configurable `stepSize` parameter.
-
-**Signature**
-
-```ts
-declare const slidingSize: { (chunkSize: number, stepSize: number): <A, E, R>(self: Stream<A, E, R>) => Stream<Chunk.Chunk<A>, E, R>; <A, E, R>(self: Stream<A, E, R>, chunkSize: number, stepSize: number): Stream<Chunk.Chunk<A>, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4672)
-
-Since v2.0.0
 Stream-Stream.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -107386,6 +107386,23 @@ export interface Stream<out A, out E = never, out R = never> extends Stream.Vari
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L71)
+
+Since v2.0.0
+Stream-slidingSize.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.slidingSize
+
+Like `sliding`, but with a configurable `stepSize` parameter.
+
+**Signature**
+
+```ts
+declare const slidingSize: { (chunkSize: number, stepSize: number): <A, E, R>(self: Stream<A, E, R>) => Stream<Chunk.Chunk<A>, E, R>; <A, E, R>(self: Stream<A, E, R>, chunkSize: number, stepSize: number): Stream<Chunk.Chunk<A>, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4672)
 
 Since v2.0.0
 Stream-some.md
@@ -110328,23 +110345,6 @@ declare const findLastSTM: { <A, R, E>(predicate: (value: A) => STM.STM<boolean,
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L284)
 
 Since v2.0.0
-TArray-forEach.md
-Package: `effect`<br />
-Module: `TArray`<br />
-
-## TArray.forEach
-
-Atomically performs transactional effect for each item in array.
-
-**Signature**
-
-```ts
-declare const forEach: { <A, R, E>(f: (value: A) => STM.STM<void, E, R>): (self: TArray<A>) => STM.STM<void, E, R>; <A, R, E>(self: TArray<A>, f: (value: A) => STM.STM<void, E, R>): STM.STM<void, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L295)
-
-Since v2.0.0
 Take-Take.md
 Package: `effect`<br />
 Module: `Take`<br />
@@ -110696,6 +110696,23 @@ declare const tap: { <A, X, E2, R>(f: (chunk: Chunk.Chunk<A>) => Effect.Effect<X
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Take.ts#L250)
+
+Since v2.0.0
+TArray-forEach.md
+Package: `effect`<br />
+Module: `TArray`<br />
+
+## TArray.forEach
+
+Atomically performs transactional effect for each item in array.
+
+**Signature**
+
+```ts
+declare const forEach: { <A, R, E>(f: (value: A) => STM.STM<void, E, R>): (self: TArray<A>) => STM.STM<void, E, R>; <A, R, E>(self: TArray<A>, f: (value: A) => STM.STM<void, E, R>): STM.STM<void, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L295)
 
 Since v2.0.0
 TArray-fromIterable.md
@@ -111897,25 +111914,6 @@ declare const currentTimeMillis: Effect.Effect<number, never, never>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L556)
 
 Since v2.0.0
-TestClock-save.md
-Package: `effect`<br />
-Module: `TestClock`<br />
-
-## TestClock.save
-
-Accesses a `TestClock` instance in the context and saves the clock
-state in an effect which, when run, will restore the `TestClock` to the
-saved state.
-
-**Signature**
-
-```ts
-declare const save: () => Effect.Effect<Effect.Effect<void>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L493)
-
-Since v2.0.0
 TMap-empty.md
 Package: `effect`<br />
 Module: `TMap`<br />
@@ -112125,23 +112123,6 @@ declare const keys: <K, V>(self: TMap<K, V>) => STM.STM<Array<K>>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L193)
 
 Since v2.0.0
-TMap-make.md
-Package: `effect`<br />
-Module: `TMap`<br />
-
-## TMap.make
-
-Makes a new `TMap` that is initialized with specified values.
-
-**Signature**
-
-```ts
-declare const make: <K, V>(...entries: Array<readonly [K, V]>) => STM.STM<TMap<K, V>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L201)
-
-Since v2.0.0
 TestClock-TestClock.md
 Package: `effect`<br />
 Module: `TestClock`<br />
@@ -112196,6 +112177,25 @@ export interface TestClock extends Clock.Clock {
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L76)
+
+Since v2.0.0
+TestClock-save.md
+Package: `effect`<br />
+Module: `TestClock`<br />
+
+## TestClock.save
+
+Accesses a `TestClock` instance in the context and saves the clock
+state in an effect which, when run, will restore the `TestClock` to the
+saved state.
+
+**Signature**
+
+```ts
+declare const save: () => Effect.Effect<Effect.Effect<void>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestClock.ts#L493)
 
 Since v2.0.0
 TestClock-setTime.md
@@ -112874,6 +112874,23 @@ export interface TMap<in out K, in out V> extends TMap.Variance<K, V> {}
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L33)
+
+Since v2.0.0
+TMap-make.md
+Package: `effect`<br />
+Module: `TMap`<br />
+
+## TMap.make
+
+Makes a new `TMap` that is initialized with specified values.
+
+**Signature**
+
+```ts
+declare const make: <K, V>(...entries: Array<readonly [K, V]>) => STM.STM<TMap<K, V>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L201)
 
 Since v2.0.0
 TMap-merge.md
@@ -113798,28 +113815,6 @@ type Parameters<T> = T extends Tool<
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L581)
 
 Since v1.0.0
-Tool-ParametersEncoded.md
-Package: `@effect/ai`<br />
-Module: `Tool`<br />
-
-## Tool.ParametersEncoded
-
-A utility type to extract the encoded type of the tool call parameters.
-
-**Signature**
-
-```ts
-type ParametersEncoded<T> = T extends Tool<
-  infer _Name,
-  infer _Config,
-  infer _Requirements
-> ? Schema.Schema.Encoded<_Config["parameters"]>
-  : never
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L594)
-
-Since v1.0.0
 Tool-fromTaggedRequest.md
 Package: `@effect/ai`<br />
 Module: `Tool`<br />
@@ -114416,25 +114411,28 @@ declare const toChunk: <A>(self: TPriorityQueue<A>) => STM.STM<Chunk.Chunk<A>>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L215)
 
 Since v2.0.0
-TPubSub-awaitShutdown.md
-Package: `effect`<br />
-Module: `TPubSub`<br />
+Tool-ParametersEncoded.md
+Package: `@effect/ai`<br />
+Module: `Tool`<br />
 
-## TPubSub.awaitShutdown
+## Tool.ParametersEncoded
 
-Waits until the `TPubSub` is shutdown. The `STM` returned by this method will
-not resume until the queue has been shutdown. If the `TPubSub` is already
-shutdown, the `STM` will resume right away.
+A utility type to extract the encoded type of the tool call parameters.
 
 **Signature**
 
 ```ts
-declare const awaitShutdown: <A>(self: TPubSub<A>) => STM.STM<void>
+type ParametersEncoded<T> = T extends Tool<
+  infer _Name,
+  infer _Config,
+  infer _Requirements
+> ? Schema.Schema.Encoded<_Config["parameters"]>
+  : never
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L64)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L594)
 
-Since v2.0.0
+Since v1.0.0
 Tool-ParametersSchema.md
 Package: `@effect/ai`<br />
 Module: `Tool`<br />
@@ -115478,6 +115476,25 @@ declare const merge: <const Toolkits extends ReadonlyArray<Any>>(...toolkits: To
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Toolkit.ts#L515)
 
 Since v1.0.0
+TPubSub-awaitShutdown.md
+Package: `effect`<br />
+Module: `TPubSub`<br />
+
+## TPubSub.awaitShutdown
+
+Waits until the `TPubSub` is shutdown. The `STM` returned by this method will
+not resume until the queue has been shutdown. If the `TPubSub` is already
+shutdown, the `STM` will resume right away.
+
+**Signature**
+
+```ts
+declare const awaitShutdown: <A>(self: TPubSub<A>) => STM.STM<void>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPubSub.ts#L64)
+
+Since v2.0.0
 TPubSub-bounded.md
 Package: `effect`<br />
 Module: `TPubSub`<br />
@@ -116413,23 +116430,6 @@ declare const withSpanContext: { (spanContext: Otel.SpanContext): <A, E, R>(effe
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/opentelemetry/src/Tracer.ts#L133)
 
 Since v1.0.0
-Traversable-sequence.md
-Package: `@effect/typeclass`<br />
-Module: `Traversable`<br />
-
-## Traversable.sequence
-
-Returns a default `sequence` implementation.
-
-**Signature**
-
-```ts
-declare const sequence: <T extends TypeLambda>(T: Traversable<T>) => <F extends TypeLambda>(F: Applicative<F>) => <TR, TO, TE, R, O, E, A>(self: Kind<T, TR, TO, TE, Kind<F, R, O, E, A>>) => Kind<F, R, O, E, Kind<T, TR, TO, TE, A>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Traversable.ts#L46)
-
-Since v0.24.0
 TReentrantLock-TReentrantLock.md
 Package: `effect`<br />
 Module: `TReentrantLock`<br />
@@ -116803,6 +116803,23 @@ export interface TRef<in out A> extends TRef.Variance<A>, Pipeable {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TRef.ts#L38)
 
 Since v2.0.0
+Traversable-sequence.md
+Package: `@effect/typeclass`<br />
+Module: `Traversable`<br />
+
+## Traversable.sequence
+
+Returns a default `sequence` implementation.
+
+**Signature**
+
+```ts
+declare const sequence: <T extends TypeLambda>(T: Traversable<T>) => <F extends TypeLambda>(F: Applicative<F>) => <TR, TO, TE, R, O, E, A>(self: Kind<T, TR, TO, TE, Kind<F, R, O, E, A>>) => Kind<F, R, O, E, Kind<T, TR, TO, TE, A>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/typeclass/src/Traversable.ts#L46)
+
+Since v0.24.0
 Traversable-traverseComposition.md
 Package: `@effect/typeclass`<br />
 Module: `Traversable`<br />
@@ -117789,40 +117806,6 @@ declare const toEntriesWithPrefix: { (prefix: string): <V>(self: Trie<V>) => Arr
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L340)
 
 Since v2.0.0
-Trie-unsafeGet.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.unsafeGet
-
-Unsafely lookup the value for the specified key in the `Trie`.
-
-`unsafeGet` will throw if the key is not found. Use `get` instead to safely
-get a value from the `Trie`.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1)
-)
-
-assert.throws(() => Trie.unsafeGet(trie, "mae"))
-```
-
-**Signature**
-
-```ts
-declare const unsafeGet: { (key: string): <V>(self: Trie<V>) => V; <V>(self: Trie<V>, key: string): V; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L503)
-
-Since v2.0.0
 TSet-TSet.md
 Package: `effect`<br />
 Module: `TSet`<br />
@@ -118335,6 +118318,40 @@ export interface TSubscriptionRef<in out A> extends TSubscriptionRef.Variance<A>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSubscriptionRef.ts#L34)
 
 Since v3.10.0
+Trie-unsafeGet.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.unsafeGet
+
+Unsafely lookup the value for the specified key in the `Trie`.
+
+`unsafeGet` will throw if the key is not found. Use `get` instead to safely
+get a value from the `Trie`.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie } from "effect"
+
+const trie = Trie.empty<number>().pipe(
+  Trie.insert("call", 0),
+  Trie.insert("me", 1)
+)
+
+assert.throws(() => Trie.unsafeGet(trie, "mae"))
+```
+
+**Signature**
+
+```ts
+declare const unsafeGet: { (key: string): <V>(self: Trie<V>) => V; <V>(self: Trie<V>, key: string): V; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L503)
+
+Since v2.0.0
 Trie-values.md
 Package: `effect`<br />
 Module: `Trie`<br />
@@ -119990,23 +120007,6 @@ declare const assertRight: <R, L>(either: Either.Either<R, L>, expected: R, ..._
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L227)
 
 Since v0.21.0
-utils-assertSome.md
-Package: `@effect/vitest`<br />
-Module: `utils`<br />
-
-## utils.assertSome
-
-Asserts that `option` is `Some`.
-
-**Signature**
-
-```ts
-declare const assertSome: <A>(option: Option.Option<A>, expected: A, ..._: Array<never>) => asserts option is Option.Some<A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L197)
-
-Since v0.21.0
 Utils-PCGRandom.md
 Package: `effect`<br />
 Module: `Utils`<br />
@@ -120313,6 +120313,23 @@ declare const toRpcGroup: <const Workflows extends NonEmptyReadonlyArray<Workflo
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/WorkflowProxy.ts#L45)
 
 Since v1.0.0
+utils-assertSome.md
+Package: `@effect/vitest`<br />
+Module: `utils`<br />
+
+## utils.assertSome
+
+Asserts that `option` is `Some`.
+
+**Signature**
+
+```ts
+declare const assertSome: <A>(option: Option.Option<A>, expected: A, ..._: Array<never>) => asserts option is Option.Some<A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/vitest/src/utils.ts#L197)
+
+Since v0.21.0
 utils-assertSuccess.md
 Package: `@effect/vitest`<br />
 Module: `utils`<br />
