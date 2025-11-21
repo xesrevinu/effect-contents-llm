@@ -40095,7 +40095,7 @@ A Context.Tag to access the current entity address.
 declare class CurrentAddress
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L405)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L408)
 
 Since v1.0.0
 Entity-CurrentRunnerAddress.md
@@ -40112,7 +40112,7 @@ A Context.Tag to access the current Runner address.
 declare class CurrentRunnerAddress
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L416)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L419)
 
 Since v1.0.0
 Entity-fromRpcGroup.md
@@ -40130,7 +40130,7 @@ that adhere to the provided `RpcGroup`.
 declare const fromRpcGroup: <const Type extends string, Rpcs extends Rpc.Any>(type: Type, protocol: RpcGroup.RpcGroup<Rpcs>) => Entity<Type, Rpcs>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L362)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L365)
 
 Since v1.0.0
 Entity-make.md
@@ -40148,7 +40148,7 @@ that adhere to the provided schemas.
 declare const make: <const Type extends string, Rpcs extends ReadonlyArray<Rpc.Any>>(type: Type, protocol: Rpcs) => Entity<Type, Rpcs[number]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L387)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Entity.ts#L390)
 
 Since v1.0.0
 EntityAddress-EntityAddress.md
@@ -89642,7 +89642,7 @@ setting.
 declare const fork: <A extends object>(value: A) => A extends Wrapper<infer _> ? A : Wrapper<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/Rpc.ts#L801)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/Rpc.ts#L816)
 
 Since v1.0.0
 Rpc-uninterruptible.md
@@ -89660,7 +89660,7 @@ that it is executed inside an uninterruptible region.
 declare const uninterruptible: <A extends object>(value: A) => A extends Wrapper<infer _> ? A : Wrapper<A>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/Rpc.ts#L810)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/rpc/src/Rpc.ts#L825)
 
 Since v1.0.0
 RpcSerialization-layerJson.md
@@ -120154,7 +120154,7 @@ By default, this is set to `true`, meaning that defects will be captured.
 declare class CaptureDefects
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L685)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L633)
 
 Since v1.0.0
 Workflow-SuspendOnFailure.md
@@ -120175,7 +120175,7 @@ You can then manually resume the workflow later with
 declare class SuspendOnFailure
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L699)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L647)
 
 Since v1.0.0
 Workflow-Workflow.Error.md
@@ -120254,7 +120254,7 @@ finalizers are only registered for top-level effects in the workflow.
 declare const withCompensation: { <A, R2>(compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): <E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; <A, E, R, R2>(effect: Effect.Effect<A, E, R>, compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L638)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L586)
 
 Since v1.0.0
 WorkflowProxy-toHttpApiGroup.md
