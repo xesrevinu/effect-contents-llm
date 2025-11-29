@@ -24710,6 +24710,73 @@ declare const unAnnotate: <A>(self: DocTree<A>) => DocTree<never>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/printer/src/DocTree.ts#L273)
 
 Since v1.0.0
+DurableQueue-make.md
+Package: `@effect/workflow`<br />
+Module: `DurableQueue`<br />
+
+## DurableQueue.make
+
+A `DurableQueue` wraps a `PersistedQueue`, providing a way to wait for items
+to finish processing using a `DurableDeferred`.
+
+```ts
+import { DurableQueue, Workflow } from "@effect/workflow"
+import { Effect, Schema } from "effect"
+
+// Define a DurableQueue that can be used to derive workers and offer items for
+// processing.
+const ApiQueue = DurableQueue.make({
+  name: "ApiQueue",
+  payload: {
+    id: Schema.String
+  },
+  success: Schema.Void,
+  error: Schema.Never,
+  idempotencyKey(payload) {
+    return payload.id
+  }
+})
+
+const MyWorkflow = Workflow.make({
+  name: "MyWorkflow",
+  payload: {
+    id: Schema.String
+  },
+  idempotencyKey: ({ id }) => id
+})
+
+const MyWorkflowLayer = MyWorkflow.toLayer(
+  Effect.fn(function*() {
+    // Add an item to the DurableQueue defined above.
+    //
+    // When the worker has finished processing the item, the workflow will
+    // resume.
+    //
+    yield* DurableQueue.process(ApiQueue, { id: "api-call-1" })
+
+    yield* Effect.log("Workflow succeeded!")
+  })
+)
+
+// Define a worker layer that can process items from the DurableQueue.
+const ApiWorker = DurableQueue.worker(
+  ApiQueue,
+  Effect.fn(function*({ id }) {
+    yield* Effect.log(`Worker processing API call with id: ${id}`)
+  }),
+  { concurrency: 5 } // Process up to 5 items concurrently
+)
+```
+
+**Signature**
+
+```ts
+declare const make: <Payload extends Schema.Schema.Any | Schema.Struct.Fields, Success extends Schema.Schema.Any = typeof Schema.Void, Error extends Schema.Schema.All = typeof Schema.Never>(options: { readonly name: string; readonly payload: Payload; readonly idempotencyKey: (payload: Payload extends Schema.Struct.Fields ? Schema.Struct<Payload>["Type"] : Payload["Type"]) => string; readonly success?: Success | undefined; readonly error?: Error | undefined; }) => DurableQueue<Payload extends Schema.Struct.Fields ? Schema.Struct<Payload> : Payload, Success, Error>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/DurableQueue.ts#L99)
+
+Since v1.0.0
 Duration-between.md
 Package: `effect`<br />
 Module: `Duration`<br />
@@ -25679,51 +25746,6 @@ declare const andThen: { <A, X>(f: (a: NoInfer<A>) => X): <E, R>(self: Effect<A,
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L8924)
-
-Since v2.0.0
-Effect-Do.md
-Package: `effect`<br />
-Module: `Effect`<br />
-
-## Effect.Do
-
-The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
-
-Here's how the do simulation works:
-
-1. Start the do simulation using the `Do` value
-2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Effect` values
-3. You can accumulate multiple `bind` statements to define multiple variables within the scope
-4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Effect, pipe } from "effect"
-
-const result = pipe(
-  Effect.Do,
-  Effect.bind("x", () => Effect.succeed(2)),
-  Effect.bind("y", () => Effect.succeed(3)),
-  Effect.let("sum", ({ x, y }) => x + y)
-)
-assert.deepStrictEqual(Effect.runSync(result), { x: 2, y: 3, sum: 5 })
-```
-
-**See**
-
-- `bind`
-- `bindTo`
-- `let`
-
-**Signature**
-
-```ts
-declare const Do: Effect<{}, never, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L7844)
 
 Since v2.0.0
 Effect-annotateCurrentSpan.md
@@ -27895,6 +27917,51 @@ declare const disconnect: <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, R>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L4833)
+
+Since v2.0.0
+Effect-Do.md
+Package: `effect`<br />
+Module: `Effect`<br />
+
+## Effect.Do
+
+The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
+
+Here's how the do simulation works:
+
+1. Start the do simulation using the `Do` value
+2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Effect` values
+3. You can accumulate multiple `bind` statements to define multiple variables within the scope
+4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Effect, pipe } from "effect"
+
+const result = pipe(
+  Effect.Do,
+  Effect.bind("x", () => Effect.succeed(2)),
+  Effect.bind("y", () => Effect.succeed(3)),
+  Effect.let("sum", ({ x, y }) => x + y)
+)
+assert.deepStrictEqual(Effect.runSync(result), { x: 2, y: 3, sum: 5 })
+```
+
+**See**
+
+- `bind`
+- `bindTo`
+- `let`
+
+**Signature**
+
+```ts
+declare const Do: Effect<{}, never, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L7844)
 
 Since v2.0.0
 Effect-Effect.md
@@ -30154,24 +30221,6 @@ declare const getFiberRefs: Effect<FiberRefs.FiberRefs, never, never>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L10411)
 
 Since v2.0.0
-Effect-getRuntimeFlags.md
-Package: `effect`<br />
-Module: `Effect`<br />
-
-## Effect.getRuntimeFlags
-
-Retrieves an effect that succeeds with the current runtime flags, which
-govern behavior and features of the runtime system.
-
-**Signature**
-
-```ts
-declare const getRuntimeFlags: Effect<RuntimeFlags.RuntimeFlags, never, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L11633)
-
-Since v2.0.0
 Effect-Latch.md
 Package: `effect`<br />
 Module: `Effect`<br />
@@ -30276,6 +30325,24 @@ export interface Latch extends Effect<void> {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L11873)
 
 Since v3.8.0
+Effect-getRuntimeFlags.md
+Package: `effect`<br />
+Module: `Effect`<br />
+
+## Effect.getRuntimeFlags
+
+Retrieves an effect that succeeds with the current runtime flags, which
+govern behavior and features of the runtime system.
+
+**Signature**
+
+```ts
+declare const getRuntimeFlags: Effect<RuntimeFlags.RuntimeFlags, never, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L11633)
+
+Since v2.0.0
 Effect-head.md
 Package: `effect`<br />
 Module: `Effect`<br />
@@ -35160,25 +35227,6 @@ declare const scoped: <A, E, R>(effect: Effect<A, E, R>) => Effect<A, E, Exclude
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L6053)
 
 Since v2.0.0
-Effect-scopedWith.md
-Package: `effect`<br />
-Module: `Effect`<br />
-
-## Effect.scopedWith
-
-Creates a `Scope`, passes it to the specified effectful function, and closes
-the scope when the effect completes (whether through success, failure, or
-interruption).
-
-**Signature**
-
-```ts
-declare const scopedWith: <A, E, R>(f: (scope: Scope.Scope) => Effect<A, E, R>) => Effect<A, E, R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L6037)
-
-Since v3.11.0
 Effect-Semaphore.md
 Package: `effect`<br />
 Module: `Effect`<br />
@@ -35368,6 +35416,25 @@ declare const scopeWith: <A, E, R>(f: (scope: Scope.Scope) => Effect<A, E, R>) =
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L6026)
 
 Since v2.0.0
+Effect-scopedWith.md
+Package: `effect`<br />
+Module: `Effect`<br />
+
+## Effect.scopedWith
+
+Creates a `Scope`, passes it to the specified effectful function, and closes
+the scope when the effect completes (whether through success, failure, or
+interruption).
+
+**Signature**
+
+```ts
+declare const scopedWith: <A, E, R>(f: (scope: Scope.Scope) => Effect<A, E, R>) => Effect<A, E, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Effect.ts#L6037)
+
+Since v3.11.0
 Effect-sequentialFinalizers.md
 Package: `effect`<br />
 Module: `Effect`<br />
@@ -43461,26 +43528,6 @@ declare const updateManyAs: { (options: { readonly forkAs?: FiberId.Single | und
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/FiberRefs.ts#L150)
 
 Since v2.0.0
-FiberRefsPatch-FiberRefsPatch.md
-Package: `effect`<br />
-Module: `FiberRefsPatch`<br />
-
-## FiberRefsPatch.FiberRefsPatch
-
-A `FiberRefsPatch` captures the changes in `FiberRef` values made by a single
-fiber as a value. This allows fibers to apply the changes made by a workflow
-without inheriting all the `FiberRef` values of the fiber that executed the
-workflow.
-
-**Signature**
-
-```ts
-type FiberRefsPatch = Empty | Add | Remove | Update | AndThen
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/FiberRefsPatch.ts#L18)
-
-Since v2.0.0
 FiberRefsPatch-combine.md
 Package: `effect`<br />
 Module: `FiberRefsPatch`<br />
@@ -43516,6 +43563,26 @@ declare const diff: (oldValue: FiberRefs.FiberRefs, newValue: FiberRefs.FiberRef
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/FiberRefsPatch.ts#L80)
+
+Since v2.0.0
+FiberRefsPatch-FiberRefsPatch.md
+Package: `effect`<br />
+Module: `FiberRefsPatch`<br />
+
+## FiberRefsPatch.FiberRefsPatch
+
+A `FiberRefsPatch` captures the changes in `FiberRef` values made by a single
+fiber as a value. This allows fibers to apply the changes made by a workflow
+without inheriting all the `FiberRef` values of the fiber that executed the
+workflow.
+
+**Signature**
+
+```ts
+type FiberRefsPatch = Empty | Add | Remove | Update | AndThen
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/FiberRefsPatch.ts#L18)
 
 Since v2.0.0
 FiberRefsPatch-patch.md
@@ -44150,35 +44217,6 @@ export interface LazyArg<A> {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Function.ts#L202)
 
 Since v2.0.0
-Function-SK.md
-Package: `effect`<br />
-Module: `Function`<br />
-
-## Function.SK
-
-The SK combinator, also known as the "S-K combinator" or "S-combinator", is a fundamental combinator in the
-lambda calculus and the SKI combinator calculus.
-
-This function is useful for discarding the first argument passed to it and returning the second argument.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { SK } from "effect/Function";
-
-assert.deepStrictEqual(SK(0, "hello"), "hello")
-```
-
-**Signature**
-
-```ts
-declare const SK: <A, B>(_: A, b: B) => B
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Function.ts#L1222)
-
-Since v2.0.0
 Function-absurd.md
 Package: `effect`<br />
 Module: `Function`<br />
@@ -44736,6 +44774,35 @@ declare const satisfies: <A>() => <B extends A>(b: B) => B
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Function.ts#L256)
+
+Since v2.0.0
+Function-SK.md
+Package: `effect`<br />
+Module: `Function`<br />
+
+## Function.SK
+
+The SK combinator, also known as the "S-K combinator" or "S-combinator", is a fundamental combinator in the
+lambda calculus and the SKI combinator calculus.
+
+This function is useful for discarding the first argument passed to it and returning the second argument.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { SK } from "effect/Function";
+
+assert.deepStrictEqual(SK(0, "hello"), "hello")
+```
+
+**Signature**
+
+```ts
+declare const SK: <A, B>(_: A, b: B) => B
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Function.ts#L1222)
 
 Since v2.0.0
 Function-tupled.md
@@ -46302,56 +46369,6 @@ declare const isAcyclic: <N, E, T extends Kind = "directed">(graph: Graph<N, E, 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Graph.ts#L1889)
 
 Since v3.18.0
-Graph-isBipartite.md
-Package: `effect`<br />
-Module: `Graph`<br />
-
-## Graph.isBipartite
-
-Checks if an undirected graph is bipartite.
-
-A bipartite graph is one whose vertices can be divided into two disjoint sets
-such that no two vertices within the same set are adjacent. Uses BFS coloring
-to determine bipartiteness.
-
-**Example**
-
-```ts
-import { Graph } from "effect"
-
-// Bipartite graph (alternating coloring possible)
-const bipartite = Graph.undirected<string, string>((mutable) => {
-  const a = Graph.addNode(mutable, "A")
-  const b = Graph.addNode(mutable, "B")
-  const c = Graph.addNode(mutable, "C")
-  const d = Graph.addNode(mutable, "D")
-  Graph.addEdge(mutable, a, b, "edge") // Set 1: {A, C}, Set 2: {B, D}
-  Graph.addEdge(mutable, b, c, "edge")
-  Graph.addEdge(mutable, c, d, "edge")
-})
-console.log(Graph.isBipartite(bipartite)) // true
-
-// Non-bipartite graph (odd cycle)
-const triangle = Graph.undirected<string, string>((mutable) => {
-  const a = Graph.addNode(mutable, "A")
-  const b = Graph.addNode(mutable, "B")
-  const c = Graph.addNode(mutable, "C")
-  Graph.addEdge(mutable, a, b, "edge")
-  Graph.addEdge(mutable, b, c, "edge")
-  Graph.addEdge(mutable, c, a, "edge") // Triangle (3-cycle)
-})
-console.log(Graph.isBipartite(triangle)) // false
-```
-
-**Signature**
-
-```ts
-declare const isBipartite: <N, E>(graph: Graph<N, E, "undirected"> | MutableGraph<N, E, "undirected">) => boolean
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Graph.ts#L2003)
-
-Since v3.18.0
 Graph-Kind.md
 Package: `effect`<br />
 Module: `Graph`<br />
@@ -46736,6 +46753,56 @@ declare class Walker<T, N> { constructor(
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Graph.ts#L2989)
+
+Since v3.18.0
+Graph-isBipartite.md
+Package: `effect`<br />
+Module: `Graph`<br />
+
+## Graph.isBipartite
+
+Checks if an undirected graph is bipartite.
+
+A bipartite graph is one whose vertices can be divided into two disjoint sets
+such that no two vertices within the same set are adjacent. Uses BFS coloring
+to determine bipartiteness.
+
+**Example**
+
+```ts
+import { Graph } from "effect"
+
+// Bipartite graph (alternating coloring possible)
+const bipartite = Graph.undirected<string, string>((mutable) => {
+  const a = Graph.addNode(mutable, "A")
+  const b = Graph.addNode(mutable, "B")
+  const c = Graph.addNode(mutable, "C")
+  const d = Graph.addNode(mutable, "D")
+  Graph.addEdge(mutable, a, b, "edge") // Set 1: {A, C}, Set 2: {B, D}
+  Graph.addEdge(mutable, b, c, "edge")
+  Graph.addEdge(mutable, c, d, "edge")
+})
+console.log(Graph.isBipartite(bipartite)) // true
+
+// Non-bipartite graph (odd cycle)
+const triangle = Graph.undirected<string, string>((mutable) => {
+  const a = Graph.addNode(mutable, "A")
+  const b = Graph.addNode(mutable, "B")
+  const c = Graph.addNode(mutable, "C")
+  Graph.addEdge(mutable, a, b, "edge")
+  Graph.addEdge(mutable, b, c, "edge")
+  Graph.addEdge(mutable, c, a, "edge") // Triangle (3-cycle)
+})
+console.log(Graph.isBipartite(triangle)) // false
+```
+
+**Signature**
+
+```ts
+declare const isBipartite: <N, E>(graph: Graph<N, E, "undirected"> | MutableGraph<N, E, "undirected">) => boolean
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Graph.ts#L2003)
 
 Since v3.18.0
 Graph-mapEdges.md
@@ -47643,24 +47710,6 @@ declare const filterMap: { <A, K, B>(f: (value: A, key: K) => Option<B>): (self:
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashMap.ts#L477)
 
 Since v2.0.0
-HashMap-findFirst.md
-Package: `effect`<br />
-Module: `HashMap`<br />
-
-## HashMap.findFirst
-
-Returns the first element that satisfies the specified
-predicate, or `None` if no such element exists.
-
-**Signature**
-
-```ts
-declare const findFirst: { <K, A, B extends A>(predicate: (a: NoInfer<A>, k: K) => a is B): (self: HashMap<K, A>) => Option<[K, B]>; <K, A>(predicate: (a: NoInfer<A>, k: K) => boolean): (self: HashMap<K, A>) => Option<[K, A]>; <K, A, B extends A>(self: HashMap<K, A>, predicate: (a: A, k: K) => a is B): Option<[K, B]>; <K, A>(self: HashMap<K, A>, predicate: (a: A, k: K) => boolean): Option<[K, A]>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashMap.ts#L489)
-
-Since v2.0.0
 HashMap-HashMap.Entry.md
 Package: `effect`<br />
 Module: `HashMap`<br />
@@ -47746,6 +47795,24 @@ type Value<T> = [T] extends [HashMap<infer _K, infer _V>] ? _V : never
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashMap.ts#L72)
+
+Since v2.0.0
+HashMap-findFirst.md
+Package: `effect`<br />
+Module: `HashMap`<br />
+
+## HashMap.findFirst
+
+Returns the first element that satisfies the specified
+predicate, or `None` if no such element exists.
+
+**Signature**
+
+```ts
+declare const findFirst: { <K, A, B extends A>(predicate: (a: NoInfer<A>, k: K) => a is B): (self: HashMap<K, A>) => Option<[K, B]>; <K, A>(predicate: (a: NoInfer<A>, k: K) => boolean): (self: HashMap<K, A>) => Option<[K, A]>; <K, A, B extends A>(self: HashMap<K, A>, predicate: (a: A, k: K) => a is B): Option<[K, B]>; <K, A>(self: HashMap<K, A>, predicate: (a: A, k: K) => boolean): Option<[K, A]>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/HashMap.ts#L489)
 
 Since v2.0.0
 HashMap-flatMap.md
@@ -53484,6 +53551,23 @@ export * as DurableDeferred from "./DurableDeferred.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L14)
 
 Since v1.0.0
+index-DurableQueue.md
+Package: `@effect/workflow`<br />
+Module: `index`<br />
+
+## index.DurableQueue
+
+Re-exports all named exports from the "./DurableQueue.js" module as `DurableQueue`.
+
+**Signature**
+
+```ts
+export * as DurableQueue from "./DurableQueue.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L19)
+
+Since v1.0.0
 index-DurableRateLimiter.md
 Package: `@effect/workflow`<br />
 Module: `index`<br />
@@ -53498,7 +53582,7 @@ Re-exports all named exports from the "./DurableRateLimiter.js" module as `Durab
 export * as DurableRateLimiter from "./DurableRateLimiter.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L19)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L24)
 
 Since v1.0.0
 index-Duration.md
@@ -55564,40 +55648,6 @@ export * as MachineId from "./MachineId.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L84)
 
 Since v1.0.0
-index-Mailbox.md
-Package: `effect`<br />
-Module: `index`<br />
-
-## index.Mailbox
-
-Re-exports all named exports from the "./Mailbox.js" module as `Mailbox`.
-
-**Signature**
-
-```ts
-export * as Mailbox from "./Mailbox.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L722)
-
-Since v3.8.0
-index-ManagedRuntime.md
-Package: `effect`<br />
-Module: `index`<br />
-
-## index.ManagedRuntime
-
-Re-exports all named exports from the "./ManagedRuntime.js" module as `ManagedRuntime`.
-
-**Signature**
-
-```ts
-export * as ManagedRuntime from "./ManagedRuntime.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L727)
-
-Since v2.0.0
 index-layer.md
 Package: `@effect/vitest`<br />
 Module: `index`<br />
@@ -55652,6 +55702,40 @@ layer(Foo.Live)("layer", (it) => {
   })
 })
 ```
+index-Mailbox.md
+Package: `effect`<br />
+Module: `index`<br />
+
+## index.Mailbox
+
+Re-exports all named exports from the "./Mailbox.js" module as `Mailbox`.
+
+**Signature**
+
+```ts
+export * as Mailbox from "./Mailbox.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L722)
+
+Since v3.8.0
+index-ManagedRuntime.md
+Package: `effect`<br />
+Module: `index`<br />
+
+## index.ManagedRuntime
+
+Re-exports all named exports from the "./ManagedRuntime.js" module as `ManagedRuntime`.
+
+**Signature**
+
+```ts
+export * as ManagedRuntime from "./ManagedRuntime.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L727)
+
+Since v2.0.0
 index-Match.md
 Package: `effect`<br />
 Module: `index`<br />
@@ -58258,6 +58342,23 @@ export * as Schedule from "./Schedule.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1258)
 
 Since v2.0.0
+index-STM.md
+Package: `effect`<br />
+Module: `index`<br />
+
+## index.STM
+
+Re-exports all named exports from the "./STM.js" module as `STM`.
+
+**Signature**
+
+```ts
+export * as STM from "./STM.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1253)
+
+Since v2.0.0
 index-ScheduleDecision.md
 Package: `effect`<br />
 Module: `index`<br />
@@ -58290,23 +58391,6 @@ export * as ScheduleInterval from "./ScheduleInterval.js"
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1268)
-
-Since v2.0.0
-index-STM.md
-Package: `effect`<br />
-Module: `index`<br />
-
-## index.STM
-
-Re-exports all named exports from the "./STM.js" module as `STM`.
-
-**Signature**
-
-```ts
-export * as STM from "./STM.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1253)
 
 Since v2.0.0
 index-ScheduleIntervals.md
@@ -58615,6 +58699,23 @@ export * as SingleProducerAsyncInput from "./SingleProducerAsyncInput.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1314)
 
 Since v2.0.0
+index-SingleRunner.md
+Package: `@effect/cluster`<br />
+Module: `index`<br />
+
+## index.SingleRunner
+
+Re-exports all named exports from the "./SingleRunner.js" module as `SingleRunner`.
+
+**Signature**
+
+```ts
+export * as SingleRunner from "./SingleRunner.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L154)
+
+Since v1.0.0
 index-Singleton.md
 Package: `@effect/cluster`<br />
 Module: `index`<br />
@@ -58629,7 +58730,7 @@ Re-exports all named exports from the "./Singleton.js" module as `Singleton`.
 export * as Singleton from "./Singleton.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L154)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L159)
 
 Since v1.0.0
 index-SingletonAddress.md
@@ -58646,7 +58747,7 @@ Re-exports all named exports from the "./SingletonAddress.js" module as `Singlet
 export * as SingletonAddress from "./SingletonAddress.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L159)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L164)
 
 Since v1.0.0
 index-Sink.md
@@ -58680,7 +58781,7 @@ Re-exports all named exports from the "./Snowflake.js" module as `Snowflake`.
 export * as Snowflake from "./Snowflake.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L164)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L169)
 
 Since v1.0.0
 index-Socket.md
@@ -58714,7 +58815,7 @@ Re-exports all named exports from the "./SocketRunner.js" module as `SocketRunne
 export * as SocketRunner from "./SocketRunner.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L169)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L174)
 
 Since v1.0.0
 index-SocketServer.md
@@ -58884,7 +58985,7 @@ Re-exports all named exports from the "./SqlMessageStorage.js" module as `SqlMes
 export * as SqlMessageStorage from "./SqlMessageStorage.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L174)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L179)
 
 Since v1.0.0
 index-SqlPersistedQueue.md
@@ -58935,7 +59036,7 @@ Re-exports all named exports from the "./SqlRunnerStorage.js" module as `SqlRunn
 export * as SqlRunnerStorage from "./SqlRunnerStorage.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L179)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L184)
 
 Since v1.0.0
 index-SqlSchema.md
@@ -59074,23 +59175,6 @@ export * as StreamEmit from "./StreamEmit.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1339)
 
 Since v2.0.0
-index-StreamHaltStrategy.md
-Package: `effect`<br />
-Module: `index`<br />
-
-## index.StreamHaltStrategy
-
-Re-exports all named exports from the "./StreamHaltStrategy.js" module as `StreamHaltStrategy`.
-
-**Signature**
-
-```ts
-export * as StreamHaltStrategy from "./StreamHaltStrategy.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1344)
-
-Since v2.0.0
 index-Streamable.md
 Package: `effect`<br />
 Module: `index`<br />
@@ -59106,6 +59190,23 @@ export * as Streamable from "./Streamable.js"
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1349)
+
+Since v2.0.0
+index-StreamHaltStrategy.md
+Package: `effect`<br />
+Module: `index`<br />
+
+## index.StreamHaltStrategy
+
+Re-exports all named exports from the "./StreamHaltStrategy.js" module as `StreamHaltStrategy`.
+
+**Signature**
+
+```ts
+export * as StreamHaltStrategy from "./StreamHaltStrategy.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1344)
 
 Since v2.0.0
 index-String.md
@@ -59644,6 +59745,23 @@ export * as TestLive from "./TestLive.js"
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1493)
 
 Since v2.0.0
+index-TestRunner.md
+Package: `@effect/cluster`<br />
+Module: `index`<br />
+
+## index.TestRunner
+
+Re-exports all named exports from the "./TestRunner.js" module as `TestRunner`.
+
+**Signature**
+
+```ts
+export * as TestRunner from "./TestRunner.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/index.ts#L189)
+
+Since v1.0.0
 index-TestServices.md
 Package: `effect`<br />
 Module: `index`<br />
@@ -60028,74 +60146,6 @@ export * as UrlParams from "./UrlParams.js"
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L285)
-
-Since v1.0.0
-index-Usage.md
-Package: `@effect/cli`<br />
-Module: `index`<br />
-
-## index.Usage
-
-Re-exports all named exports from the "./Usage.js" module as `Usage`.
-
-**Signature**
-
-```ts
-export * as Usage from "./Usage.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/index.ts#L69)
-
-Since v1.0.0
-index-Utils.md
-Package: `effect`<br />
-Module: `index`<br />
-
-## index.Utils
-
-Re-exports all named exports from the "./Utils.js" module as `Utils`.
-
-**Signature**
-
-```ts
-export * as Utils from "./Utils.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1561)
-
-Since v2.0.0
-index-ValidationError.md
-Package: `@effect/cli`<br />
-Module: `index`<br />
-
-## index.ValidationError
-
-Re-exports all named exports from the "./ValidationError.js" module as `ValidationError`.
-
-**Signature**
-
-```ts
-export * as ValidationError from "./ValidationError.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/index.ts#L74)
-
-Since v1.0.0
-index-VariantSchema.md
-Package: `@effect/experimental`<br />
-Module: `index`<br />
-
-## index.VariantSchema
-
-Re-exports all named exports from the "./VariantSchema.js" module as `VariantSchema`.
-
-**Signature**
-
-```ts
-export * as VariantSchema from "./VariantSchema.js"
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/index.ts#L84)
 
 Since v1.0.0
 Invariant-imapComposition.md
@@ -60862,76 +60912,74 @@ declare const some: { <A>(predicate: (a: A, i: number) => boolean): (self: Itera
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L944)
 
 Since v2.0.0
-Iterable-take.md
-Package: `effect`<br />
-Module: `Iterable`<br />
+index-Usage.md
+Package: `@effect/cli`<br />
+Module: `index`<br />
 
-## Iterable.take
+## index.Usage
 
-Keep only a max number of elements from the start of an `Iterable`, creating a new `Iterable`.
-
-**Note**. `n` is normalized to a non negative integer.
+Re-exports all named exports from the "./Usage.js" module as `Usage`.
 
 **Signature**
 
 ```ts
-declare const take: { (n: number): <A>(self: Iterable<A>) => Iterable<A>; <A>(self: Iterable<A>, n: number): Iterable<A>; }
+export * as Usage from "./Usage.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L305)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/index.ts#L69)
+
+Since v1.0.0
+index-Utils.md
+Package: `effect`<br />
+Module: `index`<br />
+
+## index.Utils
+
+Re-exports all named exports from the "./Utils.js" module as `Utils`.
+
+**Signature**
+
+```ts
+export * as Utils from "./Utils.js"
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/index.ts#L1561)
 
 Since v2.0.0
-Iterable-takeWhile.md
-Package: `effect`<br />
-Module: `Iterable`<br />
+index-ValidationError.md
+Package: `@effect/cli`<br />
+Module: `index`<br />
 
-## Iterable.takeWhile
+## index.ValidationError
 
-Calculate the longest initial Iterable for which all element satisfy the specified predicate, creating a new `Iterable`.
-
-**Signature**
-
-```ts
-declare const takeWhile: { <A, B extends A>(refinement: (a: NoInfer<A>, i: number) => a is B): (self: Iterable<A>) => Iterable<B>; <A>(predicate: (a: NoInfer<A>, i: number) => boolean): (self: Iterable<A>) => Iterable<A>; <A, B extends A>(self: Iterable<A>, refinement: (a: A, i: number) => a is B): Iterable<B>; <A>(self: Iterable<A>, predicate: (a: A, i: number) => boolean): Iterable<A>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L330)
-
-Since v2.0.0
-Iterable-unsafeHead.md
-Package: `effect`<br />
-Module: `Iterable`<br />
-
-## Iterable.unsafeHead
-
-Get the first element of a `Iterable`, or throw an error if the `Iterable` is empty.
+Re-exports all named exports from the "./ValidationError.js" module as `ValidationError`.
 
 **Signature**
 
 ```ts
-declare const unsafeHead: <A>(self: Iterable<A>) => A
+export * as ValidationError from "./ValidationError.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L290)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/index.ts#L74)
 
-Since v3.3.0
-Iterable-zip.md
-Package: `effect`<br />
-Module: `Iterable`<br />
+Since v1.0.0
+index-VariantSchema.md
+Package: `@effect/experimental`<br />
+Module: `index`<br />
 
-## Iterable.zip
+## index.VariantSchema
 
-Takes two `Iterable`s and returns an `Iterable` of corresponding pairs.
+Re-exports all named exports from the "./VariantSchema.js" module as `VariantSchema`.
 
 **Signature**
 
 ```ts
-declare const zip: { <B>(that: Iterable<B>): <A>(self: Iterable<A>) => Iterable<[A, B]>; <A, B>(self: Iterable<A>, that: Iterable<B>): Iterable<[A, B]>; }
+export * as VariantSchema from "./VariantSchema.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L457)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/index.ts#L84)
 
-Since v2.0.0
+Since v1.0.0
 index-WebSdk.md
 Package: `@effect/opentelemetry`<br />
 Module: `index`<br />
@@ -61014,7 +61062,7 @@ Re-exports all named exports from the "./Workflow.js" module as `Workflow`.
 export * as Workflow from "./Workflow.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L24)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L29)
 
 Since v1.0.0
 index-WorkflowEngine.md
@@ -61031,7 +61079,7 @@ Re-exports all named exports from the "./WorkflowEngine.js" module as `WorkflowE
 export * as WorkflowEngine from "./WorkflowEngine.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L29)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L34)
 
 Since v1.0.0
 index-WorkflowProxy.md
@@ -61048,7 +61096,7 @@ Re-exports all named exports from the "./WorkflowProxy.js" module as `WorkflowPr
 export * as WorkflowProxy from "./WorkflowProxy.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L34)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L39)
 
 Since v1.0.0
 index-WorkflowProxyServer.md
@@ -61065,9 +61113,79 @@ Re-exports all named exports from the "./WorkflowProxyServer.js" module as `Work
 export * as WorkflowProxyServer from "./WorkflowProxyServer.js"
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L39)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/index.ts#L44)
 
 Since v1.0.0
+Iterable-take.md
+Package: `effect`<br />
+Module: `Iterable`<br />
+
+## Iterable.take
+
+Keep only a max number of elements from the start of an `Iterable`, creating a new `Iterable`.
+
+**Note**. `n` is normalized to a non negative integer.
+
+**Signature**
+
+```ts
+declare const take: { (n: number): <A>(self: Iterable<A>) => Iterable<A>; <A>(self: Iterable<A>, n: number): Iterable<A>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L305)
+
+Since v2.0.0
+Iterable-takeWhile.md
+Package: `effect`<br />
+Module: `Iterable`<br />
+
+## Iterable.takeWhile
+
+Calculate the longest initial Iterable for which all element satisfy the specified predicate, creating a new `Iterable`.
+
+**Signature**
+
+```ts
+declare const takeWhile: { <A, B extends A>(refinement: (a: NoInfer<A>, i: number) => a is B): (self: Iterable<A>) => Iterable<B>; <A>(predicate: (a: NoInfer<A>, i: number) => boolean): (self: Iterable<A>) => Iterable<A>; <A, B extends A>(self: Iterable<A>, refinement: (a: A, i: number) => a is B): Iterable<B>; <A>(self: Iterable<A>, predicate: (a: A, i: number) => boolean): Iterable<A>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L330)
+
+Since v2.0.0
+Iterable-unsafeHead.md
+Package: `effect`<br />
+Module: `Iterable`<br />
+
+## Iterable.unsafeHead
+
+Get the first element of a `Iterable`, or throw an error if the `Iterable` is empty.
+
+**Signature**
+
+```ts
+declare const unsafeHead: <A>(self: Iterable<A>) => A
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L290)
+
+Since v3.3.0
+Iterable-zip.md
+Package: `effect`<br />
+Module: `Iterable`<br />
+
+## Iterable.zip
+
+Takes two `Iterable`s and returns an `Iterable` of corresponding pairs.
+
+**Signature**
+
+```ts
+declare const zip: { <B>(that: Iterable<B>): <A>(self: Iterable<A>) => Iterable<[A, B]>; <A, B>(self: Iterable<A>, that: Iterable<B>): Iterable<[A, B]>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Iterable.ts#L457)
+
+Since v2.0.0
 Iterable-zipWith.md
 Package: `effect`<br />
 Module: `Iterable`<br />
@@ -63376,6 +63494,27 @@ declare const appendAll: { <S extends List<any>, T extends List<any>>(that: T): 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L341)
 
 Since v2.0.0
+List-List.md
+Package: `effect`<br />
+Module: `List`<br />
+
+## List.List
+
+Represents an immutable linked list of elements of type `A`.
+
+A `List` is optimal for last-in-first-out (LIFO), stack-like access patterns.
+If you need another access pattern, for example, random access or FIFO,
+consider using a collection more suited for that other than `List`.
+
+**Signature**
+
+```ts
+type List<A> = Cons<A> | Nil<A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L49)
+
+Since v2.0.0
 List-compact.md
 Package: `effect`<br />
 Module: `List`<br />
@@ -63444,27 +63583,6 @@ declare const empty: <A = never>() => List<A>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L269)
-
-Since v2.0.0
-List-List.md
-Package: `effect`<br />
-Module: `List`<br />
-
-## List.List
-
-Represents an immutable linked list of elements of type `A`.
-
-A `List` is optimal for last-in-first-out (LIFO), stack-like access patterns.
-If you need another access pattern, for example, random access or FIFO,
-consider using a collection more suited for that other than `List`.
-
-**Signature**
-
-```ts
-type List<A> = Cons<A> | Nil<A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/List.ts#L49)
 
 Since v2.0.0
 List-every.md
@@ -64415,6 +64533,73 @@ declare const pretty: Layer.Layer<never, never, never>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Logger.ts#L639)
 
 Since v3.5.0
+LogLevel-LogLevel.md
+Package: `effect`<br />
+Module: `LogLevel`<br />
+
+## LogLevel.LogLevel
+
+A `LogLevel` represents the log level associated with an individual logging
+operation. Log levels are used both to describe the granularity (or
+importance) of individual log statements, as well as to enable tuning
+verbosity of log output.
+
+**Signature**
+
+```ts
+type LogLevel = All | Fatal | Error | Warning | Info | Debug | Trace | None
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/LogLevel.ts#L23)
+
+Since v2.0.0
+LogLevel-locally.md
+Package: `effect`<br />
+Module: `LogLevel`<br />
+
+## LogLevel.locally
+
+Temporarily sets a `LogLevel` for an `Effect` workflow.
+
+**Details**
+
+This function allows you to apply a specific `LogLevel` locally to an
+`Effect` workflow. Once the workflow completes, the `LogLevel` reverts to its
+previous state.
+
+**When to Use**
+
+This is particularly useful when you want to adjust the verbosity of logging
+for specific parts of your program without affecting the global log level.
+
+**Example**
+
+```ts
+import { Effect, LogLevel } from "effect"
+
+const program = Effect.gen(function*() {
+  yield* Effect.log("message1")
+  yield* Effect.gen(function*() {
+    yield* Effect.log("message2")
+    yield* Effect.log("message3")
+  }).pipe(LogLevel.locally(LogLevel.Warning))
+})
+
+Effect.runFork(program)
+// timestamp=... level=INFO fiber=#0 message=message1
+// timestamp=... level=WARN fiber=#0 message=message2
+// timestamp=... level=WARN fiber=#0 message=message3
+```
+
+**Signature**
+
+```ts
+declare const locally: { (self: LogLevel): <A, E, R>(use: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>; <A, E, R>(use: Effect.Effect<A, E, R>, self: LogLevel): Effect.Effect<A, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/LogLevel.ts#L208)
+
+Since v2.0.0
 Logger-prettyLogger.md
 Package: `effect`<br />
 Module: `Logger`<br />
@@ -64551,73 +64736,6 @@ declare const structuredLogger: Logger<unknown, { readonly logLevel: string; rea
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Logger.ts#L549)
-
-Since v2.0.0
-LogLevel-LogLevel.md
-Package: `effect`<br />
-Module: `LogLevel`<br />
-
-## LogLevel.LogLevel
-
-A `LogLevel` represents the log level associated with an individual logging
-operation. Log levels are used both to describe the granularity (or
-importance) of individual log statements, as well as to enable tuning
-verbosity of log output.
-
-**Signature**
-
-```ts
-type LogLevel = All | Fatal | Error | Warning | Info | Debug | Trace | None
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/LogLevel.ts#L23)
-
-Since v2.0.0
-LogLevel-locally.md
-Package: `effect`<br />
-Module: `LogLevel`<br />
-
-## LogLevel.locally
-
-Temporarily sets a `LogLevel` for an `Effect` workflow.
-
-**Details**
-
-This function allows you to apply a specific `LogLevel` locally to an
-`Effect` workflow. Once the workflow completes, the `LogLevel` reverts to its
-previous state.
-
-**When to Use**
-
-This is particularly useful when you want to adjust the verbosity of logging
-for specific parts of your program without affecting the global log level.
-
-**Example**
-
-```ts
-import { Effect, LogLevel } from "effect"
-
-const program = Effect.gen(function*() {
-  yield* Effect.log("message1")
-  yield* Effect.gen(function*() {
-    yield* Effect.log("message2")
-    yield* Effect.log("message3")
-  }).pipe(LogLevel.locally(LogLevel.Warning))
-})
-
-Effect.runFork(program)
-// timestamp=... level=INFO fiber=#0 message=message1
-// timestamp=... level=WARN fiber=#0 message=message2
-// timestamp=... level=WARN fiber=#0 message=message3
-```
-
-**Signature**
-
-```ts
-declare const locally: { (self: LogLevel): <A, E, R>(use: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>; <A, E, R>(use: Effect.Effect<A, E, R>, self: LogLevel): Effect.Effect<A, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/LogLevel.ts#L208)
 
 Since v2.0.0
 Logger-withLeveledConsole.md
@@ -67046,6 +67164,23 @@ declare class ReadResource
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L742)
 
 Since v1.0.0
+McpSchema-param.md
+Package: `@effect/ai`<br />
+Module: `McpSchema`<br />
+
+## McpSchema.param
+
+Helper to create a param for a resource URI template.
+
+**Signature**
+
+```ts
+declare const param: <const Id extends string, S extends Schema.Schema.Any>(id: Id, schema: S) => Param<Id, S>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L2027)
+
+Since v1.0.0
 McpSchema-ReadResourceResult.md
 Package: `@effect/ai`<br />
 Module: `McpSchema`<br />
@@ -67112,23 +67247,6 @@ declare class ResourceContents
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L632)
-
-Since v1.0.0
-McpSchema-param.md
-Package: `@effect/ai`<br />
-Module: `McpSchema`<br />
-
-## McpSchema.param
-
-Helper to create a param for a resource URI template.
-
-**Signature**
-
-```ts
-declare const param: <const Id extends string, S extends Schema.Schema.Any>(id: Id, schema: S) => Param<Id, S>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/McpSchema.ts#L2027)
 
 Since v1.0.0
 McpSchema-ResourceLink.md
@@ -69100,77 +69218,6 @@ declare const bind: { <N extends string, A extends Record<string, any>, B, E2, R
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L4057)
 
 Since v3.4.0
-Micro-bindTo.md
-Package: `effect`<br />
-Module: `Micro`<br />
-
-## Micro.bindTo
-
-Bind the success value of this `Micro` effect to the provided name.
-
-**Signature**
-
-```ts
-declare const bindTo: { <N extends string>(name: N): <A, E, R>(self: Micro<A, E, R>) => Micro<{ [K in N]: A; }, E, R>; <A, E, R, N extends string>(self: Micro<A, E, R>, name: N): Micro<{ [K in N]: A; }, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L4045)
-
-Since v3.4.0
-Micro-catchAll.md
-Package: `effect`<br />
-Module: `Micro`<br />
-
-## Micro.catchAll
-
-Catch the error of the given `Micro` effect, allowing you to recover from it.
-
-It only catches expected errors.
-
-**Signature**
-
-```ts
-declare const catchAll: { <E, B, E2, R2>(f: (e: NoInfer<E>) => Micro<B, E2, R2>): <A, R>(self: Micro<A, E, R>) => Micro<A | B, E2, R | R2>; <A, E, R, B, E2, R2>(self: Micro<A, E, R>, f: (e: NoInfer<E>) => Micro<B, E2, R2>): Micro<A | B, E2, R | R2>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2643)
-
-Since v3.4.6
-Micro-catchAllCause.md
-Package: `effect`<br />
-Module: `Micro`<br />
-
-## Micro.catchAllCause
-
-Catch the full `MicroCause` object of the given `Micro` effect, allowing you to
-recover from any kind of cause.
-
-**Signature**
-
-```ts
-declare const catchAllCause: { <E, B, E2, R2>(f: (cause: NoInfer<MicroCause<E>>) => Micro<B, E2, R2>): <A, R>(self: Micro<A, E, R>) => Micro<A | B, E2, R | R2>; <A, E, R, B, E2, R2>(self: Micro<A, E, R>, f: (cause: NoInfer<MicroCause<E>>) => Micro<B, E2, R2>): Micro<A | B, E2, R | R2>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2567)
-
-Since v3.4.6
-Micro-catchAllDefect.md
-Package: `effect`<br />
-Module: `Micro`<br />
-
-## Micro.catchAllDefect
-
-Catch any unexpected errors of the given `Micro` effect, allowing you to recover from them.
-
-**Signature**
-
-```ts
-declare const catchAllDefect: { <E, B, E2, R2>(f: (defect: unknown) => Micro<B, E2, R2>): <A, R>(self: Micro<A, E, R>) => Micro<A | B, E | E2, R | R2>; <A, E, R, B, E2, R2>(self: Micro<A, E, R>, f: (defect: unknown) => Micro<B, E2, R2>): Micro<A | B, E | E2, R | R2>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2663)
-
-Since v3.4.6
 Micro-Do.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -69298,6 +69345,77 @@ declare class NoSuchElementException
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L4396)
 
 Since v3.4.4
+Micro-bindTo.md
+Package: `effect`<br />
+Module: `Micro`<br />
+
+## Micro.bindTo
+
+Bind the success value of this `Micro` effect to the provided name.
+
+**Signature**
+
+```ts
+declare const bindTo: { <N extends string>(name: N): <A, E, R>(self: Micro<A, E, R>) => Micro<{ [K in N]: A; }, E, R>; <A, E, R, N extends string>(self: Micro<A, E, R>, name: N): Micro<{ [K in N]: A; }, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L4045)
+
+Since v3.4.0
+Micro-catchAll.md
+Package: `effect`<br />
+Module: `Micro`<br />
+
+## Micro.catchAll
+
+Catch the error of the given `Micro` effect, allowing you to recover from it.
+
+It only catches expected errors.
+
+**Signature**
+
+```ts
+declare const catchAll: { <E, B, E2, R2>(f: (e: NoInfer<E>) => Micro<B, E2, R2>): <A, R>(self: Micro<A, E, R>) => Micro<A | B, E2, R | R2>; <A, E, R, B, E2, R2>(self: Micro<A, E, R>, f: (e: NoInfer<E>) => Micro<B, E2, R2>): Micro<A | B, E2, R | R2>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2643)
+
+Since v3.4.6
+Micro-catchAllCause.md
+Package: `effect`<br />
+Module: `Micro`<br />
+
+## Micro.catchAllCause
+
+Catch the full `MicroCause` object of the given `Micro` effect, allowing you to
+recover from any kind of cause.
+
+**Signature**
+
+```ts
+declare const catchAllCause: { <E, B, E2, R2>(f: (cause: NoInfer<MicroCause<E>>) => Micro<B, E2, R2>): <A, R>(self: Micro<A, E, R>) => Micro<A | B, E2, R | R2>; <A, E, R, B, E2, R2>(self: Micro<A, E, R>, f: (cause: NoInfer<MicroCause<E>>) => Micro<B, E2, R2>): Micro<A | B, E2, R | R2>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2567)
+
+Since v3.4.6
+Micro-catchAllDefect.md
+Package: `effect`<br />
+Module: `Micro`<br />
+
+## Micro.catchAllDefect
+
+Catch any unexpected errors of the given `Micro` effect, allowing you to recover from them.
+
+**Signature**
+
+```ts
+declare const catchAllDefect: { <E, B, E2, R2>(f: (defect: unknown) => Micro<B, E2, R2>): <A, R>(self: Micro<A, E, R>) => Micro<A | B, E | E2, R | R2>; <A, E, R, B, E2, R2>(self: Micro<A, E, R>, f: (defect: unknown) => Micro<B, E2, R2>): Micro<A | B, E | E2, R | R2>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2663)
+
+Since v3.4.6
 Micro-catchCauseIf.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -70035,6 +70153,23 @@ declare const onExitIf: { <A, E, XE, XR, B extends MicroExit<A, E>>(refinement: 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L3522)
 
 Since v3.4.6
+Micro-TimeoutException.md
+Package: `effect`<br />
+Module: `Micro`<br />
+
+## Micro.TimeoutException
+
+Represents a checked exception which occurs when a timeout occurs.
+
+**Signature**
+
+```ts
+declare class TimeoutException
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L4405)
+
+Since v3.4.4
 Micro-onInterrupt.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -70106,23 +70241,6 @@ declare const orElseSucceed: { <B>(f: LazyArg<B>): <A, E, R>(self: Micro<A, E, R
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L2881)
 
 Since v3.4.0
-Micro-TimeoutException.md
-Package: `effect`<br />
-Module: `Micro`<br />
-
-## Micro.TimeoutException
-
-Represents a checked exception which occurs when a timeout occurs.
-
-**Signature**
-
-```ts
-declare class TimeoutException
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Micro.ts#L4405)
-
-Since v3.4.4
 Micro-promise.md
 Package: `effect`<br />
 Module: `Micro`<br />
@@ -76308,6 +76426,117 @@ declare const getOrThrow: <A>(self: Option<A>) => A
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L887)
 
 Since v2.0.0
+Option-getOrder.md
+Package: `effect`<br />
+Module: `Option`<br />
+
+## Option.getOrder
+
+Creates an `Order` instance for comparing `Option` values, using a provided
+`Order` for the inner type.
+
+**Details**
+
+This function produces an `Order` instance for `Option<A>`, allowing `Option`
+values to be compared:
+
+- `None` is always considered less than any `Some` value.
+- If both are `Some`, their inner values are compared using the provided
+  `Order` instance.
+
+**Example**
+
+```ts
+import { Number, Option } from "effect"
+
+const order = Option.getOrder(Number.Order)
+
+console.log(order(Option.none(), Option.none()))
+// Output: 0
+
+console.log(order(Option.none(), Option.some(1)))
+// Output: -1
+
+console.log(order(Option.some(1), Option.none()))
+// Output: 1
+
+console.log(order(Option.some(1), Option.some(2)))
+// Output: -1
+
+console.log(order(Option.some(1), Option.some(1)))
+// Output: 0
+```
+
+**Signature**
+
+```ts
+declare const getOrder: <A>(O: Order<A>) => Order<Option<A>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L1731)
+
+Since v2.0.0
+Option-Option.Value.md
+Package: `effect`<br />
+Module: `Option`<br />
+
+## Option.Option.Value
+
+Extracts the type of the value contained in an `Option`.
+
+**Example** (Getting the Value Type of an Option)
+
+```ts
+import { Option } from "effect"
+
+// Declare an Option holding a string
+declare const myOption: Option.Option<string>
+
+// Extract the type of the value within the Option
+//
+//      ┌─── string
+//      ▼
+type MyType = Option.Option.Value<typeof myOption>
+```
+
+**Signature**
+
+```ts
+type Value<T> = [T] extends [Option<infer _A>] ? _A : never
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L118)
+
+Since v2.0.0
+Option-Option.md
+Package: `effect`<br />
+Module: `Option`<br />
+
+## Option.Option
+
+The `Option` data type represents optional values. An `Option<A>` can either
+be `Some<A>`, containing a value of type `A`, or `None`, representing the
+absence of a value.
+
+**When to Use**
+
+You can use `Option` in scenarios like:
+
+- Using it for initial values
+- Returning values from functions that are not defined for all possible
+  inputs (referred to as “partial functions”)
+- Managing optional fields in data structures
+- Handling optional function arguments
+
+**Signature**
+
+```ts
+type Option<A> = None<A> | Some<A>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L40)
+
+Since v2.0.0
 Option-getOrThrowWith.md
 Package: `effect`<br />
 Module: `Option`<br />
@@ -76390,56 +76619,6 @@ declare const getOrUndefined: <A>(self: Option<A>) => A | undefined
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L782)
 
 Since v2.0.0
-Option-getOrder.md
-Package: `effect`<br />
-Module: `Option`<br />
-
-## Option.getOrder
-
-Creates an `Order` instance for comparing `Option` values, using a provided
-`Order` for the inner type.
-
-**Details**
-
-This function produces an `Order` instance for `Option<A>`, allowing `Option`
-values to be compared:
-
-- `None` is always considered less than any `Some` value.
-- If both are `Some`, their inner values are compared using the provided
-  `Order` instance.
-
-**Example**
-
-```ts
-import { Number, Option } from "effect"
-
-const order = Option.getOrder(Number.Order)
-
-console.log(order(Option.none(), Option.none()))
-// Output: 0
-
-console.log(order(Option.none(), Option.some(1)))
-// Output: -1
-
-console.log(order(Option.some(1), Option.none()))
-// Output: 1
-
-console.log(order(Option.some(1), Option.some(2)))
-// Output: -1
-
-console.log(order(Option.some(1), Option.some(1)))
-// Output: 0
-```
-
-**Signature**
-
-```ts
-declare const getOrder: <A>(O: Order<A>) => Order<Option<A>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L1731)
-
-Since v2.0.0
 Option-getRight.md
 Package: `effect`<br />
 Module: `Option`<br />
@@ -76519,67 +76698,6 @@ declare const isNone: <A>(self: Option<A>) => self is None<A>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L237)
-
-Since v2.0.0
-Option-Option.Value.md
-Package: `effect`<br />
-Module: `Option`<br />
-
-## Option.Option.Value
-
-Extracts the type of the value contained in an `Option`.
-
-**Example** (Getting the Value Type of an Option)
-
-```ts
-import { Option } from "effect"
-
-// Declare an Option holding a string
-declare const myOption: Option.Option<string>
-
-// Extract the type of the value within the Option
-//
-//      ┌─── string
-//      ▼
-type MyType = Option.Option.Value<typeof myOption>
-```
-
-**Signature**
-
-```ts
-type Value<T> = [T] extends [Option<infer _A>] ? _A : never
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L118)
-
-Since v2.0.0
-Option-Option.md
-Package: `effect`<br />
-Module: `Option`<br />
-
-## Option.Option
-
-The `Option` data type represents optional values. An `Option<A>` can either
-be `Some<A>`, containing a value of type `A`, or `None`, representing the
-absence of a value.
-
-**When to Use**
-
-You can use `Option` in scenarios like:
-
-- Using it for initial values
-- Returning values from functions that are not defined for all possible
-  inputs (referred to as “partial functions”)
-- Managing optional fields in data structures
-- Handling optional function arguments
-
-**Signature**
-
-```ts
-type Option<A> = None<A> | Some<A>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Option.ts#L40)
 
 Since v2.0.0
 Option-isOption.md
@@ -79266,126 +79384,6 @@ declare const isBoolean: (input: unknown) => input is boolean
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L375)
 
 Since v2.0.0
-Predicate-isDate.md
-Package: `effect`<br />
-Module: `Predicate`<br />
-
-## Predicate.isDate
-
-A refinement that checks if a value is a `Date` object.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { isDate } from "effect/Predicate"
-
-assert.strictEqual(isDate(new Date()), true)
-
-assert.strictEqual(isDate(Date.now()), false) // `Date.now()` returns a number
-assert.strictEqual(isDate("2023-01-01"), false)
-```
-
-**Signature**
-
-```ts
-declare const isDate: (input: unknown) => input is Date
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L749)
-
-Since v2.0.0
-Predicate-isError.md
-Package: `effect`<br />
-Module: `Predicate`<br />
-
-## Predicate.isError
-
-A refinement that checks if a value is an instance of `Error`.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { isError } from "effect/Predicate"
-
-assert.strictEqual(isError(new Error("boom")), true)
-assert.strictEqual(isError(new TypeError("boom")), true)
-
-assert.strictEqual(isError({ message: "boom" }), false)
-assert.strictEqual(isError("boom"), false)
-```
-
-**Signature**
-
-```ts
-declare const isError: (input: unknown) => input is Error
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L711)
-
-Since v2.0.0
-Predicate-isFunction.md
-Package: `effect`<br />
-Module: `Predicate`<br />
-
-## Predicate.isFunction
-
-A refinement that checks if a value is a `Function`.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { isFunction } from "effect/Predicate"
-
-assert.strictEqual(isFunction(() => {}), true)
-assert.strictEqual(isFunction(isFunction), true)
-
-assert.strictEqual(isFunction("function"), false)
-```
-
-**Signature**
-
-```ts
-declare const isFunction: (input: unknown) => input is Function
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L438)
-
-Since v2.0.0
-Predicate-isIterable.md
-Package: `effect`<br />
-Module: `Predicate`<br />
-
-## Predicate.isIterable
-
-A refinement that checks if a value is an `Iterable`.
-Many built-in types are iterable, such as `Array`, `string`, `Map`, and `Set`.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { isIterable } from "effect/Predicate"
-
-assert.strictEqual(isIterable([]), true)
-assert.strictEqual(isIterable("hello"), true)
-assert.strictEqual(isIterable(new Set()), true)
-
-assert.strictEqual(isIterable({}), false)
-assert.strictEqual(isIterable(123), false)
-```
-
-**Signature**
-
-```ts
-declare const isIterable: (input: unknown) => input is Iterable<unknown>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L771)
-
-Since v2.0.0
 Predicate-Predicate.Any.md
 Package: `effect`<br />
 Module: `Predicate`<br />
@@ -79586,6 +79584,126 @@ export interface Refinement<in A, out B extends A> {
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L81)
+
+Since v2.0.0
+Predicate-isDate.md
+Package: `effect`<br />
+Module: `Predicate`<br />
+
+## Predicate.isDate
+
+A refinement that checks if a value is a `Date` object.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { isDate } from "effect/Predicate"
+
+assert.strictEqual(isDate(new Date()), true)
+
+assert.strictEqual(isDate(Date.now()), false) // `Date.now()` returns a number
+assert.strictEqual(isDate("2023-01-01"), false)
+```
+
+**Signature**
+
+```ts
+declare const isDate: (input: unknown) => input is Date
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L749)
+
+Since v2.0.0
+Predicate-isError.md
+Package: `effect`<br />
+Module: `Predicate`<br />
+
+## Predicate.isError
+
+A refinement that checks if a value is an instance of `Error`.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { isError } from "effect/Predicate"
+
+assert.strictEqual(isError(new Error("boom")), true)
+assert.strictEqual(isError(new TypeError("boom")), true)
+
+assert.strictEqual(isError({ message: "boom" }), false)
+assert.strictEqual(isError("boom"), false)
+```
+
+**Signature**
+
+```ts
+declare const isError: (input: unknown) => input is Error
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L711)
+
+Since v2.0.0
+Predicate-isFunction.md
+Package: `effect`<br />
+Module: `Predicate`<br />
+
+## Predicate.isFunction
+
+A refinement that checks if a value is a `Function`.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { isFunction } from "effect/Predicate"
+
+assert.strictEqual(isFunction(() => {}), true)
+assert.strictEqual(isFunction(isFunction), true)
+
+assert.strictEqual(isFunction("function"), false)
+```
+
+**Signature**
+
+```ts
+declare const isFunction: (input: unknown) => input is Function
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L438)
+
+Since v2.0.0
+Predicate-isIterable.md
+Package: `effect`<br />
+Module: `Predicate`<br />
+
+## Predicate.isIterable
+
+A refinement that checks if a value is an `Iterable`.
+Many built-in types are iterable, such as `Array`, `string`, `Map`, and `Set`.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { isIterable } from "effect/Predicate"
+
+assert.strictEqual(isIterable([]), true)
+assert.strictEqual(isIterable("hello"), true)
+assert.strictEqual(isIterable(new Set()), true)
+
+assert.strictEqual(isIterable({}), false)
+assert.strictEqual(isIterable(123), false)
+```
+
+**Signature**
+
+```ts
+declare const isIterable: (input: unknown) => input is Iterable<unknown>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Predicate.ts#L771)
 
 Since v2.0.0
 Predicate-isMap.md
@@ -80768,6 +80886,25 @@ declare const float: Primitive<number>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Primitive.ts#L111)
 
 Since v1.0.0
+Primitive-Primitive.md
+Package: `@effect/cli`<br />
+Module: `Primitive`<br />
+
+## Primitive.Primitive
+
+A `Primitive` represents the primitive types supported by Effect CLI.
+
+Each primitive type has a way to parse and validate from a string.
+
+**Signature**
+
+```ts
+export interface Primitive<A> extends Primitive.Variance<A> {}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Primitive.ts#L34)
+
+Since v1.0.0
 Primitive-getChoices.md
 Package: `@effect/cli`<br />
 Module: `Primitive`<br />
@@ -80835,25 +80972,6 @@ declare const integer: Primitive<number>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Primitive.ts#L144)
-
-Since v1.0.0
-Primitive-Primitive.md
-Package: `@effect/cli`<br />
-Module: `Primitive`<br />
-
-## Primitive.Primitive
-
-A `Primitive` represents the primitive types supported by Effect CLI.
-
-Each primitive type has a way to parse and validate from a string.
-
-**Signature**
-
-```ts
-export interface Primitive<A> extends Primitive.Variance<A> {}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Primitive.ts#L34)
 
 Since v1.0.0
 Primitive-text.md
@@ -81564,97 +81682,6 @@ export interface Handlers<State, Output> {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/cli/src/Prompt.ts#L104)
 
 Since v1.0.0
-Prompt-Prompt.md
-Package: `@effect/ai`<br />
-Module: `Prompt`<br />
-
-## Prompt.Prompt
-
-A Prompt contains a sequence of messages that form the context of a
-conversation with a large language model.
-
-**Signature**
-
-```ts
-export interface Prompt extends Pipeable {
-  readonly [TypeId]: TypeId
-  /**
-   * Array of messages that make up the conversation.
-   */
-  readonly content: ReadonlyArray<Message>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1306)
-
-Since v1.0.0
-Prompt-PromptEncoded.md
-Package: `@effect/ai`<br />
-Module: `Prompt`<br />
-
-## Prompt.PromptEncoded
-
-Encoded representation of prompts for serialization.
-
-**Signature**
-
-```ts
-export interface PromptEncoded {
-  /**
-   * Array of messages that make up the conversation.
-   */
-  readonly content: ReadonlyArray<MessageEncoded>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1320)
-
-Since v1.0.0
-Prompt-PromptFromSelf.md
-Package: `@effect/ai`<br />
-Module: `Prompt`<br />
-
-## Prompt.PromptFromSelf
-
-Describes a schema that represents a `Prompt` instance.
-
-**Signature**
-
-```ts
-declare class PromptFromSelf
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1333)
-
-Since v1.0.0
-Prompt-ProviderOptions.md
-Package: `@effect/ai`<br />
-Module: `Prompt`<br />
-
-## Prompt.ProviderOptions
-
-Schema for provider-specific options which can be attached to both content
-parts and messages, enabling provider-specific behavior.
-
-Provider-specific options are namespaced by provider and have the structure:
-
-```
-{
-  "<provider-specific-key>": {
-    // Provider-specific options
-  }
-}
-```
-
-**Signature**
-
-```ts
-declare const ProviderOptions: Schema.Record$<typeof Schema.String, Schema.UndefinedOr<Schema.Record$<typeof Schema.String, typeof Schema.Unknown>>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L87)
-
-Since v1.0.0
 Prompt-all.md
 Package: `@effect/cli`<br />
 Module: `Prompt`<br />
@@ -82151,6 +82178,97 @@ declare const prependSystem: { (content: string): (self: Prompt) => Prompt; (sel
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1797)
+
+Since v1.0.0
+Prompt-Prompt.md
+Package: `@effect/ai`<br />
+Module: `Prompt`<br />
+
+## Prompt.Prompt
+
+A Prompt contains a sequence of messages that form the context of a
+conversation with a large language model.
+
+**Signature**
+
+```ts
+export interface Prompt extends Pipeable {
+  readonly [TypeId]: TypeId
+  /**
+   * Array of messages that make up the conversation.
+   */
+  readonly content: ReadonlyArray<Message>
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1306)
+
+Since v1.0.0
+Prompt-PromptEncoded.md
+Package: `@effect/ai`<br />
+Module: `Prompt`<br />
+
+## Prompt.PromptEncoded
+
+Encoded representation of prompts for serialization.
+
+**Signature**
+
+```ts
+export interface PromptEncoded {
+  /**
+   * Array of messages that make up the conversation.
+   */
+  readonly content: ReadonlyArray<MessageEncoded>
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1320)
+
+Since v1.0.0
+Prompt-PromptFromSelf.md
+Package: `@effect/ai`<br />
+Module: `Prompt`<br />
+
+## Prompt.PromptFromSelf
+
+Describes a schema that represents a `Prompt` instance.
+
+**Signature**
+
+```ts
+declare class PromptFromSelf
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1333)
+
+Since v1.0.0
+Prompt-ProviderOptions.md
+Package: `@effect/ai`<br />
+Module: `Prompt`<br />
+
+## Prompt.ProviderOptions
+
+Schema for provider-specific options which can be attached to both content
+parts and messages, enabling provider-specific behavior.
+
+Provider-specific options are namespaced by provider and have the structure:
+
+```
+{
+  "<provider-specific-key>": {
+    // Provider-specific options
+  }
+}
+```
+
+**Signature**
+
+```ts
+declare const ProviderOptions: Schema.Record$<typeof Schema.String, Schema.UndefinedOr<Schema.Record$<typeof Schema.String, typeof Schema.Unknown>>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L87)
 
 Since v1.0.0
 Prompt-RawInput.md
@@ -83071,44 +83189,6 @@ declare const userMessage: (params: MessageConstructorParams<UserMessage>) => Us
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Prompt.ts#L1008)
 
 Since v1.0.0
-PubSub-PubSub.md
-Package: `effect`<br />
-Module: `PubSub`<br />
-
-## PubSub.PubSub
-
-A `PubSub<A>` is an asynchronous message hub into which publishers can publish
-messages of type `A` and subscribers can subscribe to take messages of type
-`A`.
-
-**Signature**
-
-```ts
-export interface PubSub<in out A> extends Queue.Enqueue<A>, Pipeable {
-  /**
-   * Publishes a message to the `PubSub`, returning whether the message was published
-   * to the `PubSub`.
-   */
-  publish(value: A): Effect.Effect<boolean>
-
-  /**
-   * Publishes all of the specified messages to the `PubSub`, returning whether they
-   * were published to the `PubSub`.
-   */
-  publishAll(elements: Iterable<A>): Effect.Effect<boolean>
-
-  /**
-   * Subscribes to receive messages from the `PubSub`. The resulting subscription can
-   * be evaluated multiple times within the scope to take a message from the `PubSub`
-   * each time.
-   */
-  readonly subscribe: Effect.Effect<Queue.Dequeue<A>, never, Scope.Scope>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/PubSub.ts#L18)
-
-Since v2.0.0
 PubSub-awaitShutdown.md
 Package: `effect`<br />
 Module: `PubSub`<br />
@@ -83272,6 +83352,44 @@ declare const publishAll: { <A>(elements: Iterable<A>): (self: PubSub<A>) => Eff
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/PubSub.ts#L169)
+
+Since v2.0.0
+PubSub-PubSub.md
+Package: `effect`<br />
+Module: `PubSub`<br />
+
+## PubSub.PubSub
+
+A `PubSub<A>` is an asynchronous message hub into which publishers can publish
+messages of type `A` and subscribers can subscribe to take messages of type
+`A`.
+
+**Signature**
+
+```ts
+export interface PubSub<in out A> extends Queue.Enqueue<A>, Pipeable {
+  /**
+   * Publishes a message to the `PubSub`, returning whether the message was published
+   * to the `PubSub`.
+   */
+  publish(value: A): Effect.Effect<boolean>
+
+  /**
+   * Publishes all of the specified messages to the `PubSub`, returning whether they
+   * were published to the `PubSub`.
+   */
+  publishAll(elements: Iterable<A>): Effect.Effect<boolean>
+
+  /**
+   * Subscribes to receive messages from the `PubSub`. The resulting subscription can
+   * be evaluated multiple times within the scope to take a message from the `PubSub`
+   * each time.
+   */
+  readonly subscribe: Effect.Effect<Queue.Dequeue<A>, never, Scope.Scope>
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/PubSub.ts#L18)
 
 Since v2.0.0
 PubSub-shutdown.md
@@ -85581,75 +85699,6 @@ declare const forEach: { <K, V>(f: (key: K, value: V) => void): (self: RedBlackT
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L318)
 
 Since v2.0.0
-RedBlackTree-forEachBetween.md
-Package: `effect`<br />
-Module: `RedBlackTree`<br />
-
-## RedBlackTree.forEachBetween
-
-Visit each node of the tree in order with key lower than max and greater
-than or equal to min.
-
-**Signature**
-
-```ts
-declare const forEachBetween: { <K, V>(options: { readonly min: K; readonly max: K; readonly body: (key: K, value: V) => void; }): (self: RedBlackTree<K, V>) => void; <K, V>(self: RedBlackTree<K, V>, options: { readonly min: K; readonly max: K; readonly body: (key: K, value: V) => void; }): void; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L352)
-
-Since v2.0.0
-RedBlackTree-forEachGreaterThanEqual.md
-Package: `effect`<br />
-Module: `RedBlackTree`<br />
-
-## RedBlackTree.forEachGreaterThanEqual
-
-Visit each node of the tree in order with key greater then or equal to max.
-
-**Signature**
-
-```ts
-declare const forEachGreaterThanEqual: { <K, V>(min: K, f: (key: K, value: V) => void): (self: RedBlackTree<K, V>) => void; <K, V>(self: RedBlackTree<K, V>, min: K, f: (key: K, value: V) => void): void; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L329)
-
-Since v2.0.0
-RedBlackTree-forEachLessThan.md
-Package: `effect`<br />
-Module: `RedBlackTree`<br />
-
-## RedBlackTree.forEachLessThan
-
-Visit each node of the tree in order with key lower then max.
-
-**Signature**
-
-```ts
-declare const forEachLessThan: { <K, V>(max: K, f: (key: K, value: V) => void): (self: RedBlackTree<K, V>) => void; <K, V>(self: RedBlackTree<K, V>, max: K, f: (key: K, value: V) => void): void; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L340)
-
-Since v2.0.0
-RedBlackTree-fromIterable.md
-Package: `effect`<br />
-Module: `RedBlackTree`<br />
-
-## RedBlackTree.fromIterable
-
-Creates a new `RedBlackTree` from an iterable collection of key/value pairs.
-
-**Signature**
-
-```ts
-declare const fromIterable: { <B>(ord: Order<B>): <K extends B, V>(entries: Iterable<readonly [K, V]>) => RedBlackTree<K, V>; <K extends B, V, B>(entries: Iterable<readonly [K, V]>, ord: Order<B>): RedBlackTree<K, V>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L76)
-
-Since v2.0.0
 Redacted-getEquivalence.md
 Package: `effect`<br />
 Module: `Redacted`<br />
@@ -85794,6 +85843,75 @@ export interface RedBlackTree<in out Key, out Value> extends Iterable<[Key, Valu
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L34)
+
+Since v2.0.0
+RedBlackTree-forEachBetween.md
+Package: `effect`<br />
+Module: `RedBlackTree`<br />
+
+## RedBlackTree.forEachBetween
+
+Visit each node of the tree in order with key lower than max and greater
+than or equal to min.
+
+**Signature**
+
+```ts
+declare const forEachBetween: { <K, V>(options: { readonly min: K; readonly max: K; readonly body: (key: K, value: V) => void; }): (self: RedBlackTree<K, V>) => void; <K, V>(self: RedBlackTree<K, V>, options: { readonly min: K; readonly max: K; readonly body: (key: K, value: V) => void; }): void; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L352)
+
+Since v2.0.0
+RedBlackTree-forEachGreaterThanEqual.md
+Package: `effect`<br />
+Module: `RedBlackTree`<br />
+
+## RedBlackTree.forEachGreaterThanEqual
+
+Visit each node of the tree in order with key greater then or equal to max.
+
+**Signature**
+
+```ts
+declare const forEachGreaterThanEqual: { <K, V>(min: K, f: (key: K, value: V) => void): (self: RedBlackTree<K, V>) => void; <K, V>(self: RedBlackTree<K, V>, min: K, f: (key: K, value: V) => void): void; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L329)
+
+Since v2.0.0
+RedBlackTree-forEachLessThan.md
+Package: `effect`<br />
+Module: `RedBlackTree`<br />
+
+## RedBlackTree.forEachLessThan
+
+Visit each node of the tree in order with key lower then max.
+
+**Signature**
+
+```ts
+declare const forEachLessThan: { <K, V>(max: K, f: (key: K, value: V) => void): (self: RedBlackTree<K, V>) => void; <K, V>(self: RedBlackTree<K, V>, max: K, f: (key: K, value: V) => void): void; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L340)
+
+Since v2.0.0
+RedBlackTree-fromIterable.md
+Package: `effect`<br />
+Module: `RedBlackTree`<br />
+
+## RedBlackTree.fromIterable
+
+Creates a new `RedBlackTree` from an iterable collection of key/value pairs.
+
+**Signature**
+
+```ts
+declare const fromIterable: { <B>(ord: Order<B>): <K extends B, V>(entries: Iterable<readonly [K, V]>) => RedBlackTree<K, V>; <K extends B, V, B>(entries: Iterable<readonly [K, V]>, ord: Order<B>): RedBlackTree<K, V>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/RedBlackTree.ts#L76)
 
 Since v2.0.0
 RedBlackTree-getAt.md
@@ -86516,36 +86634,6 @@ export interface Request<out A, out E = never> extends Request.Variance<A, E> {}
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Request.ts#L38)
 
 Since v2.0.0
-Request-TaggedClass.md
-Package: `effect`<br />
-Module: `Request`<br />
-
-## Request.TaggedClass
-
-Provides a Tagged constructor for a Request Class.
-
-**Example**
-
-```ts
-import { Request } from "effect"
-
-type Success = string
-type Error = never
-
-class MyRequest extends Request.TaggedClass("MyRequest")<Success, Error, {
-  readonly name: string
-}> {}
-```
-
-**Signature**
-
-```ts
-declare const TaggedClass: <Tag extends string>(tag: Tag) => new <Success, Error, A extends Record<string, any>>(args: Types.Equals<Omit<A, keyof Request<unknown, unknown>>, {}> extends true ? void : { readonly [P in keyof A as P extends "_tag" | keyof Request<unknown, unknown> ? never : P]: A[P]; }) => Request<Success, Error> & Readonly<A> & { readonly _tag: Tag; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Request.ts#L165)
-
-Since v2.0.0
 Request-complete.md
 Package: `effect`<br />
 Module: `Request`<br />
@@ -86665,6 +86753,36 @@ declare const of: <R extends Request<any, any>>() => Request.Constructor<R>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Request.ts#L112)
+
+Since v2.0.0
+Request-TaggedClass.md
+Package: `effect`<br />
+Module: `Request`<br />
+
+## Request.TaggedClass
+
+Provides a Tagged constructor for a Request Class.
+
+**Example**
+
+```ts
+import { Request } from "effect"
+
+type Success = string
+type Error = never
+
+class MyRequest extends Request.TaggedClass("MyRequest")<Success, Error, {
+  readonly name: string
+}> {}
+```
+
+**Signature**
+
+```ts
+declare const TaggedClass: <Tag extends string>(tag: Tag) => new <Success, Error, A extends Record<string, any>>(args: Types.Equals<Omit<A, keyof Request<unknown, unknown>>, {}> extends true ? void : { readonly [P in keyof A as P extends "_tag" | keyof Request<unknown, unknown> ? never : P]: A[P]; }) => Request<Success, Error> & Readonly<A> & { readonly _tag: Tag; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Request.ts#L165)
 
 Since v2.0.0
 Request-succeed.md
@@ -87770,51 +87888,6 @@ export interface FinishPartEncoded extends BasePartEncoded<"finish", FinishPartM
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2263)
 
 Since v1.0.0
-Response-FinishPartMetadata.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.FinishPartMetadata
-
-Represents provider-specific metadata that can be associated with a
-`FinishPart` through module augmentation.
-
-**Signature**
-
-```ts
-export interface FinishPartMetadata extends ProviderMetadata {}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2281)
-
-Since v1.0.0
-Response-FinishReason.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.FinishReason
-
-Represents the reason why a model finished generation of a response.
-
-Possible finish reasons:
-- `"stop"`: The model generated a stop sequence.
-- `"length"`: The model exceeded its token budget.
-- `"content-filter"`: The model generated content which violated a content filter.
-- `"tool-calls"`: The model triggered a tool call.
-- `"error"`: The model encountered an error.
-- `"pause"`: The model requested to pause execution.
-- `"other"`: The model stopped for a reason not supported by this protocol.
-- `"unknown"`: The model did not specify a finish reason.
-
-**Signature**
-
-```ts
-declare const FinishReason: Schema.Literal<["stop", "length", "content-filter", "tool-calls", "error", "pause", "other", "unknown"]>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2161)
-
-Since v1.0.0
 Response-documentSourcePart.md
 Package: `@effect/ai`<br />
 Module: `Response`<br />
@@ -87883,55 +87956,49 @@ declare const finishPart: (params: ConstructorParams<FinishPart>) => FinishPart
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2305)
 
 Since v1.0.0
-Response-isPart.md
+Response-FinishPartMetadata.md
 Package: `@effect/ai`<br />
 Module: `Response`<br />
 
-## Response.isPart
+## Response.FinishPartMetadata
 
-Type guard to check if a value is a Response Part.
+Represents provider-specific metadata that can be associated with a
+`FinishPart` through module augmentation.
 
 **Signature**
 
 ```ts
-declare const isPart: (u: unknown) => u is AnyPart
+export interface FinishPartMetadata extends ProviderMetadata {}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L67)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2281)
 
 Since v1.0.0
-Response-makePart.md
+Response-FinishReason.md
 Package: `@effect/ai`<br />
 Module: `Response`<br />
 
-## Response.makePart
+## Response.FinishReason
 
-Creates a new response content part of the specified type.
+Represents the reason why a model finished generation of a response.
 
-**Example**
-
-```ts
-import { Response } from "@effect/ai"
-
-const textPart = Response.makePart("text", {
-  text: "Hello, world!"
-})
-
-const toolCallPart = Response.makePart("tool-call", {
-  id: "call_123",
-  name: "get_weather",
-  params: { city: "San Francisco" },
-  providerExecuted: false
-})
-```
+Possible finish reasons:
+- `"stop"`: The model generated a stop sequence.
+- `"length"`: The model exceeded its token budget.
+- `"content-filter"`: The model generated content which violated a content filter.
+- `"tool-calls"`: The model triggered a tool call.
+- `"error"`: The model encountered an error.
+- `"pause"`: The model requested to pause execution.
+- `"other"`: The model stopped for a reason not supported by this protocol.
+- `"unknown"`: The model did not specify a finish reason.
 
 **Signature**
 
 ```ts
-declare const makePart: <const Type extends AnyPart["type"]>(type: Type, params: Omit<Extract<AnyPart, { type: Type; }>, PartTypeId | "type" | "metadata"> & { readonly metadata?: Extract<AnyPart, { type: Type; }>["metadata"] | undefined; }) => Extract<AnyPart, { type: Type; }>
+declare const FinishReason: Schema.Literal<["stop", "length", "content-filter", "tool-calls", "error", "pause", "other", "unknown"]>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L533)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2161)
 
 Since v1.0.0
 Response-Part.md
@@ -88863,80 +88930,55 @@ export interface ToolCallPartMetadata extends ProviderMetadata {}
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1468)
 
 Since v1.0.0
-Response-ToolCallParts.md
+Response-isPart.md
 Package: `@effect/ai`<br />
 Module: `Response`<br />
 
-## Response.ToolCallParts
+## Response.isPart
 
-Utility type that extracts tool call parts from a set of tools.
+Type guard to check if a value is a Response Part.
 
 **Signature**
 
 ```ts
-type ToolCallParts<Tools> = {
-  [Name in keyof Tools]: Name extends string ?
-    ToolCallPart<Name, Schema.Struct.Type<Tool.ParametersSchema<Tools[Name]>["fields"]>>
-    : never
-}[keyof Tools]
+declare const isPart: (u: unknown) => u is AnyPart
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L413)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L67)
 
 Since v1.0.0
-Response-ToolParamsDeltaPart.md
+Response-makePart.md
 Package: `@effect/ai`<br />
 Module: `Response`<br />
 
-## Response.ToolParamsDeltaPart
+## Response.makePart
 
-Response part containing incremental tool parameter content.
+Creates a new response content part of the specified type.
 
-Represents a chunk of tool parameters being streamed, containing the
-incremental JSON content that forms the tool parameters.
+**Example**
+
+```ts
+import { Response } from "@effect/ai"
+
+const textPart = Response.makePart("text", {
+  text: "Hello, world!"
+})
+
+const toolCallPart = Response.makePart("tool-call", {
+  id: "call_123",
+  name: "get_weather",
+  params: { city: "San Francisco" },
+  providerExecuted: false
+})
+```
 
 **Signature**
 
 ```ts
-export interface ToolParamsDeltaPart extends BasePart<"tool-params-delta", ToolParamsDeltaPartMetadata> {
-  /**
-   * Unique identifier matching the corresponding tool parameter chunk.
-   */
-  readonly id: string
-  /**
-   * The incremental parameter content (typically JSON fragment) to add.
-   */
-  readonly delta: string
-}
+declare const makePart: <const Type extends AnyPart["type"]>(type: Type, params: Omit<Extract<AnyPart, { type: Type; }>, PartTypeId | "type" | "metadata"> & { readonly metadata?: Extract<AnyPart, { type: Type; }>["metadata"] | undefined; }) => Extract<AnyPart, { type: Type; }>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1235)
-
-Since v1.0.0
-Response-ToolParamsDeltaPartEncoded.md
-Package: `@effect/ai`<br />
-Module: `Response`<br />
-
-## Response.ToolParamsDeltaPartEncoded
-
-Encoded representation of tool params delta parts for serialization.
-
-**Signature**
-
-```ts
-export interface ToolParamsDeltaPartEncoded extends BasePartEncoded<"tool-params-delta", ToolParamsDeltaPartMetadata> {
-  /**
-   * Unique identifier matching the corresponding tool parameter chunk.
-   */
-  readonly id: string
-  /**
-   * The incremental parameter content (typically JSON fragment) to add.
-   */
-  readonly delta: string
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1252)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L533)
 
 Since v1.0.0
 Response-reasoningDeltaPart.md
@@ -89109,21 +89151,80 @@ declare const toolCallPart: <const Name extends string, Params>(params: Construc
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1505)
 
 Since v1.0.0
-Response-toolParamsDeltaPart.md
+Response-ToolCallParts.md
 Package: `@effect/ai`<br />
 Module: `Response`<br />
 
-## Response.toolParamsDeltaPart
+## Response.ToolCallParts
 
-Constructs a new tool params delta part.
+Utility type that extracts tool call parts from a set of tools.
 
 **Signature**
 
 ```ts
-declare const toolParamsDeltaPart: (params: ConstructorParams<ToolParamsDeltaPart>) => ToolParamsDeltaPart
+type ToolCallParts<Tools> = {
+  [Name in keyof Tools]: Name extends string ?
+    ToolCallPart<Name, Schema.Struct.Type<Tool.ParametersSchema<Tools[Name]>["fields"]>>
+    : never
+}[keyof Tools]
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1294)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L413)
+
+Since v1.0.0
+Response-ToolParamsDeltaPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.ToolParamsDeltaPart
+
+Response part containing incremental tool parameter content.
+
+Represents a chunk of tool parameters being streamed, containing the
+incremental JSON content that forms the tool parameters.
+
+**Signature**
+
+```ts
+export interface ToolParamsDeltaPart extends BasePart<"tool-params-delta", ToolParamsDeltaPartMetadata> {
+  /**
+   * Unique identifier matching the corresponding tool parameter chunk.
+   */
+  readonly id: string
+  /**
+   * The incremental parameter content (typically JSON fragment) to add.
+   */
+  readonly delta: string
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1235)
+
+Since v1.0.0
+Response-ToolParamsDeltaPartEncoded.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.ToolParamsDeltaPartEncoded
+
+Encoded representation of tool params delta parts for serialization.
+
+**Signature**
+
+```ts
+export interface ToolParamsDeltaPartEncoded extends BasePartEncoded<"tool-params-delta", ToolParamsDeltaPartMetadata> {
+  /**
+   * Unique identifier matching the corresponding tool parameter chunk.
+   */
+  readonly id: string
+  /**
+   * The incremental parameter content (typically JSON fragment) to add.
+   */
+  readonly delta: string
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1252)
 
 Since v1.0.0
 Response-ToolParamsDeltaPartMetadata.md
@@ -89611,6 +89712,23 @@ declare class Usage
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L2197)
+
+Since v1.0.0
+Response-toolParamsDeltaPart.md
+Package: `@effect/ai`<br />
+Module: `Response`<br />
+
+## Response.toolParamsDeltaPart
+
+Constructs a new tool params delta part.
+
+**Signature**
+
+```ts
+declare const toolParamsDeltaPart: (params: ConstructorParams<ToolParamsDeltaPart>) => ToolParamsDeltaPart
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Response.ts#L1294)
 
 Since v1.0.0
 Response-toolParamsEndPart.md
@@ -90187,27 +90305,6 @@ declare const make: (props: { readonly address: RunnerAddress; readonly groups: 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/Runner.ts#L98)
 
 Since v1.0.0
-RunnerHealth-RunnerHealth.md
-Package: `@effect/cluster`<br />
-Module: `RunnerHealth`<br />
-
-## RunnerHealth.RunnerHealth
-
-Represents the service used to check if a Runner is healthy.
-
-If a Runner is responsive, shards will not be re-assigned because the Runner may
-still be processing messages. If a Runner is not responsive, then its
-associated shards can and will be re-assigned to a different Runner.
-
-**Signature**
-
-```ts
-declare class RunnerHealth
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L23)
-
-Since v1.0.0
 RunnerHealth-layerK8s.md
 Package: `@effect/cluster`<br />
 Module: `RunnerHealth`<br />
@@ -90267,6 +90364,27 @@ declare const layerPing: Layer.Layer<RunnerHealth, never, Runners.Runners>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L71)
 
 Since v1.0.0
+RunnerHealth-RunnerHealth.md
+Package: `@effect/cluster`<br />
+Module: `RunnerHealth`<br />
+
+## RunnerHealth.RunnerHealth
+
+Represents the service used to check if a Runner is healthy.
+
+If a Runner is responsive, shards will not be re-assigned because the Runner may
+still be processing messages. If a Runner is not responsive, then its
+associated shards can and will be re-assigned to a different Runner.
+
+**Signature**
+
+```ts
+declare class RunnerHealth
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerHealth.ts#L23)
+
+Since v1.0.0
 RunnerServer-layer.md
 Package: `@effect/cluster`<br />
 Module: `RunnerServer`<br />
@@ -90281,7 +90399,7 @@ It also responds to `Ping` requests.
 **Signature**
 
 ```ts
-declare const layer: Layer.Layer<never, never, MessageStorage.MessageStorage | Sharding.Sharding | RpcServer.Protocol>
+declare const layer: Layer.Layer<never, never, Sharding.Sharding | MessageStorage.MessageStorage | RpcServer.Protocol>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerServer.ts#L150)
@@ -90302,7 +90420,7 @@ application.
 **Signature**
 
 ```ts
-declare const layerClientOnly: Layer.Layer<Sharding.Sharding | Runners.Runners, never, RunnerStorage.RunnerStorage | ShardingConfig | MessageStorage.MessageStorage | Runners.RpcClientProtocol>
+declare const layerClientOnly: Layer.Layer<Sharding.Sharding | Runners.Runners, never, MessageStorage.MessageStorage | RunnerStorage.RunnerStorage | ShardingConfig | Runners.RpcClientProtocol>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerServer.ts#L189)
@@ -90319,7 +90437,7 @@ A `RunnerServer` layer that includes the `Runners` & `Sharding` clients.
 **Signature**
 
 ```ts
-declare const layerWithClients: Layer.Layer<Sharding.Sharding | Runners.Runners, never, RunnerStorage.RunnerStorage | ShardingConfig | MessageStorage.MessageStorage | Runners.RpcClientProtocol | RunnerHealth.RunnerHealth | RpcServer.Protocol>
+declare const layerWithClients: Layer.Layer<Sharding.Sharding | Runners.Runners, never, MessageStorage.MessageStorage | RunnerStorage.RunnerStorage | ShardingConfig | Runners.RpcClientProtocol | RunnerHealth.RunnerHealth | RpcServer.Protocol>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/RunnerServer.ts#L165)
@@ -92520,6 +92638,79 @@ declare const mapBoth: { <In2, In, Out, Out2>(options: { readonly onInput: (in2:
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L840)
 
 Since v2.0.0
+Schedule-Schedule.md
+Package: `effect`<br />
+Module: `Schedule`<br />
+
+## Schedule.Schedule
+
+A `Schedule<Out, In, R>` defines a recurring schedule, which consumes values
+of type `In`, and which returns values of type `Out`.
+
+The `Schedule` type is structured as follows:
+
+```ts
+//        ┌─── The type of output produced by the schedule
+//        │   ┌─── The type of input consumed by the schedule
+//        │   │     ┌─── Additional requirements for the schedule
+//        ▼   ▼     ▼
+Schedule<Out, In, Requirements>
+```
+
+A schedule operates by consuming values of type `In` (such as errors in the
+case of `Effect.retry`, or values in the case of `Effect.repeat`) and
+producing values of type `Out`. It determines when to halt or continue the
+execution based on input values and its internal state.
+
+The inclusion of a `Requirements` parameter allows the schedule to leverage
+additional services or resources as needed.
+
+Schedules are defined as a possibly infinite set of intervals spread out over
+time. Each interval defines a window in which recurrence is possible.
+
+When schedules are used to repeat or retry effects, the starting boundary of
+each interval produced by a schedule is used as the moment when the effect
+will be executed again.
+
+Schedules can be composed in different ways:
+
+- Union: Combines two schedules and recurs if either schedule wants to
+  continue, using the shorter delay.
+- Intersection: Combines two schedules and recurs only if both schedules want
+  to continue, using the longer delay.
+- Sequencing: Combines two schedules by running the first one fully, then
+  switching to the second.
+
+In addition, schedule inputs and outputs can be transformed, filtered (to
+terminate a schedule early in response to some input or output), and so
+forth.
+
+A variety of other operators exist for transforming and combining schedules,
+and the companion object for `Schedule` contains all common types of
+schedules, both for performing retrying, as well as performing repetition.
+
+**Signature**
+
+```ts
+export interface Schedule<out Out, in In = unknown, out R = never> extends Schedule.Variance<Out, In, R>, Pipeable {
+  /**
+   * Initial State
+   */
+  readonly initial: any
+  /**
+   * Schedule Step
+   */
+  step(
+    now: number,
+    input: In,
+    state: any
+  ): Effect.Effect<readonly [any, Out, ScheduleDecision.ScheduleDecision], never, R>
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L95)
+
+Since v2.0.0
 Schedule-mapBothEffect.md
 Package: `effect`<br />
 Module: `Schedule`<br />
@@ -92636,79 +92827,6 @@ declare const mapInputContext: { <R0, R>(f: (env0: Context.Context<R0>) => Conte
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L600)
-
-Since v2.0.0
-Schedule-Schedule.md
-Package: `effect`<br />
-Module: `Schedule`<br />
-
-## Schedule.Schedule
-
-A `Schedule<Out, In, R>` defines a recurring schedule, which consumes values
-of type `In`, and which returns values of type `Out`.
-
-The `Schedule` type is structured as follows:
-
-```ts
-//        ┌─── The type of output produced by the schedule
-//        │   ┌─── The type of input consumed by the schedule
-//        │   │     ┌─── Additional requirements for the schedule
-//        ▼   ▼     ▼
-Schedule<Out, In, Requirements>
-```
-
-A schedule operates by consuming values of type `In` (such as errors in the
-case of `Effect.retry`, or values in the case of `Effect.repeat`) and
-producing values of type `Out`. It determines when to halt or continue the
-execution based on input values and its internal state.
-
-The inclusion of a `Requirements` parameter allows the schedule to leverage
-additional services or resources as needed.
-
-Schedules are defined as a possibly infinite set of intervals spread out over
-time. Each interval defines a window in which recurrence is possible.
-
-When schedules are used to repeat or retry effects, the starting boundary of
-each interval produced by a schedule is used as the moment when the effect
-will be executed again.
-
-Schedules can be composed in different ways:
-
-- Union: Combines two schedules and recurs if either schedule wants to
-  continue, using the shorter delay.
-- Intersection: Combines two schedules and recurs only if both schedules want
-  to continue, using the longer delay.
-- Sequencing: Combines two schedules by running the first one fully, then
-  switching to the second.
-
-In addition, schedule inputs and outputs can be transformed, filtered (to
-terminate a schedule early in response to some input or output), and so
-forth.
-
-A variety of other operators exist for transforming and combining schedules,
-and the companion object for `Schedule` contains all common types of
-schedules, both for performing retrying, as well as performing repetition.
-
-**Signature**
-
-```ts
-export interface Schedule<out Out, in In = unknown, out R = never> extends Schedule.Variance<Out, In, R>, Pipeable {
-  /**
-   * Initial State
-   */
-  readonly initial: any
-  /**
-   * Schedule Step
-   */
-  step(
-    now: number,
-    input: In,
-    state: any
-  ): Effect.Effect<readonly [any, Out, ScheduleDecision.ScheduleDecision], never, R>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L95)
 
 Since v2.0.0
 Schedule-mapInputEffect.md
@@ -93914,6 +94032,28 @@ declare const zipWith: { <Out2, In2, R2, Out, Out3>(that: Schedule<Out2, In2, R2
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schedule.ts#L2178)
 
 Since v2.0.0
+ScheduleInterval-Interval.md
+Package: `effect`<br />
+Module: `ScheduleInterval`<br />
+
+## ScheduleInterval.Interval
+
+An `Interval` represents an interval of time. Intervals can encompass all
+time, or no time at all.
+
+**Signature**
+
+```ts
+export interface Interval {
+  readonly [IntervalTypeId]: IntervalTypeId
+  readonly startMillis: number
+  readonly endMillis: number
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleInterval.ts#L27)
+
+Since v2.0.0
 ScheduleInterval-after.md
 Package: `effect`<br />
 Module: `ScheduleInterval`<br />
@@ -93965,28 +94105,6 @@ declare const empty: Interval
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleInterval.ts#L49)
-
-Since v2.0.0
-ScheduleInterval-Interval.md
-Package: `effect`<br />
-Module: `ScheduleInterval`<br />
-
-## ScheduleInterval.Interval
-
-An `Interval` represents an interval of time. Intervals can encompass all
-time, or no time at all.
-
-**Signature**
-
-```ts
-export interface Interval {
-  readonly [IntervalTypeId]: IntervalTypeId
-  readonly startMillis: number
-  readonly endMillis: number
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/ScheduleInterval.ts#L27)
 
 Since v2.0.0
 ScheduleInterval-intersect.md
@@ -94619,74 +94737,6 @@ declare class DateTimeUtcFromDate
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6915)
 
 Since v3.12.0
-Schema-DateTimeUtcFromNumber.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.DateTimeUtcFromNumber
-
-Defines a schema that attempts to convert a `number` to a `DateTime.Utc` instance using the `DateTime.unsafeMake` constructor.
-
-**Signature**
-
-```ts
-declare class DateTimeUtcFromNumber
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6899)
-
-Since v3.10.0
-Schema-DateTimeUtcFromSelf.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.DateTimeUtcFromSelf
-
-Describes a schema that represents a `DateTime.Utc` instance.
-
-**Signature**
-
-```ts
-declare class DateTimeUtcFromSelf
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6874)
-
-Since v3.10.0
-Schema-DateTimeZoned.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.DateTimeZoned
-
-Defines a schema that attempts to convert a `string` to a `DateTime.Zoned` instance.
-
-**Signature**
-
-```ts
-declare class DateTimeZoned
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7079)
-
-Since v3.10.0
-Schema-DateTimeZonedFromSelf.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.DateTimeZonedFromSelf
-
-Describes a schema that represents a `DateTime.Zoned` instance.
-
-**Signature**
-
-```ts
-declare class DateTimeZonedFromSelf
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7054)
-
-Since v3.10.0
 Schema-annotations.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -94895,6 +94945,74 @@ declare const clampDuration: (minimum: duration_.DurationInput, maximum: duratio
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6045)
+
+Since v3.10.0
+Schema-DateTimeUtcFromNumber.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.DateTimeUtcFromNumber
+
+Defines a schema that attempts to convert a `number` to a `DateTime.Utc` instance using the `DateTime.unsafeMake` constructor.
+
+**Signature**
+
+```ts
+declare class DateTimeUtcFromNumber
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6899)
+
+Since v3.10.0
+Schema-DateTimeUtcFromSelf.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.DateTimeUtcFromSelf
+
+Describes a schema that represents a `DateTime.Utc` instance.
+
+**Signature**
+
+```ts
+declare class DateTimeUtcFromSelf
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6874)
+
+Since v3.10.0
+Schema-DateTimeZoned.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.DateTimeZoned
+
+Defines a schema that attempts to convert a `string` to a `DateTime.Zoned` instance.
+
+**Signature**
+
+```ts
+declare class DateTimeZoned
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7079)
+
+Since v3.10.0
+Schema-DateTimeZonedFromSelf.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.DateTimeZonedFromSelf
+
+Describes a schema that represents a `DateTime.Zoned` instance.
+
+**Signature**
+
+```ts
+declare class DateTimeZonedFromSelf
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L7054)
 
 Since v3.10.0
 Schema-Defect.md
@@ -95260,91 +95378,6 @@ export interface SerializableWithResult<
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L10460)
 
 Since v3.10.0
-Schema-StringFromBase64.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.StringFromBase64
-
-Decodes a base64 (RFC4648) encoded string into a UTF-8 string.
-
-**Signature**
-
-```ts
-declare const StringFromBase64: Schema<string, string, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6320)
-
-Since v3.10.0
-Schema-StringFromBase64Url.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.StringFromBase64Url
-
-Decodes a base64 (URL) encoded string into a UTF-8 string.
-
-**Signature**
-
-```ts
-declare const StringFromBase64Url: Schema<string, string, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6332)
-
-Since v3.10.0
-Schema-StringFromHex.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.StringFromHex
-
-Decodes a hex encoded string into a UTF-8 string.
-
-**Signature**
-
-```ts
-declare const StringFromHex: Schema<string, string, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6344)
-
-Since v3.10.0
-Schema-StringFromUriComponent.md
-Package: `effect`<br />
-Module: `Schema`<br />
-
-## Schema.StringFromUriComponent
-
-Decodes a URI component encoded string into a UTF-8 string.
-Can be used to store data in a URL.
-
-**Example**
-
-```ts
-import { Schema } from "effect"
-
-const PaginationSchema = Schema.Struct({
-  maxItemPerPage: Schema.Number,
-  page: Schema.Number
-})
-
-const UrlSchema = Schema.compose(Schema.StringFromUriComponent, Schema.parseJson(PaginationSchema))
-
-console.log(Schema.encodeSync(UrlSchema)({ maxItemPerPage: 10, page: 1 }))
-// Output: %7B%22maxItemPerPage%22%3A10%2C%22page%22%3A1%7D
-```
-
-**Signature**
-
-```ts
-declare const StringFromUriComponent: transformOrFail<SchemaClass<string, string, never>, typeof String$, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6372)
-
-Since v3.12.0
 Schema-declare.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -95983,6 +96016,91 @@ declare const standardSchemaV1: <A, I>(schema: Schema<A, I, never>, overrideOpti
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L196)
 
 Since v3.13.0
+Schema-StringFromBase64.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.StringFromBase64
+
+Decodes a base64 (RFC4648) encoded string into a UTF-8 string.
+
+**Signature**
+
+```ts
+declare const StringFromBase64: Schema<string, string, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6320)
+
+Since v3.10.0
+Schema-StringFromBase64Url.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.StringFromBase64Url
+
+Decodes a base64 (URL) encoded string into a UTF-8 string.
+
+**Signature**
+
+```ts
+declare const StringFromBase64Url: Schema<string, string, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6332)
+
+Since v3.10.0
+Schema-StringFromHex.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.StringFromHex
+
+Decodes a hex encoded string into a UTF-8 string.
+
+**Signature**
+
+```ts
+declare const StringFromHex: Schema<string, string, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6344)
+
+Since v3.10.0
+Schema-StringFromUriComponent.md
+Package: `effect`<br />
+Module: `Schema`<br />
+
+## Schema.StringFromUriComponent
+
+Decodes a URI component encoded string into a UTF-8 string.
+Can be used to store data in a URL.
+
+**Example**
+
+```ts
+import { Schema } from "effect"
+
+const PaginationSchema = Schema.Struct({
+  maxItemPerPage: Schema.Number,
+  page: Schema.Number
+})
+
+const UrlSchema = Schema.compose(Schema.StringFromUriComponent, Schema.parseJson(PaginationSchema))
+
+console.log(Schema.encodeSync(UrlSchema)({ maxItemPerPage: 10, page: 1 }))
+// Output: %7B%22maxItemPerPage%22%3A10%2C%22page%22%3A1%7D
+```
+
+**Signature**
+
+```ts
+declare const StringFromUriComponent: transformOrFail<SchemaClass<string, string, never>, typeof String$, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Schema.ts#L6372)
+
+Since v3.12.0
 Schema-Struct.Field.md
 Package: `effect`<br />
 Module: `Schema`<br />
@@ -96862,49 +96980,6 @@ declare const required: (ast: AST) => AST
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SchemaAST.ts#L2516)
 
 Since v3.10.0
-Scope-CloseableScope.md
-Package: `effect`<br />
-Module: `Scope`<br />
-
-## Scope.CloseableScope
-
-A scope that can be explicitly closed with a specified exit value.
-
-**Signature**
-
-```ts
-export interface CloseableScope extends Scope, Pipeable {
-  readonly [CloseableScopeTypeId]: CloseableScopeTypeId
-
-  /**
-   * Closes this scope with the given exit value, running all finalizers.
-   *
-   * @internal
-   */
-  close(exit: Exit.Exit<unknown, unknown>): Effect.Effect<void>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L78)
-
-Since v2.0.0
-Scope-CloseableScopeTypeId.md
-Package: `effect`<br />
-Module: `Scope`<br />
-
-## Scope.CloseableScopeTypeId
-
-The type of the unique identifier for `CloseableScope`.
-
-**Signature**
-
-```ts
-type CloseableScopeTypeId = typeof CloseableScopeTypeId
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L43)
-
-Since v2.0.0
 Scope-addFinalizer.md
 Package: `effect`<br />
 Module: `Scope`<br />
@@ -96951,42 +97026,47 @@ declare const addFinalizerExit: (self: Scope, finalizer: Scope.Finalizer) => Eff
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L142)
 
 Since v2.0.0
-Scope-close.md
+Scope-CloseableScope.md
 Package: `effect`<br />
 Module: `Scope`<br />
 
-## Scope.close
+## Scope.CloseableScope
 
-Closes this scope with the specified exit value, running all finalizers that
-have been added to the scope.
+A scope that can be explicitly closed with a specified exit value.
 
 **Signature**
 
 ```ts
-declare const close: (self: CloseableScope, exit: Exit.Exit<unknown, unknown>) => Effect.Effect<void>
+export interface CloseableScope extends Scope, Pipeable {
+  readonly [CloseableScopeTypeId]: CloseableScopeTypeId
+
+  /**
+   * Closes this scope with the given exit value, running all finalizers.
+   *
+   * @internal
+   */
+  close(exit: Exit.Exit<unknown, unknown>): Effect.Effect<void>
+}
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L152)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L78)
 
 Since v2.0.0
-Scope-extend.md
+Scope-CloseableScopeTypeId.md
 Package: `effect`<br />
 Module: `Scope`<br />
 
-## Scope.extend
+## Scope.CloseableScopeTypeId
 
-Extends the scope of an `Effect` that requires a scope into this scope.
-It provides this scope to the effect but does not close the scope when the
-effect completes execution. This allows extending a scoped value into a
-larger scope.
+The type of the unique identifier for `CloseableScope`.
 
 **Signature**
 
 ```ts
-declare const extend: { (scope: Scope): <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, Exclude<R, Scope>>; <A, E, R>(effect: Effect.Effect<A, E, R>, scope: Scope): Effect.Effect<A, E, Exclude<R, Scope>>; }
+type CloseableScopeTypeId = typeof CloseableScopeTypeId
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L163)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L43)
 
 Since v2.0.0
 Scope-Scope.Closeable.md
@@ -97074,6 +97154,44 @@ type ScopeTypeId = typeof ScopeTypeId
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L27)
+
+Since v2.0.0
+Scope-close.md
+Package: `effect`<br />
+Module: `Scope`<br />
+
+## Scope.close
+
+Closes this scope with the specified exit value, running all finalizers that
+have been added to the scope.
+
+**Signature**
+
+```ts
+declare const close: (self: CloseableScope, exit: Exit.Exit<unknown, unknown>) => Effect.Effect<void>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L152)
+
+Since v2.0.0
+Scope-extend.md
+Package: `effect`<br />
+Module: `Scope`<br />
+
+## Scope.extend
+
+Extends the scope of an `Effect` that requires a scope into this scope.
+It provides this scope to the effect but does not close the scope when the
+effect completes execution. This allows extending a scoped value into a
+larger scope.
+
+**Signature**
+
+```ts
+declare const extend: { (scope: Scope): <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, Exclude<R, Scope>>; <A, E, R>(effect: Effect.Effect<A, E, R>, scope: Scope): Effect.Effect<A, E, Exclude<R, Scope>>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Scope.ts#L163)
 
 Since v2.0.0
 Scope-fork.md
@@ -97759,6 +97877,24 @@ export interface SingleProducerAsyncInput<in out Err, in out Elem, in out Done>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SingleProducerAsyncInput.ts#L29)
 
 Since v2.0.0
+SingleRunner-layer.md
+Package: `@effect/cluster`<br />
+Module: `SingleRunner`<br />
+
+## SingleRunner.layer
+
+A sql backed single-node cluster, that can be used for running durable
+entities and workflows.
+
+**Signature**
+
+```ts
+declare const layer: (options?: { readonly shardingConfig?: Partial<ShardingConfig.ShardingConfig["Type"]> | undefined; readonly runnerStorage?: "memory" | "sql" | undefined; }) => Layer.Layer<Sharding.Sharding | Runners.Runners | MessageStorage.MessageStorage, ConfigError.ConfigError, SqlClient.SqlClient>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/SingleRunner.ts#L23)
+
+Since v1.0.0
 SingletonAddress-SingletonAddress.md
 Package: `@effect/cluster`<br />
 Module: `SingletonAddress`<br />
@@ -98758,6 +98894,29 @@ declare const foldWeighted: <S, In>(options: { readonly initial: S; readonly max
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L799)
 
 Since v2.0.0
+Sink-Sink.md
+Package: `effect`<br />
+Module: `Sink`<br />
+
+## Sink.Sink
+
+A `Sink<A, In, L, E, R>` is used to consume elements produced by a `Stream`.
+You can think of a sink as a function that will consume a variable amount of
+`In` elements (could be 0, 1, or many), might fail with an error of type `E`,
+and will eventually yield a value of type `A` together with a remainder of
+type `L` (i.e. any leftovers).
+
+**Signature**
+
+```ts
+export interface Sink<out A, in In = unknown, out L = never, out E = never, out R = never>
+  extends Sink.Variance<A, In, L, E, R>, Pipeable
+{}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L48)
+
+Since v2.0.0
 Sink-foldWeightedDecompose.md
 Package: `effect`<br />
 Module: `Sink`<br />
@@ -98887,29 +99046,6 @@ declare const forEachChunk: <In, X, E, R>(f: (input: Chunk.Chunk<In>) => Effect.
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L921)
-
-Since v2.0.0
-Sink-Sink.md
-Package: `effect`<br />
-Module: `Sink`<br />
-
-## Sink.Sink
-
-A `Sink<A, In, L, E, R>` is used to consume elements produced by a `Stream`.
-You can think of a sink as a function that will consume a variable amount of
-`In` elements (could be 0, 1, or many), might fail with an error of type `E`,
-and will eventually yield a value of type `A` together with a remainder of
-type `L` (i.e. any leftovers).
-
-**Signature**
-
-```ts
-export interface Sink<out A, in In = unknown, out L = never, out E = never, out R = never>
-  extends Sink.Variance<A, In, L, E, R>, Pipeable
-{}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Sink.ts#L48)
 
 Since v2.0.0
 Sink-forEachChunkWhile.md
@@ -99683,91 +99819,6 @@ declare const fromIterable: { <B>(ord: Order<B>): <K extends B, V>(iterable: Ite
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SortedMap.ts#L100)
 
 Since v2.0.0
-SortedMap-getOrder.md
-Package: `effect`<br />
-Module: `SortedMap`<br />
-
-## SortedMap.getOrder
-
-Gets the `Order<K>` that the `SortedMap<K, V>` is using.
-
-**Signature**
-
-```ts
-declare const getOrder: <K, V>(self: SortedMap<K, V>) => Order<K>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SortedMap.ts#L150)
-
-Since v2.0.0
-SortedSet-every.md
-Package: `effect`<br />
-Module: `SortedSet`<br />
-
-## SortedSet.every
-
-Check if a predicate holds true for every `SortedSet` element.
-
-**Signature**
-
-```ts
-declare const every: { <A>(predicate: Predicate<A>): (self: SortedSet<A>) => boolean; <A>(self: SortedSet<A>, predicate: Predicate<A>): boolean; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SortedSet.ts#L155)
-
-Since v2.0.0
-SortedSet-fromIterable.md
-Package: `effect`<br />
-Module: `SortedSet`<br />
-
-## SortedSet.fromIterable
-
-Creates a new `SortedSet` from an iterable collection of values.
-
-**Signature**
-
-```ts
-declare const fromIterable: { <B>(ord: Order<B>): <A extends B>(iterable: Iterable<A>) => SortedSet<A>; <A extends B, B>(iterable: Iterable<A>, ord: Order<B>): SortedSet<A>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SortedSet.ts#L100)
-
-Since v2.0.0
-SortedSet-some.md
-Package: `effect`<br />
-Module: `SortedSet`<br />
-
-## SortedSet.some
-
-Check if a predicate holds true for some `SortedSet` element.
-
-**Signature**
-
-```ts
-declare const some: { <A>(predicate: Predicate<A>): (self: SortedSet<A>) => boolean; <A>(self: SortedSet<A>, predicate: Predicate<A>): boolean; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SortedSet.ts#L332)
-
-Since v2.0.0
-SqlResolver-findById.md
-Package: `@effect/sql`<br />
-Module: `SqlResolver`<br />
-
-## SqlResolver.findById
-
-Create a resolver that resolves results by id.
-
-**Signature**
-
-```ts
-declare const findById: <T extends string, I, II, RI, A, IA, Row, E, RA = never, R = never>(tag: T, options: { readonly Id: Schema.Schema<I, II, RI>; readonly Result: Schema.Schema<A, IA>; readonly ResultId: (result: Types.NoInfer<A>, row: Types.NoInfer<Row>) => I; readonly execute: (requests: Array<Types.NoInfer<II>>) => Effect.Effect<ReadonlyArray<Row>, E>; readonly withContext?: false; } | { readonly Id: Schema.Schema<I, II, RI>; readonly Result: Schema.Schema<A, IA, RA>; readonly ResultId: (result: Types.NoInfer<A>, row: Types.NoInfer<Row>) => I; readonly execute: (requests: Array<Types.NoInfer<II>>) => Effect.Effect<ReadonlyArray<Row>, E, R>; readonly withContext: true; }) => Effect.Effect<SqlResolver<T, I, Option.Option<A>, E, RI>, never, RA | R>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/sql/src/SqlResolver.ts#L345)
-
-Since v1.0.0
 STM-acquireUseRelease.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -100416,106 +100467,91 @@ declare const filterOrFail: { <A, B extends A, E2>(refinement: Refinement<NoInfe
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L671)
 
 Since v2.0.0
-STM-firstSuccessOf.md
+SortedMap-getOrder.md
 Package: `effect`<br />
-Module: `STM`<br />
+Module: `SortedMap`<br />
 
-## STM.firstSuccessOf
+## SortedMap.getOrder
 
-This function takes an iterable of `STM` values and returns a new
-`STM` value that represents the first `STM` value in the iterable
-that succeeds. If all of the `Effect` values in the iterable fail, then
-the resulting `STM` value will fail as well.
-
-This function is sequential, meaning that the `STM` values in the
-iterable will be executed in sequence, and the first one that succeeds
-will determine the outcome of the resulting `STM` value.
-
-Returns a new `STM` value that represents the first successful
-`STM` value in the iterable, or a failed `STM` value if all of the
-`STM` values in the iterable fail.
+Gets the `Order<K>` that the `SortedMap<K, V>` is using.
 
 **Signature**
 
 ```ts
-declare const firstSuccessOf: <A, E, R>(effects: Iterable<STM<A, E, R>>) => STM<A, E, R>
+declare const getOrder: <K, V>(self: SortedMap<K, V>) => Order<K>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1983)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SortedMap.ts#L150)
 
 Since v2.0.0
-STM-flatMap.md
+SortedSet-every.md
 Package: `effect`<br />
-Module: `STM`<br />
+Module: `SortedSet`<br />
 
-## STM.flatMap
+## SortedSet.every
 
-Feeds the value produced by this effect to the specified function, and then
-runs the returned effect as well to produce its results.
+Check if a predicate holds true for every `SortedSet` element.
 
 **Signature**
 
 ```ts
-declare const flatMap: { <A, A2, E1, R1>(f: (a: A) => STM<A2, E1, R1>): <E, R>(self: STM<A, E, R>) => STM<A2, E1 | E, R1 | R>; <A, E, R, A2, E1, R1>(self: STM<A, E, R>, f: (a: A) => STM<A2, E1, R1>): STM<A2, E | E1, R | R1>; }
+declare const every: { <A>(predicate: Predicate<A>): (self: SortedSet<A>) => boolean; <A>(self: SortedSet<A>, predicate: Predicate<A>): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L695)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SortedSet.ts#L155)
 
 Since v2.0.0
-STM-flatten.md
+SortedSet-fromIterable.md
 Package: `effect`<br />
-Module: `STM`<br />
+Module: `SortedSet`<br />
 
-## STM.flatten
+## SortedSet.fromIterable
 
-Flattens out a nested `STM` effect.
+Creates a new `SortedSet` from an iterable collection of values.
 
 **Signature**
 
 ```ts
-declare const flatten: <A, E2, R2, E, R>(self: STM<STM<A, E2, R2>, E, R>) => STM<A, E2 | E, R2 | R>
+declare const fromIterable: { <B>(ord: Order<B>): <A extends B>(iterable: Iterable<A>) => SortedSet<A>; <A extends B, B>(iterable: Iterable<A>, ord: Order<B>): SortedSet<A>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L706)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SortedSet.ts#L100)
 
 Since v2.0.0
-STM-flip.md
+SortedSet-some.md
 Package: `effect`<br />
-Module: `STM`<br />
+Module: `SortedSet`<br />
 
-## STM.flip
+## SortedSet.some
 
-Flips the success and failure channels of this transactional effect. This
-allows you to use all methods on the error channel, possibly before
-flipping back.
+Check if a predicate holds true for some `SortedSet` element.
 
 **Signature**
 
 ```ts
-declare const flip: <A, E, R>(self: STM<A, E, R>) => STM<E, A, R>
+declare const some: { <A>(predicate: Predicate<A>): (self: SortedSet<A>) => boolean; <A>(self: SortedSet<A>, predicate: Predicate<A>): boolean; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L716)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/SortedSet.ts#L332)
 
 Since v2.0.0
-STM-flipWith.md
-Package: `effect`<br />
-Module: `STM`<br />
+SqlResolver-findById.md
+Package: `@effect/sql`<br />
+Module: `SqlResolver`<br />
 
-## STM.flipWith
+## SqlResolver.findById
 
-Swaps the error/value parameters, applies the function `f` and flips the
-parameters back
+Create a resolver that resolves results by id.
 
 **Signature**
 
 ```ts
-declare const flipWith: { <E, A, R, E2, A2, R2>(f: (stm: STM<E, A, R>) => STM<E2, A2, R2>): (self: STM<A, E, R>) => STM<A | A2, E | E2, R | R2>; <A, E, R, E2, A2, R2>(self: STM<A, E, R>, f: (stm: STM<E, A, R>) => STM<E2, A2, R2>): STM<A | A2, E | E2, R | R2>; }
+declare const findById: <T extends string, I, II, RI, A, IA, Row, E, RA = never, R = never>(tag: T, options: { readonly Id: Schema.Schema<I, II, RI>; readonly Result: Schema.Schema<A, IA>; readonly ResultId: (result: Types.NoInfer<A>, row: Types.NoInfer<Row>) => I; readonly execute: (requests: Array<Types.NoInfer<II>>) => Effect.Effect<ReadonlyArray<Row>, E>; readonly withContext?: false; } | { readonly Id: Schema.Schema<I, II, RI>; readonly Result: Schema.Schema<A, IA, RA>; readonly ResultId: (result: Types.NoInfer<A>, row: Types.NoInfer<Row>) => I; readonly execute: (requests: Array<Types.NoInfer<II>>) => Effect.Effect<ReadonlyArray<Row>, E, R>; readonly withContext: true; }) => Effect.Effect<SqlResolver<T, I, Option.Option<A>, E, RI>, never, RA | R>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L725)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/sql/src/SqlResolver.ts#L345)
 
-Since v2.0.0
+Since v1.0.0
 SqlResolver-grouped.md
 Package: `@effect/sql`<br />
 Module: `SqlResolver`<br />
@@ -100661,6 +100697,106 @@ declare const makeParser: (onParse: (event: AnyEvent) => void) => Parser
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/experimental/src/Sse.ts#L93)
 
 Since v1.0.0
+STM-firstSuccessOf.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.firstSuccessOf
+
+This function takes an iterable of `STM` values and returns a new
+`STM` value that represents the first `STM` value in the iterable
+that succeeds. If all of the `Effect` values in the iterable fail, then
+the resulting `STM` value will fail as well.
+
+This function is sequential, meaning that the `STM` values in the
+iterable will be executed in sequence, and the first one that succeeds
+will determine the outcome of the resulting `STM` value.
+
+Returns a new `STM` value that represents the first successful
+`STM` value in the iterable, or a failed `STM` value if all of the
+`STM` values in the iterable fail.
+
+**Signature**
+
+```ts
+declare const firstSuccessOf: <A, E, R>(effects: Iterable<STM<A, E, R>>) => STM<A, E, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1983)
+
+Since v2.0.0
+STM-flatMap.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.flatMap
+
+Feeds the value produced by this effect to the specified function, and then
+runs the returned effect as well to produce its results.
+
+**Signature**
+
+```ts
+declare const flatMap: { <A, A2, E1, R1>(f: (a: A) => STM<A2, E1, R1>): <E, R>(self: STM<A, E, R>) => STM<A2, E1 | E, R1 | R>; <A, E, R, A2, E1, R1>(self: STM<A, E, R>, f: (a: A) => STM<A2, E1, R1>): STM<A2, E | E1, R | R1>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L695)
+
+Since v2.0.0
+STM-flatten.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.flatten
+
+Flattens out a nested `STM` effect.
+
+**Signature**
+
+```ts
+declare const flatten: <A, E2, R2, E, R>(self: STM<STM<A, E2, R2>, E, R>) => STM<A, E2 | E, R2 | R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L706)
+
+Since v2.0.0
+STM-flip.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.flip
+
+Flips the success and failure channels of this transactional effect. This
+allows you to use all methods on the error channel, possibly before
+flipping back.
+
+**Signature**
+
+```ts
+declare const flip: <A, E, R>(self: STM<A, E, R>) => STM<E, A, R>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L716)
+
+Since v2.0.0
+STM-flipWith.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.flipWith
+
+Swaps the error/value parameters, applies the function `f` and flips the
+parameters back
+
+**Signature**
+
+```ts
+declare const flipWith: { <E, A, R, E2, A2, R2>(f: (stm: STM<E, A, R>) => STM<E2, A2, R2>): (self: STM<A, E, R>) => STM<A | A2, E | E2, R | R2>; <A, E, R, E2, A2, R2>(self: STM<A, E, R>, f: (stm: STM<E, A, R>) => STM<E2, A2, R2>): STM<A | A2, E | E2, R | R2>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L725)
+
+Since v2.0.0
 STM-forEach.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -101479,6 +101615,61 @@ declare const rejectSTM: { <A, E2, R2>(pf: (a: A) => Option.Option<STM<E2, E2, R
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1583)
 
 Since v2.0.0
+STM-STM.md
+Package: `effect`<br />
+Module: `STM`<br />
+
+## STM.STM
+
+`STM<A, E, R>` represents an effect that can be performed transactionally,
+ resulting in a failure `E` or a value `A` that may require an environment
+ `R` to execute.
+
+Software Transactional Memory is a technique which allows composition of
+arbitrary atomic operations.  It is the software analog of transactions in
+database systems.
+
+The API is lifted directly from the Haskell package Control.Concurrent.STM
+although the implementation does not resemble the Haskell one at all.
+
+See http://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM.html
+
+STM in Haskell was introduced in:
+
+Composable memory transactions, by Tim Harris, Simon Marlow, Simon Peyton
+Jones, and Maurice Herlihy, in ACM Conference on Principles and Practice of
+Parallel Programming 2005.
+
+See https://www.microsoft.com/en-us/research/publication/composable-memory-transactions/
+
+See also:
+ Lock Free Data Structures using STMs in Haskell, by Anthony Discolo, Tim
+ Harris, Simon Marlow, Simon Peyton Jones, Satnam Singh) FLOPS 2006: Eighth
+ International Symposium on Functional and Logic Programming, Fuji Susono,
+ JAPAN, April 2006
+
+ https://www.microsoft.com/en-us/research/publication/lock-free-data-structures-using-stms-in-haskell/
+
+The implemtation is based on the ZIO STM module, while JS environments have
+no race conditions from multiple threads STM provides greater benefits for
+synchronization of Fibers and transactional data-types can be quite useful.
+
+**Signature**
+
+```ts
+export interface STM<out A, out E = never, out R = never>
+  extends Effect.Effect<A, E, R>, STM.Variance<A, E, R>, Pipeable
+{
+  [Unify.typeSymbol]?: unknown
+  [Unify.unifySymbol]?: STMUnify<this>
+  [Unify.ignoreSymbol]?: STMUnifyIgnore
+  [Symbol.iterator](): Effect.EffectGenerator<STM<A, E, R>>
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L70)
+
+Since v2.0.0
 STM-repeatUntil.md
 Package: `effect`<br />
 Module: `STM`<br />
@@ -101584,61 +101775,6 @@ declare const replicateSTMDiscard: { (n: number): <A, E, R>(self: STM<A, E, R>) 
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L1660)
-
-Since v2.0.0
-STM-STM.md
-Package: `effect`<br />
-Module: `STM`<br />
-
-## STM.STM
-
-`STM<A, E, R>` represents an effect that can be performed transactionally,
- resulting in a failure `E` or a value `A` that may require an environment
- `R` to execute.
-
-Software Transactional Memory is a technique which allows composition of
-arbitrary atomic operations.  It is the software analog of transactions in
-database systems.
-
-The API is lifted directly from the Haskell package Control.Concurrent.STM
-although the implementation does not resemble the Haskell one at all.
-
-See http://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM.html
-
-STM in Haskell was introduced in:
-
-Composable memory transactions, by Tim Harris, Simon Marlow, Simon Peyton
-Jones, and Maurice Herlihy, in ACM Conference on Principles and Practice of
-Parallel Programming 2005.
-
-See https://www.microsoft.com/en-us/research/publication/composable-memory-transactions/
-
-See also:
- Lock Free Data Structures using STMs in Haskell, by Anthony Discolo, Tim
- Harris, Simon Marlow, Simon Peyton Jones, Satnam Singh) FLOPS 2006: Eighth
- International Symposium on Functional and Logic Programming, Fuji Susono,
- JAPAN, April 2006
-
- https://www.microsoft.com/en-us/research/publication/lock-free-data-structures-using-stms-in-haskell/
-
-The implemtation is based on the ZIO STM module, while JS environments have
-no race conditions from multiple threads STM provides greater benefits for
-synchronization of Fibers and transactional data-types can be quite useful.
-
-**Signature**
-
-```ts
-export interface STM<out A, out E = never, out R = never>
-  extends Effect.Effect<A, E, R>, STM.Variance<A, E, R>, Pipeable
-{
-  [Unify.typeSymbol]?: unknown
-  [Unify.unifySymbol]?: STMUnify<this>
-  [Unify.ignoreSymbol]?: STMUnifyIgnore
-  [Symbol.iterator](): Effect.EffectGenerator<STM<A, E, R>>
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/STM.ts#L70)
 
 Since v2.0.0
 STM-retry.md
@@ -102678,6 +102814,70 @@ declare const broadcastedQueues: { <N extends number>(n: N, maximumLag: number |
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L633)
 
 Since v2.0.0
+Stream-DefaultChunkSize.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.DefaultChunkSize
+
+The default chunk size used by the various combinators and constructors of
+`Stream`.
+
+**Signature**
+
+```ts
+declare const DefaultChunkSize: number
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L173)
+
+Since v2.0.0
+Stream-Do.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.Do
+
+The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
+
+Here's how the do simulation works:
+
+1. Start the do simulation using the `Do` value
+2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Stream` values
+3. You can accumulate multiple `bind` statements to define multiple variables within the scope
+4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Chunk, Effect, pipe, Stream } from "effect"
+
+const result = pipe(
+  Stream.Do,
+  Stream.bind("x", () => Stream.succeed(2)),
+  Stream.bind("y", () => Stream.succeed(3)),
+  Stream.let("sum", ({ x, y }) => x + y)
+)
+assert.deepStrictEqual(Effect.runSync(Stream.runCollect(result)), Chunk.of({ x: 2, y: 3, sum: 5 }))
+```
+
+**See**
+
+- `bindTo`
+- `bind`
+- `bindEffect`
+- `let`
+
+**Signature**
+
+```ts
+declare const Do: Stream<{}, never, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L6246)
+
+Since v2.0.0
 Stream-broadcastedQueuesDynamic.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -102805,70 +103005,6 @@ declare const catchAllCause: { <E, A2, E2, R2>(f: (cause: Cause.Cause<E>) => Str
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L780)
-
-Since v2.0.0
-Stream-DefaultChunkSize.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.DefaultChunkSize
-
-The default chunk size used by the various combinators and constructors of
-`Stream`.
-
-**Signature**
-
-```ts
-declare const DefaultChunkSize: number
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L173)
-
-Since v2.0.0
-Stream-Do.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.Do
-
-The "do simulation" in Effect allows you to write code in a more declarative style, similar to the "do notation" in other programming languages. It provides a way to define variables and perform operations on them using functions like `bind` and `let`.
-
-Here's how the do simulation works:
-
-1. Start the do simulation using the `Do` value
-2. Within the do simulation scope, you can use the `bind` function to define variables and bind them to `Stream` values
-3. You can accumulate multiple `bind` statements to define multiple variables within the scope
-4. Inside the do simulation scope, you can also use the `let` function to define variables and bind them to simple values
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Chunk, Effect, pipe, Stream } from "effect"
-
-const result = pipe(
-  Stream.Do,
-  Stream.bind("x", () => Stream.succeed(2)),
-  Stream.bind("y", () => Stream.succeed(3)),
-  Stream.let("sum", ({ x, y }) => x + y)
-)
-assert.deepStrictEqual(Effect.runSync(Stream.runCollect(result)), Chunk.of({ x: 2, y: 3, sum: 5 }))
-```
-
-**See**
-
-- `bindTo`
-- `bind`
-- `bindEffect`
-- `let`
-
-**Signature**
-
-```ts
-declare const Do: Stream<{}, never, never>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L6246)
 
 Since v2.0.0
 Stream-catchSome.md
@@ -107289,6 +107425,41 @@ declare const runHead: <A, E, R>(self: Stream<A, E, R>) => Effect.Effect<Option.
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4394)
 
 Since v2.0.0
+Stream-Stream.md
+Package: `effect`<br />
+Module: `Stream`<br />
+
+## Stream.Stream
+
+A `Stream<A, E, R>` is a description of a program that, when evaluated, may
+emit zero or more values of type `A`, may fail with errors of type `E`, and
+uses an context of type `R`. One way to think of `Stream` is as a
+`Effect` program that could emit multiple values.
+
+`Stream` is a purely functional *pull* based stream. Pull based streams offer
+inherent laziness and backpressure, relieving users of the need to manage
+buffers between operators. As an optimization, `Stream` does not emit
+single values, but rather an array of values. This allows the cost of effect
+evaluation to be amortized.
+
+`Stream` forms a monad on its `A` type parameter, and has error management
+facilities for its `E` type parameter, modeled similarly to `Effect` (with
+some adjustments for the multiple-valued nature of `Stream`). These aspects
+allow for rich and expressive composition of streams.
+
+**Signature**
+
+```ts
+export interface Stream<out A, out E = never, out R = never> extends Stream.Variance<A, E, R>, Pipeable {
+  [Unify.typeSymbol]?: unknown
+  [Unify.unifySymbol]?: StreamUnify<this>
+  [Unify.ignoreSymbol]?: StreamUnifyIgnore
+}
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L71)
+
+Since v2.0.0
 Stream-runIntoPubSub.md
 Package: `effect`<br />
 Module: `Stream`<br />
@@ -107377,41 +107548,6 @@ declare const runIntoQueueScoped: { <A, E>(queue: Queue.Enqueue<Take.Take<A, E>>
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L4458)
-
-Since v2.0.0
-Stream-Stream.md
-Package: `effect`<br />
-Module: `Stream`<br />
-
-## Stream.Stream
-
-A `Stream<A, E, R>` is a description of a program that, when evaluated, may
-emit zero or more values of type `A`, may fail with errors of type `E`, and
-uses an context of type `R`. One way to think of `Stream` is as a
-`Effect` program that could emit multiple values.
-
-`Stream` is a purely functional *pull* based stream. Pull based streams offer
-inherent laziness and backpressure, relieving users of the need to manage
-buffers between operators. As an optimization, `Stream` does not emit
-single values, but rather an array of values. This allows the cost of effect
-evaluation to be amortized.
-
-`Stream` forms a monad on its `A` type parameter, and has error management
-facilities for its `E` type parameter, modeled similarly to `Effect` (with
-some adjustments for the multiple-valued nature of `Stream`). These aspects
-allow for rich and expressive composition of streams.
-
-**Signature**
-
-```ts
-export interface Stream<out A, out E = never, out R = never> extends Stream.Variance<A, E, R>, Pipeable {
-  [Unify.typeSymbol]?: unknown
-  [Unify.unifySymbol]?: StreamUnify<this>
-  [Unify.ignoreSymbol]?: StreamUnifyIgnore
-}
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Stream.ts#L71)
 
 Since v2.0.0
 Stream-runLast.md
@@ -110338,93 +110474,6 @@ declare const contains: { <A>(value: A): (self: TArray<A>) => STM.STM<boolean>; 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L84)
 
 Since v2.0.0
-TArray-count.md
-Package: `effect`<br />
-Module: `TArray`<br />
-
-## TArray.count
-
-Count the values in the array matching a predicate.
-
-**Signature**
-
-```ts
-declare const count: { <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<number>; <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<number>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L96)
-
-Since v2.0.0
-TArray-countSTM.md
-Package: `effect`<br />
-Module: `TArray`<br />
-
-## TArray.countSTM
-
-Count the values in the array matching a transactional predicate.
-
-**Signature**
-
-```ts
-declare const countSTM: { <A, R, E>(predicate: (value: A) => STM.STM<boolean, E, R>): (self: TArray<A>) => STM.STM<number, E, R>; <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<boolean, E, R>): STM.STM<number, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L108)
-
-Since v2.0.0
-TArray-empty.md
-Package: `effect`<br />
-Module: `TArray`<br />
-
-## TArray.empty
-
-Makes an empty `TArray`.
-
-**Signature**
-
-```ts
-declare const empty: <A>() => STM.STM<TArray<A>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L119)
-
-Since v2.0.0
-TArray-every.md
-Package: `effect`<br />
-Module: `TArray`<br />
-
-## TArray.every
-
-Atomically evaluate the conjunction of a predicate across the members of
-the array.
-
-**Signature**
-
-```ts
-declare const every: { <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<boolean>; <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<boolean>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L128)
-
-Since v2.0.0
-TArray-everySTM.md
-Package: `effect`<br />
-Module: `TArray`<br />
-
-## TArray.everySTM
-
-Atomically evaluate the conjunction of a transactional predicate across the
-members of the array.
-
-**Signature**
-
-```ts
-declare const everySTM: { <A, R, E>(predicate: (value: A) => STM.STM<boolean, E, R>): (self: TArray<A>) => STM.STM<boolean, E, R>; <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<boolean, E, R>): STM.STM<boolean, E, R>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L140)
-
-Since v2.0.0
 Take-Take.md
 Package: `effect`<br />
 Module: `Take`<br />
@@ -110776,6 +110825,93 @@ declare const tap: { <A, X, E2, R>(f: (chunk: Chunk.Chunk<A>) => Effect.Effect<X
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Take.ts#L250)
+
+Since v2.0.0
+TArray-count.md
+Package: `effect`<br />
+Module: `TArray`<br />
+
+## TArray.count
+
+Count the values in the array matching a predicate.
+
+**Signature**
+
+```ts
+declare const count: { <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<number>; <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<number>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L96)
+
+Since v2.0.0
+TArray-countSTM.md
+Package: `effect`<br />
+Module: `TArray`<br />
+
+## TArray.countSTM
+
+Count the values in the array matching a transactional predicate.
+
+**Signature**
+
+```ts
+declare const countSTM: { <A, R, E>(predicate: (value: A) => STM.STM<boolean, E, R>): (self: TArray<A>) => STM.STM<number, E, R>; <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<boolean, E, R>): STM.STM<number, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L108)
+
+Since v2.0.0
+TArray-empty.md
+Package: `effect`<br />
+Module: `TArray`<br />
+
+## TArray.empty
+
+Makes an empty `TArray`.
+
+**Signature**
+
+```ts
+declare const empty: <A>() => STM.STM<TArray<A>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L119)
+
+Since v2.0.0
+TArray-every.md
+Package: `effect`<br />
+Module: `TArray`<br />
+
+## TArray.every
+
+Atomically evaluate the conjunction of a predicate across the members of
+the array.
+
+**Signature**
+
+```ts
+declare const every: { <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<boolean>; <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<boolean>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L128)
+
+Since v2.0.0
+TArray-everySTM.md
+Package: `effect`<br />
+Module: `TArray`<br />
+
+## TArray.everySTM
+
+Atomically evaluate the conjunction of a transactional predicate across the
+members of the array.
+
+**Signature**
+
+```ts
+declare const everySTM: { <A, R, E>(predicate: (value: A) => STM.STM<boolean, E, R>): (self: TArray<A>) => STM.STM<boolean, E, R>; <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<boolean, E, R>): STM.STM<boolean, E, R>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TArray.ts#L140)
 
 Since v2.0.0
 TArray-findFirst.md
@@ -111747,6 +111883,85 @@ export interface SpanTransformer {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Telemetry.ts#L500)
 
 Since v1.0.0
+Telemetry-addGenAIAnnotations.md
+Package: `@effect/ai`<br />
+Module: `Telemetry`<br />
+
+## Telemetry.addGenAIAnnotations
+
+Applies GenAI telemetry attributes to an OpenTelemetry span.
+
+This function adds standardized GenAI attributes to a span following OpenTelemetry
+semantic conventions. It supports both curried and direct application patterns.
+
+**Note**: This function mutates the provided span in-place.
+
+**Example**
+
+```ts
+import { Telemetry } from "@effect/ai"
+import { Effect } from "effect"
+
+const directUsage = Effect.gen(function* () {
+  const span = yield* Effect.currentSpan
+
+  Telemetry.addGenAIAnnotations(span, {
+    system: "openai",
+    request: { model: "gpt-4", temperature: 0.7 },
+    usage: { inputTokens: 100, outputTokens: 50 }
+  })
+})
+```
+
+**Signature**
+
+```ts
+declare const addGenAIAnnotations: { (options: GenAITelemetryAttributeOptions): (span: Span) => void; (span: Span, options: GenAITelemetryAttributeOptions): void; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Telemetry.ts#L441)
+
+Since v1.0.0
+Telemetry-addSpanAttributes.md
+Package: `@effect/ai`<br />
+Module: `Telemetry`<br />
+
+## Telemetry.addSpanAttributes
+
+Creates a function to add attributes to a span with a given prefix and key transformation.
+
+This utility function is used internally to create specialized functions for adding
+different types of telemetry attributes to OpenTelemetry spans.
+
+**Example**
+
+```ts
+import { Telemetry } from "@effect/ai"
+import { String, Tracer } from "effect"
+
+const addCustomAttributes = Telemetry.addSpanAttributes(
+  "custom.ai",
+  String.camelToSnake
+)
+
+// Usage with a span
+declare const span: Tracer.Span
+addCustomAttributes(span, {
+  modelName: "gpt-4",
+  maxTokens: 1000
+})
+// Results in attributes: "custom.ai.model_name" and "custom.ai.max_tokens"
+```
+
+**Signature**
+
+```ts
+declare const addSpanAttributes: (keyPrefix: string, transformKey: (key: string) => string) => <Attributes extends Record<string, any>>(span: Span, attributes: Attributes) => void
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Telemetry.ts#L322)
+
+Since v1.0.0
 Telemetry-TokenAttributes.md
 Package: `@effect/ai`<br />
 Module: `Telemetry`<br />
@@ -111840,85 +112055,6 @@ type WellKnownSystem = | "anthropic"
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Telemetry.ts#L220)
-
-Since v1.0.0
-Telemetry-addGenAIAnnotations.md
-Package: `@effect/ai`<br />
-Module: `Telemetry`<br />
-
-## Telemetry.addGenAIAnnotations
-
-Applies GenAI telemetry attributes to an OpenTelemetry span.
-
-This function adds standardized GenAI attributes to a span following OpenTelemetry
-semantic conventions. It supports both curried and direct application patterns.
-
-**Note**: This function mutates the provided span in-place.
-
-**Example**
-
-```ts
-import { Telemetry } from "@effect/ai"
-import { Effect } from "effect"
-
-const directUsage = Effect.gen(function* () {
-  const span = yield* Effect.currentSpan
-
-  Telemetry.addGenAIAnnotations(span, {
-    system: "openai",
-    request: { model: "gpt-4", temperature: 0.7 },
-    usage: { inputTokens: 100, outputTokens: 50 }
-  })
-})
-```
-
-**Signature**
-
-```ts
-declare const addGenAIAnnotations: { (options: GenAITelemetryAttributeOptions): (span: Span) => void; (span: Span, options: GenAITelemetryAttributeOptions): void; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Telemetry.ts#L441)
-
-Since v1.0.0
-Telemetry-addSpanAttributes.md
-Package: `@effect/ai`<br />
-Module: `Telemetry`<br />
-
-## Telemetry.addSpanAttributes
-
-Creates a function to add attributes to a span with a given prefix and key transformation.
-
-This utility function is used internally to create specialized functions for adding
-different types of telemetry attributes to OpenTelemetry spans.
-
-**Example**
-
-```ts
-import { Telemetry } from "@effect/ai"
-import { String, Tracer } from "effect"
-
-const addCustomAttributes = Telemetry.addSpanAttributes(
-  "custom.ai",
-  String.camelToSnake
-)
-
-// Usage with a span
-declare const span: Tracer.Span
-addCustomAttributes(span, {
-  modelName: "gpt-4",
-  maxTokens: 1000
-})
-// Results in attributes: "custom.ai.model_name" and "custom.ai.max_tokens"
-```
-
-**Signature**
-
-```ts
-declare const addSpanAttributes: (keyPrefix: string, transformKey: (key: string) => string) => <Attributes extends Record<string, any>>(span: Span, attributes: Attributes) => void
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Telemetry.ts#L322)
 
 Since v1.0.0
 Terminal-QuitException.md
@@ -112430,6 +112566,26 @@ export interface TestLive {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestLive.ts#L28)
 
 Since v2.0.0
+TestRunner-layer.md
+Package: `@effect/cluster`<br />
+Module: `TestRunner`<br />
+
+## TestRunner.layer
+
+An in-memory cluster that can be used for testing purposes.
+
+MessageStorage is backed by an in-memory driver, and RunnerStorage is backed
+by an in-memory driver.
+
+**Signature**
+
+```ts
+declare const layer: Layer.Layer<Sharding.Sharding | Runners.Runners | MessageStorage.MessageStorage | MessageStorage.MemoryDriver, never, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/cluster/src/TestRunner.ts#L21)
+
+Since v1.0.0
 TestServices-annotate.md
 Package: `effect`<br />
 Module: `TestServices`<br />
@@ -112828,114 +112984,6 @@ declare const withAnnotationsScoped: (annotations: Annotations.TestAnnotations) 
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L95)
-
-Since v2.0.0
-TestServices-withLive.md
-Package: `effect`<br />
-Module: `TestServices`<br />
-
-## TestServices.withLive
-
-Executes the specified workflow with the specified implementation of the
-live service.
-
-**Signature**
-
-```ts
-declare const withLive: ((live: Live.TestLive) => <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>) & (<A, E, R>(effect: Effect.Effect<A, E, R>, live: Live.TestLive) => Effect.Effect<A, E, R>)
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L167)
-
-Since v2.0.0
-TestServices-withLiveScoped.md
-Package: `effect`<br />
-Module: `TestServices`<br />
-
-## TestServices.withLiveScoped
-
-Sets the implementation of the live service to the specified value and
-restores it to its original value when the scope is closed.
-
-**Signature**
-
-```ts
-declare const withLiveScoped: (live: Live.TestLive) => Effect.Effect<void, never, Scope.Scope>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L182)
-
-Since v2.0.0
-TestServices-withSized.md
-Package: `effect`<br />
-Module: `TestServices`<br />
-
-## TestServices.withSized
-
-Executes the specified workflow with the specified implementation of the
-sized service.
-
-**Signature**
-
-```ts
-declare const withSized: ((sized: Sized.TestSized) => <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>) & (<A, E, R>(effect: Effect.Effect<A, E, R>, sized: Sized.TestSized) => Effect.Effect<A, E, R>)
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L253)
-
-Since v2.0.0
-TestServices-withSizedScoped.md
-Package: `effect`<br />
-Module: `TestServices`<br />
-
-## TestServices.withSizedScoped
-
-Sets the implementation of the sized service to the specified value and
-restores it to its original value when the scope is closed.
-
-**Signature**
-
-```ts
-declare const withSizedScoped: (sized: Sized.TestSized) => Effect.Effect<void, never, Scope.Scope>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L268)
-
-Since v2.0.0
-TestServices-withTestConfig.md
-Package: `effect`<br />
-Module: `TestServices`<br />
-
-## TestServices.withTestConfig
-
-Executes the specified workflow with the specified implementation of the
-config service.
-
-**Signature**
-
-```ts
-declare const withTestConfig: ((config: TestConfig.TestConfig) => <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>) & (<A, E, R>(effect: Effect.Effect<A, E, R>, config: TestConfig.TestConfig) => Effect.Effect<A, E, R>)
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L324)
-
-Since v2.0.0
-TestServices-withTestConfigScoped.md
-Package: `effect`<br />
-Module: `TestServices`<br />
-
-## TestServices.withTestConfigScoped
-
-Sets the implementation of the config service to the specified value and
-restores it to its original value when the scope is closed.
-
-**Signature**
-
-```ts
-declare const withTestConfigScoped: (config: TestConfig.TestConfig) => Effect.Effect<void, never, Scope.Scope>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L339)
 
 Since v2.0.0
 TMap-TMap.md
@@ -113598,6 +113646,114 @@ declare const values: <K, V>(self: TMap<K, V>) => STM.STM<Array<V>>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TMap.ts#L515)
 
 Since v2.0.0
+TestServices-withLive.md
+Package: `effect`<br />
+Module: `TestServices`<br />
+
+## TestServices.withLive
+
+Executes the specified workflow with the specified implementation of the
+live service.
+
+**Signature**
+
+```ts
+declare const withLive: ((live: Live.TestLive) => <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>) & (<A, E, R>(effect: Effect.Effect<A, E, R>, live: Live.TestLive) => Effect.Effect<A, E, R>)
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L167)
+
+Since v2.0.0
+TestServices-withLiveScoped.md
+Package: `effect`<br />
+Module: `TestServices`<br />
+
+## TestServices.withLiveScoped
+
+Sets the implementation of the live service to the specified value and
+restores it to its original value when the scope is closed.
+
+**Signature**
+
+```ts
+declare const withLiveScoped: (live: Live.TestLive) => Effect.Effect<void, never, Scope.Scope>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L182)
+
+Since v2.0.0
+TestServices-withSized.md
+Package: `effect`<br />
+Module: `TestServices`<br />
+
+## TestServices.withSized
+
+Executes the specified workflow with the specified implementation of the
+sized service.
+
+**Signature**
+
+```ts
+declare const withSized: ((sized: Sized.TestSized) => <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>) & (<A, E, R>(effect: Effect.Effect<A, E, R>, sized: Sized.TestSized) => Effect.Effect<A, E, R>)
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L253)
+
+Since v2.0.0
+TestServices-withSizedScoped.md
+Package: `effect`<br />
+Module: `TestServices`<br />
+
+## TestServices.withSizedScoped
+
+Sets the implementation of the sized service to the specified value and
+restores it to its original value when the scope is closed.
+
+**Signature**
+
+```ts
+declare const withSizedScoped: (sized: Sized.TestSized) => Effect.Effect<void, never, Scope.Scope>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L268)
+
+Since v2.0.0
+TestServices-withTestConfig.md
+Package: `effect`<br />
+Module: `TestServices`<br />
+
+## TestServices.withTestConfig
+
+Executes the specified workflow with the specified implementation of the
+config service.
+
+**Signature**
+
+```ts
+declare const withTestConfig: ((config: TestConfig.TestConfig) => <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>) & (<A, E, R>(effect: Effect.Effect<A, E, R>, config: TestConfig.TestConfig) => Effect.Effect<A, E, R>)
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L324)
+
+Since v2.0.0
+TestServices-withTestConfigScoped.md
+Package: `effect`<br />
+Module: `TestServices`<br />
+
+## TestServices.withTestConfigScoped
+
+Sets the implementation of the config service to the specified value and
+restores it to its original value when the scope is closed.
+
+**Signature**
+
+```ts
+declare const withTestConfigScoped: (config: TestConfig.TestConfig) => Effect.Effect<void, never, Scope.Scope>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TestServices.ts#L339)
+
+Since v2.0.0
 Tokenizer-Service.md
 Package: `@effect/ai`<br />
 Module: `Tokenizer`<br />
@@ -113813,6 +113969,23 @@ declare class Destructive
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1377)
 
 Since v1.0.0
+TPriorityQueue-empty.md
+Package: `effect`<br />
+Module: `TPriorityQueue`<br />
+
+## TPriorityQueue.empty
+
+Constructs a new empty `TPriorityQueue` with the specified `Order`.
+
+**Signature**
+
+```ts
+declare const empty: <A>(order: Order.Order<A>) => STM.STM<TPriorityQueue<A>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L67)
+
+Since v2.0.0
 Tool-Failure.md
 Package: `@effect/ai`<br />
 Module: `Tool`<br />
@@ -113909,205 +114082,6 @@ export interface FromTaggedRequest<S extends AnyTaggedRequestSchema> extends
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L550)
 
 Since v1.0.0
-Tool-fromTaggedRequest.md
-Package: `@effect/ai`<br />
-Module: `Tool`<br />
-
-## Tool.fromTaggedRequest
-
-Creates a Tool from a Schema.TaggedRequest.
-
-This utility function converts Effect's TaggedRequest schemas into Tool
-definitions, automatically mapping the request parameters, success, and
-failure schemas.
-
-**Example**
-
-```ts
-import { Tool } from "@effect/ai"
-import { Schema } from "effect"
-
-// Define a tagged request for user operations
-class GetUser extends Schema.TaggedRequest<GetUser>()("GetUser", {
-  success: Schema.Struct({
-    id: Schema.Number,
-    name: Schema.String,
-    email: Schema.String
-  }),
-  failure: Schema.Struct({
-    error: Schema.Literal("UserNotFound", "DatabaseError"),
-    message: Schema.String
-  }),
-  payload: {
-    userId: Schema.Number
-  }
-}) {}
-
-// Convert to a Tool
-const getUserTool = Tool.fromTaggedRequest(GetUser)
-```
-
-**Signature**
-
-```ts
-declare const fromTaggedRequest: <S extends AnyTaggedRequestSchema>(schema: S) => FromTaggedRequest<S>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1169)
-
-Since v1.0.0
-Tool-getDescription.md
-Package: `@effect/ai`<br />
-Module: `Tool`<br />
-
-## Tool.getDescription
-
-Extracts the description from a tool's metadata.
-
-Returns the tool's description if explicitly set, otherwise attempts to
-extract it from the parameter schema's AST annotations.
-
-**Example**
-
-```ts
-import { Tool } from "@effect/ai"
-
-const myTool = Tool.make("example", {
-  description: "This is an example tool"
-})
-
-const description = Tool.getDescription(myTool)
-console.log(description) // "This is an example tool"
-```
-
-**Signature**
-
-```ts
-declare const getDescription: <Name extends string, Config extends { readonly parameters: AnyStructSchema; readonly success: Schema.Schema.Any; readonly failure: Schema.Schema.All; readonly failureMode: FailureMode; }>(tool: Tool<Name, Config>) => string | undefined
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1209)
-
-Since v1.0.0
-TPriorityQueue-empty.md
-Package: `effect`<br />
-Module: `TPriorityQueue`<br />
-
-## TPriorityQueue.empty
-
-Constructs a new empty `TPriorityQueue` with the specified `Order`.
-
-**Signature**
-
-```ts
-declare const empty: <A>(order: Order.Order<A>) => STM.STM<TPriorityQueue<A>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L67)
-
-Since v2.0.0
-TPriorityQueue-fromIterable.md
-Package: `effect`<br />
-Module: `TPriorityQueue`<br />
-
-## TPriorityQueue.fromIterable
-
-Creates a new `TPriorityQueue` from an iterable collection of values.
-
-**Signature**
-
-```ts
-declare const fromIterable: <A>(order: Order.Order<A>) => (iterable: Iterable<A>) => STM.STM<TPriorityQueue<A>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L75)
-
-Since v2.0.0
-TPriorityQueue-isEmpty.md
-Package: `effect`<br />
-Module: `TPriorityQueue`<br />
-
-## TPriorityQueue.isEmpty
-
-Checks whether the queue is empty.
-
-**Signature**
-
-```ts
-declare const isEmpty: <A>(self: TPriorityQueue<A>) => STM.STM<boolean>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L85)
-
-Since v2.0.0
-TPriorityQueue-isNonEmpty.md
-Package: `effect`<br />
-Module: `TPriorityQueue`<br />
-
-## TPriorityQueue.isNonEmpty
-
-Checks whether the queue is not empty.
-
-**Signature**
-
-```ts
-declare const isNonEmpty: <A>(self: TPriorityQueue<A>) => STM.STM<boolean>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L93)
-
-Since v2.0.0
-TPriorityQueue-make.md
-Package: `effect`<br />
-Module: `TPriorityQueue`<br />
-
-## TPriorityQueue.make
-
-Makes a new `TPriorityQueue` that is initialized with specified values.
-
-**Signature**
-
-```ts
-declare const make: <A>(order: Order.Order<A>) => (...elements: Array<A>) => STM.STM<TPriorityQueue<A>>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L101)
-
-Since v2.0.0
-TPriorityQueue-offer.md
-Package: `effect`<br />
-Module: `TPriorityQueue`<br />
-
-## TPriorityQueue.offer
-
-Offers the specified value to the queue.
-
-**Signature**
-
-```ts
-declare const offer: { <A>(value: A): (self: TPriorityQueue<A>) => STM.STM<void>; <A>(self: TPriorityQueue<A>, value: A): STM.STM<void>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L109)
-
-Since v2.0.0
-TPriorityQueue-offerAll.md
-Package: `effect`<br />
-Module: `TPriorityQueue`<br />
-
-## TPriorityQueue.offerAll
-
-Offers all of the elements in the specified collection to the queue.
-
-**Signature**
-
-```ts
-declare const offerAll: { <A>(values: Iterable<A>): (self: TPriorityQueue<A>) => STM.STM<void>; <A>(self: TPriorityQueue<A>, values: Iterable<A>): STM.STM<void>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L120)
-
-Since v2.0.0
 Tool-Handler.md
 Package: `@effect/ai`<br />
 Module: `Tool`<br />
@@ -114874,6 +114848,86 @@ type TypeId = typeof TypeId
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L60)
 
 Since v1.0.0
+Tool-fromTaggedRequest.md
+Package: `@effect/ai`<br />
+Module: `Tool`<br />
+
+## Tool.fromTaggedRequest
+
+Creates a Tool from a Schema.TaggedRequest.
+
+This utility function converts Effect's TaggedRequest schemas into Tool
+definitions, automatically mapping the request parameters, success, and
+failure schemas.
+
+**Example**
+
+```ts
+import { Tool } from "@effect/ai"
+import { Schema } from "effect"
+
+// Define a tagged request for user operations
+class GetUser extends Schema.TaggedRequest<GetUser>()("GetUser", {
+  success: Schema.Struct({
+    id: Schema.Number,
+    name: Schema.String,
+    email: Schema.String
+  }),
+  failure: Schema.Struct({
+    error: Schema.Literal("UserNotFound", "DatabaseError"),
+    message: Schema.String
+  }),
+  payload: {
+    userId: Schema.Number
+  }
+}) {}
+
+// Convert to a Tool
+const getUserTool = Tool.fromTaggedRequest(GetUser)
+```
+
+**Signature**
+
+```ts
+declare const fromTaggedRequest: <S extends AnyTaggedRequestSchema>(schema: S) => FromTaggedRequest<S>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1169)
+
+Since v1.0.0
+Tool-getDescription.md
+Package: `@effect/ai`<br />
+Module: `Tool`<br />
+
+## Tool.getDescription
+
+Extracts the description from a tool's metadata.
+
+Returns the tool's description if explicitly set, otherwise attempts to
+extract it from the parameter schema's AST annotations.
+
+**Example**
+
+```ts
+import { Tool } from "@effect/ai"
+
+const myTool = Tool.make("example", {
+  description: "This is an example tool"
+})
+
+const description = Tool.getDescription(myTool)
+console.log(description) // "This is an example tool"
+```
+
+**Signature**
+
+```ts
+declare const getDescription: <Name extends string, Config extends { readonly parameters: AnyStructSchema; readonly success: Schema.Schema.Any; readonly failure: Schema.Schema.All; readonly failureMode: FailureMode; }>(tool: Tool<Name, Config>) => string | undefined
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/ai/src/Tool.ts#L1209)
+
+Since v1.0.0
 Tool-getJsonSchema.md
 Package: `@effect/ai`<br />
 Module: `Tool`<br />
@@ -115573,6 +115627,108 @@ export interface TPriorityQueue<in out A> extends TPriorityQueue.Variance<A> {}
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L36)
+
+Since v2.0.0
+TPriorityQueue-fromIterable.md
+Package: `effect`<br />
+Module: `TPriorityQueue`<br />
+
+## TPriorityQueue.fromIterable
+
+Creates a new `TPriorityQueue` from an iterable collection of values.
+
+**Signature**
+
+```ts
+declare const fromIterable: <A>(order: Order.Order<A>) => (iterable: Iterable<A>) => STM.STM<TPriorityQueue<A>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L75)
+
+Since v2.0.0
+TPriorityQueue-isEmpty.md
+Package: `effect`<br />
+Module: `TPriorityQueue`<br />
+
+## TPriorityQueue.isEmpty
+
+Checks whether the queue is empty.
+
+**Signature**
+
+```ts
+declare const isEmpty: <A>(self: TPriorityQueue<A>) => STM.STM<boolean>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L85)
+
+Since v2.0.0
+TPriorityQueue-isNonEmpty.md
+Package: `effect`<br />
+Module: `TPriorityQueue`<br />
+
+## TPriorityQueue.isNonEmpty
+
+Checks whether the queue is not empty.
+
+**Signature**
+
+```ts
+declare const isNonEmpty: <A>(self: TPriorityQueue<A>) => STM.STM<boolean>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L93)
+
+Since v2.0.0
+TPriorityQueue-make.md
+Package: `effect`<br />
+Module: `TPriorityQueue`<br />
+
+## TPriorityQueue.make
+
+Makes a new `TPriorityQueue` that is initialized with specified values.
+
+**Signature**
+
+```ts
+declare const make: <A>(order: Order.Order<A>) => (...elements: Array<A>) => STM.STM<TPriorityQueue<A>>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L101)
+
+Since v2.0.0
+TPriorityQueue-offer.md
+Package: `effect`<br />
+Module: `TPriorityQueue`<br />
+
+## TPriorityQueue.offer
+
+Offers the specified value to the queue.
+
+**Signature**
+
+```ts
+declare const offer: { <A>(value: A): (self: TPriorityQueue<A>) => STM.STM<void>; <A>(self: TPriorityQueue<A>, value: A): STM.STM<void>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L109)
+
+Since v2.0.0
+TPriorityQueue-offerAll.md
+Package: `effect`<br />
+Module: `TPriorityQueue`<br />
+
+## TPriorityQueue.offerAll
+
+Offers all of the elements in the specified collection to the queue.
+
+**Signature**
+
+```ts
+declare const offerAll: { <A>(values: Iterable<A>): (self: TPriorityQueue<A>) => STM.STM<void>; <A>(self: TPriorityQueue<A>, values: Iterable<A>): STM.STM<void>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TPriorityQueue.ts#L120)
 
 Since v2.0.0
 TPriorityQueue-peek.md
@@ -117440,225 +117596,6 @@ declare const forEach: { <V>(f: (value: V, key: string) => void): (self: Trie<V>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L747)
 
 Since v2.0.0
-Trie-fromIterable.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.fromIterable
-
-Creates a new `Trie` from an iterable collection of key/value pairs (e.g. `Array<[string, V]>`).
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie, Equal } from "effect"
-
-const iterable: Array<readonly [string, number]> = [["call", 0], ["me", 1], ["mind", 2], ["mid", 3]]
-const trie = Trie.fromIterable(iterable)
-
-// The entries in the `Trie` are extracted in alphabetical order, regardless of the insertion order
-assert.deepStrictEqual(Array.from(trie), [["call", 0], ["me", 1], ["mid", 3], ["mind", 2]])
-assert.equal(Equal.equals(Trie.make(["call", 0], ["me", 1], ["mind", 2], ["mid", 3]), trie), true)
-```
-
-**Signature**
-
-```ts
-declare const fromIterable: <V>(entries: Iterable<readonly [string, V]>) => Trie<V>
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L81)
-
-Since v2.0.0
-Trie-get.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.get
-
-Safely lookup the value for the specified key in the `Trie`.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie, Option } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1),
-  Trie.insert("mind", 2),
-  Trie.insert("mid", 3)
-)
-
-assert.deepStrictEqual(Trie.get(trie, "call"), Option.some(0))
-assert.deepStrictEqual(Trie.get(trie, "me"), Option.some(1))
-assert.deepStrictEqual(Trie.get(trie, "mind"), Option.some(2))
-assert.deepStrictEqual(Trie.get(trie, "mid"), Option.some(3))
-assert.deepStrictEqual(Trie.get(trie, "cale"), Option.none())
-assert.deepStrictEqual(Trie.get(trie, "ma"), Option.none())
-assert.deepStrictEqual(Trie.get(trie, "midn"), Option.none())
-assert.deepStrictEqual(Trie.get(trie, "mea"), Option.none())
-```
-
-**Signature**
-
-```ts
-declare const get: { (key: string): <V>(self: Trie<V>) => Option<V>; <V>(self: Trie<V>, key: string): Option<V>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L423)
-
-Since v2.0.0
-Trie-has.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.has
-
-Check if the given key exists in the `Trie`.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("call", 0),
-  Trie.insert("me", 1),
-  Trie.insert("mind", 2),
-  Trie.insert("mid", 3)
-)
-
-assert.equal(Trie.has(trie, "call"), true)
-assert.equal(Trie.has(trie, "me"), true)
-assert.equal(Trie.has(trie, "mind"), true)
-assert.equal(Trie.has(trie, "mid"), true)
-assert.equal(Trie.has(trie, "cale"), false)
-assert.equal(Trie.has(trie, "ma"), false)
-assert.equal(Trie.has(trie, "midn"), false)
-assert.equal(Trie.has(trie, "mea"), false)
-```
-
-**Signature**
-
-```ts
-declare const has: { (key: string): <V>(self: Trie<V>) => boolean; <V>(self: Trie<V>, key: string): boolean; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L456)
-
-Since v2.0.0
-Trie-insert.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.insert
-
-Insert a new entry in the `Trie`.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie } from "effect"
-
-const trie1 = Trie.empty<number>().pipe(
-  Trie.insert("call", 0)
-)
-const trie2 = trie1.pipe(Trie.insert("me", 1))
-const trie3 = trie2.pipe(Trie.insert("mind", 2))
-const trie4 = trie3.pipe(Trie.insert("mid", 3))
-
-assert.deepStrictEqual(Array.from(trie1), [["call", 0]])
-assert.deepStrictEqual(Array.from(trie2), [["call", 0], ["me", 1]])
-assert.deepStrictEqual(Array.from(trie3), [["call", 0], ["me", 1], ["mind", 2]])
-assert.deepStrictEqual(Array.from(trie4), [["call", 0], ["me", 1], ["mid", 3], ["mind", 2]])
-```
-
-**Signature**
-
-```ts
-declare const insert: { <V1>(key: string, value: V1): <V>(self: Trie<V>) => Trie<V | V1>; <V1, V>(self: Trie<V>, key: string, value: V1): Trie<V | V1>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L128)
-
-Since v2.0.0
-Trie-insertMany.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.insertMany
-
-Insert multiple entries in the `Trie` at once.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie, Equal } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("she", 2)
-)
-
-const trieInsert = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insertMany(
-    [["sells", 1], ["she", 2]]
-  )
-)
-
-assert.equal(
-  Equal.equals(trie, trieInsert),
-  true
-)
-```
-
-**Signature**
-
-```ts
-declare const insertMany: { <V1>(iter: Iterable<[string, V1]>): <V>(self: Trie<V>) => Trie<V | V1>; <V1, V>(self: Trie<V>, iter: Iterable<[string, V1]>): Trie<V | V1>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L837)
-
-Since v2.0.0
-Trie-isEmpty.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.isEmpty
-
-Checks if the `Trie` contains any entries.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie } from "effect"
-
-const trie = Trie.empty<number>()
-const trie1 = trie.pipe(Trie.insert("ma", 0))
-
-assert.equal(Trie.isEmpty(trie), true)
-assert.equal(Trie.isEmpty(trie1), false)
-```
-
-**Signature**
-
-```ts
-declare const isEmpty: <V>(self: Trie<V>) => boolean
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L479)
-
-Since v2.0.0
 TSet-TSet.md
 Package: `effect`<br />
 Module: `TSet`<br />
@@ -118171,6 +118108,225 @@ export interface TSubscriptionRef<in out A> extends TSubscriptionRef.Variance<A>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSubscriptionRef.ts#L34)
 
 Since v3.10.0
+Trie-fromIterable.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.fromIterable
+
+Creates a new `Trie` from an iterable collection of key/value pairs (e.g. `Array<[string, V]>`).
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie, Equal } from "effect"
+
+const iterable: Array<readonly [string, number]> = [["call", 0], ["me", 1], ["mind", 2], ["mid", 3]]
+const trie = Trie.fromIterable(iterable)
+
+// The entries in the `Trie` are extracted in alphabetical order, regardless of the insertion order
+assert.deepStrictEqual(Array.from(trie), [["call", 0], ["me", 1], ["mid", 3], ["mind", 2]])
+assert.equal(Equal.equals(Trie.make(["call", 0], ["me", 1], ["mind", 2], ["mid", 3]), trie), true)
+```
+
+**Signature**
+
+```ts
+declare const fromIterable: <V>(entries: Iterable<readonly [string, V]>) => Trie<V>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L81)
+
+Since v2.0.0
+Trie-get.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.get
+
+Safely lookup the value for the specified key in the `Trie`.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie, Option } from "effect"
+
+const trie = Trie.empty<number>().pipe(
+  Trie.insert("call", 0),
+  Trie.insert("me", 1),
+  Trie.insert("mind", 2),
+  Trie.insert("mid", 3)
+)
+
+assert.deepStrictEqual(Trie.get(trie, "call"), Option.some(0))
+assert.deepStrictEqual(Trie.get(trie, "me"), Option.some(1))
+assert.deepStrictEqual(Trie.get(trie, "mind"), Option.some(2))
+assert.deepStrictEqual(Trie.get(trie, "mid"), Option.some(3))
+assert.deepStrictEqual(Trie.get(trie, "cale"), Option.none())
+assert.deepStrictEqual(Trie.get(trie, "ma"), Option.none())
+assert.deepStrictEqual(Trie.get(trie, "midn"), Option.none())
+assert.deepStrictEqual(Trie.get(trie, "mea"), Option.none())
+```
+
+**Signature**
+
+```ts
+declare const get: { (key: string): <V>(self: Trie<V>) => Option<V>; <V>(self: Trie<V>, key: string): Option<V>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L423)
+
+Since v2.0.0
+Trie-has.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.has
+
+Check if the given key exists in the `Trie`.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie } from "effect"
+
+const trie = Trie.empty<number>().pipe(
+  Trie.insert("call", 0),
+  Trie.insert("me", 1),
+  Trie.insert("mind", 2),
+  Trie.insert("mid", 3)
+)
+
+assert.equal(Trie.has(trie, "call"), true)
+assert.equal(Trie.has(trie, "me"), true)
+assert.equal(Trie.has(trie, "mind"), true)
+assert.equal(Trie.has(trie, "mid"), true)
+assert.equal(Trie.has(trie, "cale"), false)
+assert.equal(Trie.has(trie, "ma"), false)
+assert.equal(Trie.has(trie, "midn"), false)
+assert.equal(Trie.has(trie, "mea"), false)
+```
+
+**Signature**
+
+```ts
+declare const has: { (key: string): <V>(self: Trie<V>) => boolean; <V>(self: Trie<V>, key: string): boolean; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L456)
+
+Since v2.0.0
+Trie-insert.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.insert
+
+Insert a new entry in the `Trie`.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie } from "effect"
+
+const trie1 = Trie.empty<number>().pipe(
+  Trie.insert("call", 0)
+)
+const trie2 = trie1.pipe(Trie.insert("me", 1))
+const trie3 = trie2.pipe(Trie.insert("mind", 2))
+const trie4 = trie3.pipe(Trie.insert("mid", 3))
+
+assert.deepStrictEqual(Array.from(trie1), [["call", 0]])
+assert.deepStrictEqual(Array.from(trie2), [["call", 0], ["me", 1]])
+assert.deepStrictEqual(Array.from(trie3), [["call", 0], ["me", 1], ["mind", 2]])
+assert.deepStrictEqual(Array.from(trie4), [["call", 0], ["me", 1], ["mid", 3], ["mind", 2]])
+```
+
+**Signature**
+
+```ts
+declare const insert: { <V1>(key: string, value: V1): <V>(self: Trie<V>) => Trie<V | V1>; <V1, V>(self: Trie<V>, key: string, value: V1): Trie<V | V1>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L128)
+
+Since v2.0.0
+Trie-insertMany.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.insertMany
+
+Insert multiple entries in the `Trie` at once.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie, Equal } from "effect"
+
+const trie = Trie.empty<number>().pipe(
+  Trie.insert("shells", 0),
+  Trie.insert("sells", 1),
+  Trie.insert("she", 2)
+)
+
+const trieInsert = Trie.empty<number>().pipe(
+  Trie.insert("shells", 0),
+  Trie.insertMany(
+    [["sells", 1], ["she", 2]]
+  )
+)
+
+assert.equal(
+  Equal.equals(trie, trieInsert),
+  true
+)
+```
+
+**Signature**
+
+```ts
+declare const insertMany: { <V1>(iter: Iterable<[string, V1]>): <V>(self: Trie<V>) => Trie<V | V1>; <V1, V>(self: Trie<V>, iter: Iterable<[string, V1]>): Trie<V | V1>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L837)
+
+Since v2.0.0
+Trie-isEmpty.md
+Package: `effect`<br />
+Module: `Trie`<br />
+
+## Trie.isEmpty
+
+Checks if the `Trie` contains any entries.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie } from "effect"
+
+const trie = Trie.empty<number>()
+const trie1 = trie.pipe(Trie.insert("ma", 0))
+
+assert.equal(Trie.isEmpty(trie), true)
+assert.equal(Trie.isEmpty(trie1), false)
+```
+
+**Signature**
+
+```ts
+declare const isEmpty: <V>(self: Trie<V>) => boolean
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L479)
+
+Since v2.0.0
 Trie-keys.md
 Package: `effect`<br />
 Module: `Trie`<br />
