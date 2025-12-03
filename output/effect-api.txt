@@ -74050,7 +74050,7 @@ Emitted when a partial code snippet is streamed by the code interpreter.
 declare class ResponseCodeInterpreterCallCodeDeltaEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1634)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1642)
 
 Since v1.0.0
 OpenAiClient-ResponseCodeInterpreterCallCodeDoneEvent.md
@@ -74067,7 +74067,7 @@ Emitted when the code snippet is finalized by the code interpreter.
 declare class ResponseCodeInterpreterCallCodeDoneEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1666)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1674)
 
 Since v1.0.0
 OpenAiClient-ResponseCodeInterpreterCallCompletedEvent.md
@@ -74084,7 +74084,7 @@ Emitted when the code interpreter call is completed.
 declare class ResponseCodeInterpreterCallCompletedEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1606)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1614)
 
 Since v1.0.0
 OpenAiClient-ResponseCodeInterpreterCallInProgressEvent.md
@@ -74101,7 +74101,7 @@ Emitted when a code interpreter call is in progress.
 declare class ResponseCodeInterpreterCallInProgressEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1546)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1554)
 
 Since v1.0.0
 OpenAiClient-ResponseCodeInterpreterCallInterpretingEvent.md
@@ -74118,7 +74118,7 @@ Emitted when the code interpreter is actively interpreting the code snippet.
 declare class ResponseCodeInterpreterCallInterpretingEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1576)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1584)
 
 Since v1.0.0
 OpenAiClient-ResponseCompletedEvent.md
@@ -74169,7 +74169,7 @@ Emitted when a content part is done.
 declare class ResponseContentPartDoneEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L491)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L495)
 
 Since v1.0.0
 OpenAiClient-ResponseCreatedEvent.md
@@ -74203,7 +74203,7 @@ Event representing a delta (partial update) to the input of a custom tool call.
 declare class ResponseCustomToolCallInputDeltaEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1697)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1705)
 
 Since v1.0.0
 OpenAiClient-ResponseCustomToolCallInputDoneEvent.md
@@ -74220,7 +74220,7 @@ Event indicating that input for a custom tool call is complete.
 declare class ResponseCustomToolCallInputDoneEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1728)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1736)
 
 Since v1.0.0
 OpenAiClient-ResponseErrorEvent.md
@@ -74237,7 +74237,7 @@ Emitted when an error occurs.
 declare class ResponseErrorEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1759)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1767)
 
 Since v1.0.0
 OpenAiClient-ResponseFailedEvent.md
@@ -74271,7 +74271,7 @@ Emitted when a file search call is completed (results found).
 declare class ResponseFileSearchCallCompletedEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L859)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L867)
 
 Since v1.0.0
 OpenAiClient-ResponseFileSearchCallInProgressEvent.md
@@ -74288,7 +74288,7 @@ Emitted when a file search call is initiated.
 declare class ResponseFileSearchCallInProgressEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L805)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L813)
 
 Since v1.0.0
 OpenAiClient-ResponseFileSearchCallSearchingEvent.md
@@ -74305,7 +74305,7 @@ Emitted when a file search is currently searching.
 declare class ResponseFileSearchCallSearchingEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L832)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L840)
 
 Since v1.0.0
 OpenAiClient-ResponseFunctionCallArgumentsDeltaEvent.md
@@ -74322,7 +74322,7 @@ Emitted when there is a partial function-call arguments delta.
 declare class ResponseFunctionCallArgumentsDeltaEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L743)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L751)
 
 Since v1.0.0
 OpenAiClient-ResponseFunctionCallArgumentsDoneEvent.md
@@ -74339,7 +74339,7 @@ Emitted when function-call arguments are finalized.
 declare class ResponseFunctionCallArgumentsDoneEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L774)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L782)
 
 Since v1.0.0
 OpenAiClient-ResponseImageGenerationCallCompletedEvent.md
@@ -74357,7 +74357,7 @@ is available.
 declare class ResponseImageGenerationCallCompletedEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1292)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1300)
 
 Since v1.0.0
 OpenAiClient-ResponseImageGenerationCallGeneratingEvent.md
@@ -74375,7 +74375,7 @@ Emitted when an image generation tool call is actively generating an image
 declare class ResponseImageGenerationCallGeneratingEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1224)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1232)
 
 Since v1.0.0
 OpenAiClient-ResponseImageGenerationCallInProgressEvent.md
@@ -74392,7 +74392,7 @@ Emitted when an image generation tool call is in progress.
 declare class ResponseImageGenerationCallInProgressEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1194)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1202)
 
 Since v1.0.0
 OpenAiClient-ResponseImageGenerationCallPartialImageEvent.md
@@ -74409,7 +74409,7 @@ Emitted when a partial image is available during image generation streaming.
 declare class ResponseImageGenerationCallPartialImageEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1253)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1261)
 
 Since v1.0.0
 OpenAiClient-ResponseInProgressEvent.md
@@ -74461,7 +74461,7 @@ tool call.
 declare class ResponseMcpCallArgumentsDeltaEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1320)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1328)
 
 Since v1.0.0
 OpenAiClient-ResponseMcpCallArgumentsDoneEvent.md
@@ -74478,7 +74478,7 @@ Emitted when the arguments for an MCP tool call are finalized.
 declare class ResponseMcpCallArgumentsDoneEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1352)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1360)
 
 Since v1.0.0
 OpenAiClient-ResponseMcpCallCompletedEvent.md
@@ -74495,7 +74495,7 @@ Emitted when an MCP tool call has completed successfully.
 declare class ResponseMcpCallCompletedEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1410)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1418)
 
 Since v1.0.0
 OpenAiClient-ResponseMcpCallFailedEvent.md
@@ -74512,7 +74512,7 @@ Emitted when an MCP tool call has failed.
 declare class ResponseMcpCallFailedEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1437)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1445)
 
 Since v1.0.0
 OpenAiClient-ResponseMcpCallInProgressEvent.md
@@ -74529,7 +74529,7 @@ Emitted when an MCP tool call is in progress.
 declare class ResponseMcpCallInProgressEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1383)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1391)
 
 Since v1.0.0
 OpenAiClient-ResponseMcpListToolsCompletedEvent.md
@@ -74546,7 +74546,7 @@ Emitted when the list of available MCP tools has been successfully retrieved.
 declare class ResponseMcpListToolsCompletedEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1492)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1500)
 
 Since v1.0.0
 OpenAiClient-ResponseMcpListToolsFailedEvent.md
@@ -74563,7 +74563,7 @@ Emitted when the attempt to list available MCP tools has failed.
 declare class ResponseMcpListToolsFailedEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1519)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1527)
 
 Since v1.0.0
 OpenAiClient-ResponseMcpListToolsInProgressEvent.md
@@ -74581,7 +74581,7 @@ MCP tools.
 declare class ResponseMcpListToolsInProgressEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1465)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1473)
 
 Since v1.0.0
 OpenAiClient-ResponseOutputItemAddedEvent.md
@@ -74632,7 +74632,7 @@ Emitted when an annotation is added to output text content.
 declare class ResponseOutputTextAnnotationAddedEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L634)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L642)
 
 Since v1.0.0
 OpenAiClient-ResponseOutputTextDeltaEvent.md
@@ -74649,7 +74649,7 @@ Emitted when there is an additional text delta.
 declare class ResponseOutputTextDeltaEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L556)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L564)
 
 Since v1.0.0
 OpenAiClient-ResponseOutputTextDoneEvent.md
@@ -74666,7 +74666,7 @@ Emitted when text content is finalized.
 declare class ResponseOutputTextDoneEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L595)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L603)
 
 Since v1.0.0
 OpenAiClient-ResponseQueuedEvent.md
@@ -74700,7 +74700,7 @@ Emitted when a reasoning summary part is completed.
 declare class ResponseReasoningSummaryPartAddedEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L984)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L992)
 
 Since v1.0.0
 OpenAiClient-ResponseReasoningSummaryPartDoneEvent.md
@@ -74717,7 +74717,7 @@ Emitted when a new reasoning summary part is added.
 declare class ResponseReasoningSummaryPartDoneEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1019)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1027)
 
 Since v1.0.0
 OpenAiClient-ResponseReasoningSummaryTextDeltaEvent.md
@@ -74734,7 +74734,7 @@ Emitted when a delta is added to a reasoning summary text.
 declare class ResponseReasoningSummaryTextDeltaEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1054)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1062)
 
 Since v1.0.0
 OpenAiClient-ResponseReasoningSummaryTextDoneEvent.md
@@ -74751,7 +74751,7 @@ Emitted when a reasoning summary text is completed.
 declare class ResponseReasoningSummaryTextDoneEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1089)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1097)
 
 Since v1.0.0
 OpenAiClient-ResponseReasoningTextDeltaEvent.md
@@ -74768,7 +74768,7 @@ Emitted when a delta is added to a reasoning text.
 declare class ResponseReasoningTextDeltaEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1124)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1132)
 
 Since v1.0.0
 OpenAiClient-ResponseReasoningTextDoneEvent.md
@@ -74785,7 +74785,7 @@ Emitted when a reasoning text is completed.
 declare class ResponseReasoningTextDoneEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1159)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1167)
 
 Since v1.0.0
 OpenAiClient-ResponseRefusalDeltaEvent.md
@@ -74802,7 +74802,7 @@ Emitted when there is a partial refusal text.
 declare class ResponseRefusalDeltaEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L673)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L681)
 
 Since v1.0.0
 OpenAiClient-ResponseRefusalDoneEvent.md
@@ -74819,7 +74819,7 @@ Emitted when refusal text is finalized.
 declare class ResponseRefusalDoneEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L708)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L716)
 
 Since v1.0.0
 OpenAiClient-ResponseStreamEvent.md
@@ -74836,7 +74836,7 @@ Represents the events that can be emitted during a streaming response.
 type ResponseStreamEvent = typeof ResponseStreamEvent.Type
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1898)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L1906)
 
 Since v1.0.0
 OpenAiClient-ResponseWebSearchCallCompletedEvent.md
@@ -74853,7 +74853,7 @@ Emitted when a web search call is completed.
 declare class ResponseWebSearchCallCompletedEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L940)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L948)
 
 Since v1.0.0
 OpenAiClient-ResponseWebSearchCallInProgressEvent.md
@@ -74870,7 +74870,7 @@ Emitted when a web search call is initiated.
 declare class ResponseWebSearchCallInProgressEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L886)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L894)
 
 Since v1.0.0
 OpenAiClient-ResponseWebSearchCallSearchingEvent.md
@@ -74887,7 +74887,7 @@ Emitted when a web search call is executing.
 declare class ResponseWebSearchCallSearchingEvent
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L913)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/ai/openai/src/OpenAiClient.ts#L921)
 
 Since v1.0.0
 OpenAiTelemetry-AllAttributes.md
@@ -120412,7 +120412,7 @@ By default, this is set to `true`, meaning that defects will be captured.
 declare class CaptureDefects
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L633)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L681)
 
 Since v1.0.0
 Workflow-SuspendOnFailure.md
@@ -120433,7 +120433,7 @@ You can then manually resume the workflow later with
 declare class SuspendOnFailure
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L647)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L695)
 
 Since v1.0.0
 Workflow-Workflow.Error.md
@@ -120493,6 +120493,46 @@ type Success<W> = W extends Workflow<any, any, infer Success, any>
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L49)
 
 Since v1.0.0
+Workflow-provideScope.md
+Package: `@effect/workflow`<br />
+Module: `Workflow`<br />
+
+## Workflow.provideScope
+
+Provides the workflow scope to the given effect.
+
+The workflow scope is only closed when the workflow execution fully
+completes.
+
+**Signature**
+
+```ts
+declare const provideScope: <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, Exclude<R, Scope.Scope> | WorkflowInstance>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L607)
+
+Since v1.0.0
+Workflow-scope.md
+Package: `@effect/workflow`<br />
+Module: `Workflow`<br />
+
+## Workflow.scope
+
+Accesses the workflow scope.
+
+The workflow scope is only closed when the workflow execution fully
+completes.
+
+**Signature**
+
+```ts
+declare const scope: Effect.Effect<Scope.Scope, never, WorkflowInstance>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L592)
+
+Since v1.0.0
 Workflow-withCompensation.md
 Package: `@effect/workflow`<br />
 Module: `Workflow`<br />
@@ -120512,7 +120552,7 @@ finalizers are only registered for top-level effects in the workflow.
 declare const withCompensation: { <A, R2>(compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): <E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; <A, E, R, R2>(effect: Effect.Effect<A, E, R>, compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L586)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L641)
 
 Since v1.0.0
 WorkflowProxy-toHttpApiGroup.md
