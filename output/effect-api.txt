@@ -120412,7 +120412,7 @@ By default, this is set to `true`, meaning that defects will be captured.
 declare class CaptureDefects
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L681)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L691)
 
 Since v1.0.0
 Workflow-SuspendOnFailure.md
@@ -120433,7 +120433,7 @@ You can then manually resume the workflow later with
 declare class SuspendOnFailure
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L695)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L705)
 
 Since v1.0.0
 Workflow-Workflow.Error.md
@@ -120510,7 +120510,7 @@ completes.
 declare const provideScope: <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, Exclude<R, Scope.Scope> | WorkflowInstance>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L607)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L617)
 
 Since v1.0.0
 Workflow-scope.md
@@ -120530,7 +120530,7 @@ completes.
 declare const scope: Effect.Effect<Scope.Scope, never, WorkflowInstance>
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L592)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L602)
 
 Since v1.0.0
 Workflow-withCompensation.md
@@ -120552,7 +120552,7 @@ finalizers are only registered for top-level effects in the workflow.
 declare const withCompensation: { <A, R2>(compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): <E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; <A, E, R, R2>(effect: Effect.Effect<A, E, R>, compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>): Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L641)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/platform/src/Workflow.ts#L651)
 
 Since v1.0.0
 WorkflowProxy-toHttpApiGroup.md
