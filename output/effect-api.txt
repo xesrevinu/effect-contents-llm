@@ -117253,6 +117253,29 @@ export interface TRef<in out A> extends TRef.Variance<A>, Pipeable {
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TRef.ts#L38)
 
 Since v2.0.0
+Tracer-currentOtelSpan.md
+Package: `@effect/opentelemetry`<br />
+Module: `Tracer`<br />
+
+## Tracer.currentOtelSpan
+
+Get the current OpenTelemetry span.
+
+Works with both the official OpenTelemetry API (via `Tracer.layer`, `NodeSdk.layer`, etc.)
+and the lightweight OTLP module (`OtlpTracer.layer`).
+
+When using OTLP, the returned span is a wrapper that conforms to the
+OpenTelemetry `Span` interface.
+
+**Signature**
+
+```ts
+declare const currentOtelSpan: Effect<Otel.Span, NoSuchElementException, never>
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/opentelemetry/src/Tracer.ts#L44)
+
+Since v1.0.0
 Tracer-withSpanContext.md
 Package: `@effect/opentelemetry`<br />
 Module: `Tracer`<br />
@@ -117270,7 +117293,7 @@ attach to a parent span.
 declare const withSpanContext: { (spanContext: Otel.SpanContext): <A, E, R>(effect: Effect<A, E, R>) => Effect<A, E, Exclude<R, ParentSpan>>; <A, E, R>(effect: Effect<A, E, R>, spanContext: Otel.SpanContext): Effect<A, E, Exclude<R, ParentSpan>>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/opentelemetry/src/Tracer.ts#L133)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/opentelemetry/src/Tracer.ts#L141)
 
 Since v1.0.0
 Traversable-sequence.md
@@ -117536,52 +117559,6 @@ declare const filter: { <A, B extends A>(f: (a: NoInfer<A>, k: string) => a is B
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L649)
-
-Since v2.0.0
-Trie-filterMap.md
-Package: `effect`<br />
-Module: `Trie`<br />
-
-## Trie.filterMap
-
-Maps over the entries of the `Trie` using the specified partial function
-and filters out `None` values.
-
-**Example**
-
-```ts
-import * as assert from "node:assert"
-import { Trie, Equal, Option } from "effect"
-
-const trie = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1),
-  Trie.insert("she", 2)
-)
-
-const trieMapV = Trie.empty<number>().pipe(
-  Trie.insert("she", 2)
-)
-
-const trieMapK = Trie.empty<number>().pipe(
-  Trie.insert("shells", 0),
-  Trie.insert("sells", 1)
-)
-
-assert.equal(Equal.equals(Trie.filterMap(trie, (v) => v > 1 ? Option.some(v) : Option.none()), trieMapV), true)
-assert.equal(
-  Equal.equals(Trie.filterMap(trie, (v, k) => k.length > 3 ? Option.some(v) : Option.none()), trieMapK),
-  true
-)
-```
-
-**Signature**
-
-```ts
-declare const filterMap: { <A, B>(f: (value: A, key: string) => Option<B>): (self: Trie<A>) => Trie<B>; <A, B>(self: Trie<A>, f: (value: A, key: string) => Option<B>): Trie<B>; }
-```
-
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L690)
 
 Since v2.0.0
 TSet-TSet.md
@@ -118047,22 +118024,50 @@ declare const transformSTM: { <A, R, E>(f: (a: A) => STM.STM<A, E, R>): (self: T
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSet.ts#L350)
 
 Since v2.0.0
-TSet-union.md
+Trie-filterMap.md
 Package: `effect`<br />
-Module: `TSet`<br />
+Module: `Trie`<br />
 
-## TSet.union
+## Trie.filterMap
 
-Atomically transforms the set into the union of itself and the provided
-set.
+Maps over the entries of the `Trie` using the specified partial function
+and filters out `None` values.
+
+**Example**
+
+```ts
+import * as assert from "node:assert"
+import { Trie, Equal, Option } from "effect"
+
+const trie = Trie.empty<number>().pipe(
+  Trie.insert("shells", 0),
+  Trie.insert("sells", 1),
+  Trie.insert("she", 2)
+)
+
+const trieMapV = Trie.empty<number>().pipe(
+  Trie.insert("she", 2)
+)
+
+const trieMapK = Trie.empty<number>().pipe(
+  Trie.insert("shells", 0),
+  Trie.insert("sells", 1)
+)
+
+assert.equal(Equal.equals(Trie.filterMap(trie, (v) => v > 1 ? Option.some(v) : Option.none()), trieMapV), true)
+assert.equal(
+  Equal.equals(Trie.filterMap(trie, (v, k) => k.length > 3 ? Option.some(v) : Option.none()), trieMapK),
+  true
+)
+```
 
 **Signature**
 
 ```ts
-declare const union: { <A>(other: TSet<A>): (self: TSet<A>) => STM.STM<void>; <A>(self: TSet<A>, other: TSet<A>): STM.STM<void>; }
+declare const filterMap: { <A, B>(f: (value: A, key: string) => Option<B>): (self: Trie<A>) => Trie<B>; <A, B>(self: Trie<A>, f: (value: A, key: string) => Option<B>): Trie<B>; }
 ```
 
-[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSet.ts#L362)
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L690)
 
 Since v2.0.0
 Trie-forEach.md
@@ -118861,6 +118866,24 @@ declare const valuesWithPrefix: { (prefix: string): <V>(self: Trie<V>) => Iterab
 ```
 
 [Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/Trie.ts#L284)
+
+Since v2.0.0
+TSet-union.md
+Package: `effect`<br />
+Module: `TSet`<br />
+
+## TSet.union
+
+Atomically transforms the set into the union of itself and the provided
+set.
+
+**Signature**
+
+```ts
+declare const union: { <A>(other: TSet<A>): (self: TSet<A>) => STM.STM<void>; <A>(self: TSet<A>, other: TSet<A>): STM.STM<void>; }
+```
+
+[Source](https://github.com/Effect-TS/effect/tree/main/packages/effect/src/TSet.ts#L362)
 
 Since v2.0.0
 TSubscriptionRef-TSubscriptionRef.md
